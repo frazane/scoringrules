@@ -1,0 +1,70 @@
+site_name: ScoringRules
+site_description: The documentation for the ScoringRules python library.
+
+nav:
+  - Home: index.md
+  - Reference:
+    - Brier Score: api/brier.md
+    - Continuous Ranked Probability Score: api/crps.md
+    - Logarithmic Score: api/logarithmic.md
+    - Energy Score: api/energy.md
+    - Variogram Score: api/variogram.md
+
+
+theme:
+  name: material
+
+  features:
+      - navigation.sections  # Sections are included in the navigation on the left.
+      - toc.integrate  # Table of contents is integrated on the left; does not appear separately on the right.
+      - header.autohide  # header disappears as you scroll
+
+
+  palette:
+      - scheme: default
+        primary: indigo
+        accent: amber
+        toggle:
+            icon: material/weather-night
+            name: Switch to dark mode
+      - scheme: slate
+        primary: indigo
+        accent: amber
+        toggle:
+            icon: material/weather-sunny
+            name: Switch to light mode
+  icon:
+      repo: fontawesome/brands/github  # GitHub logo in top right
+      logo: "material/bullseye-arrow"  # Equinox logo in top left
+
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          selection:
+            inherited_members: true  # Allow looking up inherited methods
+          rendering:
+            show_root_heading: true  # actually display anything at all...
+            show_root_full_path: true  # display "diffrax.asdf" not just "asdf"
+            show_if_no_docstring: true
+            show_signature_annotations: true
+            show_source: true  # don't include source code
+            members_order: source  # order methods according to their order of definition in the source code, not alphabetical order
+            heading_level: 4
+          options:
+            docstring_style: "numpy"
+
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_css:
+  - stylesheets/extra.css
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css
+
+extra_javascript:
+  - scripts/katex.js
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js

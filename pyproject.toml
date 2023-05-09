@@ -1,0 +1,79 @@
+[tool.poetry]
+name = "scoringutils"
+version = "0.1.0"
+description = ""
+authors = ["frazane <zanetta.francesco@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "^1.23.4"
+scipy = "^1.9.3"
+numbagg = "^0.2.2"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.4.3"
+mkdocs-material = "^9.1.11"
+mkdocstrings = { extras = ["python"], version = "^0.21.2" }
+jupyter = "^1.0.0"
+nbconvert = "7.3.1"
+ipykernel = "6.22.0"
+properscoring = "^0.1"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.0.265"
+black = "^23.3.0"
+pre-commit = "^3.3.1"
+isort = "^5.12.0"
+pytest = "^7.3.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.ruff]
+fix = true
+cache-dir = "~/.cache/ruff"
+dummy-variable-rgx = "^_$"
+exclude = ["docs/"]
+ignore-init-module-imports = true
+line-length = 88
+select = [
+  "D",   # docstrings
+  "F",   # pyflakes
+  "E",   # pycodestyle
+  "W",
+  "YTT", # flake8-2020
+  "B",   # flake8-bugbear
+  "Q",   # flake8-quotes
+  "PLE", # pylint
+  "PLR",
+  "PLW",
+  "PIE", # misc lints
+  "PYI", # flake8-pyi
+  "TID", # tidy imports
+  "ISC", # implicit string concatenation
+  "TCH", # type-checking imports
+]
+ignore = [
+  "E402",
+  "E731",
+  "E501",
+  "PGH001",
+  "RET504",
+  "S101",
+  "F722",
+  "PLR2004",
+  "PLR0913",
+]
+unfixable = ["ERA001", "F401", "F841", "T201", "T203"]
+src = ["scoringutils", "tests"]
+target-version = "py310"
+
+[tool.ruff.pydocstyle]
+convention = "numpy"
