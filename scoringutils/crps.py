@@ -26,7 +26,6 @@ def ensemble(pred, obs):
     >>> crps.ensemble(pred, obs)
     """
 
-
     M = pred.shape[0]
     E_1 = np.sum(pred - obs[None, ...], axis=0) / M
     E_2 = np.sum(pred[None, ...] - pred[:, None, ...], axis=0) / (M * (M - 1))

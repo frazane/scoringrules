@@ -1,10 +1,10 @@
 (function () {
     'use strict';
-    
+
     var katexMath = (function () {
         var maths = document.querySelectorAll('.arithmatex'),
             tex;
-    
+
         for (var i = 0; i < maths.length; i++) {
           tex = maths[i].textContent || maths[i].innerText;
           if (tex.startsWith('\\(') && tex.endsWith('\\)')) {
@@ -14,7 +14,7 @@
           }
         }
     });
-    
+
     (function () {
       var onReady = function onReady(fn) {
         if (document.addEventListener) {
@@ -27,13 +27,12 @@
           });
         }
       };
-    
+
       onReady(function () {
         if (typeof katex !== "undefined") {
           katexMath();
         }
       });
     })();
-    
+
     }());
-    
