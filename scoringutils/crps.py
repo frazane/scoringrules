@@ -3,7 +3,7 @@ from scipy.stats import norm
 
 
 def ensemble(pred, obs):
-    """Energy form of the Continuous Ranked Probability Score (CRPS).
+    """Compute the energy form of the Continuous Ranked Probability Score (CRPS).
 
     $$a=1$$
 
@@ -25,7 +25,6 @@ def ensemble(pred, obs):
     >>> from scoringrules import crps
     >>> crps.ensemble(pred, obs)
     """
-
     M = pred.shape[0]
     E_1 = np.sum(pred - obs[None, ...], axis=0) / M
     E_2 = np.sum(pred[None, ...] - pred[:, None, ...], axis=0) / (M * (M - 1))
@@ -33,7 +32,7 @@ def ensemble(pred, obs):
 
 
 def normal(mu, sigma, obs):
-    """Closed form of the Continuous Ranked Probability Score (CRPS) for the normal distribution.
+    """Compute the closed form of the Continuous Ranked Probability Score (CRPS) for the normal distribution.
 
     Parameters
     ----------
@@ -52,7 +51,7 @@ def normal(mu, sigma, obs):
 
 
 def lognormal(mu, sigma, obs):
-    """Closed form of the Continuous Ranked Probability Score (CRPS) for the lognormal distribution.
+    """Compute the closed form of the Continuous Ranked Probability Score (CRPS) for the lognormal distribution.
 
     Parameters
     ----------
