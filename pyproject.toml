@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "scoringutils"
+name = "scoringrules"
 version = "0.1.0"
 description = ""
 authors = ["frazane <zanetta.francesco@gmail.com>"]
@@ -63,6 +63,7 @@ select = [
 ignore = [
   "D100",
   "D104",
+  "D301",
   "E402",
   "E731",
   "E501",
@@ -74,8 +75,12 @@ ignore = [
   "PLR0913",
 ]
 unfixable = ["ERA001", "F401", "F841", "T201", "T203"]
-src = ["scoringutils", "tests"]
+src = ["scoringrules", "tests"]
 target-version = "py310"
+
+[tool.ruff.per-file-ignores]
+"scoringrules/crps.py" = ["PLW2901"]
+
 
 [tool.ruff.pydocstyle]
 convention = "numpy"
