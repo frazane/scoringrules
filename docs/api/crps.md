@@ -24,8 +24,8 @@ as well as the analytic formulations of the CRPS for some parametric distributio
 <br/><br/>
 
 ## Ensemble-based estimators
-::: scoringutils.crps.ensemble_int
+::: scoringrules.crps.ensemble_int
 
 ## Analytical formulations
-::: scoringutils.crps.normal
-::: scoringutils.crps.lognormal
+::: scoringrules.crps.normal
+::: scoringrules.crps.lognormal
