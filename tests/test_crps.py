@@ -1,32 +1,69 @@
-# import numpy as np
+import numpy as np
+from scoringrules import crps
 
-# from scoringrules import crps
-
-
-# def test_ensemble():
-#     M = 21
-#     obs = np.random.randn(10)
-#     pred = obs[None, ...] + np.random.randn(M, 10)
-#     res = crps.ensemble(pred, obs)
-
-#     pred_perfect = obs[None, ...] + np.random.randn(M, 10) * 1e-5
-#     res_zero = crps.ensemble(pred_perfect, obs)
-#     assert res_zero - 0.0 < 0.0001
+ENSEMBLE_SIZE = 51
+N = 100
 
 
-# def test_normal():
-#     obs = np.random.randn(10)
-#     mu, sigma = np.random.randn(10), abs(np.random.randn(10))
-#     res = crps.normal(mu, sigma, obs)
+def test_ensemble_int():
+    observation = np.random.randn(N)
+    mu = observation + np.random.randn(N) * 0.1
+    sigma = abs(np.random.randn(N)) * 0.3
+    forecasts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-#     res_zero = crps.normal(1, 0.00001, 1)
-#     assert res_zero - 0.0 < 0.0001
+    # non-negative values
+    res = crps.ensemble(forecasts, observation)
+    assert not np.any(res < 0.0)
+
+    # approx zero when perfect forecast
+    perfect_forecasts = (
+        observation[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
+    )
+    res = crps.ensemble(perfect_forecasts, observation)
+    assert not np.any(res - 0.0 > 0.0001)
 
 
-# def test_normal():
-#     obs = np.random.randn(10)
-#     mu, sigma = np.random.randn(10), abs(np.random.randn(10))
-#     res = crps.normal(mu, sigma, obs)
+def test_ensemble_gqf():
+    observation = np.random.randn(N)
+    mu = observation + np.random.randn(N) * 0.1
+    sigma = abs(np.random.randn(N)) * 0.3
+    forecasts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-#     res_zero = crps.normal(1, 0.00001, 1)
-#     assert res_zero - 0.0 < 0.0001
+    # non-negative values
+    res = crps.ensemble(forecasts, observation, estimator="gqf")
+    assert not np.any(res < 0.0)
+
+    # approx zero when perfect forecast
+    perfect_forecasts = (
+        observation[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
+    )
+    res = crps.ensemble(perfect_forecasts, observation, estimator="gqf")
+    assert not np.any(res - 0.0 > 0.0001)
+
+
+def test_normal():
+    obs = np.random.randn(N)
+    mu = obs + np.random.randn(N) * 0.1
+    sigma = abs(np.random.randn(N)) * 0.3
+
+    # non-negative values
+    res = crps.normal(mu, sigma, obs)
+    assert not np.any(res < 0.0)
+
+    # approx zero when perfect forecast
+    res = crps.normal(obs, 0.00001, obs)
+    assert not np.any(res - 0.0 > 0.0001)
+
+
+def test_lognormal():
+    obs = np.random.randn(N)
+    mu = obs + np.random.randn(N) * 0.1
+    sigma = abs(np.random.randn(N)) * 0.3
+
+    # non-negative values
+    res = crps.normal(mu, sigma, obs)
+    assert not np.any(res < 0.0)
+
+    # approx zero when perfect forecast
+    res = crps.normal(obs, 0.00001, obs)
+    assert not np.any(res - 0.0 > 0.0001)
