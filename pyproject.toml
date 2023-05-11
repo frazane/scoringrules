@@ -3,6 +3,12 @@ name = "scoringrules"
 version = "0.1.1"
 description = "Scoring rules for probabilistic forecast evaluation."
 authors = ["Francesco Zanetta <zanetta.francesco@gmail.com>"]
+homepage = "https://github.com/frazane/scoringrules"
+documentation = "https://frazane.github.io/scoringrules/"
+keywords = ["probabilistic", "forecasting", "verification"]
+
+[tool.poetry.urls]
+"Homepage" = "https://github.com/frazane/scoringrules"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -47,6 +53,7 @@ select = [
   "D",   # docstrings
   "F",   # pyflakes
   "E",   # pycodestyle
+  "I",
   "W",
   "YTT", # flake8-2020
   "B",   # flake8-bugbear
