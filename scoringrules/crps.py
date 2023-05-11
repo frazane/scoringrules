@@ -13,7 +13,9 @@ def ensemble_int(
     r"""Compute the Continuous Ranked Probability Score (CRPS).
 
     $$ \text{CRPS}_{\text{INT}}(M, y) = \int_{\mathbb{R}} \left[ \frac{1}{M}
-    \sum_{i=1}^M \mathbb{1}\{x_i \le x \} - \mathbb{1}(y \le x)  \right] ^2 dx$$
+    \sum_{i=1}^M \mathbb{1}\{x_i \le x \} - \mathbb{1}(y \le x)  \right] ^2 dx $$
+
+    Ciao $x=1 \frac{1}{2}$.
 
 
     Parameters

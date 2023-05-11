@@ -63,8 +63,8 @@ markdown_extensions:
 
 extra_css:
   - stylesheets/extra.css
-  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css
+  - https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.css
 
 extra_javascript:
   - scripts/katex.js
-  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js
+  - https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.js
