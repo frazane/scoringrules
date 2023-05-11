@@ -42,7 +42,7 @@ def ensemble_int(
     if not sorted_ensemble:
         forecasts = np.sort(forecasts, axis=axis)
 
-    return _ensemble_int_gufunc_alt(forecasts, observation)
+    return _ensemble_int_gufunc(forecasts, observation)
 
 
 def normal(mu: NDArray, sigma: NDArray, observation: NDArray):
@@ -97,7 +97,7 @@ def lognormal(mu, sigma, obs):
     ],
     "(n),()->()",
 )
-def _ensemble_int_gufunc_alt(forecasts, observation, result):
+def _ensemble_int_gufunc(forecasts, observation, result):
     obs = observation[0]
     M = forecasts.shape[0]
 

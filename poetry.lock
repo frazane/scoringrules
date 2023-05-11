@@ -632,14 +632,14 @@ dev = ["flake8", "markdown", "twine", "wheel"]
 
 [[package]]
 name = "griffe"
-version = "0.27.3"
+version = "0.27.4"
 description = "Signatures for entire Python programs. Extract the structure, the frame, the skeleton of your project, to generate API documentation or find breaking changes in your API."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "griffe-0.27.3-py3-none-any.whl", hash = "sha256:094513b209d4acd4b2680c2415d3af5f8ed925714795380c2a7d070e222e0b27"},
-    {file = "griffe-0.27.3.tar.gz", hash = "sha256:a3d0f75aa76b80f181f818cf605f658a69fccf287aaeeeafc7a6cf4e6a2ca27e"},
+    {file = "griffe-0.27.4-py3-none-any.whl", hash = "sha256:685350067286229e80a18b8989d6acbd43abdf8b763591221d19c56f4108549e"},
+    {file = "griffe-0.27.4.tar.gz", hash = "sha256:088c25fb22f8d1f1add5d3b58a86a3969993181a36ca55b3fa33096a3f3b1a23"},
 ]
 
 [package.dependencies]
@@ -1596,6 +1596,26 @@ files = [
 [package.dependencies]
 llvmlite = ">=0.40.0dev0,<0.41"
 numpy = ">=1.21,<1.25"
+
+[[package]]
+name = "numba-stats"
+version = "1.2.0"
+description = "Numba-accelerated implementations of common probability distributions"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "numba-stats-1.2.0.tar.gz", hash = "sha256:0a335f943121dce707ce827098d3062d28b98cc4e4d8cb1f7fe29f76a26f0431"},
+    {file = "numba_stats-1.2.0-py3-none-any.whl", hash = "sha256:cfd2454b16958d494ad2671f9e0cc875cfda2e61d4a479bc1047c63ec3babca5"},
+]
+
+[package.dependencies]
+numba = ">=0.49"
+numpy = ">=1.18"
+scipy = ">=1.5"
+
+[package.extras]
+test = ["pydocstyle", "pytest", "pytest-benchmark", "pytest-cov"]
 
 [[package]]
 name = "numbagg"
@@ -2809,4 +2829,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "b8540999bfead1dc9fad3ef6fcbe269a422d073be6377c1b9d7fd30078623d99"
+content-hash = "d13b09b7f0d4fa6e7664f5525b382423ea2d4b102cad50ac992d76719094a124"

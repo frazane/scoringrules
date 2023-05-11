@@ -9,6 +9,7 @@ python = "^3.10"
 numpy = "^1.23.4"
 scipy = "^1.9.3"
 numbagg = "^0.2.2"
+numba-stats = "^1.2.0"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.4.3"
