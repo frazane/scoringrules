@@ -42,28 +42,28 @@ def test_ensemble_gqf():
 
 
 def test_normal():
-    obs = np.random.randn(N)
-    mu = obs + np.random.randn(N) * 0.1
+    observation = np.random.randn(N)
+    mu = observation + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N)) * 0.3
 
     # non-negative values
-    res = crps.normal(mu, sigma, obs)
+    res = crps.normal(mu, sigma, observation)
     assert not np.any(res < 0.0)
 
     # approx zero when perfect forecast
-    res = crps.normal(obs, 0.00001, obs)
+    res = crps.normal(observation, 0.00001, observation)
     assert not np.any(res - 0.0 > 0.0001)
 
 
 def test_lognormal():
-    obs = np.random.randn(N)
-    mu = obs + np.random.randn(N) * 0.1
+    observation = np.random.lognormal(size=N)
+    mu = observation + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N)) * 0.3
 
     # non-negative values
-    res = crps.normal(mu, sigma, obs)
+    res = crps.lognormal(mu, sigma, observation)
     assert not np.any(res < 0.0)
 
     # approx zero when perfect forecast
-    res = crps.normal(obs, 0.00001, obs)
+    res = crps.lognormal(np.log(observation), 0.00001, observation)
     assert not np.any(res - 0.0 > 0.0001)
