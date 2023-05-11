@@ -1,6 +1,6 @@
-__version__ = "0.1.1"
+from scoringrules import crps
 
-from . import crps
+__version__ = "0.1.1"
 
 
 __all__ = ["crps"]
