@@ -41,6 +41,24 @@ def test_ensemble_gqf():
     assert not np.any(res - 0.0 > 0.0001)
 
 
+def test_ensemble_nrg():
+    observation = np.random.randn(N)
+    mu = observation + np.random.randn(N) * 0.1
+    sigma = abs(np.random.randn(N)) * 0.3
+    forecasts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+
+    # non-negative values
+    res = crps.ensemble(forecasts, observation, estimator="nrg")
+    assert not np.any(res < 0.0)
+
+    # approx zero when perfect forecast
+    perfect_forecasts = (
+        observation[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
+    )
+    res = crps.ensemble(perfect_forecasts, observation, estimator="nrg")
+    assert not np.any(res - 0.0 > 0.0001)
+
+
 def test_normal():
     observation = np.random.randn(N)
     mu = observation + np.random.randn(N) * 0.1

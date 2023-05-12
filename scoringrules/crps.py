@@ -44,13 +44,15 @@ def ensemble(
     >>> from scoringrules import crps
     >>> crps.ensemble(pred, obs)
     """
-    if not sorted_ensemble:
+    if not sorted_ensemble and estimator != "nrg":
         forecasts = np.sort(forecasts, axis=axis)
 
     if estimator == "int":
         out = _crps_ensemble_int_gufunc(forecasts, observation)
     elif estimator == "gqf":
         out = _crps_ensemble_gqf_gufunc(forecasts, observation)
+    elif estimator == "nrg":
+        out = _crps_ensemble_nrg_gufunc(forecasts, observation)
     else:
         raise ValueError("{estimator} is not a valid estimator")
 
@@ -213,6 +215,22 @@ def _crps_ensemble_gqf_gufunc(forecasts, observation, result):
         integral += (forecast - obs) * (M * obs_cdf - i + 0.5)
 
     result[0] = (2 / M**2) * integral
+
+
+@guvectorize(
+    [
+        "void(float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:])",
+    ],
+    "(n),()->()",
+)
+def _crps_ensemble_nrg_gufunc(forecasts, observation, result):
+    """CRPS estimator based on the energy form."""
+    e_1 = np.nanmean(np.abs(observation - forecasts))
+    e_2 = np.nanmean(
+        np.abs(np.expand_dims(forecasts, 0) - np.expand_dims(forecasts, 1))
+    )
+    result[0] = e_1 - 0.5 * e_2
 
 
 __all__ = [
