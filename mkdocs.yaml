@@ -58,10 +58,13 @@ plugins:
             heading_level: 4
           options:
             docstring_style: "numpy"
+  - bibtex:
+      bib_file: "docs/refs.bib"
 
 markdown_extensions:
   - pymdownx.arithmatex:
       generic: true
+  - footnotes
 
 extra_css:
   - stylesheets/extra.css

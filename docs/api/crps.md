@@ -9,7 +9,7 @@ of the scalar observation $y$. $\mathbb{1}$ is the indicator function. The CRPS 
 also be viewed as the Brier score integrated over all real-valued thresholds.
 
 
-Citing directly from the abstract of [CITE]:
+Citing directly from the abstract of Zamo and Naveau (2018)[@zamo_estimation_2018]:
 > The continuous ranked probability score (CRPS) is a much used measure
 of performance for probabilistic forecasts of a scalar observation. It is a quadratic
 measure of the difference between the forecast cumulative distribution function (CDF)
@@ -24,7 +24,7 @@ as well as the analytic formulations of the CRPS for some parametric distributio
 <br/><br/>
 
 ## Ensemble-based estimators
-::: scoringrules.crps.ensemble_int
+::: scoringrules.crps.ensemble
 
 ## Analytical formulations
 ::: scoringrules.crps.normal
