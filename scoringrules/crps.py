@@ -59,18 +59,16 @@ def ensemble(
     return out
 
 
-def normal(mu: NDArray, sigma: NDArray, observation: NDArray):
-    """Compute the closed form of the CRPS for the normal distribution.
+def normal(mu: NDArray, sigma: NDArray, observation: NDArray) -> NDArray:
+    r"""Compute the closed form of the CRPS for the normal distribution.
 
-    TODO: https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml
+    It is based on the following formulation from
+    [Geiting et al. (2005)](https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml):
 
-    It is based on the following formulation
+    $$ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},$$
 
-    $$ \\mathrm{CRPS}(\\mathcal{N}(\\mu, \\sigma), y) =
-    \\sigma \\Bigl\\{ \\omega [\\Phi(ω) - 1] + 2 \\phi(\\omega) - \frac{1}{\\sqrt{\\pi}} \\Bigl\\} $$
-
-    where $\\Phi(ω)$ and $\\phi(ω)$ are respectively the CDF and PDF of the standard normal
-    distribution at the normalized prediction error $\\omega = \frac{y - \\mu}{\\sigma}$.
+    where $\Phi(ω)$ and $\phi(ω)$ are respectively the CDF and PDF of the standard normal
+    distribution at the normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
 
     Parameters
     ----------
@@ -97,30 +95,30 @@ def normal(mu: NDArray, sigma: NDArray, observation: NDArray):
     )
 
 
-def lognormal(mu, sigma, obs):
-    """Compute the closed form of the CRPS for the lognormal distribution.
+def lognormal(mulog: NDArray, sigmalog: NDArray, observation: NDArray) -> NDArray:
+    r"""Compute the closed form of the CRPS for the lognormal distribution.
 
-    TODO: https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2521
+    It is based on the formulation introduced by
+    [Baran and Lerch (2015)](https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2521)
 
-    $$ \\mathrm{CRPS}(\\mathrm{log}\\mathcal{N}(\\mu, \\sigma), y) =
-    y [2 \\Phi(y) - 1] - 2 \\mathrm{exp}(\\mu + \frac{\\sigma^2}{2})
-    \\left[ \\Phi(\\omega - \\sigma) + \\Phi(\frac{\\sigma}{\\sqrt{2}}) \right]$$
+    $$ \mathrm{CRPS}(\mathrm{log}\mathcal{N}(\mu, \sigma), y) =
+    y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
+    \left[ \Phi(\omega - \sigma) + \Phi(\frac{\sigma}{\sqrt{2}}) \right]$$
 
-    where $\\Phi$ is the CDF of the standard normal distribution at
-    $\\omega = \frac{\\mathrm{log}y - \\mu}{\\sigma}$.
-
+    where $\Phi$ is the CDF of the standard normal distribution and
+    $\omega = \frac{\mathrm{log}y - \mu}{\sigma}$.
 
 
     Parameters
     ----------
-    mulog: array_like
+    mulog: NDArray
         Mean of the normal underlying distribution.
-    sigmalog: array_like
+    sigmalog: NDArray
         Standard deviation of the underlying normal distribution.
 
     Returns
     -------
-    crps: array_like
+    crps: NDArray
         The CRPS between Lognormal(mu, sigma) and obs.
 
     Notes
