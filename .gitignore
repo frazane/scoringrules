@@ -148,3 +148,4 @@ workspace.code-workspace
 scratch_nbs/
 .DS_store
 .ruff_cache/
+_devlog/
