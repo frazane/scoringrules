@@ -2,29 +2,29 @@ import math
 
 import numpy as np
 from numba import guvectorize, njit, vectorize
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike
 
 INV_SQRT_PI = 1 / np.sqrt(np.pi)
 
 
 def ensemble(
-    forecasts: NDArray,
-    observations: NDArray,
+    forecasts: ArrayLike,
+    observations: ArrayLike,
     axis: int = -1,
     sorted_ensemble: bool = False,
     estimator: str = "int",
-) -> NDArray:
+) -> ArrayLike:
     r"""Estimate the Continuous Ranked Probability Score (CRPS) for a finite ensemble.
 
     Parameters
     ----------
-    forecasts: NDArray
+    forecasts: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    observations: NDArray
+    observations: ArrayLike
         The observed values.
     axis: int, optional
-        The axis corresponding to the example. Default is the last axis.
+        The axis corresponding to the ensemble. Default is the last axis.
     sorted_ensemble: bool, optional
         Boolean indicating whether the ensemble members are already in ascending order.
         Default is False.
@@ -33,7 +33,7 @@ def ensemble(
 
     Returns
     -------
-    crps: NDArray
+    crps: ArrayLike
         The CRPS between the forecast ensemble and obs.
 
     Examples
@@ -63,7 +63,7 @@ def ensemble(
     return out
 
 
-def normal(mu: NDArray, sigma: NDArray, observation: NDArray) -> NDArray:
+def normal(mu: ArrayLike, sigma: ArrayLike, observation: ArrayLike) -> ArrayLike:
     r"""Compute the closed form of the CRPS for the normal distribution.
 
     It is based on the following formulation from
@@ -76,11 +76,11 @@ def normal(mu: NDArray, sigma: NDArray, observation: NDArray) -> NDArray:
 
     Parameters
     ----------
-    mu: NDArray
+    mu: ArrayLike
         Mean of the forecast normal distribution.
-    sigma: NDArray
+    sigma: ArrayLike
         Standard deviation of the forecast normal distribution.
-    observation: NDArray
+    observation: ArrayLike
         The observed values.
 
     Returns
@@ -96,7 +96,9 @@ def normal(mu: NDArray, sigma: NDArray, observation: NDArray) -> NDArray:
     return _crps_normal_ufunc(mu, sigma, observation)
 
 
-def lognormal(mulog: NDArray, sigmalog: NDArray, observation: NDArray) -> NDArray:
+def lognormal(
+    mulog: ArrayLike, sigmalog: ArrayLike, observation: ArrayLike
+) -> ArrayLike:
     r"""Compute the closed form of the CRPS for the lognormal distribution.
 
     It is based on the formulation introduced by
@@ -112,14 +114,14 @@ def lognormal(mulog: NDArray, sigmalog: NDArray, observation: NDArray) -> NDArra
 
     Parameters
     ----------
-    mulog: NDArray
+    mulog: ArrayLike
         Mean of the normal underlying distribution.
-    sigmalog: NDArray
+    sigmalog: ArrayLike
         Standard deviation of the underlying normal distribution.
 
     Returns
     -------
-    crps: NDArray
+    crps: ArrayLike
         The CRPS between Lognormal(mu, sigma) and obs.
 
     Notes
@@ -170,8 +172,8 @@ def _crps_lognormal_ufunc(mulog, sigmalog, observation):
     "(n),()->()",
 )
 def _crps_ensemble_int_gufunc(
-    forecasts: NDArray, observation: NDArray, out: NDArray
-) -> NDArray:
+    forecasts: ArrayLike, observation: ArrayLike, out: ArrayLike
+) -> ArrayLike:
     """CRPS estimator based on the integral form."""
     obs = observation[0]
     M = forecasts.shape[0]
@@ -217,8 +219,8 @@ def _crps_ensemble_int_gufunc(
     "(n),()->()",
 )
 def _crps_ensemble_qd_gufunc(
-    forecasts: NDArray, observation: NDArray, out: NDArray
-) -> NDArray:
+    forecasts: ArrayLike, observation: ArrayLike, out: ArrayLike
+) -> ArrayLike:
     """CRPS estimator based on the quantile decomposition form."""
     obs = observation[0]
     M = forecasts.shape[0]
@@ -247,8 +249,8 @@ def _crps_ensemble_qd_gufunc(
     "(n),()->()",
 )
 def _crps_ensemble_nrg_gufunc(
-    forecasts: NDArray, observation: NDArray, out: NDArray
-) -> NDArray:
+    forecasts: ArrayLike, observation: ArrayLike, out: ArrayLike
+) -> ArrayLike:
     """CRPS estimator based on the energy form."""
     obs = observation[0]
     M = forecasts.shape[-1]
@@ -276,8 +278,8 @@ def _crps_ensemble_nrg_gufunc(
     "(n),()->()",
 )
 def _crps_ensemble_fair_gufunc(
-    forecasts: NDArray, observation: NDArray, out: NDArray
-) -> NDArray:
+    forecasts: ArrayLike, observation: ArrayLike, out: ArrayLike
+) -> ArrayLike:
     """Fair version of the CRPS estimator based on the energy form."""
     obs = observation[0]
     M = forecasts.shape[-1]
@@ -305,8 +307,8 @@ def _crps_ensemble_fair_gufunc(
     "(n),()->()",
 )
 def _crps_ensemble_pwm_gufunc(
-    forecasts: NDArray, observation: NDArray, out: NDArray
-) -> NDArray:
+    forecasts: ArrayLike, observation: ArrayLike, out: ArrayLike
+) -> ArrayLike:
     """CRPS estimator based on the probability weighted moment (PWM) form."""
     obs = observation[0]
     M = forecasts.shape[0]
