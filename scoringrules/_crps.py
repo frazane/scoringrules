@@ -8,7 +8,7 @@ Array = TypeVar("Array", np.ndarray, Any)
 ArrayLike = TypeVar("ArrayLike", np.ndarray, Any, float)
 
 
-def ensemble(
+def crps_ensemble(
     forecasts: Array,
     observations: ArrayLike,
     axis: int = -1,
@@ -52,7 +52,7 @@ def ensemble(
     )
 
 
-def normal(
+def crps_normal(
     mu: ArrayLike, sigma: ArrayLike, observation: ArrayLike, backend: str = "numpy"
 ) -> ArrayLike:
     r"""Compute the closed form of the CRPS for the normal distribution.
@@ -87,7 +87,7 @@ def normal(
     return srb[backend].crps_normal(mu, sigma, observation)
 
 
-def lognormal(
+def crps_lognormal(
     mulog: ArrayLike,
     sigmalog: ArrayLike,
     observation: ArrayLike,
@@ -132,7 +132,7 @@ def lognormal(
 
 
 __all__ = [
-    "ensemble",
-    "normal",
-    "lognormal",
+    "crps_ensemble",
+    "crps_normal",
+    "crps_lognormal",
 ]

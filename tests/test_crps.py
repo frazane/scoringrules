@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from scoringrules import crps
+from scoringrules import _crps
 
 ENSEMBLE_SIZE = 51
 N = 100
@@ -21,20 +21,20 @@ def test_ensemble(estimator, backend):
     if backend in ["numpy", "jax"]:
         if estimator not in ["nrg", "fair", "pwm"]:
             with pytest.raises(ValueError):
-                crps.ensemble(
+                _crps.ensemble(
                     forecasts, observation, estimator=estimator, backend=backend
                 )
             return
 
     # non-negative values
-    res = crps.ensemble(forecasts, observation, estimator=estimator, backend=backend)
+    res = _crps.ensemble(forecasts, observation, estimator=estimator, backend=backend)
     assert not np.any(res < 0.0)
 
     # approx zero when perfect forecast
     perfect_forecasts = (
         observation[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
     )
-    res = crps.ensemble(
+    res = _crps.ensemble(
         perfect_forecasts, observation, estimator=estimator, backend=backend
     )
     assert not np.any(res - 0.0 > 0.0001)

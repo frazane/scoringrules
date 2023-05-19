@@ -1,5 +1,5 @@
 import math
-from typing import Any
+from typing import TypeVar
 
 import numpy as np
 from numba import guvectorize, njit, vectorize
@@ -7,7 +7,7 @@ from numba import guvectorize, njit, vectorize
 INV_SQRT_PI = 1 / np.sqrt(np.pi)
 EPSILON = 1e-6
 
-ArrayLike = np.ndarray[Any, float] | float
+ArrayLike = TypeVar("ArrayLike", np.ndarray, float)
 
 
 @njit
@@ -102,8 +102,8 @@ def _crps_ensemble_qd_gufunc(
         out[0] = np.nan
         return
 
-    obs_cdf = 0
-    integral = 0
+    obs_cdf = 0.0
+    integral = 0.0
 
     for i, forecast in enumerate(forecasts):
         if obs < forecast:
@@ -260,8 +260,8 @@ def _energy_score_gufunc(
     """Compute the Energy Score for a finite ensemble."""
     M = forecasts.shape[0]
 
-    e_1 = 0
-    e_2 = 0
+    e_1 = 0.0
+    e_2 = 0.0
     for i in range(M):
         e_1 += np.linalg.norm(forecasts[i] - observations)
         for j in range(M):

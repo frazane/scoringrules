@@ -14,7 +14,7 @@ def energy_score(
     m_axis: int = -2,
     v_axis: int = -1,
     engine="numba",
-) -> ArrayLike:
+) -> Array:
     """Compute the Energy Score for a finite multivariate ensemble.
 
     The Energy Score is a multivariate scoring rule expressed as

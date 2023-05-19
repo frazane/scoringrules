@@ -2,4 +2,4 @@
 
 <br/><br/>
 
-::: scoringrules.brier.brier_score
+::: scoringrules.brier_score
