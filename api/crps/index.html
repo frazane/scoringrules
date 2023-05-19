@@ -15,7 +15,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.11">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.12">
     
     
       
@@ -665,7 +665,7 @@ also be viewed as the Brier score integrated over all real-valued thresholds.</p
 
 
 <h4 id="scoringrules.crps.ensemble" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">crps</span><span class="o">.</span><span class="n">ensemble</span><span class="p">(</span><span class="n">forecasts</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">sorted_ensemble</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">estimator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;int&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span></code>
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">crps</span><span class="o">.</span><span class="n">ensemble</span><span class="p">(</span><span class="n">forecasts</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">sorted_ensemble</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">estimator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;pwm&#39;</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;numba&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span></code>
 
 </h4>
 
@@ -688,7 +688,7 @@ also be viewed as the Brier score integrated over all real-valued thresholds.</p
         <tr>
           <td><code>forecasts</code></td>
           <td>
-                <code><span title="numpy.typing.NDArray">NDArray</span></code>
+                <code><span title="scoringrules.crps.Array">Array</span></code>
           </td>
           <td><p>The predicted forecast ensemble, where the ensemble dimension is by default
 represented by the last axis.</p></td>
@@ -699,7 +699,7 @@ represented by the last axis.</p></td>
         <tr>
           <td><code>observations</code></td>
           <td>
-                <code><span title="numpy.typing.NDArray">NDArray</span></code>
+                <code><span title="scoringrules.crps.ArrayLike">ArrayLike</span></code>
           </td>
           <td><p>The observed values.</p></td>
           <td>
@@ -711,7 +711,7 @@ represented by the last axis.</p></td>
           <td>
                 <code>int</code>
           </td>
-          <td><p>The axis corresponding to the example. Default is the last axis.</p></td>
+          <td><p>The axis corresponding to the ensemble. Default is the last axis.</p></td>
           <td>
                 <code>-1</code>
           </td>
@@ -734,7 +734,7 @@ Default is False.</p></td>
           </td>
           <td><p>Indicates the CRPS estimator to be used.</p></td>
           <td>
-                <code>&#39;int&#39;</code>
+                <code>&#39;pwm&#39;</code>
           </td>
         </tr>
     </tbody>
@@ -751,7 +751,7 @@ Default is False.</p></td>
     <tbody>
         <tr>
 <td><code>crps</code></td>          <td>
-                <code><span title="numpy.typing.NDArray">NDArray</span></code>
+                <code><span title="scoringrules.crps.ArrayLike">ArrayLike</span></code>
           </td>
           <td><p>The CRPS between the forecast ensemble and obs.</p></td>
         </tr>
@@ -765,9 +765,7 @@ Default is False.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>scoringrules/crps.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">11</span>
 <span class="normal">12</span>
 <span class="normal">13</span>
 <span class="normal">14</span>
@@ -808,28 +806,26 @@ Default is False.</p></td>
 <span class="normal">49</span>
 <span class="normal">50</span>
 <span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">ensemble</span><span class="p">(</span>
-    <span class="n">forecasts</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span>
-    <span class="n">observations</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span>
+<span class="normal">52</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">ensemble</span><span class="p">(</span>
+    <span class="n">forecasts</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span>
+    <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
     <span class="n">sorted_ensemble</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">estimator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
+    <span class="n">estimator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pwm&quot;</span><span class="p">,</span>
+    <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;numba&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Estimate the Continuous Ranked Probability Score (CRPS) for a finite ensemble.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    forecasts: NDArray</span>
+<span class="sd">    forecasts: ArrayLike</span>
 <span class="sd">        The predicted forecast ensemble, where the ensemble dimension is by default</span>
 <span class="sd">        represented by the last axis.</span>
-<span class="sd">    observations: NDArray</span>
+<span class="sd">    observations: ArrayLike</span>
 <span class="sd">        The observed values.</span>
-<span class="sd">    axis: int, optional</span>
-<span class="sd">        The axis corresponding to the example. Default is the last axis.</span>
-<span class="sd">    sorted_ensemble: bool, optional</span>
+<span class="sd">    axis: int</span>
+<span class="sd">        The axis corresponding to the ensemble. Default is the last axis.</span>
+<span class="sd">    sorted_ensemble: bool</span>
 <span class="sd">        Boolean indicating whether the ensemble members are already in ascending order.</span>
 <span class="sd">        Default is False.</span>
 <span class="sd">    estimator: str</span>
@@ -837,7 +833,7 @@ Default is False.</p></td>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    crps: NDArray</span>
+<span class="sd">    crps: ArrayLike</span>
 <span class="sd">        The CRPS between the forecast ensemble and obs.</span>
 
 <span class="sd">    Examples</span>
@@ -845,19 +841,13 @@ Default is False.</p></td>
 <span class="sd">    &gt;&gt;&gt; from scoringrules import crps</span>
 <span class="sd">    &gt;&gt;&gt; crps.ensemble(pred, obs)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">sorted_ensemble</span> <span class="ow">and</span> <span class="n">estimator</span> <span class="o">!=</span> <span class="s2">&quot;nrg&quot;</span><span class="p">:</span>
-        <span class="n">forecasts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">forecasts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">estimator</span> <span class="o">==</span> <span class="s2">&quot;int&quot;</span><span class="p">:</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="n">_crps_ensemble_int_gufunc</span><span class="p">(</span><span class="n">forecasts</span><span class="p">,</span> <span class="n">observations</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">estimator</span> <span class="o">==</span> <span class="s2">&quot;qd&quot;</span><span class="p">:</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="n">_crps_ensemble_qd_gufunc</span><span class="p">(</span><span class="n">forecasts</span><span class="p">,</span> <span class="n">observations</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">estimator</span> <span class="o">==</span> <span class="s2">&quot;nrg&quot;</span><span class="p">:</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="n">_crps_ensemble_nrg_gufunc</span><span class="p">(</span><span class="n">forecasts</span><span class="p">,</span> <span class="n">observations</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{estimator}</span><span class="s2"> is not a valid estimator&quot;</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">out</span>
+    <span class="k">return</span> <span class="n">srb</span><span class="p">[</span><span class="n">backend</span><span class="p">]</span><span class="o">.</span><span class="n">crps_ensemble</span><span class="p">(</span>
+        <span class="n">forecasts</span><span class="p">,</span>
+        <span class="n">observations</span><span class="p">,</span>
+        <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span>
+        <span class="n">sorted_ensemble</span><span class="o">=</span><span class="n">sorted_ensemble</span><span class="p">,</span>
+        <span class="n">estimator</span><span class="o">=</span><span class="n">estimator</span><span class="p">,</span>
+    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -870,7 +860,7 @@ Default is False.</p></td>
 
 
 <h4 id="scoringrules.crps.normal" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">crps</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span></code>
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">crps</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;numpy&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span></code>
 
 </h4>
 
@@ -878,9 +868,9 @@ Default is False.</p></td>
   <div class="doc doc-contents first">
   
       <p>Compute the closed form of the CRPS for the normal distribution.</p>
-<p>TODO: https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml</p>
-<p>It is based on the following formulation</p>
-<div class="arithmatex">\[ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\} \]</div>
+<p>It is based on the following formulation from
+<a href="https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml">Geiting et al. (2005)</a>:</p>
+<div class="arithmatex">\[ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},\]</div>
 <p>where <span class="arithmatex">\(\Phi(ω)\)</span> and <span class="arithmatex">\(\phi(ω)\)</span> are respectively the CDF and PDF of the standard normal
 distribution at the normalized prediction error <span class="arithmatex">\(\omega = \frac{y - \mu}{\sigma}\)</span>.</p>
 
@@ -898,7 +888,7 @@ distribution at the normalized prediction error <span class="arithmatex">\(\omeg
         <tr>
           <td><code>mu</code></td>
           <td>
-                <code><span title="numpy.typing.NDArray">NDArray</span></code>
+                <code><span title="scoringrules.crps.ArrayLike">ArrayLike</span></code>
           </td>
           <td><p>Mean of the forecast normal distribution.</p></td>
           <td>
@@ -908,7 +898,7 @@ distribution at the normalized prediction error <span class="arithmatex">\(\omeg
         <tr>
           <td><code>sigma</code></td>
           <td>
-                <code><span title="numpy.typing.NDArray">NDArray</span></code>
+                <code><span title="scoringrules.crps.ArrayLike">ArrayLike</span></code>
           </td>
           <td><p>Standard deviation of the forecast normal distribution.</p></td>
           <td>
@@ -918,7 +908,7 @@ distribution at the normalized prediction error <span class="arithmatex">\(\omeg
         <tr>
           <td><code>observation</code></td>
           <td>
-                <code><span title="numpy.typing.NDArray">NDArray</span></code>
+                <code><span title="scoringrules.crps.ArrayLike">ArrayLike</span></code>
           </td>
           <td><p>The observed values.</p></td>
           <td>
@@ -953,7 +943,10 @@ distribution at the normalized prediction error <span class="arithmatex">\(\omeg
 
       <details class="quote">
         <summary>Source code in <code>scoringrules/crps.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">58</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
 <span class="normal">59</span>
 <span class="normal">60</span>
 <span class="normal">61</span>
@@ -982,30 +975,26 @@ distribution at the normalized prediction error <span class="arithmatex">\(\omeg
 <span class="normal">84</span>
 <span class="normal">85</span>
 <span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
+<span class="normal">87</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">normal</span><span class="p">(</span>
+    <span class="n">mu</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;numpy&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the closed form of the CRPS for the normal distribution.</span>
 
-<span class="sd">    TODO: https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml</span>
+<span class="sd">    It is based on the following formulation from</span>
+<span class="sd">    [Geiting et al. (2005)](https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml):</span>
 
-<span class="sd">    It is based on the following formulation</span>
-
-<span class="sd">    $$ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\} $$</span>
+<span class="sd">    $$ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},$$</span>
 
 <span class="sd">    where $\Phi(ω)$ and $\phi(ω)$ are respectively the CDF and PDF of the standard normal</span>
 <span class="sd">    distribution at the normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    mu: NDArray</span>
+<span class="sd">    mu: ArrayLike</span>
 <span class="sd">        Mean of the forecast normal distribution.</span>
-<span class="sd">    sigma: NDArray</span>
+<span class="sd">    sigma: ArrayLike</span>
 <span class="sd">        Standard deviation of the forecast normal distribution.</span>
-<span class="sd">    observation: NDArray</span>
+<span class="sd">    observation: ArrayLike</span>
 <span class="sd">        The observed values.</span>
 
 <span class="sd">    Returns</span>
@@ -1018,10 +1007,7 @@ distribution at the normalized prediction error <span class="arithmatex">\(\omeg
 <span class="sd">    &gt;&gt;&gt; from scoringrules import crps</span>
 <span class="sd">    &gt;&gt;&gt; crps.normal(0.1, 0.4, 0.0)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ω</span> <span class="o">=</span> <span class="p">(</span><span class="n">observation</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span>
-    <span class="k">return</span> <span class="n">sigma</span> <span class="o">*</span> <span class="p">(</span>
-        <span class="n">ω</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">ω</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span><span class="n">ω</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">INV_SQRT_PI</span>
-    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">srb</span><span class="p">[</span><span class="n">backend</span><span class="p">]</span><span class="o">.</span><span class="n">crps_normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">observation</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -1033,7 +1019,7 @@ distribution at the normalized prediction error <span class="arithmatex">\(\omeg
 
 
 <h4 id="scoringrules.crps.lognormal" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">crps</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mulog</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">sigmalog</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span></code>
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">crps</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mulog</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">sigmalog</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;numpy&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span></code>
 
 </h4>
 
@@ -1041,7 +1027,8 @@ distribution at the normalized prediction error <span class="arithmatex">\(\omeg
   <div class="doc doc-contents first">
   
       <p>Compute the closed form of the CRPS for the lognormal distribution.</p>
-<p>TODO: https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2521</p>
+<p>It is based on the formulation introduced by
+<a href="https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2521">Baran and Lerch (2015)</a></p>
 <div class="arithmatex">\[ \mathrm{CRPS}(\mathrm{log}\mathcal{N}(\mu, \sigma), y) =
 y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
 \left[ \Phi(\omega - \sigma) + \Phi(\frac{\sigma}{\sqrt{2}}) \right]\]</div>
@@ -1062,7 +1049,7 @@ y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
         <tr>
           <td><code>mulog</code></td>
           <td>
-                <code><span title="numpy.typing.NDArray">NDArray</span></code>
+                <code><span title="scoringrules.crps.ArrayLike">ArrayLike</span></code>
           </td>
           <td><p>Mean of the normal underlying distribution.</p></td>
           <td>
@@ -1072,7 +1059,7 @@ y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
         <tr>
           <td><code>sigmalog</code></td>
           <td>
-                <code><span title="numpy.typing.NDArray">NDArray</span></code>
+                <code><span title="scoringrules.crps.ArrayLike">ArrayLike</span></code>
           </td>
           <td><p>Standard deviation of the underlying normal distribution.</p></td>
           <td>
@@ -1093,7 +1080,7 @@ y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
     <tbody>
         <tr>
 <td><code>crps</code></td>          <td>
-                <code><span title="numpy.typing.NDArray">NDArray</span></code>
+                <code><span title="scoringrules.crps.ArrayLike">ArrayLike</span></code>
           </td>
           <td><p>The CRPS between Lognormal(mu, sigma) and obs.</p></td>
         </tr>
@@ -1110,7 +1097,12 @@ but of the underlying normal distribution it is derived from.</p>
 
       <details class="quote">
         <summary>Source code in <code>scoringrules/crps.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 95</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
 <span class="normal"> 96</span>
 <span class="normal"> 97</span>
 <span class="normal"> 98</span>
@@ -1146,15 +1138,16 @@ but of the underlying normal distribution it is derived from.</p>
 <span class="normal">128</span>
 <span class="normal">129</span>
 <span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">lognormal</span><span class="p">(</span><span class="n">mulog</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">sigmalog</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
+<span class="normal">131</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">lognormal</span><span class="p">(</span>
+    <span class="n">mulog</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">sigmalog</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">observation</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+    <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;numpy&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the closed form of the CRPS for the lognormal distribution.</span>
 
-<span class="sd">    TODO: https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2521</span>
+<span class="sd">    It is based on the formulation introduced by</span>
+<span class="sd">    [Baran and Lerch (2015)](https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2521)</span>
 
 <span class="sd">    $$ \mathrm{CRPS}(\mathrm{log}\mathcal{N}(\mu, \sigma), y) =</span>
 <span class="sd">    y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})</span>
@@ -1164,17 +1157,16 @@ but of the underlying normal distribution it is derived from.</p>
 <span class="sd">    $\omega = \frac{\mathrm{log}y - \mu}{\sigma}$.</span>
 
 
-
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    mulog: NDArray</span>
+<span class="sd">    mulog: ArrayLike</span>
 <span class="sd">        Mean of the normal underlying distribution.</span>
-<span class="sd">    sigmalog: NDArray</span>
+<span class="sd">    sigmalog: ArrayLike</span>
 <span class="sd">        Standard deviation of the underlying normal distribution.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    crps: NDArray</span>
+<span class="sd">    crps: ArrayLike</span>
 <span class="sd">        The CRPS between Lognormal(mu, sigma) and obs.</span>
 
 <span class="sd">    Notes</span>
@@ -1187,12 +1179,7 @@ but of the underlying normal distribution it is derived from.</p>
 <span class="sd">    &gt;&gt;&gt; from scoringrules import crps</span>
 <span class="sd">    &gt;&gt;&gt; crps.lognormal(0.1, 0.4, 0.0)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ω</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span> <span class="o">-</span> <span class="n">mulog</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigmalog</span>
-    <span class="n">ex</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">mulog</span> <span class="o">+</span> <span class="n">sigmalog</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="n">crps</span> <span class="o">=</span> <span class="n">observation</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">ω</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">ex</span> <span class="o">*</span> <span class="p">(</span>
-        <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">ω</span> <span class="o">-</span> <span class="n">sigmalog</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">sigmalog</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="n">crps</span>
+    <span class="k">return</span> <span class="n">srb</span><span class="p">[</span><span class="n">backend</span><span class="p">]</span><span class="o">.</span><span class="n">crps_lognormal</span><span class="p">(</span><span class="n">mulog</span><span class="p">,</span> <span class="n">sigmalog</span><span class="p">,</span> <span class="n">observation</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -1254,7 +1241,7 @@ but of the underlying normal distribution it is derived from.</p>
     <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "toc.follow", "header.autohide"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.fac441b0.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c2be25ad.min.js"></script>
       
         <script src="../../scripts/katex.js"></script>
       
