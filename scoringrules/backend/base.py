@@ -3,8 +3,8 @@ from typing import Any, TypeVar
 
 import numpy as np
 
-Array = TypeVar("Array", np.ndarray, Any)
-ArrayLike = TypeVar("ArrayLike", np.ndarray, Any, float)
+Array = TypeVar("Array", bound=np.ndarray | Any)
+ArrayLike = TypeVar("ArrayLike", bound=np.ndarray | Any | float)
 
 
 class AbstractBackend:
@@ -36,7 +36,7 @@ class AbstractBackend:
     @abstractmethod
     def energy_score(
         self, fcts: Array, obs: Array, m_axis: int = -2, v_axis: int = -1
-    ) -> ArrayLike:
+    ) -> Array:
         """Compute the Energy Score for a multivariate finite ensemble."""
 
     @abstractmethod

@@ -117,9 +117,10 @@ class NumpyAPIBackend(AbstractBackend):
 
         return (fcts - obs) ** 2
 
-    def _crps_ensemble_fair(self, fcts, obs):
+    def _crps_ensemble_fair(self, fcts: Array, obs: ArrayLike) -> ArrayLike:
         """Fair version of the CRPS estimator based on the energy form."""
         M = fcts.shape[-1]
+        obs = self.np.asarray(obs)
         e_1 = self.np.nansum(self.np.abs(obs[..., None] - fcts), axis=-1) / M
         e_2 = self.np.nansum(
             self.np.abs(fcts[..., None] - fcts[..., None, :]),
@@ -127,7 +128,7 @@ class NumpyAPIBackend(AbstractBackend):
         ) / (M * (M - 1))
         return e_1 - 0.5 * e_2
 
-    def _crps_ensemble_nrg(self, fcts, obs):
+    def _crps_ensemble_nrg(self, fcts: Array, obs: ArrayLike) -> ArrayLike:
         """CRPS estimator based on the energy form."""
         M = fcts.shape[-1]
         e_1 = self.np.nansum(self.np.abs(obs[..., None] - fcts), axis=-1) / M
@@ -137,7 +138,7 @@ class NumpyAPIBackend(AbstractBackend):
         ) / (M**2)
         return e_1 - 0.5 * e_2
 
-    def _crps_ensemble_pwm(self, fcts, obs):
+    def _crps_ensemble_pwm(self, fcts: Array, obs: ArrayLike) -> ArrayLike:
         """CRPS estimator based on the probability weighted moment (PWM) form."""
         M = fcts.shape[-1]
         expected_diff = self.np.sum(self.np.abs(obs[..., None] - fcts), axis=-1) / M
@@ -145,13 +146,13 @@ class NumpyAPIBackend(AbstractBackend):
         β_1 = self.np.sum(fcts * self.np.arange(M), axis=-1) / (M * (M - 1))
         return expected_diff + β_0 - 2 * β_1
 
-    def _norm_cdf(self, x):
+    def _norm_cdf(self, x: ArrayLike) -> ArrayLike:
         """Cumulative distribution function for the standard normal distribution."""
         return (1.0 + self.special.erf(x / self.np.sqrt(2.0))) / 2.0
 
-    def _norm_pdf(self, x):
+    def _norm_pdf(self, x: ArrayLike) -> ArrayLike:
         """Probability density function for the standard normal distribution."""
         return (1 / self.np.sqrt(2 * self.np.pi)) * self.np.exp(-(x**2) / 2)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"NumpyAPIBackend('{self.backend_name}')"
