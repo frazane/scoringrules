@@ -1,3 +1,3 @@
-::: scoringrules.crps.normal
+::: scoringrules.crps_normal
 <br/><br/>
-::: scoringrules.crps.lognormal
+::: scoringrules.crps_lognormal

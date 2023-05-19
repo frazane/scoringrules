@@ -1,1 +1,1 @@
-::: scoringrules.crps.ensemble
+::: scoringrules.crps_ensemble
