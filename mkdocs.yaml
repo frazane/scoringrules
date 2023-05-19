@@ -7,7 +7,10 @@ nav:
   - Home: index.md
   - Reference:
     - Brier Score: api/brier.md
-    - Continuous Ranked Probability Score: api/crps.md
+    - Continuous Ranked Probability Score:
+      - api/crps/index.md
+      - Ensemble-based estimation: api/crps/ensemble.md
+      - Analytical formulations: api/crps/analytical.md
     - Logarithmic Score: api/logarithmic.md
     - Energy Score: api/energy.md
     - Variogram Score: api/variogram.md
@@ -53,13 +56,14 @@ plugins:
             show_root_full_path: true
             show_if_no_docstring: true
             show_signature_annotations: true
-            show_source: true
+            show_source: false
             members_order: source
             heading_level: 4
           options:
             docstring_style: "numpy"
   - bibtex:
       bib_file: "docs/refs.bib"
+  - section-index
 
 markdown_extensions:
   - pymdownx.arithmatex:

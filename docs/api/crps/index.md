@@ -51,9 +51,3 @@ where $\hat{\beta_0} = \frac{1}{M} \sum_{i=1}^{M}x_i$ and $\hat{\beta_1} = \frac
 
 
 <br/><br/>
-
-::: scoringrules.crps.ensemble
-
-## Analytical formulations
-::: scoringrules.crps.normal
-::: scoringrules.crps.lognormal
