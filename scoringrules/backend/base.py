@@ -40,5 +40,16 @@ class AbstractBackend:
         """Compute the Energy Score for a multivariate finite ensemble."""
 
     @abstractmethod
+    def variogram_score(
+        self,
+        fcts: Array,
+        obs: Array,
+        p: float = 1.0,
+        m_axis: int = -2,
+        v_axisc: int = -1,
+    ):
+        """Compute the Variogram Score for a multivariate finite ensemble."""
+
+    @abstractmethod
     def brier_score(self, fcts: ArrayLike, obs: ArrayLike) -> ArrayLike:
         """Compute the Brier Score for predicted probabilities."""

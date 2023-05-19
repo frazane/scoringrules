@@ -117,6 +117,30 @@ class NumpyAPIBackend(AbstractBackend):
 
         return (fcts - obs) ** 2
 
+    def variogram_score(
+        self,
+        forecasts: Array,
+        observations: Array,
+        p: float = 1,
+        m_axis: int = -2,
+        v_axis: int = -1,
+    ):
+        """Compute the Variogram Score for a multivariate finite ensemble."""
+        if m_axis != -2:
+            forecasts = np.moveaxis(forecasts, m_axis, -2)
+        if v_axis != -1:
+            forecasts = np.moveaxis(forecasts, v_axis, -1)
+            observations = np.moveaxis(observations, v_axis, -1)
+
+        M = forecasts.shape[-2]
+        fct_diff = self.np.abs(forecasts[..., None] - forecasts[..., None, :]) ** p
+        vfcts = self.np.sum(fct_diff, axis=-3) / M
+        obs_diff = (
+            self.np.abs(observations[..., None] - observations[..., None, :]) ** p
+        )
+        out = self.np.sum(2 * (obs_diff - vfcts) ** 2, axis=(-2, -1))
+        return out
+
     def _crps_ensemble_fair(self, fcts: Array, obs: ArrayLike) -> ArrayLike:
         """Fair version of the CRPS estimator based on the energy form."""
         M = fcts.shape[-1]

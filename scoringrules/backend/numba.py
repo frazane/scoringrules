@@ -15,6 +15,7 @@ from .gufuncs import (
     _crps_lognormal_ufunc,
     _crps_normal_ufunc,
     _energy_score_gufunc,
+    _variogram_score_gufunc,
 )
 
 Array = np.ndarray
@@ -76,14 +77,31 @@ class NumbaBackend(AbstractBackend):
         return _crps_lognormal_ufunc(mulog, sigmalog, observation)
 
     @staticmethod
-    def energy_score(forecasts: Array, observations: Array) -> ArrayLike:
+    def energy_score(
+        forecasts: Array,
+        observations: Array,
+        m_axis: int = -2,
+        v_axis: int = -1,
+    ) -> ArrayLike:
         """Compute the Energy Score for a finite multivariate ensemble."""
+        if m_axis != -2:
+            forecasts = np.moveaxis(forecasts, m_axis, -2)
+        if v_axis != -1:
+            forecasts = np.moveaxis(forecasts, v_axis, -1)
+            observations = np.moveaxis(observations, v_axis, -1)
         return _energy_score_gufunc(forecasts, observations)
 
     @staticmethod
     def brier_score(forecasts: ArrayLike, observations: ArrayLike) -> ArrayLike:
-        """Compute the Brier Score for a finite multivariate ensemble."""
+        """Compute the Brier Score for predicted probabilities."""
         return _brier_score_ufunc(forecasts, observations)
+
+    @staticmethod
+    def variogram_score(
+        forecasts: Array, observations: Array, p: float = 1.0
+    ) -> ArrayLike:
+        """Compute the Variogram Score for a finite multivariate ensemble."""
+        return _variogram_score_gufunc(forecasts, observations, p)
 
     def __repr__(self):
         return "NumbaBackend"
