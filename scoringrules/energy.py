@@ -1,11 +1,20 @@
+from typing import Any, TypeVar
+
 import numpy as np
-from numba import guvectorize
-from numpy.typing import ArrayLike
+
+from scoringrules.backend import backends as srb
+
+Array = TypeVar("Array", np.ndarray, Any)
+ArrayLike = TypeVar("ArrayLike", np.ndarray, Any, float)
 
 
 def energy_score(
-    forecasts: ArrayLike, observations: ArrayLike, m_axis: int = -2, v_axis: int = -1
-):
+    forecasts: Array,
+    observations: Array,
+    m_axis: int = -2,
+    v_axis: int = -1,
+    engine="numba",
+) -> ArrayLike:
     """Compute the Energy Score for a finite multivariate ensemble.
 
     The Energy Score is a multivariate scoring rule expressed as
@@ -34,30 +43,6 @@ def energy_score(
     energy_score: ArrayLike of shape (...)
         The computed Energy Score.
     """
-    if v_axis != -1:
-        forecasts = np.moveaxis(forecasts, v_axis, -1)
-    if m_axis != -2:
-        forecasts = np.moveaxis(forecasts, m_axis, -2)
-
-    return _energy_score_gufunc(forecasts, observations)
-
-
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:])",
-    ],
-    "(m,d),(d)->()",
-)
-def _energy_score_gufunc(forecasts, observations, out):
-    """Compute the Energy Score for a finite ensemble."""
-    M = forecasts.shape[0]
-
-    e_1 = 0
-    e_2 = 0
-    for i in range(M):
-        for j in range(M):
-            e_1 += np.linalg.norm(forecasts[i] - observations)
-            e_2 += np.linalg.norm(forecasts[i] - forecasts[j])
-
-    out[0] = e_1 - 0.5 / (M * (M - 1)) * e_2
+    return srb[engine].energy_score(
+        forecasts, observations, m_axis=m_axis, v_axis=v_axis
+    )
