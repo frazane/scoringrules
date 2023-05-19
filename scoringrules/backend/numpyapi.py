@@ -38,9 +38,9 @@ class NumpyAPIBackend(AbstractBackend):
         self,
         fcts: Array,
         obs: ArrayLike,
-        axis=-1,
-        sorted_ensemble=False,
-        estimator="pwm",
+        axis: int = -1,
+        sorted_ensemble: bool = False,
+        estimator: str = "pwm",
     ) -> ArrayLike:
         """Compute the CRPS for a finite ensemble."""
         if axis != -1:
