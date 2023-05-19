@@ -17,7 +17,7 @@ from .gufuncs import (
     _energy_score_gufunc,
 )
 
-Array = TypeVar("Array", np.ndarray)
+Array = np.ndarray
 ArrayLike = TypeVar("ArrayLike", np.ndarray, float)
 
 
@@ -25,7 +25,7 @@ class NumbaBackend(AbstractBackend):
     """The numba backend."""
 
     def __init__(self):
-        self.engine_name = "numba"
+        self.backend_name = "numba"
 
     @staticmethod
     def crps_ensemble(
@@ -84,3 +84,6 @@ class NumbaBackend(AbstractBackend):
     def brier_score(forecasts: ArrayLike, observations: ArrayLike) -> ArrayLike:
         """Compute the Brier Score for a finite multivariate ensemble."""
         return _brier_score_ufunc(forecasts, observations)
+
+    def __repr__(self):
+        return "NumbaBackend"

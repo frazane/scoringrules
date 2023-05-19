@@ -25,7 +25,7 @@ ipykernel = "6.22.0"
 properscoring = "^0.1"
 matplotlib = "^3.7.1"
 mkdocs-bibtex = "^2.8.16"
-jax = {extras = ["cpu"], version = "^0.4.10"}
+jax = { extras = ["cpu"], version = "^0.4.10" }
 
 
 [tool.poetry.group.dev.dependencies]
@@ -73,6 +73,7 @@ ignore = [
   "D100",
   "D103",
   "D104",
+  "D105",
   "D301",
   "E402",
   "E731",
@@ -111,6 +112,4 @@ warn_unused_configs = true
 show_error_codes = true
 show_column_numbers = true
 ignore_missing_imports = true
-exclude = [
-    '^third_party',
-]
+exclude = ['^third_party']

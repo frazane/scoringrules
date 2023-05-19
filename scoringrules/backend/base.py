@@ -10,6 +10,8 @@ ArrayLike = TypeVar("ArrayLike", np.ndarray, Any, float)
 class AbstractBackend:
     """The abstract backend class."""
 
+    backend_name: str
+
     @abstractmethod
     def crps_ensemble(
         self,

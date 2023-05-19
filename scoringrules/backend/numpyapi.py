@@ -13,26 +13,26 @@ ArrayLike = TypeVar("ArrayLike", np.ndarray, Any, float)
 
 
 class NumpyAPIBackend(AbstractBackend):
-    """A class for numpy-api compatible backends."""
+    """A class for numpy-API compatible backends."""
 
     np: ModuleType
     special: ModuleType
 
-    def __init__(self, engine_name: str):
-        if engine_name == "numpy":
+    def __init__(self, backend_name: str):
+        if backend_name == "numpy":
             import numpy as np
             from scipy import special
 
             self.special = special
             self.np = np
-        if engine_name == "jax":
+        if backend_name == "jax":
             import jax.numpy as jnp
             from jax.scipy import special
 
             self.special = special
             self.np = jnp
 
-        self.engine_name = engine_name
+        self.backend_name = backend_name
 
     def crps_ensemble(
         self,
@@ -152,3 +152,6 @@ class NumpyAPIBackend(AbstractBackend):
     def _norm_pdf(self, x):
         """Probability density function for the standard normal distribution."""
         return (1 / self.np.sqrt(2 * self.np.pi)) * self.np.exp(-(x**2) / 2)
+
+    def __repr__(self):
+        return f"NumpyAPIBackend('{self.backend_name}')"
