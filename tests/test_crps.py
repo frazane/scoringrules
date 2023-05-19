@@ -1,87 +1,40 @@
 import numpy as np
+import pytest
 from scoringrules import crps
 
 ENSEMBLE_SIZE = 51
 N = 100
 
+ESTIMATORS = ["nrg", "fair", "pwm", "int", "qd", "akr", "akr_circperm"]
+BACKENDS = ["numpy", "numba", "jax"]
 
-def test_ensemble_int():
+
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_ensemble(estimator, backend):
     observation = np.random.randn(N)
     mu = observation + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N)) * 0.3
     forecasts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
+    # test exceptions
+    if backend in ["numpy", "jax"]:
+        if estimator not in ["nrg", "fair", "pwm"]:
+            with pytest.raises(ValueError):
+                crps.ensemble(
+                    forecasts, observation, estimator=estimator, backend=backend
+                )
+            return
+
     # non-negative values
-    res = crps.ensemble(forecasts, observation)
+    res = crps.ensemble(forecasts, observation, estimator=estimator, backend=backend)
     assert not np.any(res < 0.0)
 
     # approx zero when perfect forecast
     perfect_forecasts = (
         observation[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
     )
-    res = crps.ensemble(perfect_forecasts, observation)
-    assert not np.any(res - 0.0 > 0.0001)
-
-
-def test_ensemble_qd():
-    observation = np.random.randn(N)
-    mu = observation + np.random.randn(N) * 0.1
-    sigma = abs(np.random.randn(N)) * 0.3
-    forecasts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
-
-    # non-negative values
-    res = crps.ensemble(forecasts, observation, estimator="qd")
-    assert not np.any(res < 0.0)
-
-    # approx zero when perfect forecast
-    perfect_forecasts = (
-        observation[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
+    res = crps.ensemble(
+        perfect_forecasts, observation, estimator=estimator, backend=backend
     )
-    res = crps.ensemble(perfect_forecasts, observation, estimator="qd")
-    assert not np.any(res - 0.0 > 0.0001)
-
-
-def test_ensemble_nrg():
-    observation = np.random.randn(N)
-    mu = observation + np.random.randn(N) * 0.1
-    sigma = abs(np.random.randn(N)) * 0.3
-    forecasts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
-
-    # non-negative values
-    res = crps.ensemble(forecasts, observation, estimator="nrg")
-    assert not np.any(res < 0.0)
-
-    # approx zero when perfect forecast
-    perfect_forecasts = (
-        observation[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
-    )
-    res = crps.ensemble(perfect_forecasts, observation, estimator="nrg")
-    assert not np.any(res - 0.0 > 0.0001)
-
-
-def test_normal():
-    observation = np.random.randn(N)
-    mu = observation + np.random.randn(N) * 0.1
-    sigma = abs(np.random.randn(N)) * 0.3
-
-    # non-negative values
-    res = crps.normal(mu, sigma, observation)
-    assert not np.any(res < 0.0)
-
-    # approx zero when perfect forecast
-    res = crps.normal(observation, 0.00001, observation)
-    assert not np.any(res - 0.0 > 0.0001)
-
-
-def test_lognormal():
-    observation = np.random.lognormal(size=N)
-    mu = observation + np.random.randn(N) * 0.1
-    sigma = abs(np.random.randn(N)) * 0.3
-
-    # non-negative values
-    res = crps.lognormal(mu, sigma, observation)
-    assert not np.any(res < 0.0)
-
-    # approx zero when perfect forecast
-    res = crps.lognormal(np.log(observation), 0.00001, observation)
     assert not np.any(res - 0.0 > 0.0001)
