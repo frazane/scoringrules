@@ -1,15 +1,13 @@
-from typing import Any, TypeVar
-
-import numpy as np
+from typing import TypeVar
 
 from scoringrules.backend import backends as srb
+from scoringrules.backend.arrayapi import Array
 
-Array = TypeVar("Array", np.ndarray, Any)
-ArrayLike = TypeVar("ArrayLike", np.ndarray, Any, float)
+ArrayLike = TypeVar("ArrayLike", Array, float)
 
 
 def brier_score(
-    forecasts: ArrayLike, observations: ArrayLike, backend="numpy"
+    forecasts: ArrayLike, observations: ArrayLike, /, *, backend="numpy"
 ) -> ArrayLike:
     r"""
     Compute the Brier Score (BS).
@@ -26,6 +24,8 @@ def brier_score(
         Forecasted probabilities between 0 and 1.
     observations: NDArray
         Observed outcome, either 0 or 1.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numpy'.
 
     Returns
     -------

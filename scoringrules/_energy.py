@@ -1,19 +1,19 @@
-from typing import Any, TypeVar
-
-import numpy as np
+from typing import TypeVar
 
 from scoringrules.backend import backends as srb
+from scoringrules.backend.arrayapi import Array
 
-Array = TypeVar("Array", np.ndarray, Any)
-ArrayLike = TypeVar("ArrayLike", np.ndarray, Any, float)
+ArrayLike = TypeVar("ArrayLike", Array, float)
 
 
 def energy_score(
     forecasts: Array,
     observations: Array,
+    /,
+    *,
     m_axis: int = -2,
     v_axis: int = -1,
-    engine="numba",
+    backend="numba",
 ) -> Array:
     r"""Compute the Energy Score for a finite multivariate ensemble.
 
@@ -37,12 +37,14 @@ def energy_score(
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis: int or tuple(int)
         The axis corresponding to the variables dimension. Defaults to -1.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
     energy_score: ArrayLike of shape (...)
         The computed Energy Score.
     """
-    return srb[engine].energy_score(
+    return srb[backend].energy_score(
         forecasts, observations, m_axis=m_axis, v_axis=v_axis
     )

@@ -1,11 +1,9 @@
-from typing import Any, TypeVar
-
-import numpy as np
+from typing import TypeVar
 
 from scoringrules.backend import backends as srb
+from scoringrules.backend.arrayapi import Array
 
-Array = TypeVar("Array", np.ndarray, Any)
-ArrayLike = TypeVar("ArrayLike", np.ndarray, Any, float)
+ArrayLike = TypeVar("ArrayLike", Array, float)
 
 
 def variogram_score(
@@ -14,7 +12,7 @@ def variogram_score(
     p: float = 1.0,
     m_axis: int = -2,
     v_axis: int = -1,
-    engine="numba",
+    backend="numba",
 ) -> Array:
     r"""Compute the Variogram Score for a finite multivariate ensemble.
 
@@ -40,12 +38,14 @@ def variogram_score(
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis: int
         The axis corresponding to the variables dimension. Defaults to -1.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
     variogram_score: Array
         The computed Variogram Score.
     """
-    return srb[engine].variogram_score(
+    return srb[backend].variogram_score(
         forecasts, observations, p=p, m_axis=m_axis, v_axis=v_axis
     )

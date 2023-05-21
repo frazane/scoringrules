@@ -1,16 +1,16 @@
-from typing import Any, TypeVar
-
-import numpy as np
+from typing import TypeVar
 
 from scoringrules.backend import backends as srb
+from scoringrules.backend.arrayapi import Array
 
-Array = TypeVar("Array", np.ndarray, Any)
-ArrayLike = TypeVar("ArrayLike", np.ndarray, Any, float)
+ArrayLike = TypeVar("ArrayLike", Array, float)
 
 
 def crps_ensemble(
     forecasts: Array,
     observations: ArrayLike,
+    /,
+    *,
     axis: int = -1,
     sorted_ensemble: bool = False,
     estimator: str = "pwm",
@@ -32,6 +32,8 @@ def crps_ensemble(
         Default is False.
     estimator: str
         Indicates the CRPS estimator to be used.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
@@ -53,7 +55,12 @@ def crps_ensemble(
 
 
 def crps_normal(
-    mu: ArrayLike, sigma: ArrayLike, observation: ArrayLike, backend: str = "numpy"
+    mu: ArrayLike,
+    sigma: ArrayLike,
+    observation: ArrayLike,
+    /,
+    *,
+    backend: str = "numpy",
 ) -> ArrayLike:
     r"""Compute the closed form of the CRPS for the normal distribution.
 
