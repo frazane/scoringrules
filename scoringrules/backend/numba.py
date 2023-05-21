@@ -20,6 +20,7 @@ from .gufuncs import (
 )
 
 ArrayLike = TypeVar("ArrayLike", np.ndarray, float)
+# ArrayLike = Array | float
 
 
 class NumbaBackend(AbstractBackend):

@@ -1,14 +1,15 @@
+from typing import TypeVar
+
 import numpy as np
 from scipy import special
 
-from .arrayapi.array_type import Array
-from .arrayapi.functions import ArrayAPIProtocol
+from .arrayapi import Array, ArrayAPIProtocol
 from .base import AbstractBackend
 
 INV_SQRT_PI = 1 / np.sqrt(np.pi)
 EPSILON = 1e-6
 
-ArrayLike = Array | float
+ArrayLike = TypeVar("ArrayLike", Array, float)
 
 
 class ArrayAPIBackend(AbstractBackend):
@@ -97,7 +98,7 @@ class ArrayAPIBackend(AbstractBackend):
         """
         M: int = fcts.shape[m_axis]
         err_norm = self.np.linalg.norm(
-            fcts - self.np.expand_dims(obs, axis=v_axis), axis=v_axis, keepdims=True
+            fcts - self.np.expand_dims(obs, axis=m_axis), axis=v_axis, keepdims=True
         )
         E_1 = self.np.sum(err_norm, axis=m_axis) / M
 

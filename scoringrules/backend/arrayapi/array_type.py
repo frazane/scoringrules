@@ -1,6 +1,6 @@
 """A minimal subset of array API standard from
 https://github.com/data-apis/array-api/tree/accf8c20d8fae9b760e59a40ab43b556fd8410cb/src/array_api_stubs/_2022_12
-with few modifications. Just for static typing.
+with few modifications.
 """
 from types import EllipsisType
 from typing import TypeVar
