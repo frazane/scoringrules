@@ -4,7 +4,7 @@ with few modifications. Just for static typing.
 """
 from typing import Literal, Protocol, TypeVar
 
-from array_type import Array, Dtype
+from .array_type import Array, Dtype
 
 device = TypeVar("device")
 SupportsBufferProtocol = TypeVar("SupportsBufferProtocol")

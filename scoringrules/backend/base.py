@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import TypeVar
 
-from arrayapi import Array
+from .arrayapi import Array
 
 ArrayLike = TypeVar("ArrayLike", Array, float)
 
