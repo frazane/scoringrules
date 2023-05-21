@@ -1,10 +1,9 @@
 from abc import abstractmethod
-from typing import Any, TypeVar
+from typing import TypeVar
 
-import numpy as np
+from arrayapi import Array
 
-Array = TypeVar("Array", bound=np.ndarray | Any)
-ArrayLike = TypeVar("ArrayLike", bound=np.ndarray | Any | float)
+ArrayLike = TypeVar("ArrayLike", Array, float)
 
 
 class AbstractBackend:
@@ -20,17 +19,17 @@ class AbstractBackend:
         axis: int = -1,
         sorted_ensemble: bool = False,
         estimator: str = "pwm",
-    ) -> ArrayLike:
+    ) -> Array:
         """Compute the CRPS for a finite ensemble."""
 
     @abstractmethod
-    def crps_normal(self, mu: ArrayLike, sigma: ArrayLike, obs: ArrayLike) -> ArrayLike:
+    def crps_normal(self, mu: ArrayLike, sigma: ArrayLike, obs: ArrayLike) -> Array:
         """Compute the CRPS for the normal distribution."""
 
     @abstractmethod
     def crps_lognormal(
         self, mulog: ArrayLike, sigmalog: ArrayLike, obs: ArrayLike
-    ) -> ArrayLike:
+    ) -> Array:
         """Compute the CRPS for the log normal distribution."""
 
     @abstractmethod
@@ -47,9 +46,9 @@ class AbstractBackend:
         p: float = 1.0,
         m_axis: int = -2,
         v_axisc: int = -1,
-    ):
+    ) -> Array:
         """Compute the Variogram Score for a multivariate finite ensemble."""
 
     @abstractmethod
-    def brier_score(self, fcts: ArrayLike, obs: ArrayLike) -> ArrayLike:
+    def brier_score(self, fcts: ArrayLike, obs: ArrayLike) -> Array:
         """Compute the Brier Score for predicted probabilities."""

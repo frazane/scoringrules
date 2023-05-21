@@ -1,9 +1,9 @@
 from importlib.util import find_spec
 from typing import Literal
 
+from .array import ArrayAPIBackend
 from .base import AbstractBackend
 from .numba import NumbaBackend
-from .numpyapi import NumpyAPIBackend
 
 
 class BackendsRegistry(dict[str, AbstractBackend]):
@@ -27,9 +27,9 @@ class BackendsRegistry(dict[str, AbstractBackend]):
             )
 
         if backend_name == "numpy":
-            self["numpy"] = NumpyAPIBackend("numpy")
+            self["numpy"] = ArrayAPIBackend("numpy")
         elif backend_name == "jax":
-            self["jax"] = NumpyAPIBackend("jax")
+            self["jax"] = ArrayAPIBackend("jax")
         elif backend_name == "numba":
             self["numba"] = NumbaBackend()
 

@@ -10,31 +10,35 @@ EPSILON = 1e-6
 ArrayLike = TypeVar("ArrayLike", np.ndarray, float)
 
 
-@njit
+@njit(["float32(float32)", "float64(float64)"])
 def _norm_cdf(x: float) -> float:
     """Cumulative distribution function for the standard normal distribution."""
-    return (1.0 + math.erf(x / math.sqrt(2.0))) / 2.0
+    out: float = (1.0 + math.erf(x / math.sqrt(2.0))) / 2.0
+    return out
 
 
-@njit
+@njit(["float32(float32)", "float64(float64)"])
 def _norm_pdf(x: float) -> float:
     """Probability density function for the standard normal distribution."""
-    return (1 / math.sqrt(2 * math.pi)) * math.exp(-(x**2) / 2)
+    out: float = (1 / math.sqrt(2 * math.pi)) * math.exp(-(x**2) / 2)
+    return out
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _crps_normal_ufunc(mu: float, sigma: float, observation: float) -> float:
     ω = (observation - mu) / sigma
-    return sigma * (ω * (2 * _norm_cdf(ω) - 1) + 2 * _norm_pdf(ω) - INV_SQRT_PI)
+    out: float = sigma * (ω * (2 * _norm_cdf(ω) - 1) + 2 * _norm_pdf(ω) - INV_SQRT_PI)
+    return out
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _crps_lognormal_ufunc(mulog: float, sigmalog: float, observation: float) -> float:
     ω = (np.log(observation) - mulog) / sigmalog
     ex = 2 * np.exp(mulog + sigmalog**2 / 2)
-    return observation * (2 * _norm_cdf(ω) - 1) - ex * (
+    out: float = observation * (2 * _norm_cdf(ω) - 1) - ex * (
         _norm_cdf(ω - sigmalog) + _norm_cdf(sigmalog / np.sqrt(2)) - 1
     )
+    return out
 
 
 @guvectorize(
@@ -263,9 +267,9 @@ def _energy_score_gufunc(
     e_1 = 0.0
     e_2 = 0.0
     for i in range(M):
-        e_1 += np.linalg.norm(forecasts[i] - observations)
+        e_1 += float(np.linalg.norm(forecasts[i] - observations))
         for j in range(M):
-            e_2 += np.linalg.norm(forecasts[i] - forecasts[j])
+            e_2 += float(np.linalg.norm(forecasts[i] - forecasts[j]))
 
     out[0] = e_1 - 0.5 / (M * (M - 1)) * e_2
 
