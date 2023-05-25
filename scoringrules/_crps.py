@@ -15,7 +15,7 @@ def crps_ensemble(
     sorted_ensemble: bool = False,
     estimator: str = "pwm",
     backend: str = "numba",
-) -> ArrayLike:
+) -> Array:
     r"""Estimate the Continuous Ranked Probability Score (CRPS) for a finite ensemble.
 
     Parameters

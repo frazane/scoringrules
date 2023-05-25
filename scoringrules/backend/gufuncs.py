@@ -223,7 +223,7 @@ def _crps_ensemble_akr_gufunc(
     e_2 = 0
     for i, forecast in enumerate(forecasts):
         if i == 0:
-            continue
+            i = M - 1
         e_1 += abs(forecast - obs)
         e_2 += abs(forecast - forecasts[i - 1])
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
@@ -242,12 +242,12 @@ def _crps_ensemble_akr_circperm_gufunc(
     """CRPS estimaton based on the AKR with cyclic permutation."""
     M = forecasts.shape[-1]
     obs = observation[0]
-    sigma_i = lambda i: int((i + ((M - 1) / 2)) % M)
-    e_1 = 0
-    e_2 = 0
+    e_1 = 0.0
+    e_2 = 0.0
     for i, forecast in enumerate(forecasts):
+        sigma_i = int((i + 1 + ((M - 1) / 2)) % M)
         e_1 += abs(forecast - obs)
-        e_2 += abs(forecast - forecasts[sigma_i(i + 1)])
+        e_2 += abs(forecast - forecasts[sigma_i])
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 

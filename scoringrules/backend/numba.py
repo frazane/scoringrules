@@ -41,7 +41,12 @@ class NumbaBackend(AbstractBackend):
         if axis != -1:
             forecasts = np.moveaxis(forecasts, axis, -1)
 
-        if not sorted_ensemble and estimator != "nrg":
+        if not sorted_ensemble and estimator not in [
+            "nrg",
+            "akr",
+            "akr_circperm",
+            "fair",
+        ]:
             forecasts = np.sort(forecasts, axis=-1)
 
         if estimator == "int":
