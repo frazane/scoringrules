@@ -11,22 +11,22 @@
       
       
       
+        <link rel="prev" href="../energy/">
       
-        <link rel="next" href="api/brier/">
       
-      <link rel="icon" href="assets/images/favicon.png">
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.13">
     
     
       
-        <title>scoringrules</title>
+        <title>Variogram Score - scoringrules</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.85bb2934.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.85bb2934.min.css">
       
         
-        <link rel="stylesheet" href="assets/stylesheets/palette.a6bdf11c.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.a6bdf11c.min.css">
       
       
 
@@ -42,13 +42,13 @@
       
     
     
-      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="stylesheets/extra.css">
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
     
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.css">
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#scoringrules-probabilistic-forecast-evaluation" class="md-skip">
+        <a href="#variogram-score-1" class="md-skip">
           Skip to content
         </a>
       
@@ -93,7 +93,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="scoringrules" class="md-header__button md-logo" aria-label="scoringrules" data-md-component="logo">
+    <a href="../.." title="scoringrules" class="md-header__button md-logo" aria-label="scoringrules" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10c0-1.16-.21-2.31-.61-3.39l-1.6 1.6c.14.59.21 1.19.21 1.79a8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 8-8c.6 0 1.2.07 1.79.21L15.4 2.6C14.31 2.21 13.16 2 12 2m7 0-4 4v1.5l-2.55 2.55C12.3 10 12.15 10 12 10a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2c0-.15 0-.3-.05-.45L16.5 9H18l4-4h-3V2m-7 4a6 6 0 0 0-6 6 6 6 0 0 0 6 6 6 6 0 0 0 6-6h-2a4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4V6Z"/></svg>
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Home
+              Variogram Score
             
           </span>
         </div>
@@ -217,7 +217,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="scoringrules" class="md-nav__button md-logo" aria-label="scoringrules" data-md-component="logo">
+    <a href="../.." title="scoringrules" class="md-nav__button md-logo" aria-label="scoringrules" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10c0-1.16-.21-2.31-.61-3.39l-1.6 1.6c.14.59.21 1.19.21 1.79a8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 8-8c.6 0 1.2.07 1.79.21L15.4 2.6C14.31 2.21 13.16 2 12 2m7 0-4 4v1.5l-2.55 2.55C12.3 10 12.15 10 12 10a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2c0-.15 0-.3-.05-.45L16.5 9H18l4-4h-3V2m-7 4a6 6 0 0 0-6 6 6 6 0 0 0 6 6 6 6 0 0 0 6-6h-2a4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4V6Z"/></svg>
@@ -246,21 +246,11 @@
 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="." class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
         Home
       </a>
-      
     </li>
   
 
@@ -271,16 +261,18 @@
 
   
   
+    
+  
   
     
       
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
       
       
       
@@ -289,7 +281,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_2">
           <span class="md-nav__icon md-icon"></span>
           Reference
@@ -302,7 +294,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/brier/" class="md-nav__link">
+      <a href="../brier/" class="md-nav__link">
         Brier Score
       </a>
     </li>
@@ -328,7 +320,7 @@
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="api/crps/">Continuous Ranked Probability Score</a>
+          <a href="../crps/">Continuous Ranked Probability Score</a>
           
             <label for="__nav_2_2">
               <span class="md-nav__icon md-icon"></span>
@@ -349,7 +341,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/crps/ensemble/" class="md-nav__link">
+      <a href="../crps/ensemble/" class="md-nav__link">
         Ensemble-based estimation
       </a>
     </li>
@@ -363,7 +355,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/crps/analytical/" class="md-nav__link">
+      <a href="../crps/analytical/" class="md-nav__link">
         Analytical formulations
       </a>
     </li>
@@ -384,7 +376,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/logarithmic.md" class="md-nav__link">
+      <a href="../logarithmic.md" class="md-nav__link">
         Logarithmic Score
       </a>
     </li>
@@ -398,7 +390,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/energy/" class="md-nav__link">
+      <a href="../energy/" class="md-nav__link">
         Energy Score
       </a>
     </li>
@@ -410,11 +402,52 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="api/variogram/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Variogram Score
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Variogram Score
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.variogram_score" class="md-nav__link">
+    variogram_score()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -446,6 +479,21 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.variogram_score" class="md-nav__link">
+    variogram_score()
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -462,10 +510,130 @@
   
 
 
-<h1 id="scoringrules-probabilistic-forecast-evaluation">Scoringrules: probabilistic forecast evaluation</h1>
-<p>Scoringrules is a python library for evaluating probabilistic forecasts by computing
-scoring rules and other diagnostic quantities. It aims to assist forecasting practitioners by
-providing a set of tools based the scientific literature and via its didactic approach.</p>
+<h1 id="variogram-score-1">Variogram Score <sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup></h1>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h4 id="scoringrules.variogram_score" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">variogram_score</span><span class="p">(</span><span class="n">forecasts</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">m_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">v_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="s1">&#39;numba&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>
+
+</h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Compute the Variogram Score for a finite multivariate ensemble.</p>
+<p>For a <span class="arithmatex">\(D\)</span>-variate ensemble the Variogram Score
+<a href="https://journals.ametsoc.org/view/journals/mwre/143/4/mwr-d-14-00269.1.xml#bib9">(Sheuerer and Hamill, 2015)</a>
+of order <span class="arithmatex">\(p\)</span> is expressed as</p>
+<div class="arithmatex">\[VS(F, \mathbf{y}) = \sum_{i,j=1}^{D}(|y_i - y_j|^p - E_F|X_i - X_j|^p)^2 ,\]</div>
+<p>where <span class="arithmatex">\(\mathbf{X}\)</span> and <span class="arithmatex">\(\mathbf{X'}\)</span> are independently sampled ensembles from from <span class="arithmatex">\(F\)</span>.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>forecasts</code></td>
+          <td>
+                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
+          </td>
+          <td><p>The predicted forecast ensemble, where the ensemble dimension is by default
+represented by the second last axis and the variables dimension by the last axis.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>observations</code></td>
+          <td>
+                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
+          </td>
+          <td><p>The observed values, where the variables dimension is by default the last axis.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>p</code></td>
+          <td>
+                <code>float</code>
+          </td>
+          <td><p>The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.</p></td>
+          <td>
+                <code>1.0</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>m_axis</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The axis corresponding to the ensemble dimension. Defaults to -2.</p></td>
+          <td>
+                <code>-2</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>v_axis</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The axis corresponding to the variables dimension. Defaults to -1.</p></td>
+          <td>
+                <code>-1</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>backend</code></td>
+          <td>
+          </td>
+          <td><p>The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.</p></td>
+          <td>
+                <code>&#39;numba&#39;</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>variogram_score</code></td>          <td>
+                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
+          </td>
+          <td><p>The computed Variogram Score.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div><div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Michael Scheuerer and Thomas M. Hamill. Variogram-Based Proper Scoring Rules for Probabilistic Forecasts of Multivariate Quantities. <em>Monthly Weather Review</em>, 2015. URL: <a href="https://journals.ametsoc.org/view/journals/mwre/143/4/mwr-d-14-00269.1.xml">https://journals.ametsoc.org/view/journals/mwre/143/4/mwr-d-14-00269.1.xml</a>, <a href="https://doi.org/10.1175/MWR-D-14-00269.1">doi:10.1175/MWR-D-14-00269.1</a>.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
 
 
 
@@ -503,12 +671,12 @@ providing a set of tools based the scientific literature and via its didactic ap
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.sections", "toc.follow", "header.autohide"], "search": "assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "toc.follow", "header.autohide"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="assets/javascripts/bundle.b4d07000.min.js"></script>
+      <script src="../../assets/javascripts/bundle.b4d07000.min.js"></script>
       
-        <script src="scripts/katex.js"></script>
+        <script src="../../scripts/katex.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.js"></script>
       

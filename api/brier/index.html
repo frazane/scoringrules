@@ -17,7 +17,7 @@
         <link rel="next" href="../crps/">
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.12">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.13">
     
     
       
@@ -330,7 +330,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#scoringrules.brier.brier_score" class="md-nav__link">
+  <a href="#scoringrules.brier_score" class="md-nav__link">
     brier_score()
   </a>
   
@@ -350,10 +350,64 @@
   
   
   
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+      
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../crps/">Continuous Ranked Probability Score</a>
+          
+            <label for="__nav_2_2">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Continuous Ranked Probability Score
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../crps/" class="md-nav__link">
-        Continuous Ranked Probability Score
+      <a href="../crps/ensemble/" class="md-nav__link">
+        Ensemble-based estimation
       </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crps/analytical/" class="md-nav__link">
+        Analytical formulations
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -379,7 +433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../energy.md" class="md-nav__link">
+      <a href="../energy/" class="md-nav__link">
         Energy Score
       </a>
     </li>
@@ -393,7 +447,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../variogram.md" class="md-nav__link">
+      <a href="../variogram/" class="md-nav__link">
         Variogram Score
       </a>
     </li>
@@ -434,7 +488,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#scoringrules.brier.brier_score" class="md-nav__link">
+  <a href="#scoringrules.brier_score" class="md-nav__link">
     brier_score()
   </a>
   
@@ -459,15 +513,14 @@
 
 
 <h1 id="brier-score">Brier Score</h1>
-<p><br/><br/></p>
 
 
 <div class="doc doc-object doc-function">
 
 
 
-<h4 id="scoringrules.brier.brier_score" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">brier</span><span class="o">.</span><span class="n">brier_score</span><span class="p">(</span><span class="n">forecasts</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="s1">&#39;numpy&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span></code>
+<h4 id="scoringrules.brier_score" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">brier_score</span><span class="p">(</span><span class="n">forecasts</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="s1">&#39;numpy&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span></code>
 
 </h4>
 
@@ -503,11 +556,20 @@
         <tr>
           <td><code>observations</code></td>
           <td>
-                <code><span title="scoringrules.brier.ArrayLike">ArrayLike</span></code>
+                <code><span title="scoringrules._brier.ArrayLike">ArrayLike</span></code>
           </td>
           <td><p>Observed outcome, either 0 or 1.</p></td>
           <td>
               <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>backend</code></td>
+          <td>
+          </td>
+          <td><p>The name of the backend used for computations. Defaults to 'numpy'.</p></td>
+          <td>
+                <code>&#39;numpy&#39;</code>
           </td>
         </tr>
     </tbody>
@@ -531,61 +593,6 @@
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>scoringrules/brier.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">brier_score</span><span class="p">(</span>
-    <span class="n">forecasts</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;numpy&quot;</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Compute the Brier Score (BS).</span>
-
-<span class="sd">    The BS is formulated as</span>
-
-<span class="sd">    $$BS(f, y) = (f - y)^2,$$</span>
-
-<span class="sd">    where $f \in [0, 1]$ is the predicted probability of an event and $y \in \{0, 1\}$ the actual outcome.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    forecasts : NDArray</span>
-<span class="sd">        Forecasted probabilities between 0 and 1.</span>
-<span class="sd">    observations: NDArray</span>
-<span class="sd">        Observed outcome, either 0 or 1.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    brier_score : NDArray</span>
-<span class="sd">        The computed Brier Score.</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">srb</span><span class="p">[</span><span class="n">backend</span><span class="p">]</span><span class="o">.</span><span class="n">brier_score</span><span class="p">(</span><span class="n">forecasts</span><span class="p">,</span> <span class="n">observations</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-      </details>
   </div>
 
 </div>
@@ -629,7 +636,7 @@
     <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "toc.follow", "header.autohide"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c2be25ad.min.js"></script>
+      <script src="../../assets/javascripts/bundle.b4d07000.min.js"></script>
       
         <script src="../../scripts/katex.js"></script>
       

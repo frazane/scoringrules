@@ -11,22 +11,24 @@
       
       
       
+        <link rel="prev" href="../ensemble/">
       
-        <link rel="next" href="api/brier/">
       
-      <link rel="icon" href="assets/images/favicon.png">
+        <link rel="next" href="../../energy/">
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.13">
     
     
       
-        <title>scoringrules</title>
+        <title>Analytical formulations - scoringrules</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.85bb2934.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.85bb2934.min.css">
       
         
-        <link rel="stylesheet" href="assets/stylesheets/palette.a6bdf11c.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.a6bdf11c.min.css">
       
       
 
@@ -42,13 +44,13 @@
       
     
     
-      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="stylesheets/extra.css">
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
     
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.css">
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -77,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#scoringrules-probabilistic-forecast-evaluation" class="md-skip">
+        <a href="#scoringrules.crps_normal" class="md-skip">
           Skip to content
         </a>
       
@@ -93,7 +95,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="scoringrules" class="md-header__button md-logo" aria-label="scoringrules" data-md-component="logo">
+    <a href="../../.." title="scoringrules" class="md-header__button md-logo" aria-label="scoringrules" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10c0-1.16-.21-2.31-.61-3.39l-1.6 1.6c.14.59.21 1.19.21 1.79a8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 8-8c.6 0 1.2.07 1.79.21L15.4 2.6C14.31 2.21 13.16 2 12 2m7 0-4 4v1.5l-2.55 2.55C12.3 10 12.15 10 12 10a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2c0-.15 0-.3-.05-.45L16.5 9H18l4-4h-3V2m-7 4a6 6 0 0 0-6 6 6 6 0 0 0 6 6 6 6 0 0 0 6-6h-2a4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4V6Z"/></svg>
@@ -112,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Home
+              Analytical formulations
             
           </span>
         </div>
@@ -217,7 +219,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="scoringrules" class="md-nav__button md-logo" aria-label="scoringrules" data-md-component="logo">
+    <a href="../../.." title="scoringrules" class="md-nav__button md-logo" aria-label="scoringrules" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10c0-1.16-.21-2.31-.61-3.39l-1.6 1.6c.14.59.21 1.19.21 1.79a8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 8-8c.6 0 1.2.07 1.79.21L15.4 2.6C14.31 2.21 13.16 2 12 2m7 0-4 4v1.5l-2.55 2.55C12.3 10 12.15 10 12 10a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2c0-.15 0-.3-.05-.45L16.5 9H18l4-4h-3V2m-7 4a6 6 0 0 0-6 6 6 6 0 0 0 6 6 6 6 0 0 0 6-6h-2a4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4V6Z"/></svg>
@@ -246,21 +248,11 @@
 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="." class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
         Home
       </a>
-      
     </li>
   
 
@@ -271,16 +263,18 @@
 
   
   
+    
+  
   
     
       
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
       
       
       
@@ -289,7 +283,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_2">
           <span class="md-nav__icon md-icon"></span>
           Reference
@@ -302,7 +296,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/brier/" class="md-nav__link">
+      <a href="../../brier/" class="md-nav__link">
         Brier Score
       </a>
     </li>
@@ -314,21 +308,23 @@
               
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" checked>
       
       
       
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="api/crps/">Continuous Ranked Probability Score</a>
+          <a href="../">Continuous Ranked Probability Score</a>
           
             <label for="__nav_2_2">
               <span class="md-nav__icon md-icon"></span>
@@ -336,7 +332,7 @@
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_2_2">
           <span class="md-nav__icon md-icon"></span>
           Continuous Ranked Probability Score
@@ -349,7 +345,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/crps/ensemble/" class="md-nav__link">
+      <a href="../ensemble/" class="md-nav__link">
         Ensemble-based estimation
       </a>
     </li>
@@ -361,11 +357,68 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="api/crps/analytical/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Analytical formulations
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Analytical formulations
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.crps_normal" class="md-nav__link">
+    crps_normal()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.crps_lognormal" class="md-nav__link">
+    crps_lognormal()
+  </a>
+  
+    <nav class="md-nav" aria-label="crps_lognormal()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scoringrules.crps_lognormal--notes" class="md-nav__link">
+    Notes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -384,7 +437,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/logarithmic.md" class="md-nav__link">
+      <a href="../../logarithmic.md" class="md-nav__link">
         Logarithmic Score
       </a>
     </li>
@@ -398,7 +451,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/energy/" class="md-nav__link">
+      <a href="../../energy/" class="md-nav__link">
         Energy Score
       </a>
     </li>
@@ -412,7 +465,7 @@
   
   
     <li class="md-nav__item">
-      <a href="api/variogram/" class="md-nav__link">
+      <a href="../../variogram/" class="md-nav__link">
         Variogram Score
       </a>
     </li>
@@ -443,8 +496,41 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.crps_normal" class="md-nav__link">
+    crps_normal()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.crps_lognormal" class="md-nav__link">
+    crps_lognormal()
+  </a>
+  
+    <nav class="md-nav" aria-label="crps_lognormal()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scoringrules.crps_lognormal--notes" class="md-nav__link">
+    Notes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -462,10 +548,184 @@
   
 
 
-<h1 id="scoringrules-probabilistic-forecast-evaluation">Scoringrules: probabilistic forecast evaluation</h1>
-<p>Scoringrules is a python library for evaluating probabilistic forecasts by computing
-scoring rules and other diagnostic quantities. It aims to assist forecasting practitioners by
-providing a set of tools based the scientific literature and via its didactic approach.</p>
+  <h1>Analytical formulations</h1>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h4 id="scoringrules.crps_normal" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">crps_normal</span><span class="p">(</span><span class="n">mu</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;numpy&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span></code>
+
+</h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Compute the closed form of the CRPS for the normal distribution.</p>
+<p>It is based on the following formulation from
+<a href="https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml">Geiting et al. (2005)</a>:</p>
+<div class="arithmatex">\[ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},\]</div>
+<p>where <span class="arithmatex">\(\Phi(ω)\)</span> and <span class="arithmatex">\(\phi(ω)\)</span> are respectively the CDF and PDF of the standard normal
+distribution at the normalized prediction error <span class="arithmatex">\(\omega = \frac{y - \mu}{\sigma}\)</span>.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>mu</code></td>
+          <td>
+                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+          </td>
+          <td><p>Mean of the forecast normal distribution.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>sigma</code></td>
+          <td>
+                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+          </td>
+          <td><p>Standard deviation of the forecast normal distribution.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>observation</code></td>
+          <td>
+                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+          </td>
+          <td><p>The observed values.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>crps</code></td>          <td>
+                <code>array_like</code>
+          </td>
+          <td><p>The CRPS between Normal(mu, sigma) and obs.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+<p><strong>Examples:</strong></p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">scoringrules</span> <span class="kn">import</span> <span class="n">crps</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">crps</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+</code></pre></div>
+
+  </div>
+
+</div><p><br/><br/>
+</p>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h4 id="scoringrules.crps_lognormal" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">crps_lognormal</span><span class="p">(</span><span class="n">mulog</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">sigmalog</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;numpy&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span></code>
+
+</h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Compute the closed form of the CRPS for the lognormal distribution.</p>
+<p>It is based on the formulation introduced by
+<a href="https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2521">Baran and Lerch (2015)</a></p>
+<div class="arithmatex">\[ \mathrm{CRPS}(\mathrm{log}\mathcal{N}(\mu, \sigma), y) =
+y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
+\left[ \Phi(\omega - \sigma) + \Phi(\frac{\sigma}{\sqrt{2}}) \right]\]</div>
+<p>where <span class="arithmatex">\(\Phi\)</span> is the CDF of the standard normal distribution and
+<span class="arithmatex">\(\omega = \frac{\mathrm{log}y - \mu}{\sigma}\)</span>.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>mulog</code></td>
+          <td>
+                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+          </td>
+          <td><p>Mean of the normal underlying distribution.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>sigmalog</code></td>
+          <td>
+                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+          </td>
+          <td><p>Standard deviation of the underlying normal distribution.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>crps</code></td>          <td>
+                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+          </td>
+          <td><p>The CRPS between Lognormal(mu, sigma) and obs.</p></td>
+        </tr>
+    </tbody>
+  </table>
+      <h6 id="scoringrules.crps_lognormal--notes">Notes</h6>
+<p>The mean and standard deviation are not the values for the distribution itself,
+but of the underlying normal distribution it is derived from.</p>
+
+<p><strong>Examples:</strong></p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">scoringrules</span> <span class="kn">import</span> <span class="n">crps</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">crps</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+</code></pre></div>
+
+  </div>
+
+</div>
 
 
 
@@ -503,12 +763,12 @@ providing a set of tools based the scientific literature and via its didactic ap
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.sections", "toc.follow", "header.autohide"], "search": "assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.sections", "toc.follow", "header.autohide"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="assets/javascripts/bundle.b4d07000.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.b4d07000.min.js"></script>
       
-        <script src="scripts/katex.js"></script>
+        <script src="../../../scripts/katex.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.js"></script>
       
