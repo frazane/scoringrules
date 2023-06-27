@@ -292,7 +292,7 @@ def _brier_score_ufunc(forecast, observation):
         "void(float32[:,:], float32[:], float32, float32[:])",
         "void(float64[:,:], float64[:], float64, float64[:])",
     ],
-    "(d,m),(d),()->()",
+    "(m,d),(d),()->()",
 )
 def _variogram_score_gufunc(forecasts, observation, p, out):
     D = forecasts.shape[0]

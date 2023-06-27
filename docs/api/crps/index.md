@@ -1,5 +1,11 @@
 # Continuous Ranked Probability Score
 
+
+<p align="center">
+  <img width="600" height="200" src="../../assets/animation.gif">
+  CIAOOOOOOOOOOOOOOOOOOOOOOOO
+</p>
+
 Formally, the CRPS is expressed as
 
 $$\text{CRPS}(F, y) = \int_{\mathbb{R}}[F(x)-\mathbb{1}\{y \le x\}]^2 dx$$
