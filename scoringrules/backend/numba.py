@@ -15,6 +15,7 @@ from .gufuncs import (
     _crps_ensemble_qd_gufunc,
     _crps_lognormal_ufunc,
     _crps_normal_ufunc,
+    _crps_logistic_ufunc,
     _energy_score_gufunc,
     _variogram_score_gufunc,
 )
@@ -79,6 +80,11 @@ class NumbaBackend(AbstractBackend):
     ) -> Array:
         """Compute the CRPS for a log normal distribution."""
         return _crps_lognormal_ufunc(mulog, sigmalog, observation)
+    
+    @staticmethod
+    def crps_logistic(mu: ArrayLike, sigma: ArrayLike, observation: ArrayLike) -> Array:
+        """Compute the CRPS for a logistic distribution."""
+        return _crps_logistic_ufunc(mu, sigma, observation)
 
     @staticmethod
     def energy_score(

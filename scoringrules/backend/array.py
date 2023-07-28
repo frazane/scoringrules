@@ -89,6 +89,11 @@ class ArrayAPIBackend(AbstractBackend):
             - 1
         )
 
+    def crps_logistic(self, mu: ArrayLike, sigma: ArrayLike, obs: ArrayLike) -> Array:
+        """Compute the CRPS for the normal distribution."""
+        ω = (obs - mu) / sigma
+        return sigma * (ω - 2 * self.np.log(self._logis_cdf(ω)) - 1)
+
     def energy_score(self, fcts: Array, obs: Array, m_axis=-2, v_axis=-1) -> Array:
         """
         Compute the energy score based on a finite ensemble.
@@ -186,6 +191,10 @@ class ArrayAPIBackend(AbstractBackend):
     def _norm_pdf(self, x: ArrayLike) -> Array:
         """Probability density function for the standard normal distribution."""
         return (1.0 / self.np.sqrt(2.0 * self.np.pi)) * self.np.exp(-(x**2) / 2)
+
+    def _logis_cdf(self, x: ArrayLike) -> Array:
+        """Cumulative distribution function for the standard logistic distribution."""
+        return (1 / (1 + np.exp(-x)))
 
     def __repr__(self) -> str:
         return f"NumpyAPIBackend('{self.backend_name}')"

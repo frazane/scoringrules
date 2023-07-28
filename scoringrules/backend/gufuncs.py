@@ -24,6 +24,13 @@ def _norm_pdf(x: float) -> float:
     return out
 
 
+@njit(["float32(float32)", "float64(float64)"])
+def _logis_cdf(x: float) -> float:
+    """Cumulative distribution function for the standard logistic distribution."""
+    out: float = 1.0 / (1.0 + math.exp(-x))
+    return out
+
+
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _crps_normal_ufunc(mu: float, sigma: float, observation: float) -> float:
     ω = (observation - mu) / sigma
@@ -38,6 +45,13 @@ def _crps_lognormal_ufunc(mulog: float, sigmalog: float, observation: float) -> 
     out: float = observation * (2 * _norm_cdf(ω) - 1) - ex * (
         _norm_cdf(ω - sigmalog) + _norm_cdf(sigmalog / np.sqrt(2)) - 1
     )
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_logistic_ufunc(mu: float, sigma: float, observation: float) -> float:
+    ω = (observation - mu) / sigma
+    out: float = sigma * (ω - 2 * np.log(_logis_cdf(ω)) - 1)
     return out
 
 
@@ -318,6 +332,7 @@ __all__ = [
     "_crps_ensemble_qd_gufunc",
     "_crps_normal_ufunc",
     "_crps_lognormal_ufunc",
+    "_crps_logistic_ufunc",
     "_energy_score_gufunc",
     "_brier_score_ufunc",
     "_variogram_score_gufunc",
