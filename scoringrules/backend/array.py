@@ -1,7 +1,7 @@
+from types import ModuleType
 from typing import TypeVar
 
 import numpy as np
-from scipy import special
 
 from .arrayapi import Array, ArrayAPIProtocol
 from .base import AbstractBackend
@@ -17,20 +17,20 @@ class ArrayAPIBackend(AbstractBackend):
 
     _supported_backends = ["numpy", "jax"]
     np: ArrayAPIProtocol
-    special: special
+    scipy: ModuleType
 
     def __init__(self, backend_name: str):
         if backend_name == "numpy":
             import numpy as np
-            from scipy import special
+            import scipy
 
-            self.special = special  # type: ignore
+            self.scipy = scipy  # type: ignore
             self.np = np  # type: ignore
         elif backend_name == "jax":
             import jax.numpy as jnp
-            from jax.scipy import special
+            from jax import scipy
 
-            self.special = special  # type: ignore
+            self.scipy = scipy  # type: ignore
             self.np = jnp  # type: ignore
         else:
             raise ValueError(
@@ -149,6 +149,19 @@ class ArrayAPIBackend(AbstractBackend):
         out = self.np.sum(2 * (obs_diff - vfcts) ** 2, axis=(-2, -1))
         return out
 
+    def logscore_normal(
+        self,
+        mu: ArrayLike,
+        sigma: ArrayLike,
+        obs: ArrayLike,
+        negative: bool = True,
+    ):
+        """Compute the logarithmic score for the normal distribution."""
+        constant = -1.0 if negative else 1.0
+        ω = (obs - mu) / sigma
+        prob = self._norm_pdf(ω) / sigma
+        return constant * self.np.log(prob)
+
     def _crps_ensemble_fair(self, fcts: Array, obs: Array) -> Array:
         """Fair version of the CRPS estimator based on the energy form."""
         M: int = fcts.shape[-1]
@@ -181,7 +194,7 @@ class ArrayAPIBackend(AbstractBackend):
 
     def _norm_cdf(self, x: ArrayLike) -> Array:
         """Cumulative distribution function for the standard normal distribution."""
-        return (1.0 + self.special.erf(x / self.np.sqrt(2.0))) / 2.0
+        return (1.0 + self.scipy.special.erf(x / self.np.sqrt(2.0))) / 2.0
 
     def _norm_pdf(self, x: ArrayLike) -> Array:
         """Probability density function for the standard normal distribution."""

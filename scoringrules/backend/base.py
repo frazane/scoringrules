@@ -33,6 +33,16 @@ class AbstractBackend:
         """Compute the CRPS for the log normal distribution."""
 
     @abstractmethod
+    def logscore_normal(
+        self,
+        mu: ArrayLike,
+        sigma: ArrayLike,
+        observation: ArrayLike,
+        negative: bool = True,
+    ) -> Array:
+        """Compute the logarithmic score for the normal distribution."""
+
+    @abstractmethod
     def energy_score(
         self, fcts: Array, obs: Array, m_axis: int = -2, v_axis: int = -1
     ) -> Array:
