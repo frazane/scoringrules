@@ -48,6 +48,11 @@ class NumbaBackend(AbstractBackend):
             "akr_circperm",
             "fair",
         ]:
+            if hasattr(forecasts, "__dask_graph__"):
+                raise NotImplementedError(
+                    "Estimators that need sorting of the ensemble do not yet work with dask. "
+                    "Sort the ensemble beforehand or try another estimator (nrg, akr, akr_circperm or fair)"
+                )
             forecasts = np.sort(forecasts, axis=-1)
 
         if estimator == "int":

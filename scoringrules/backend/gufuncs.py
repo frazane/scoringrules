@@ -106,7 +106,7 @@ def _crps_ensemble_qd_gufunc(
 ):
     """CRPS estimator based on the quantile decomposition form."""
     obs = observation[0]
-    M = forecasts.shape[0]
+    M = forecasts.shape[-1]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -194,7 +194,7 @@ def _crps_ensemble_pwm_gufunc(
 ):
     """CRPS estimator based on the probability weighted moment (PWM) form."""
     obs = observation[0]
-    M = forecasts.shape[0]
+    M = forecasts.shape[-1]
 
     if np.isnan(obs):
         out[0] = np.nan
