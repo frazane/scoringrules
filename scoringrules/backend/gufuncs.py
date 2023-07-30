@@ -298,11 +298,11 @@ def _brier_score_ufunc(forecast, observation):
         "void(float32[:,:], float32[:], float32, float32[:])",
         "void(float64[:,:], float64[:], float64, float64[:])",
     ],
-    "(m,d),(d),()->()",
+    "(d,m),(d),()->()",
 )
 def _variogram_score_gufunc(forecasts, observation, p, out):
-    D = forecasts.shape[0]
-    M = forecasts.shape[1]
+    D = forecasts.shape[-2]
+    M = forecasts.shape[-1]
     out[0] = 0.0
     for i in range(D):
         for j in range(D):

@@ -121,6 +121,7 @@ class NumbaBackend(AbstractBackend):
         """Compute the Variogram Score for a finite multivariate ensemble."""
         if m_axis != -1:
             forecasts = np.moveaxis(forecasts, m_axis, -1)
+            v_axis = v_axis - 1 if v_axis != 0 else v_axis
         if v_axis != -2:
             forecasts = np.moveaxis(forecasts, v_axis, -2)
 

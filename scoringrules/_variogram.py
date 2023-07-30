@@ -10,8 +10,8 @@ def variogram_score(
     forecasts: Array,
     observations: Array,
     p: float = 1.0,
-    m_axis: int = -2,
-    v_axis: int = -1,
+    m_axis: int = -1,
+    v_axis: int = -2,
     backend="numba",
 ) -> Array:
     r"""Compute the Variogram Score for a finite multivariate ensemble.

@@ -130,19 +130,25 @@ class ArrayAPIBackend(AbstractBackend):
         forecasts: Array,
         observations: Array,
         p: float = 1,
-        m_axis: int = -2,
-        v_axis: int = -1,
+        m_axis: int = -1,
+        v_axis: int = -2,
     ) -> Array:
         """Compute the Variogram Score for a multivariate finite ensemble."""
-        if m_axis != -2:
-            forecasts = self.np.moveaxis(forecasts, m_axis, -2)
-        if v_axis != -1:
-            forecasts = self.np.moveaxis(forecasts, v_axis, -1)
+        if m_axis != -1:
+            forecasts = self.np.moveaxis(forecasts, m_axis, -1)
+            v_axis = v_axis - 1 if v_axis != 0 else v_axis
+        if v_axis != -2:
+            forecasts = self.np.moveaxis(forecasts, v_axis, -2)
             observations = self.np.moveaxis(observations, v_axis, -1)
 
-        M: int = forecasts.shape[-2]
-        fct_diff = self.np.abs(forecasts[..., None] - forecasts[..., None, :]) ** p
-        vfcts = self.np.sum(fct_diff, axis=-3) / M
+        M: int = forecasts.shape[-1]
+        fct_diff = (
+            self.np.abs(
+                self.np.expand_dims(forecasts, -2) - self.np.expand_dims(forecasts, -3)
+            )
+            ** p
+        )
+        vfcts = self.np.sum(fct_diff, axis=-1) / M
         obs_diff = (
             self.np.abs(observations[..., None] - observations[..., None, :]) ** p
         )
