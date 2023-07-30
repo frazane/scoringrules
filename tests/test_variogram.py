@@ -34,3 +34,18 @@ def test_variogram_score_permuted_dims(backend):
         assert isinstance(res, np.ndarray)
     elif backend == "jax":
         assert isinstance(res, jax.Array)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_variogram_score_correctness(backend):
+    fcts = np.array(
+        [[0.79546742, 0.4777960, 0.2164079], [0.02461368, 0.7584595, 0.3181810]]
+    )
+
+    obs = np.array([0.2743836, 0.8146400])
+
+    res = variogram_score(fcts, obs, p=0.5, backend=backend)
+    np.testing.assert_allclose(res, 0.05083489, rtol=1e-5)
+
+    res = variogram_score(fcts, obs, p=1.0, backend=backend)
+    np.testing.assert_allclose(res, 0.04856365, rtol=1e-5)

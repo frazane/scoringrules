@@ -311,7 +311,7 @@ def _variogram_score_gufunc(forecasts, observation, p, out):
                 vfcts += abs(forecasts[i, m] - forecasts[j, m]) ** p
             vfcts = vfcts / M
             vobs = abs(observation[i] - observation[j]) ** p
-            out[0] += 2 * (vobs - vfcts) ** 2
+            out[0] += (vobs - vfcts) ** 2
 
 
 __all__ = [

@@ -152,7 +152,7 @@ class ArrayAPIBackend(AbstractBackend):
         obs_diff = (
             self.np.abs(observations[..., None] - observations[..., None, :]) ** p
         )
-        out = self.np.sum(2 * (obs_diff - vfcts) ** 2, axis=(-2, -1))
+        out = self.np.sum((obs_diff - vfcts) ** 2, axis=(-2, -1))
         return out
 
     def logscore_normal(
