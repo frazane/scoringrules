@@ -115,10 +115,15 @@ class NumbaBackend(AbstractBackend):
         forecasts: Array,
         observations: Array,
         p: float = 1.0,
-        m_axis: int = -2,
-        v_axis: int = -1,
+        m_axis: int = -1,
+        v_axis: int = -2,
     ) -> Array:
         """Compute the Variogram Score for a finite multivariate ensemble."""
+        if m_axis != -1:
+            forecasts = np.moveaxis(forecasts, m_axis, -1)
+        if v_axis != -2:
+            forecasts = np.moveaxis(forecasts, v_axis, -2)
+
         return _variogram_score_gufunc(forecasts, observations, p)
 
     def __repr__(self) -> str:
