@@ -38,7 +38,6 @@ class AbstractBackend:
         mu: ArrayLike,
         sigma: ArrayLike,
         observation: ArrayLike,
-        negative: bool = True,
     ) -> Array:
         """Compute the logarithmic score for the normal distribution."""
 

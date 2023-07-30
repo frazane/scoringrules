@@ -86,11 +86,9 @@ class NumbaBackend(AbstractBackend):
         mu: ArrayLike,
         sigma: ArrayLike,
         observation: ArrayLike,
-        negative: bool = False,
     ) -> Array:
         """Compute the logarithmic score for a normal distribution."""
-        constant = -1.0 if negative else 1.0
-        return constant * _logscore_normal_ufunc(mu, sigma, observation)
+        return _logscore_normal_ufunc(mu, sigma, observation)
 
     @staticmethod
     def energy_score(

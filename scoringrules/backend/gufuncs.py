@@ -44,7 +44,7 @@ def _crps_lognormal_ufunc(mulog: float, sigmalog: float, observation: float) -> 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _logscore_normal_ufunc(mu: np.ndarray, sigma: np.ndarray, observation: np.ndarray):
     ω = (observation - mu) / sigma
-    return np.log(_norm_pdf(ω) / sigma)
+    return -np.log(_norm_pdf(ω) / sigma)
 
 
 @guvectorize(
