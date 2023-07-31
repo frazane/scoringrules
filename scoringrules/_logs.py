@@ -6,7 +6,7 @@ from scoringrules.backend.arrayapi import Array
 ArrayLike = tp.TypeVar("ArrayLike", Array, float)
 
 
-def logscore_normal(
+def logs_normal(
     mu: ArrayLike,
     sigma: ArrayLike,
     observation: ArrayLike,
@@ -37,7 +37,7 @@ def logscore_normal(
     Examples
     --------
     >>> import scoringrules as sr
-    >>> sr.logscore_normal(0.1, 0.4, 0.0)
+    >>> sr.logs_normal(0.1, 0.4, 0.0)
     >>> 0.033898
     """
-    return srb[backend].logscore_normal(mu, sigma, observation)
+    return srb[backend].logs_normal(mu, sigma, observation)

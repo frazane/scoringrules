@@ -33,7 +33,7 @@ class AbstractBackend:
         """Compute the CRPS for the log normal distribution."""
 
     @abstractmethod
-    def logscore_normal(
+    def logs_normal(
         self,
         mu: ArrayLike,
         sigma: ArrayLike,

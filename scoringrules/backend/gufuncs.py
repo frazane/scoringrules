@@ -42,7 +42,7 @@ def _crps_lognormal_ufunc(mulog: float, sigmalog: float, observation: float) -> 
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
-def _logscore_normal_ufunc(mu: np.ndarray, sigma: np.ndarray, observation: np.ndarray):
+def _logs_normal_ufunc(mu: np.ndarray, sigma: np.ndarray, observation: np.ndarray):
     ω = (observation - mu) / sigma
     return -np.log(_norm_pdf(ω) / sigma)
 
@@ -324,7 +324,7 @@ __all__ = [
     "_crps_ensemble_qd_gufunc",
     "_crps_normal_ufunc",
     "_crps_lognormal_ufunc",
-    "_logscore_normal_ufunc",
+    "_logs_normal_ufunc",
     "_energy_score_gufunc",
     "_brier_score_ufunc",
     "_variogram_score_gufunc",

@@ -16,7 +16,7 @@ from .gufuncs import (
     _crps_lognormal_ufunc,
     _crps_normal_ufunc,
     _energy_score_gufunc,
-    _logscore_normal_ufunc,
+    _logs_normal_ufunc,
     _variogram_score_gufunc,
 )
 
@@ -87,13 +87,13 @@ class NumbaBackend(AbstractBackend):
         return _crps_lognormal_ufunc(mulog, sigmalog, observation)
 
     @staticmethod
-    def logscore_normal(
+    def logs_normal(
         mu: ArrayLike,
         sigma: ArrayLike,
         observation: ArrayLike,
     ) -> Array:
         """Compute the logarithmic score for a normal distribution."""
-        return _logscore_normal_ufunc(mu, sigma, observation)
+        return _logs_normal_ufunc(mu, sigma, observation)
 
     @staticmethod
     def energy_score(
