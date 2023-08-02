@@ -99,9 +99,6 @@ class NumbaBackend(AbstractBackend):
         observations: ArrayLike,
         w_func: tp.Callable= lambda x, *args: np.ones_like(x),
         w_funcargs: tuple=(),
-        axis=-1,
-        sorted_ensemble=False,
-        estimator="int",
     ) -> Array:
         """Compute the Threshold-Weighted CRPS for a finite ensemble."""
         fw = w_func(forecasts, *w_funcargs)
@@ -112,16 +109,13 @@ class NumbaBackend(AbstractBackend):
     def twcrps_ensemble(
         forecasts: Array,
         observations: ArrayLike,
-        lower: float,
-        upper: float,
-        axis=-1,
-        sorted_ensemble=False,
-        estimator="int",
+        v_func: tp.Callable= lambda x, *args: x,
+        v_funcargs: tuple=(),
     ) -> Array:
         """Compute the Threshold-Weighted CRPS for a finite ensemble."""
-        g_forecasts  = forecasts
-        g_observations = observations
-        return _crps_ensemble_pwm_gufunc(g_forecasts, g_observations)
+        v_forecasts = v_func(forecasts, *v_funcargs)
+        v_observations = v_func(observations, *v_funcargs)
+        return _crps_ensemble_nrg_gufunc(v_forecasts, v_observations)
 
     @staticmethod
     def logs_normal(

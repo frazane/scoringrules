@@ -10,13 +10,10 @@ ArrayLike = tp.TypeVar("ArrayLike", Array, float)
 def twcrps_ensemble(
     forecasts: Array,
     observations: ArrayLike,
-    lower: float = -float('inf'),
-    upper: float = float('inf'),
     /,
+    v_func: tp.Callable=lambda x, *args: x,
+    v_funcargs: tuple=(),
     *,
-    axis: int = -1,
-    sorted_ensemble: bool = False,
-    estimator: str = "pwm",
     backend: str = "numba",
 ) -> Array:
     r"""Estimate the Threshold-Weighted Continuous Ranked Probability Score (twCRPS) for a finite ensemble.
@@ -28,10 +25,10 @@ def twcrps_ensemble(
         represented by the last axis.
     observations: ArrayLike
         The observed values.
-    lower: float
-        The lower bound in the weight function. Default is -Inf.
-    upper: float
-        The upper bound in the weight function. Default is Inf.
+    v_func: tp.Callable
+        Chaining function used to emphasise particular outcomes.
+    v_funcargs: tuple
+        Additional arguments to the chaining function.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
     sorted_ensemble: bool
@@ -50,16 +47,13 @@ def twcrps_ensemble(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> twcrps.ensemble(pred, obs, lower = -1.0, upper = 2.5)
+    >>> twcrps.ensemble(pred, obs)
     """
     return srb[backend].twcrps_ensemble(
         forecasts,
         observations,
-        lower,
-        upper,
-        axis=axis,
-        sorted_ensemble=sorted_ensemble,
-        estimator=estimator,
+        v_func,
+        v_funcargs,
     )
     
 
@@ -70,9 +64,6 @@ def owcrps_ensemble(
     w_func: tp.Callable=lambda x, *args: np.ones_like(x),
     w_funcargs: tuple=(),
     *,
-    axis: int = -1,
-    sorted_ensemble: bool = False,
-    estimator: str = "pwm",
     backend: str = "numba",
 ) -> Array:
     r"""Estimate the Outcome-Weighted Continuous Ranked Probability Score (owCRPS) for a finite ensemble.
@@ -113,9 +104,6 @@ def owcrps_ensemble(
         observations,
         w_func,
         w_funcargs,
-        axis=axis,
-        sorted_ensemble=sorted_ensemble,
-        estimator=estimator,
     )
     
     

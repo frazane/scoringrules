@@ -43,11 +43,18 @@ class AbstractBackend:
         observations: ArrayLike,
         w_func: tp.Callable,
         w_funcargs: tuple,
-        axis: int = -1,
-        sorted_ensemble: bool = False,
-        estimator: str = "nrg",
     ) -> Array:
         """Compute the Outcome-Weighted CRPS for a finite ensemble."""
+        
+    @abstractmethod
+    def twcrps_ensemble(
+        self,
+        forecasts: Array,
+        observations: ArrayLike,
+        v_func: tp.Callable,
+        v_funcargs: tuple,
+    ) -> Array:
+        """Compute the Threshold-Weighted CRPS for a finite ensemble."""
         
     def logs_normal(
         self,
