@@ -308,6 +308,42 @@ def _brier_score_ufunc(forecast, observation):
 
 @guvectorize(
     [
+        "void(float32[:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:], float64[:])",
+    ],
+    "(n),(),(n),()->()",
+)
+def _owcrps_ensemble_nrg_gufunc(
+    forecasts: np.ndarray,
+    observation: np.ndarray,
+    fw: np.ndarray,
+    ow: np.ndarray,
+    out: np.ndarray
+):
+    """Outcome-weighted CRPS estimator based on the energy form."""
+    obs = observation[0]
+    ow = ow[0]
+    M = forecasts.shape[-1]
+
+    if np.isnan(obs):
+        out[0] = np.nan
+        return
+
+    e_1 = 0.0
+    e_2 = 0.0
+
+    for i, x_i in enumerate(forecasts):
+        e_1 += abs(x_i - obs) * fw[i] * ow
+        for j, x_j in enumerate(forecasts):
+            e_2 += abs(x_i - x_j) * fw[i] * fw[j] * ow
+
+    wbar = np.mean(fw)
+
+    out[0] = e_1 / (M * wbar) - 0.5 * e_2 / ((M * wbar) ** 2)
+
+
+@guvectorize(
+    [
         "void(float32[:,:], float32[:], float32, float32[:])",
         "void(float64[:,:], float64[:], float64, float64[:])",
     ],
@@ -341,5 +377,6 @@ __all__ = [
     "_logs_normal_ufunc",
     "_energy_score_gufunc",
     "_brier_score_ufunc",
+    "_owcrps_ensemble_nrg_gufunc",
     "_variogram_score_gufunc",
 ]

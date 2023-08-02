@@ -1,9 +1,9 @@
 from abc import abstractmethod
-from typing import TypeVar
+import typing as tp
 
 from .arrayapi import Array
 
-ArrayLike = TypeVar("ArrayLike", Array, float)
+ArrayLike = tp.TypeVar("ArrayLike", Array, float)
 
 
 class AbstractBackend:
@@ -14,8 +14,8 @@ class AbstractBackend:
     @abstractmethod
     def crps_ensemble(
         self,
-        fcts: Array,
-        obs: ArrayLike,
+        forecasts: Array,
+        observations: ArrayLike,
         axis: int = -1,
         sorted_ensemble: bool = False,
         estimator: str = "pwm",
@@ -35,6 +35,19 @@ class AbstractBackend:
     @abstractmethod
     def crps_logistic(self, mu: ArrayLike, sigma: ArrayLike, obs: ArrayLike) -> Array:
         """Compute the CRPS for the logistic distribution."""
+    
+    @abstractmethod
+    def owcrps_ensemble(
+        self,
+        forecasts: Array,
+        observations: ArrayLike,
+        w_func: tp.Callable,
+        v_funcargs: tuple,
+        axis: int = -1,
+        sorted_ensemble: bool = False,
+        estimator: str = "nrg",
+    ) -> Array:
+        """Compute the Outcome-Weighted CRPS for a finite ensemble."""
         
     def logs_normal(
         self,

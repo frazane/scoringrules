@@ -1,4 +1,4 @@
-from typing import TypeVar
+import typing as tp
 
 import numpy as np
 
@@ -18,10 +18,11 @@ from .gufuncs import (
     _crps_logistic_ufunc,
     _energy_score_gufunc,
     _logs_normal_ufunc,
+    _owcrps_ensemble_nrg_gufunc,
     _variogram_score_gufunc,
 )
 
-ArrayLike = TypeVar("ArrayLike", np.ndarray, float)
+ArrayLike = tp.TypeVar("ArrayLike", np.ndarray, float)
 # ArrayLike = Array | float
 
 
@@ -91,6 +92,36 @@ class NumbaBackend(AbstractBackend):
     def crps_logistic(mu: ArrayLike, sigma: ArrayLike, observation: ArrayLike) -> Array:
         """Compute the CRPS for a logistic distribution."""
         return _crps_logistic_ufunc(mu, sigma, observation)
+
+    @staticmethod
+    def owcrps_ensemble(
+        forecasts: Array,
+        observations: ArrayLike,
+        w_func: tp.Callable= lambda x, *args: np.ones_like(x),
+        v_funcargs: tuple=(),
+        axis=-1,
+        sorted_ensemble=False,
+        estimator="int",
+    ) -> Array:
+        """Compute the Threshold-Weighted CRPS for a finite ensemble."""
+        fw = w_func(forecasts, *v_funcargs)
+        ow = w_func(observations, *v_funcargs)
+        return _owcrps_ensemble_nrg_gufunc(forecasts, observations, fw, ow)
+
+    @staticmethod
+    def twcrps_ensemble(
+        forecasts: Array,
+        observations: ArrayLike,
+        lower: float,
+        upper: float,
+        axis=-1,
+        sorted_ensemble=False,
+        estimator="int",
+    ) -> Array:
+        """Compute the Threshold-Weighted CRPS for a finite ensemble."""
+        g_forecasts  = forecasts
+        g_observations = observations
+        return _crps_ensemble_pwm_gufunc(g_forecasts, g_observations)
 
     @staticmethod
     def logs_normal(
