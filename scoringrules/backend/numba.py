@@ -98,14 +98,14 @@ class NumbaBackend(AbstractBackend):
         forecasts: Array,
         observations: ArrayLike,
         w_func: tp.Callable= lambda x, *args: np.ones_like(x),
-        v_funcargs: tuple=(),
+        w_funcargs: tuple=(),
         axis=-1,
         sorted_ensemble=False,
         estimator="int",
     ) -> Array:
         """Compute the Threshold-Weighted CRPS for a finite ensemble."""
-        fw = w_func(forecasts, *v_funcargs)
-        ow = w_func(observations, *v_funcargs)
+        fw = w_func(forecasts, *w_funcargs)
+        ow = w_func(observations, *w_funcargs)
         return _owcrps_ensemble_nrg_gufunc(forecasts, observations, fw, ow)
 
     @staticmethod

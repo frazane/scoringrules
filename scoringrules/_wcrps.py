@@ -66,16 +66,16 @@ def twcrps_ensemble(
 def owcrps_ensemble(
     forecasts: Array,
     observations: ArrayLike,
-    w_func: tp.Callable=lambda x, *args: np.ones_like(x),
-    v_funcargs: tuple=(),
     /,
+    w_func: tp.Callable=lambda x, *args: np.ones_like(x),
+    w_funcargs: tuple=(),
     *,
     axis: int = -1,
     sorted_ensemble: bool = False,
     estimator: str = "pwm",
     backend: str = "numba",
 ) -> Array:
-    r"""Estimate the Outcome-Weighted Continuous Ranked Probability Score (twCRPS) for a finite ensemble.
+    r"""Estimate the Outcome-Weighted Continuous Ranked Probability Score (owCRPS) for a finite ensemble.
 
     Parameters
     ----------
@@ -84,10 +84,10 @@ def owcrps_ensemble(
         represented by the last axis.
     observations: ArrayLike
         The observed values.
-    lower: float
-        The lower bound in the weight function. Default is -Inf.
-    upper: float
-        The upper bound in the weight function. Default is Inf.
+    w_func: tp.Callable
+        Weight function used to emphasise particular outcomes.
+    w_funcargs: tuple
+        Additional arguments to the weight function.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
     sorted_ensemble: bool
@@ -100,19 +100,19 @@ def owcrps_ensemble(
 
     Returns
     -------
-    twcrps: ArrayLike
-        The twCRPS between the forecast ensemble and obs for the chosen weight function.
+    owcrps: ArrayLike
+        The owCRPS between the forecast ensemble and obs for the chosen weight function.
 
     Examples
     --------
     >>> from scoringrules import crps
-    >>> owcrps.ensemble(pred, obs, lower = -1.0, upper = 2.5)
+    >>> owcrps.ensemble(pred, obs)
     """
     return srb[backend].owcrps_ensemble(
         forecasts,
         observations,
         w_func,
-        v_funcargs,
+        w_funcargs,
         axis=axis,
         sorted_ensemble=sorted_ensemble,
         estimator=estimator,

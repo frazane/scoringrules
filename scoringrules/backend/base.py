@@ -42,7 +42,7 @@ class AbstractBackend:
         forecasts: Array,
         observations: ArrayLike,
         w_func: tp.Callable,
-        v_funcargs: tuple,
+        w_funcargs: tuple,
         axis: int = -1,
         sorted_ensemble: bool = False,
         estimator: str = "nrg",
