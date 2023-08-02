@@ -55,6 +55,11 @@ def _crps_logistic_ufunc(mu: float, sigma: float, observation: float) -> float:
     return out
 
 
+def _logs_normal_ufunc(mu: np.ndarray, sigma: np.ndarray, observation: np.ndarray):
+    ω = (observation - mu) / sigma
+    return -np.log(_norm_pdf(ω) / sigma)
+
+
 @guvectorize(
     [
         "void(float32[:], float32[:], float32[:])",
@@ -114,7 +119,7 @@ def _crps_ensemble_qd_gufunc(
 ):
     """CRPS estimator based on the quantile decomposition form."""
     obs = observation[0]
-    M = forecasts.shape[0]
+    M = forecasts.shape[-1]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -202,7 +207,7 @@ def _crps_ensemble_pwm_gufunc(
 ):
     """CRPS estimator based on the probability weighted moment (PWM) form."""
     obs = observation[0]
-    M = forecasts.shape[0]
+    M = forecasts.shape[-1]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -309,8 +314,8 @@ def _brier_score_ufunc(forecast, observation):
     "(d,m),(d),()->()",
 )
 def _variogram_score_gufunc(forecasts, observation, p, out):
-    D = forecasts.shape[0]
-    M = forecasts.shape[1]
+    D = forecasts.shape[-2]
+    M = forecasts.shape[-1]
     out[0] = 0.0
     for i in range(D):
         for j in range(D):
@@ -319,7 +324,7 @@ def _variogram_score_gufunc(forecasts, observation, p, out):
                 vfcts += abs(forecasts[i, m] - forecasts[j, m]) ** p
             vfcts = vfcts / M
             vobs = abs(observation[i] - observation[j]) ** p
-            out[0] += 2 * (vobs - vfcts) ** 2
+            out[0] += (vobs - vfcts) ** 2
 
 
 __all__ = [
@@ -333,6 +338,7 @@ __all__ = [
     "_crps_normal_ufunc",
     "_crps_lognormal_ufunc",
     "_crps_logistic_ufunc",
+    "_logs_normal_ufunc",
     "_energy_score_gufunc",
     "_brier_score_ufunc",
     "_variogram_score_gufunc",

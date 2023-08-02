@@ -1,7 +1,7 @@
+from types import ModuleType
 from typing import TypeVar
 
 import numpy as np
-from scipy import special
 
 from .arrayapi import Array, ArrayAPIProtocol
 from .base import AbstractBackend
@@ -17,20 +17,20 @@ class ArrayAPIBackend(AbstractBackend):
 
     _supported_backends = ["numpy", "jax"]
     np: ArrayAPIProtocol
-    special: special
+    scipy: ModuleType
 
     def __init__(self, backend_name: str):
         if backend_name == "numpy":
             import numpy as np
-            from scipy import special
+            import scipy
 
-            self.special = special  # type: ignore
+            self.scipy = scipy  # type: ignore
             self.np = np  # type: ignore
         elif backend_name == "jax":
             import jax.numpy as jnp
-            from jax.scipy import special
+            from jax import scipy
 
-            self.special = special  # type: ignore
+            self.scipy = scipy  # type: ignore
             self.np = jnp  # type: ignore
         else:
             raise ValueError(
@@ -135,24 +135,43 @@ class ArrayAPIBackend(AbstractBackend):
         forecasts: Array,
         observations: Array,
         p: float = 1,
-        m_axis: int = -2,
-        v_axis: int = -1,
+        m_axis: int = -1,
+        v_axis: int = -2,
     ) -> Array:
         """Compute the Variogram Score for a multivariate finite ensemble."""
-        if m_axis != -2:
-            forecasts = self.np.moveaxis(forecasts, m_axis, -2)
-        if v_axis != -1:
-            forecasts = self.np.moveaxis(forecasts, v_axis, -1)
+        if m_axis != -1:
+            forecasts = self.np.moveaxis(forecasts, m_axis, -1)
+            v_axis = v_axis - 1 if v_axis != 0 else v_axis
+        if v_axis != -2:
+            forecasts = self.np.moveaxis(forecasts, v_axis, -2)
             observations = self.np.moveaxis(observations, v_axis, -1)
 
-        M: int = forecasts.shape[-2]
-        fct_diff = self.np.abs(forecasts[..., None] - forecasts[..., None, :]) ** p
-        vfcts = self.np.sum(fct_diff, axis=-3) / M
+        M: int = forecasts.shape[-1]
+        fct_diff = (
+            self.np.abs(
+                self.np.expand_dims(forecasts, -2) - self.np.expand_dims(forecasts, -3)
+            )
+            ** p
+        )
+        vfcts = self.np.sum(fct_diff, axis=-1) / M
         obs_diff = (
             self.np.abs(observations[..., None] - observations[..., None, :]) ** p
         )
-        out = self.np.sum(2 * (obs_diff - vfcts) ** 2, axis=(-2, -1))
+        out = self.np.sum((obs_diff - vfcts) ** 2, axis=(-2, -1))
         return out
+
+    def logs_normal(
+        self,
+        mu: ArrayLike,
+        sigma: ArrayLike,
+        obs: ArrayLike,
+        negative: bool = True,
+    ):
+        """Compute the logarithmic score for the normal distribution."""
+        constant = -1.0 if negative else 1.0
+        ω = (obs - mu) / sigma
+        prob = self._norm_pdf(ω) / sigma
+        return constant * self.np.log(prob)
 
     def _crps_ensemble_fair(self, fcts: Array, obs: Array) -> Array:
         """Fair version of the CRPS estimator based on the energy form."""
@@ -186,7 +205,7 @@ class ArrayAPIBackend(AbstractBackend):
 
     def _norm_cdf(self, x: ArrayLike) -> Array:
         """Cumulative distribution function for the standard normal distribution."""
-        return (1.0 + self.special.erf(x / self.np.sqrt(2.0))) / 2.0
+        return (1.0 + self.scipy.special.erf(x / self.np.sqrt(2.0))) / 2.0
 
     def _norm_pdf(self, x: ArrayLike) -> Array:
         """Probability density function for the standard normal distribution."""
