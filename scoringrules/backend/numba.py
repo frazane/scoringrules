@@ -15,7 +15,9 @@ from .gufuncs import (
     _crps_ensemble_qd_gufunc,
     _crps_lognormal_ufunc,
     _crps_normal_ufunc,
+    _crps_logistic_ufunc,
     _energy_score_gufunc,
+    _logs_normal_ufunc,
     _variogram_score_gufunc,
 )
 
@@ -47,6 +49,11 @@ class NumbaBackend(AbstractBackend):
             "akr_circperm",
             "fair",
         ]:
+            if hasattr(forecasts, "__dask_graph__"):
+                raise NotImplementedError(
+                    "Estimators that need sorting of the ensemble do not yet work with dask. "
+                    "Sort the ensemble beforehand or try another estimator (nrg, akr, akr_circperm or fair)"
+                )
             forecasts = np.sort(forecasts, axis=-1)
 
         if estimator == "int":
@@ -79,6 +86,20 @@ class NumbaBackend(AbstractBackend):
     ) -> Array:
         """Compute the CRPS for a log normal distribution."""
         return _crps_lognormal_ufunc(mulog, sigmalog, observation)
+    
+    @staticmethod
+    def crps_logistic(mu: ArrayLike, sigma: ArrayLike, observation: ArrayLike) -> Array:
+        """Compute the CRPS for a logistic distribution."""
+        return _crps_logistic_ufunc(mu, sigma, observation)
+
+    @staticmethod
+    def logs_normal(
+        mu: ArrayLike,
+        sigma: ArrayLike,
+        observation: ArrayLike,
+    ) -> Array:
+        """Compute the logarithmic score for a normal distribution."""
+        return _logs_normal_ufunc(mu, sigma, observation)
 
     @staticmethod
     def energy_score(
@@ -105,10 +126,16 @@ class NumbaBackend(AbstractBackend):
         forecasts: Array,
         observations: Array,
         p: float = 1.0,
-        m_axis: int = -2,
-        v_axis: int = -1,
+        m_axis: int = -1,
+        v_axis: int = -2,
     ) -> Array:
         """Compute the Variogram Score for a finite multivariate ensemble."""
+        if m_axis != -1:
+            forecasts = np.moveaxis(forecasts, m_axis, -1)
+            v_axis = v_axis - 1 if v_axis != 0 else v_axis
+        if v_axis != -2:
+            forecasts = np.moveaxis(forecasts, v_axis, -2)
+
         return _variogram_score_gufunc(forecasts, observations, p)
 
     def __repr__(self) -> str:

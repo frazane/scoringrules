@@ -32,12 +32,12 @@ sigma = abs(np.random.randn(10000)) * 0.3
 pred = np.random.randn(10000, 51) * sigma[...,None] + mu[...,None]
 
 # crps estimation for finite ensemble of 51 members
-res = sr.crps.ensemble(pred, obs)
+res = sr.crps_ensemble(pred, obs)
 print(np.mean(res))
 # >>> 0.08141540569209642
 
 # closed form solution
-res = sr.crps.normal(mu, sigma, obs)
+res = sr.crps_normal(mu, sigma, obs)
 print(np.mean(res))
 # >>> 0.08145091847731219
 ```
