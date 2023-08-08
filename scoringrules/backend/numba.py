@@ -16,9 +16,9 @@ from .gufuncs import (
     _crps_lognormal_ufunc,
     _crps_normal_ufunc,
     _crps_logistic_ufunc,
+    _owcrps_ensemble_nrg_gufunc,
     _energy_score_gufunc,
     _logs_normal_ufunc,
-    _owcrps_ensemble_nrg_gufunc,
     _variogram_score_gufunc,
 )
 
@@ -97,10 +97,14 @@ class NumbaBackend(AbstractBackend):
     def owcrps_ensemble(
         forecasts: Array,
         observations: ArrayLike,
-        w_func: tp.Callable= lambda x, *args: np.ones_like(x),
-        w_funcargs: tuple=(),
+        w_func: tp.Callable = lambda x, *args: np.ones_like(x),
+        w_funcargs: tuple = (),
+        axis=-1,
     ) -> Array:
         """Compute the Threshold-Weighted CRPS for a finite ensemble."""
+        if axis != -1:
+            forecasts = np.moveaxis(forecasts, axis, -1)
+            
         fw = w_func(forecasts, *w_funcargs)
         ow = w_func(observations, *w_funcargs)
         return _owcrps_ensemble_nrg_gufunc(forecasts, observations, fw, ow)
@@ -109,10 +113,14 @@ class NumbaBackend(AbstractBackend):
     def twcrps_ensemble(
         forecasts: Array,
         observations: ArrayLike,
-        v_func: tp.Callable= lambda x, *args: x,
-        v_funcargs: tuple=(),
+        v_func: tp.Callable = lambda x, *args: x,
+        v_funcargs: tuple = (),
+        axis=-1,
     ) -> Array:
         """Compute the Threshold-Weighted CRPS for a finite ensemble."""
+        if axis != -1:
+            forecasts = np.moveaxis(forecasts, axis, -1)
+            
         v_forecasts = v_func(forecasts, *v_funcargs)
         v_observations = v_func(observations, *v_funcargs)
         return _crps_ensemble_nrg_gufunc(v_forecasts, v_observations)

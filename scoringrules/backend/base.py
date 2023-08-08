@@ -43,6 +43,7 @@ class AbstractBackend:
         observations: ArrayLike,
         w_func: tp.Callable,
         w_funcargs: tuple,
+        axis: int = -1,
     ) -> Array:
         """Compute the Outcome-Weighted CRPS for a finite ensemble."""
         
@@ -53,6 +54,7 @@ class AbstractBackend:
         observations: ArrayLike,
         v_func: tp.Callable,
         v_funcargs: tuple,
+        axis: int = -1,
     ) -> Array:
         """Compute the Threshold-Weighted CRPS for a finite ensemble."""
         
