@@ -58,6 +58,17 @@ class AbstractBackend:
     ) -> Array:
         """Compute the Threshold-Weighted CRPS for a finite ensemble."""
         
+    @abstractmethod
+    def vrcrps_ensemble(
+        self,
+        forecasts: Array,
+        observations: ArrayLike,
+        w_func: tp.Callable,
+        w_funcargs: tuple,
+        axis: int = -1,
+    ) -> Array:
+        """Compute the Vertically Re-scaled CRPS for a finite ensemble."""
+        
     def logs_normal(
         self,
         mu: ArrayLike,

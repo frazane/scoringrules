@@ -47,7 +47,7 @@ def twcrps_ensemble(
     Returns
     -------
     twcrps: ArrayLike
-        The twCRPS between the forecast ensemble and obs for the chosen weight function.
+        The twCRPS between the forecast ensemble and obs for the chosen chaining function.
 
     Examples
     --------
@@ -119,7 +119,69 @@ def owcrps_ensemble(
     )
     
     
+def vrcrps_ensemble(
+    forecasts: Array,
+    observations: ArrayLike,
+    /,
+    w_func: tp.Callable = lambda x, *args: x,
+    w_funcargs: tuple = (),
+    *,
+    axis: int = -1,
+    backend: str = "numba",
+) -> Array:
+    r"""Estimate the Vertically Re-scaled Continuous Ranked Probability Score (vrCRPS) for a finite ensemble.
+
+    Computation is performed using the ensemble representation of the vrCRPS in
+    [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
+
+    \[
+    \begin{split}
+        \mathrm{vrCRPS}(F_{ens}, y) = & \frac{1}{M} \sum_{m = 1}^{M} |x_{m} - y|w(x_{m})w(y) - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m} - x_{j}|w(x_{m})w(x_{j}) \\
+            & + \left( \sum_{m = 1}^{M} |x_{m}| w(x_{m}) - |y| w(y) \right) \left( \sum_{m = 1}^{M} w(x_{m}) - w(y) \right),
+    \end{split}
+    \] 
+
+    where $F_{ens}(x) = \sum_{m=1}^{M} \one \{ x_{m} \leq x \}/M$ is the empirical 
+    distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
+    $M$ members, $w$ is the chosen weight function, and $\bar{w} = \sum_{m=1}^{M}w(x_{m})/M$.
+
+    Parameters
+    ----------
+    forecasts: ArrayLike
+        The predicted forecast ensemble, where the ensemble dimension is by default
+        represented by the last axis.
+    observations: ArrayLike
+        The observed values.
+    w_func: tp.Callable
+        Weight function used to emphasise particular outcomes.
+    w_funcargs: tuple
+        Additional arguments to the weight function.
+    axis: int
+        The axis corresponding to the ensemble. Default is the last axis.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    vrcrps: ArrayLike
+        The vrCRPS between the forecast ensemble and obs for the chosen weight function.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> vrcrps.ensemble(pred, obs)
+    """
+    return srb[backend].vrcrps_ensemble(
+        forecasts,
+        observations,
+        w_func,
+        w_funcargs,
+        axis=axis,
+    )
+    
+    
 __all__ = [
     "twcrps_ensemble",
     "owcrps_ensemble",
+    "vrcrps_ensemble",
 ]

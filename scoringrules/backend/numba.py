@@ -17,6 +17,7 @@ from .gufuncs import (
     _crps_normal_ufunc,
     _crps_logistic_ufunc,
     _owcrps_ensemble_nrg_gufunc,
+    _vrcrps_ensemble_nrg_gufunc,
     _energy_score_gufunc,
     _logs_normal_ufunc,
     _variogram_score_gufunc,
@@ -124,6 +125,22 @@ class NumbaBackend(AbstractBackend):
         v_forecasts = v_func(forecasts, *v_funcargs)
         v_observations = v_func(observations, *v_funcargs)
         return _crps_ensemble_nrg_gufunc(v_forecasts, v_observations)
+
+    @staticmethod
+    def vrcrps_ensemble(
+        forecasts: Array,
+        observations: ArrayLike,
+        w_func: tp.Callable = lambda x, *args: np.ones_like(x),
+        w_funcargs: tuple = (),
+        axis=-1,
+    ) -> Array:
+        """Compute the Vertically Re-scaled CRPS for a finite ensemble."""
+        if axis != -1:
+            forecasts = np.moveaxis(forecasts, axis, -1)
+            
+        fw = w_func(forecasts, *w_funcargs)
+        ow = w_func(observations, *w_funcargs)
+        return _vrcrps_ensemble_nrg_gufunc(forecasts, observations, fw, ow)
 
     @staticmethod
     def logs_normal(
