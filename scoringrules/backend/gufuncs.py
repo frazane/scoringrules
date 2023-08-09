@@ -364,7 +364,61 @@ def _energy_score_gufunc(
         for j in range(M):
             e_2 += float(np.linalg.norm(forecasts[i] - forecasts[j]))
 
-    out[0] = e_1 - 0.5 / (M * (M - 1)) * e_2
+    out[0] = e_1 / M - 0.5 / (M**2) * e_2
+    
+    
+@guvectorize(
+    [
+        "void(float32[:,:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:,:], float64[:], float64[:], float64[:], float64[:])",
+    ],
+    "(m,d),(d),(m),()->()",
+)
+def _owenergy_score_gufunc(
+    forecasts: np.ndarray, observations: np.ndarray, fw: np.ndarray, ow: np.ndarray, out: np.ndarray
+):
+    """Compute the Outcome-Weighted Energy Score for a finite ensemble."""
+    M = forecasts.shape[0]
+    ow = ow[0]
+
+    e_1 = 0.0
+    e_2 = 0.0
+    for i in range(M):
+        e_1 += float(np.linalg.norm(forecasts[i] - observations) * fw[i] * ow)
+        for j in range(M):
+            e_2 += float(np.linalg.norm(forecasts[i] - forecasts[j]) * fw[i] * fw[j] * ow)           
+
+    wbar = np.mean(fw)
+
+    out[0] = e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2)
+
+
+@guvectorize(
+    [
+        "void(float32[:,:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:,:], float64[:], float64[:], float64[:], float64[:])",
+    ],
+    "(m,d),(d),(m),()->()",
+)
+def _vrenergy_score_gufunc(
+    forecasts: np.ndarray, observations: np.ndarray, fw: np.ndarray, ow: np.ndarray, out: np.ndarray
+):
+    """Compute the Vertically Re-scaled Energy Score for a finite ensemble."""
+    M = forecasts.shape[0]
+    ow = ow[0]
+
+    e_1 = 0.0
+    e_2 = 0.0
+    for i in range(M):
+        e_1 += float(np.linalg.norm(forecasts[i] - observations) * fw[i] * ow)
+        for j in range(M):
+            e_2 += float(np.linalg.norm(forecasts[i] - forecasts[j]) * fw[i] * fw[j])
+
+    wbar = np.mean(fw)
+    wabs_x = np.mean(np.apply_along_axis(np.linalg.norm, axis=1, arr=forecasts) * fw)
+    wabs_y = np.linalg.norm(observations) * ow
+
+    out[0] = e_1 / M - 0.5 * e_2 / (M ** 2) + (wabs_x - wabs_y)*(wbar - ow)
 
 
 @vectorize(["float32(float32, float32)", "float64(float64, float64)"])
@@ -416,6 +470,8 @@ __all__ = [
     "_vrcrps_ensemble_nrg_gufunc",
     "_logs_normal_ufunc",
     "_energy_score_gufunc",
+    "_owenergy_score_gufunc",
+    "_vrenergy_score_gufunc",
     "_brier_score_ufunc",
     "_variogram_score_gufunc",
 ]

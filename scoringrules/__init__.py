@@ -4,6 +4,7 @@ from scoringrules._brier import brier_score
 from scoringrules._crps import crps_ensemble, crps_lognormal, crps_normal, crps_logistic
 from scoringrules._wcrps import owcrps_ensemble, twcrps_ensemble, vrcrps_ensemble
 from scoringrules._energy import energy_score
+from scoringrules._wenergy import owenergy_score, twenergy_score, vrenergy_score
 from scoringrules._logs import logs_normal
 from scoringrules._variogram import variogram_score
 from scoringrules.backend import register_backend
@@ -23,5 +24,8 @@ __all__ = [
     "logs_normal",
     "brier_score",
     "energy_score",
+    "owenergy_score",
+    "twenergy_score",
+    "vrenergy_score",
     "variogram_score",
 ]

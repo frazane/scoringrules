@@ -137,7 +137,7 @@ def vrcrps_ensemble(
     \[
     \begin{split}
         \mathrm{vrCRPS}(F_{ens}, y) = & \frac{1}{M} \sum_{m = 1}^{M} |x_{m} - y|w(x_{m})w(y) - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m} - x_{j}|w(x_{m})w(x_{j}) \\
-            & + \left( \sum_{m = 1}^{M} |x_{m}| w(x_{m}) - |y| w(y) \right) \left( \sum_{m = 1}^{M} w(x_{m}) - w(y) \right),
+            & + \left( \frac{1}{M} \sum_{m = 1}^{M} |x_{m}| w(x_{m}) - |y| w(y) \right) \left( \frac{1}{M} \sum_{m = 1}^{M} w(x_{m}) - w(y) \right),
     \end{split}
     \] 
 

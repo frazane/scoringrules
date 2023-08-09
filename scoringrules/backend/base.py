@@ -82,6 +82,24 @@ class AbstractBackend:
         self, fcts: Array, obs: Array, m_axis: int = -2, v_axis: int = -1
     ) -> Array:
         """Compute the Energy Score for a multivariate finite ensemble."""
+        
+    @abstractmethod
+    def owenergy_score(
+        self, fcts: Array, obs: Array, w_func: tp.Callable, w_funcargs: tuple, m_axis: int = -2, v_axis: int = -1
+    ) -> Array:
+        """Compute the Outcome-Weighted Energy Score for a multivariate finite ensemble."""
+        
+    @abstractmethod
+    def twenergy_score(
+        self, fcts: Array, obs: Array, v_func: tp.Callable, v_funcargs: tuple, m_axis: int = -2, v_axis: int = -1
+    ) -> Array:
+        """Compute the Threshold-Weighted Energy Score for a multivariate finite ensemble."""
+        
+    @abstractmethod
+    def vrenergy_score(
+        self, fcts: Array, obs: Array, w_func: tp.Callable, w_funcargs: tuple, m_axis: int = -2, v_axis: int = -1
+    ) -> Array:
+        """Compute the Vertically Re-scaled Energy Score for a multivariate finite ensemble."""
 
     @abstractmethod
     def variogram_score(

@@ -19,6 +19,8 @@ from .gufuncs import (
     _owcrps_ensemble_nrg_gufunc,
     _vrcrps_ensemble_nrg_gufunc,
     _energy_score_gufunc,
+    _owenergy_score_gufunc,
+    _vrenergy_score_gufunc,
     _logs_normal_ufunc,
     _variogram_score_gufunc,
 )
@@ -165,6 +167,68 @@ class NumbaBackend(AbstractBackend):
             forecasts = np.moveaxis(forecasts, v_axis, -1)
             observations = np.moveaxis(observations, v_axis, -1)
         return _energy_score_gufunc(forecasts, observations)
+
+    @staticmethod
+    def owenergy_score(
+        forecasts: Array,
+        observations: Array,
+        w_func: tp.Callable = lambda x, *args: 1.0,
+        w_funcargs: tuple = (),
+        m_axis: int = -2,
+        v_axis: int = -1,
+    ) -> Array:
+        """Compute the Outcome-Weighted Energy Score for a finite multivariate ensemble."""
+        if m_axis != -2:
+            forecasts = np.moveaxis(forecasts, m_axis, -2)
+        if v_axis != -1:
+            forecasts = np.moveaxis(forecasts, v_axis, -1)
+            observations = np.moveaxis(observations, v_axis, -1)
+
+        w_func_wrap = lambda x: w_func(x, *w_funcargs)
+        fw = np.apply_along_axis(w_func_wrap, axis=-1, arr=forecasts)
+        ow = np.apply_along_axis(w_func_wrap, axis=0, arr=observations,)
+        return _owenergy_score_gufunc(forecasts, observations, fw, ow)
+
+    @staticmethod
+    def twenergy_score(
+        forecasts: Array,
+        observations: Array,
+        v_func: tp.Callable = lambda x, *args: x,
+        v_funcargs: tuple = (),
+        m_axis: int = -2,
+        v_axis: int = -1,
+    ) -> Array:
+        """Compute the Threshold-Weighted Energy Score for a finite multivariate ensemble."""
+        if m_axis != -2:
+            forecasts = np.moveaxis(forecasts, m_axis, -2)
+        if v_axis != -1:
+            forecasts = np.moveaxis(forecasts, v_axis, -1)
+            observations = np.moveaxis(observations, v_axis, -1)
+            
+        v_forecasts = v_func(forecasts, *v_funcargs)
+        v_observations = v_func(observations, *v_funcargs)
+        return _energy_score_gufunc(v_forecasts, v_observations)
+    
+    @staticmethod
+    def vrenergy_score(
+        forecasts: Array,
+        observations: Array,
+        w_func: tp.Callable = lambda x, *args: 1.0,
+        w_funcargs: tuple = (),
+        m_axis: int = -2,
+        v_axis: int = -1,
+    ) -> Array:
+        """Compute the Vertically Re-scaled Energy Score for a finite multivariate ensemble."""
+        if m_axis != -2:
+            forecasts = np.moveaxis(forecasts, m_axis, -2)
+        if v_axis != -1:
+            forecasts = np.moveaxis(forecasts, v_axis, -1)
+            observations = np.moveaxis(observations, v_axis, -1)
+            
+        w_func_wrap = lambda x: w_func(x, *w_funcargs)
+        fw = np.apply_along_axis(w_func_wrap, axis=-1, arr=forecasts)
+        ow = np.apply_along_axis(w_func_wrap, axis=0, arr=observations,)
+        return _vrenergy_score_gufunc(forecasts, observations, fw, ow)
 
     @staticmethod
     def brier_score(forecasts: ArrayLike, observations: ArrayLike) -> Array:
