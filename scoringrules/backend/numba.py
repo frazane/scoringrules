@@ -102,7 +102,7 @@ class NumbaBackend(AbstractBackend):
         w_funcargs: tuple = (),
         axis=-1,
     ) -> Array:
-        """Compute the Threshold-Weighted CRPS for a finite ensemble."""
+        """Compute the Outcome-Weighted CRPS for a finite ensemble."""
         if axis != -1:
             forecasts = np.moveaxis(forecasts, axis, -1)
             

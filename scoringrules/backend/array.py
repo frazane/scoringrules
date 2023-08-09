@@ -1,7 +1,7 @@
 from types import ModuleType
-from typing import TypeVar
 
 import numpy as np
+import typing as tp
 
 from .arrayapi import Array, ArrayAPIProtocol
 from .base import AbstractBackend
@@ -9,7 +9,7 @@ from .base import AbstractBackend
 INV_SQRT_PI = 1 / np.sqrt(np.pi)
 EPSILON = 1e-6
 
-ArrayLike = TypeVar("ArrayLike", Array, float)
+ArrayLike = tp.TypeVar("ArrayLike", Array, float)
 
 
 class ArrayAPIBackend(AbstractBackend):
@@ -93,6 +93,69 @@ class ArrayAPIBackend(AbstractBackend):
         """Compute the CRPS for the normal distribution."""
         ω = (obs - mu) / sigma
         return sigma * (ω - 2 * self.np.log(self._logis_cdf(ω)) - 1)
+
+    def owcrps_ensemble(
+        self,
+        fcts: Array,
+        obs: ArrayLike,
+        w_func: tp.Callable = lambda x, *args: np.ones_like(x),
+        w_funcargs: tuple = (),
+        axis: int = -1,
+    ) -> Array:
+        """Compute the Outcome-Weighted CRPS for a finite ensemble."""
+        obs: Array = self.np.asarray(obs)
+
+        if axis != -1:
+            fcts = self.np.moveaxis(fcts, axis, -1)
+
+        fw = w_func(fcts, *w_funcargs)
+        ow = w_func(obs, *w_funcargs)
+
+        out = self._owcrps_ensemble_nrg(fcts, obs, fw, ow)
+
+        return out
+    
+    def twcrps_ensemble(
+        self,
+        fcts: Array,
+        obs: ArrayLike,
+        v_func: tp.Callable = lambda x, *args: x,
+        v_funcargs: tuple = (),
+        axis: int = -1,
+    ) -> Array:
+        """Compute the Threshold-Weighted CRPS for a finite ensemble."""
+        obs: Array = self.np.asarray(obs)
+
+        if axis != -1:
+            fcts = self.np.moveaxis(fcts, axis, -1)
+            
+        v_fcts = v_func(fcts, *v_funcargs)
+        v_obs = v_func(obs, *v_funcargs)
+
+        out = self._crps_ensemble_nrg(v_fcts, v_obs)
+
+        return out
+    
+    def vrcrps_ensemble(
+        self,
+        fcts: Array,
+        obs: ArrayLike,
+        w_func: tp.Callable = lambda x, *args: np.ones_like(x),
+        w_funcargs: tuple = (),
+        axis: int = -1,
+    ) -> Array:
+        """Compute the Vertically Re-scaled CRPS for a finite ensemble."""
+        obs: Array = self.np.asarray(obs)
+
+        if axis != -1:
+            fcts = self.np.moveaxis(fcts, axis, -1)
+            
+        fw = w_func(fcts, *w_funcargs)
+        ow = w_func(obs, *w_funcargs)
+
+        out = self._vrcrps_ensemble_nrg(fcts, obs, fw, ow)
+
+        return out
 
     def energy_score(self, fcts: Array, obs: Array, m_axis=-2, v_axis=-1) -> Array:
         """
@@ -202,6 +265,34 @@ class ArrayAPIBackend(AbstractBackend):
         β_0 = self.np.sum(fcts, axis=-1) / M
         β_1 = self.np.sum(fcts * self.np.arange(M), axis=-1) / (M * (M - 1))
         return expected_diff + β_0 - 2.0 * β_1
+
+    def _owcrps_ensemble_nrg(self, fcts: Array, obs: Array, fw: Array, ow: Array) -> Array:
+        """Outcome-Weighted CRPS estimator based on the energy form."""
+        M: int = fcts.shape[-1]
+        wbar = self.np.mean(fw, axis=1)
+        e_1 = self.np.sum(self.np.abs(obs[..., None] - fcts) * fw, axis=-1) * ow / (M * wbar)
+        e_2 = self.np.sum(
+            self.np.abs(
+                self.np.expand_dims(fcts * fw, axis=-1) - self.np.expand_dims(fcts * fw, axis=-2)
+            ),
+            axis=(-1, -2),
+        ) 
+        e_2 *= ow / (M**2 * wbar**2)
+        return e_1 - 0.5 * e_2
+    
+    def _vrcrps_ensemble_nrg(self, fcts: Array, obs: Array, fw: Array, ow: Array) -> Array:
+        """Vertically Re-scaled CRPS estimator based on the energy form."""
+        M: int = fcts.shape[-1]
+        e_1 = self.np.sum(self.np.abs(obs[..., None] - fcts) * fw, axis=-1) * ow / M
+        e_2 = self.np.sum(
+            self.np.abs(
+                self.np.expand_dims(fcts * fw, axis=-1) - self.np.expand_dims(fcts * fw, axis=-2)
+            ),
+            axis=(-1, -2),
+        ) / (M**2)
+        e_3 = (self.np.mean(self.np.abs(fcts) * fw, axis=-1) - obs[..., None] * ow[..., None])
+        e_3 *= (self.np.mean(fw, axis=1) - ow)
+        return e_1 - 0.5 * e_2 + e_3
 
     def _norm_cdf(self, x: ArrayLike) -> Array:
         """Cumulative distribution function for the standard normal distribution."""
