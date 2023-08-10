@@ -439,20 +439,88 @@ def _brier_score_ufunc(forecast, observation):
         "void(float32[:,:], float32[:], float32, float32[:])",
         "void(float64[:,:], float64[:], float64, float64[:])",
     ],
-    "(d,m),(d),()->()",
+    "(m,d),(d),()->()",
 )
 def _variogram_score_gufunc(forecasts, observation, p, out):
-    D = forecasts.shape[-2]
-    M = forecasts.shape[-1]
+    M = forecasts.shape[-2]
+    D = forecasts.shape[-1]
     out[0] = 0.0
     for i in range(D):
         for j in range(D):
             vfcts = 0.0
             for m in range(M):
-                vfcts += abs(forecasts[i, m] - forecasts[j, m]) ** p
+                vfcts += abs(forecasts[m, i] - forecasts[m, j]) ** p
             vfcts = vfcts / M
             vobs = abs(observation[i] - observation[j]) ** p
             out[0] += (vobs - vfcts) ** 2
+            
+
+@guvectorize(
+    [
+        "void(float32[:,:], float32[:], float32, float32[:], float32[:], float32[:])",
+        "void(float64[:,:], float64[:], float64, float64[:], float64[:], float64[:])",
+    ],
+    "(m,d),(d),(),(m),()->()",
+)
+def _owvariogram_score_gufunc(forecasts, observation, p, fw, ow, out):
+    M = forecasts.shape[-2]
+    
+    def vs_kern(x1, x2, p):
+        rho = 0.0
+        d = len(x1)
+        for i in range(d):
+            for j in range(d):   
+                rho1 = abs(x1[i] - x1[j]) ** p
+                rho2 = abs(x2[i] - x2[j]) ** p
+                rho += (rho1 - rho2) ** 2
+        return rho
+    
+    e_1 = 0.0
+    e_2 = 0.0
+    for k in range(M):
+        e_1 += vs_kern(forecasts[k], observation, p) * fw[k] * ow
+        for m in range(M):
+            e_2 += vs_kern(forecasts[k], forecasts[m], p) * fw[k] * fw[m] * ow           
+
+    wbar = np.mean(fw)
+
+    out[0] = e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2)
+    
+
+@guvectorize(
+    [
+        "void(float32[:,:], float32[:], float32, float32[:], float32[:], float32[:])",
+        "void(float64[:,:], float64[:], float64, float64[:], float64[:], float64[:])",
+    ],
+    "(m,d),(d),(),(m),()->()",
+)
+def _vrvariogram_score_gufunc(forecasts, observation, p, fw, ow, out):
+    M = forecasts.shape[-2]
+    D = forecasts.shape[-1]
+        
+    def vs_kern(x1, x2, p):
+        rho = 0.0
+        d = len(x1)
+        for i in range(d):
+            for j in range(d):   
+                rho1 = abs(x1[i] - x1[j]) ** p
+                rho2 = abs(x2[i] - x2[j]) ** p
+                rho += (rho1 - rho2) ** 2
+        return rho
+    
+    e_1 = 0.0
+    e_2 = 0.0
+    e_3_x = 0.0
+    for k in range(M):
+        e_1 += vs_kern(forecasts[k], observation, p) * fw[k] * ow
+        e_3_x += vs_kern(forecasts[k], np.zeros(D), p) * fw[k] * fw[k] / M
+        for m in range(M):
+            e_2 += vs_kern(forecasts[k], forecasts[m], p) * fw[k] * fw[m]
+
+    wbar = np.mean(fw)
+    e_3_y = vs_kern(observation, np.zeros(D), p) * ow
+
+    out[0] = e_1 / M - 0.5 * e_2 / (M ** 2) + (e_3_x - e_3_y)*(wbar - ow)
 
 
 __all__ = [
@@ -474,4 +542,6 @@ __all__ = [
     "_vrenergy_score_gufunc",
     "_brier_score_ufunc",
     "_variogram_score_gufunc",
+    "_owvariogram_score_gufunc",
+    "_vrvariogram_score_gufunc",
 ]

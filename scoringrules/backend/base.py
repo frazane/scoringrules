@@ -111,6 +111,45 @@ class AbstractBackend:
         v_axisc: int = -1,
     ) -> Array:
         """Compute the Variogram Score for a multivariate finite ensemble."""
+        
+    @abstractmethod
+    def owvariogram_score(
+        self,
+        fcts: Array,
+        obs: Array,
+        w_func: tp.Callable, 
+        w_funcargs: tuple,
+        p: float = 1.0,
+        m_axis: int = -2,
+        v_axisc: int = -1,
+    ) -> Array:
+        """Compute the Outcome-Weighted Variogram Score for a multivariate finite ensemble."""
+        
+    @abstractmethod
+    def twvariogram_score(
+        self,
+        fcts: Array,
+        obs: Array,
+        v_func: tp.Callable, 
+        v_funcargs: tuple,
+        p: float = 1.0,
+        m_axis: int = -2,
+        v_axisc: int = -1,
+    ) -> Array:
+        """Compute the Threshold-Weighted Variogram Score for a multivariate finite ensemble."""
+        
+    @abstractmethod
+    def vrvariogram_score(
+        self,
+        fcts: Array,
+        obs: Array,
+        w_func: tp.Callable, 
+        w_funcargs: tuple,
+        p: float = 1.0,
+        m_axis: int = -2,
+        v_axisc: int = -1,
+    ) -> Array:
+        """Compute the Vertically Re-scaled Variogram Score for a multivariate finite ensemble."""
 
     @abstractmethod
     def brier_score(self, fcts: ArrayLike, obs: ArrayLike) -> Array:
