@@ -24,7 +24,7 @@ def twcrps_ensemble(
 
     $$ \mathrm{twCRPS}(F_{ens}, y) = \frac{1}{M} \sum_{m = 1}^{M} |v(x_{m}) - v(y)| - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |v(x_{m}) - v(x_{j})|,$$
 
-    where $F_{ens}(x) = \sum_{m=1}^{M} \one \{ x_{m} \leq x \}/M$ is the empirical 
+    where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical 
     distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
     $M$ members, and $v$ is the chaining function used to target particular outcomes.
 
@@ -80,7 +80,7 @@ def owcrps_ensemble(
 
     $$ \mathrm{owCRPS}(F_{ens}, y) = \frac{1}{M \bar{w}} \sum_{m = 1}^{M} |x_{m} - y|w(x_{m})w(y) - \frac{1}{2 M^{2} \bar{w}^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m} - x_{j}|w(x_{m})w(x_{j})w(y),$$
 
-    where $F_{ens}(x) = \sum_{m=1}^{M} \one \{ x_{m} \leq x \}/M$ is the empirical 
+    where $F_{ens}(x) = \sum_{m=1}^{M} 1\{ x_{m} \leq x \}/M$ is the empirical 
     distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
     $M$ members, $w$ is the chosen weight function, and $\bar{w} = \sum_{m=1}^{M}w(x_{m})/M$.
 
@@ -141,7 +141,7 @@ def vrcrps_ensemble(
     \end{split}
     \] 
 
-    where $F_{ens}(x) = \sum_{m=1}^{M} \one \{ x_{m} \leq x \}/M$ is the empirical 
+    where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical 
     distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
     $M$ members, $w$ is the chosen weight function, and $\bar{w} = \sum_{m=1}^{M}w(x_{m})/M$.
 
