@@ -156,7 +156,7 @@ class ArrayAPIBackend(AbstractBackend):
         out = self._vrcrps_ensemble_nrg(fcts, obs, fw, ow)
 
         return out
-
+    
     def energy_score(self, fcts: Array, obs: Array, m_axis=-2, v_axis=-1) -> Array:
         """
         Compute the energy score based on a finite ensemble.
@@ -182,6 +182,29 @@ class ArrayAPIBackend(AbstractBackend):
             M * (M - 1)
         )
         return self.np.squeeze(E_1 - 0.5 * E_2)
+    
+    def twenergy_score(
+        self,
+        fcts: Array,
+        obs: Array,
+        v_func: tp.Callable = lambda x, *args: x,
+        v_funcargs: tuple = (),
+        m_axis=-2,
+        v_axis=-1
+    ) -> Array:
+        """
+        Compute the threshold-weighted energy score based on a finite ensemble.
+        """
+        if m_axis != -2:
+            fcts = self.np.moveaxis(fcts, m_axis, -2)
+            v_axis = v_axis - 1 if v_axis != 0 else v_axis
+        if v_axis != -1:
+            fcts = self.np.moveaxis(fcts, v_axis, -1)
+            obs = self.np.moveaxis(obs, v_axis, -1)
+        
+        v_fcts = v_func(fcts, *v_funcargs)
+        v_obs = v_func(obs, *v_funcargs)
+        return self.energy_score(v_fcts, v_obs)
 
     def brier_score(self, fcts: ArrayLike, obs: ArrayLike) -> Array:
         """Compute the Brier Score for predicted probabilities of events."""
@@ -198,15 +221,15 @@ class ArrayAPIBackend(AbstractBackend):
         forecasts: Array,
         observations: Array,
         p: float = 1,
-        m_axis: int = -1,
-        v_axis: int = -2,
+        m_axis: int = -2,
+        v_axis: int = -1,
     ) -> Array:
         """Compute the Variogram Score for a multivariate finite ensemble."""
-        if m_axis != -1:
-            forecasts = self.np.moveaxis(forecasts, m_axis, -1)
+        if m_axis != -2:
+            forecasts = self.np.moveaxis(forecasts, m_axis, -2)
             v_axis = v_axis - 1 if v_axis != 0 else v_axis
-        if v_axis != -2:
-            forecasts = self.np.moveaxis(forecasts, v_axis, -2)
+        if v_axis != -1:
+            forecasts = self.np.moveaxis(forecasts, v_axis, -1)
             observations = self.np.moveaxis(observations, v_axis, -1)
 
         M: int = forecasts.shape[-1]
@@ -222,6 +245,28 @@ class ArrayAPIBackend(AbstractBackend):
         )
         out = self.np.sum((obs_diff - vfcts) ** 2, axis=(-2, -1))
         return out
+    
+    def twvariogram_score(
+        self,
+        forecasts: Array,
+        observations: Array,
+        v_func: tp.Callable = lambda x, *args: x,
+        v_funcargs: tuple = (),
+        p: float = 1,
+        m_axis: int = -2,
+        v_axis: int = -1,
+    ) -> Array:
+        """Compute the Threshold-Weighted Variogram Score for a multivariate finite ensemble."""
+        if m_axis != -2:
+            forecasts = self.np.moveaxis(forecasts, m_axis, -2)
+            v_axis = v_axis - 1 if v_axis != 0 else v_axis
+        if v_axis != -1:
+            forecasts = self.np.moveaxis(forecasts, v_axis, -1)
+            observations = self.np.moveaxis(observations, v_axis, -1)
+
+        v_fcts = v_func(forecasts, *v_funcargs)
+        v_obs = v_func(observations, *v_funcargs)
+        return self.variogram_score(v_fcts, v_obs, p)
 
     def logs_normal(
         self,
