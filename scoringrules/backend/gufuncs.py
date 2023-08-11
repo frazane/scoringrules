@@ -338,7 +338,7 @@ def _vrcrps_ensemble_nrg_gufunc(
             e_2 += abs(x_i - x_j) * fw[i] * fw[j]
 
     wbar = np.mean(fw)
-    wabs_x = np.mean(abs(forecasts) * fw)
+    wabs_x = np.mean(np.abs(forecasts) * fw)
     wabs_y = abs(obs) * ow
 
     out[0] = e_1 / M - 0.5 * e_2 / (M ** 2) + (wabs_x - wabs_y)*(wbar - ow)
@@ -409,13 +409,15 @@ def _vrenergy_score_gufunc(
 
     e_1 = 0.0
     e_2 = 0.0
+    wabs_x = 0.0
     for i in range(M):
         e_1 += float(np.linalg.norm(forecasts[i] - observations) * fw[i] * ow)
+        wabs_x += np.linalg.norm(forecasts[i]) * fw[i]
         for j in range(M):
             e_2 += float(np.linalg.norm(forecasts[i] - forecasts[j]) * fw[i] * fw[j])
 
+    wabs_x = wabs_x / M
     wbar = np.mean(fw)
-    wabs_x = np.mean(np.apply_along_axis(np.linalg.norm, axis=1, arr=forecasts) * fw)
     wabs_y = np.linalg.norm(observations) * ow
 
     out[0] = e_1 / M - 0.5 * e_2 / (M ** 2) + (wabs_x - wabs_y)*(wbar - ow)
@@ -453,34 +455,33 @@ def _variogram_score_gufunc(forecasts, observation, p, out):
             vfcts = vfcts / M
             vobs = abs(observation[i] - observation[j]) ** p
             out[0] += (vobs - vfcts) ** 2
-            
+
 
 @guvectorize(
     [
-        "void(float32[:,:], float32[:], float32, float32[:], float32[:], float32[:])",
-        "void(float64[:,:], float64[:], float64, float64[:], float64[:], float64[:])",
+        "void(float32[:,:], float32[:], float32, float32[:], float32, float32[:])",
+        "void(float64[:,:], float64[:], float64, float64[:], float64, float64[:])",
     ],
     "(m,d),(d),(),(m),()->()",
 )
 def _owvariogram_score_gufunc(forecasts, observation, p, fw, ow, out):
     M = forecasts.shape[-2]
-    
-    def vs_kern(x1, x2, p):
-        rho = 0.0
-        d = len(x1)
-        for i in range(d):
-            for j in range(d):   
-                rho1 = abs(x1[i] - x1[j]) ** p
-                rho2 = abs(x2[i] - x2[j]) ** p
-                rho += (rho1 - rho2) ** 2
-        return rho
-    
+    D = forecasts.shape[-1]
+        
     e_1 = 0.0
     e_2 = 0.0
     for k in range(M):
-        e_1 += vs_kern(forecasts[k], observation, p) * fw[k] * ow
-        for m in range(M):
-            e_2 += vs_kern(forecasts[k], forecasts[m], p) * fw[k] * fw[m] * ow           
+        for i in range(D):
+            for j in range(D):   
+                rho1 = abs(forecasts[k, i] - forecasts[k, j]) ** p
+                rho2 = abs(observation[i] - observation[j]) ** p
+                e_1 += (rho1 - rho2) ** 2 * fw[k] * ow
+        for m in range(M): 
+            for i in range(D):
+                for j in range(D):   
+                    rho1 = abs(forecasts[k, i] - forecasts[k, j]) ** p
+                    rho2 = abs(forecasts[m, i] - forecasts[m, j]) ** p
+                    e_2 += (rho1 - rho2) ** 2 * fw[k] * fw[m] * ow  
 
     wbar = np.mean(fw)
 
@@ -489,36 +490,39 @@ def _owvariogram_score_gufunc(forecasts, observation, p, fw, ow, out):
 
 @guvectorize(
     [
-        "void(float32[:,:], float32[:], float32, float32[:], float32[:], float32[:])",
-        "void(float64[:,:], float64[:], float64, float64[:], float64[:], float64[:])",
+        "void(float32[:,:], float32[:], float32, float32[:], float32, float32[:])",
+        "void(float64[:,:], float64[:], float64, float64[:], float64, float64[:])",
     ],
     "(m,d),(d),(),(m),()->()",
 )
 def _vrvariogram_score_gufunc(forecasts, observation, p, fw, ow, out):
     M = forecasts.shape[-2]
     D = forecasts.shape[-1]
-        
-    def vs_kern(x1, x2, p):
-        rho = 0.0
-        d = len(x1)
-        for i in range(d):
-            for j in range(d):   
-                rho1 = abs(x1[i] - x1[j]) ** p
-                rho2 = abs(x2[i] - x2[j]) ** p
-                rho += (rho1 - rho2) ** 2
-        return rho
     
     e_1 = 0.0
     e_2 = 0.0
     e_3_x = 0.0
     for k in range(M):
-        e_1 += vs_kern(forecasts[k], observation, p) * fw[k] * ow
-        e_3_x += vs_kern(forecasts[k], np.zeros(D), p) * fw[k] * fw[k] / M
+        for i in range(D):
+            for j in range(D):   
+                rho1 = abs(forecasts[k, i] - forecasts[k, j]) ** p
+                rho2 = abs(observation[i] - observation[j]) ** p
+                e_1 += (rho1 - rho2) ** 2 * fw[k] * ow
+                e_3_x += (rho1) ** 2 * fw[k]
         for m in range(M):
-            e_2 += vs_kern(forecasts[k], forecasts[m], p) * fw[k] * fw[m]
+            for i in range(D):
+                for j in range(D):   
+                    rho1 = abs(forecasts[k, i] - forecasts[k, j]) ** p
+                    rho2 = abs(forecasts[m, i] - forecasts[m, j]) ** p
+                    e_2 += (rho1 - rho2) ** 2 * fw[k] * fw[m]
 
+    e_3_x *= 1/M
     wbar = np.mean(fw)
-    e_3_y = vs_kern(observation, np.zeros(D), p) * ow
+    e_3_y = 0.0
+    for i in range(D):
+        for j in range(D):   
+            rho1 = abs(observation[i] - observation[j]) ** p
+            e_3_y += (rho1) ** 2 * ow
 
     out[0] = e_1 / M - 0.5 * e_2 / (M ** 2) + (e_3_x - e_3_y)*(wbar - ow)
 
