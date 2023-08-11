@@ -1,0 +1,1 @@
+# Variogram Score [@scheuerer_variogram-based_2015]

@@ -11,9 +11,16 @@ nav:
       - api/crps/index.md
       - Ensemble-based estimation: api/crps/ensemble.md
       - Analytical formulations: api/crps/analytical.md
+      - Weighted versions: api/crps/weighted.md
     - Logarithmic Score: api/logarithmic.md
-    - Energy Score: api/energy.md
+    - Energy Score: 
+      - api/energy/index.md
+      - Ensemble-based estimation: api/energy/ensemble.md
+      - Weighted versions: api/energy/weighted.md
     - Variogram Score: api/variogram.md
+      - api/variogram/index.md
+      - Ensemble-based estimation: api/variogram/ensemble.md
+      - Weighted versions: api/variogram/weighted.md
 
 
 theme:

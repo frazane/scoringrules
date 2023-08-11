@@ -1,0 +1,1 @@
+::: scoringrules.variogram_score
