@@ -17,7 +17,7 @@ nav:
       - api/energy/index.md
       - Ensemble-based estimation: api/energy/ensemble.md
       - Weighted versions: api/energy/weighted.md
-    - Variogram Score: api/variogram.md
+    - Variogram Score: 
       - api/variogram/index.md
       - Ensemble-based estimation: api/variogram/ensemble.md
       - Weighted versions: api/variogram/weighted.md
