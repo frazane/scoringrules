@@ -141,7 +141,7 @@ class NumbaBackend(AbstractBackend):
         """Compute the Vertically Re-scaled CRPS for a finite ensemble."""
         if axis != -1:
             forecasts = np.moveaxis(forecasts, axis, -1)
-            
+
         fw = w_func(forecasts, *w_funcargs)
         ow = w_func(observations, *w_funcargs)
         return _vrcrps_ensemble_nrg_gufunc(forecasts, observations, fw, ow)

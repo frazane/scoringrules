@@ -123,7 +123,7 @@ def vrcrps_ensemble(
     forecasts: Array,
     observations: ArrayLike,
     /,
-    w_func: tp.Callable = lambda x, *args: x,
+    w_func: tp.Callable = lambda x, *args: np.ones_like(x),
     w_funcargs: tuple = (),
     *,
     axis: int = -1,
