@@ -102,7 +102,7 @@ def test_twcrps_score_correctness(backend):
     np.testing.assert_allclose(res, 0.09489662, rtol=1e-6)
 
     def v_func(x, t):
-        return np.maximum(x, t)
+        return np.minimum(x, t)
 
     t = 1.85
     res = np.mean(twcrps_ensemble(fcts, obs, v_func, (t,), backend=backend))
