@@ -44,8 +44,8 @@ def test_variogram_score_correctness(backend):
 
     obs = np.array([0.2743836, 0.8146400])
 
-    res = variogram_score(fcts, obs, p=0.5, backend=backend)
+    res = variogram_score(fcts.T, obs, p=0.5, backend=backend)
     np.testing.assert_allclose(res, 0.05083489, rtol=1e-5)
 
-    res = variogram_score(fcts, obs, p=1.0, backend=backend)
+    res = variogram_score(fcts.T, obs, p=1.0, backend=backend)
     np.testing.assert_allclose(res, 0.04856365, rtol=1e-5)
