@@ -183,6 +183,39 @@ class ArrayAPIBackend(AbstractBackend):
         )
         return self.np.squeeze(E_1 - 0.5 * E_2)
     
+    def owenergy_score(
+        self,
+        fcts: Array,
+        obs: Array,
+        w_func: tp.Callable = lambda x, *args: 1.0,
+        w_funcargs: tuple = (),
+        m_axis=-2, 
+        v_axis=-1,
+    ) -> Array:
+        """Compute the outcome-weighted energy score based on a finite ensemble."""
+        M: int = fcts.shape[m_axis]
+
+        w_func_wrap = lambda x: w_func(x, *w_funcargs)
+        fw = self.np.apply_along_axis(w_func_wrap, axis=-1, arr=fcts)
+        ow = self.np.apply_along_axis(w_func_wrap, axis=0, arr=obs)
+        wbar = self.np.mean(fw)
+
+        err_norm = self.np.linalg.norm(
+            fcts - self.np.expand_dims(obs, axis=m_axis), axis=v_axis, keepdims=True
+        )
+        E_1 = self.np.sum(err_norm * self.np.expand_dims(fw, axis=v_axis) * ow, axis=m_axis) / (M * wbar)
+
+        ens_diff = self.np.expand_dims(fcts, axis=m_axis) - self.np.expand_dims(
+            fcts, axis=m_axis - 1
+        )
+        spread_norm = self.np.linalg.norm(ens_diff, axis=v_axis, keepdims=True)
+        
+        fw_diff = self.np.expand_dims(fw, axis=m_axis)*self.np.expand_dims(fw, axis=v_axis)
+        E_2 = self.np.sum(spread_norm * self.np.expand_dims(fw_diff, axis=-1) * ow,
+                          axis=(m_axis, m_axis - 1),
+                          keepdims=True) / (M**2 + wbar**2)
+        return self.np.squeeze(E_1 - 0.5 * E_2)
+    
     def twenergy_score(
         self,
         fcts: Array,
@@ -205,6 +238,42 @@ class ArrayAPIBackend(AbstractBackend):
         v_fcts = v_func(fcts, *v_funcargs)
         v_obs = v_func(obs, *v_funcargs)
         return self.energy_score(v_fcts, v_obs)
+    
+    def vrenergy_score(
+        self,
+        fcts: Array,
+        obs: Array,
+        w_func: tp.Callable = lambda x, *args: 1.0,
+        w_funcargs: tuple = (),
+        m_axis=-2, 
+        v_axis=-1,
+    ) -> Array:
+        """Compute the vertically re-scaled energy score based on a finite ensemble."""
+        M: int = fcts.shape[m_axis]
+
+        w_func_wrap = lambda x: w_func(x, *w_funcargs)
+        fw = self.np.apply_along_axis(w_func_wrap, axis=-1, arr=fcts)
+        ow = self.np.apply_along_axis(w_func_wrap, axis=0, arr=obs)
+
+        err_norm = self.np.linalg.norm(
+            fcts - self.np.expand_dims(obs, axis=m_axis), axis=v_axis, keepdims=True
+        )
+        E_1 = self.np.sum(err_norm * self.np.expand_dims(fw, axis=v_axis) * ow, axis=m_axis) / M
+
+        ens_diff = self.np.expand_dims(fcts, axis=m_axis) - self.np.expand_dims(
+            fcts, axis=m_axis - 1
+        )
+        spread_norm = self.np.linalg.norm(ens_diff, axis=v_axis, keepdims=True)
+        
+        fw_diff = self.np.expand_dims(fw, axis=m_axis)*self.np.expand_dims(fw, axis=v_axis)
+        E_2 = self.np.sum(spread_norm * self.np.expand_dims(fw_diff, axis=-1),
+                          axis=(m_axis, m_axis - 1),
+                          keepdims=True) / (M ** 2)
+        
+        wbar = self.np.mean(fw)
+        rhobar = self.np.mean(self.np.linalg.norm(fcts, axis=v_axis) * fw)
+        E_3 = (rhobar - self.np.linalg.norm(obs) * ow) * (wbar - ow)
+        return self.np.squeeze(E_1 - 0.5 * E_2 + E_3)
 
     def brier_score(self, fcts: ArrayLike, obs: ArrayLike) -> Array:
         """Compute the Brier Score for predicted probabilities of events."""
