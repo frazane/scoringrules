@@ -315,6 +315,52 @@ class ArrayAPIBackend(AbstractBackend):
         out = self.np.sum((obs_diff - vfcts) ** 2, axis=(-2, -1))
         return out
     
+    def owvariogram_score(
+        self,
+        forecasts: Array,
+        observations: Array,
+        p: float = 1,
+        w_func: tp.Callable = lambda x, *args: 1.0,
+        w_funcargs: tuple = (),
+        m_axis: int = -2,
+        v_axis: int = -1,
+    ) -> Array:
+        """Compute the Outcome-Weighted Variogram Score for a multivariate finite ensemble."""
+        if m_axis != -2:
+            forecasts = self.np.moveaxis(forecasts, m_axis, -2)
+            v_axis = v_axis - 1 if v_axis != 0 else v_axis
+        if v_axis != -1:
+            forecasts = self.np.moveaxis(forecasts, v_axis, -1)
+            observations = self.np.moveaxis(observations, v_axis, -1)
+
+        w_func_wrap = lambda x: w_func(x, *w_funcargs)
+        fw = self.np.apply_along_axis(w_func_wrap, axis=-1, arr=forecasts)
+        ow = self.np.apply_along_axis(w_func_wrap, axis=0, arr=observations)
+        wbar = self.np.mean(fw)
+
+        M: int = forecasts.shape[-1]
+        fct_diff = (
+            self.np.abs(
+                self.np.expand_dims(forecasts, v_axis) - self.np.expand_dims(forecasts, m_axis)
+            )
+            ** p
+        )
+        fct_diff = self.np.transpose(fct_diff, axes=(1, 2, 0))
+        obs_diff = (
+            self.np.abs(observations[..., None] - observations[..., None, :]) ** p
+        )
+        
+        e_1 = (fct_diff - obs_diff) ** 2
+        e_1 = self.np.sum(e_1, axis=(0, 1))
+        e_1 = self.np.sum(e_1 * fw * ow) / (M * wbar)
+        
+        e_2 = (fct_diff[:, :, :, self.np.newaxis] - fct_diff[:, :, self.np.newaxis, :]) ** 2
+        e_2 = self.np.sum(e_2, axis=(0, 1))
+        e_2 = self.np.sum(e_2 * self.np.outer(fw, fw) * ow) / (M**2 * wbar**2)
+        
+        out = e_1 - 0.5 * e_2
+        return out
+    
     def twvariogram_score(
         self,
         forecasts: Array,
@@ -336,6 +382,57 @@ class ArrayAPIBackend(AbstractBackend):
         v_fcts = v_func(forecasts, *v_funcargs)
         v_obs = v_func(observations, *v_funcargs)
         return self.variogram_score(v_fcts, v_obs, p)
+
+    def vrvariogram_score(
+        self,
+        forecasts: Array,
+        observations: Array,
+        p: float = 1,
+        w_func: tp.Callable = lambda x, *args: 1.0,
+        w_funcargs: tuple = (),
+        m_axis: int = -2,
+        v_axis: int = -1,
+    ) -> Array:
+        """Compute the Vertically Re-scaled Variogram Score for a multivariate finite ensemble."""
+        if m_axis != -2:
+            forecasts = self.np.moveaxis(forecasts, m_axis, -2)
+            v_axis = v_axis - 1 if v_axis != 0 else v_axis
+        if v_axis != -1:
+            forecasts = self.np.moveaxis(forecasts, v_axis, -1)
+            observations = self.np.moveaxis(observations, v_axis, -1)
+
+        w_func_wrap = lambda x: w_func(x, *w_funcargs)
+        fw = self.np.apply_along_axis(w_func_wrap, axis=-1, arr=forecasts)
+        ow = self.np.apply_along_axis(w_func_wrap, axis=0, arr=observations)
+        wbar = self.np.mean(fw)
+
+        M: int = forecasts.shape[-1]
+        fct_diff = (
+            self.np.abs(
+                self.np.expand_dims(forecasts, v_axis) - self.np.expand_dims(forecasts, m_axis)
+            )
+            ** p
+        )
+        fct_diff = self.np.transpose(fct_diff, axes=(1, 2, 0))
+        obs_diff = (
+            self.np.abs(observations[..., None] - observations[..., None, :]) ** p
+        )
+        
+        e_1 = (fct_diff - obs_diff) ** 2
+        e_1 = self.np.sum(e_1, axis=(0, 1))
+        e_1 = self.np.sum(e_1 * fw * ow) / M
+        
+        e_2 = (fct_diff[:, :, :, self.np.newaxis] - fct_diff[:, :, self.np.newaxis, :]) ** 2
+        e_2 = self.np.sum(e_2, axis=(0, 1))
+        e_2 = self.np.sum(e_2 * self.np.outer(fw, fw)) / (M**2)
+        
+        e_3 = self.np.sum(fct_diff ** 2, axis=(0, 1))
+        e_3 = self.np.sum(e_3 * fw) / M
+        e_3 -= self.np.sum(obs_diff ** 2) * ow
+        e_3 *= (wbar - ow)
+        
+        out = e_1 - 0.5 * e_2 + e_3
+        return out
 
     def logs_normal(
         self,
