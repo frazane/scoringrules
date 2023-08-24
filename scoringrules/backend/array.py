@@ -301,14 +301,14 @@ class ArrayAPIBackend(AbstractBackend):
             forecasts = self.np.moveaxis(forecasts, v_axis, -1)
             observations = self.np.moveaxis(observations, v_axis, -1)
 
-        M: int = forecasts.shape[-1]
+        M: int = forecasts.shape[-2]
         fct_diff = (
             self.np.abs(
-                self.np.expand_dims(forecasts, -2) - self.np.expand_dims(forecasts, -3)
+                self.np.expand_dims(forecasts, v_axis) - self.np.expand_dims(forecasts, m_axis)
             )
             ** p
         )
-        vfcts = self.np.sum(fct_diff, axis=-1) / M
+        vfcts = self.np.sum(fct_diff, axis=(m_axis-1)) / M
         obs_diff = (
             self.np.abs(observations[..., None] - observations[..., None, :]) ** p
         )
@@ -338,7 +338,7 @@ class ArrayAPIBackend(AbstractBackend):
         ow = self.np.apply_along_axis(w_func_wrap, axis=0, arr=observations)
         wbar = self.np.mean(fw)
 
-        M: int = forecasts.shape[-1]
+        M: int = forecasts.shape[-2]
         fct_diff = (
             self.np.abs(
                 self.np.expand_dims(forecasts, v_axis) - self.np.expand_dims(forecasts, m_axis)
@@ -406,7 +406,7 @@ class ArrayAPIBackend(AbstractBackend):
         ow = self.np.apply_along_axis(w_func_wrap, axis=0, arr=observations)
         wbar = self.np.mean(fw)
 
-        M: int = forecasts.shape[-1]
+        M: int = forecasts.shape[-2]
         fct_diff = (
             self.np.abs(
                 self.np.expand_dims(forecasts, v_axis) - self.np.expand_dims(forecasts, m_axis)

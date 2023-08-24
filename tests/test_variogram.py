@@ -13,7 +13,7 @@ BACKENDS = ["numpy", "numba", "jax"]
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_variogram_score(backend):
     obs = np.random.randn(N, N_VARS)
-    fcts = np.expand_dims(obs, axis=-1) + np.random.randn(N, N_VARS, ENSEMBLE_SIZE)
+    fcts = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
     res = variogram_score(fcts, obs, backend=backend)
 
