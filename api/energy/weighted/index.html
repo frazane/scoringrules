@@ -14,14 +14,14 @@
         <link rel="prev" href="../ensemble/">
       
       
-        <link rel="next" href="../weighted/">
+        <link rel="next" href="../../variogram/">
       
       <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.13">
     
     
       
-        <title>Analytical formulations - scoringrules</title>
+        <title>Weighted versions - scoringrules</title>
       
     
     
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#scoringrules.crps_normal" class="md-skip">
+        <a href="#scoringrules.owenergy_score" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Analytical formulations
+              Weighted versions
             
           </span>
         </div>
@@ -308,23 +308,21 @@
               
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
       
       
       
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../">Continuous Ranked Probability Score</a>
+          <a href="../../crps/">Continuous Ranked Probability Score</a>
           
             <label for="__nav_2_2">
               <span class="md-nav__icon md-icon"></span>
@@ -332,7 +330,7 @@
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_2_2">
           <span class="md-nav__icon md-icon"></span>
           Continuous Ranked Probability Score
@@ -345,7 +343,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ensemble/" class="md-nav__link">
+      <a href="../../crps/ensemble/" class="md-nav__link">
         Ensemble-based estimation
       </a>
     </li>
@@ -357,68 +355,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Analytical formulations
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../crps/analytical/" class="md-nav__link">
         Analytical formulations
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#scoringrules.crps_normal" class="md-nav__link">
-    crps_normal()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scoringrules.crps_lognormal" class="md-nav__link">
-    crps_lognormal()
-  </a>
-  
-    <nav class="md-nav" aria-label="crps_lognormal()">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#scoringrules.crps_lognormal--notes" class="md-nav__link">
-    Notes
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -430,7 +371,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../weighted/" class="md-nav__link">
+      <a href="../../crps/weighted/" class="md-nav__link">
         Weighted versions
       </a>
     </li>
@@ -463,21 +404,23 @@
               
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" checked>
       
       
       
         
         
         <div class="md-nav__link md-nav__link--index ">
-          <a href="../../energy/">Energy Score</a>
+          <a href="../">Energy Score</a>
           
             <label for="__nav_2_4">
               <span class="md-nav__icon md-icon"></span>
@@ -485,7 +428,7 @@
           
         </div>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_2_4">
           <span class="md-nav__icon md-icon"></span>
           Energy Score
@@ -498,7 +441,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../energy/ensemble/" class="md-nav__link">
+      <a href="../ensemble/" class="md-nav__link">
         Ensemble-based estimation
       </a>
     </li>
@@ -510,11 +453,62 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../energy/weighted/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Weighted versions
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Weighted versions
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.owenergy_score" class="md-nav__link">
+    owenergy_score()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.twenergy_score" class="md-nav__link">
+    twenergy_score()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.vrenergy_score" class="md-nav__link">
+    vrenergy_score()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -626,29 +620,23 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#scoringrules.crps_normal" class="md-nav__link">
-    crps_normal()
+  <a href="#scoringrules.owenergy_score" class="md-nav__link">
+    owenergy_score()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#scoringrules.crps_lognormal" class="md-nav__link">
-    crps_lognormal()
-  </a>
-  
-    <nav class="md-nav" aria-label="crps_lognormal()">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#scoringrules.crps_lognormal--notes" class="md-nav__link">
-    Notes
+  <a href="#scoringrules.twenergy_score" class="md-nav__link">
+    twenergy_score()
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.vrenergy_score" class="md-nav__link">
+    vrenergy_score()
+  </a>
   
 </li>
       
@@ -670,26 +658,29 @@
   
 
 
-  <h1>Analytical formulations</h1>
+  <h1>Weighted versions</h1>
 
 <div class="doc doc-object doc-function">
 
 
 
-<h4 id="scoringrules.crps_normal" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">crps_normal</span><span class="p">(</span><span class="n">mu</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;numpy&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span></code>
+<h4 id="scoringrules.owenergy_score" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">owenergy_score</span><span class="p">(</span><span class="n">forecasts</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="n">w_func</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">w_funcargs</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span> <span class="o">*</span><span class="p">,</span> <span class="n">m_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">v_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="s1">&#39;numba&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>
 
 </h4>
 
 
   <div class="doc doc-contents first">
   
-      <p>Compute the closed form of the CRPS for the normal distribution.</p>
-<p>It is based on the following formulation from
-<a href="https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml">Geiting et al. (2005)</a>:</p>
-<div class="arithmatex">\[ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},\]</div>
-<p>where <span class="arithmatex">\(\Phi(ω)\)</span> and <span class="arithmatex">\(\phi(ω)\)</span> are respectively the CDF and PDF of the standard normal
-distribution at the normalized prediction error <span class="arithmatex">\(\omega = \frac{y - \mu}{\sigma}\)</span>.</p>
+      <p>Compute the Outcome-Weighted Energy Score (owES) for a finite multivariate ensemble.</p>
+<p>Computation is performed using the ensemble representation of the owES in
+<a href="https://arxiv.org/abs/2202.12732">Allen et al. (2022)</a>:</p>
+<div class="arithmatex">\[
+    \mathrm{owES}(F_{ens}, \mathbf{y}) = \frac{1}{M \bar{w}} \sum_{m = 1}^{M} \| \mathbf{x}_{m} - \mathbf{y} \| w(\mathbf{x}_{m}) w(\mathbf{y}) - \frac{1}{2 M^{2} \bar{w}^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} \| \mathbf{x}_{m} - \mathbf{x}_{j} \| w(\mathbf{x}_{m}) w(\mathbf{x}_{j}) w(\mathbf{y}),
+\]</div>
+<p>where <span class="arithmatex">\(F_{ens}\)</span> is the ensemble forecast <span class="arithmatex">\(\mathbf{x}_{1}, \dots, \mathbf{x}_{M}\)</span> with
+<span class="arithmatex">\(M\)</span> members, <span class="arithmatex">\(\| \cdotp \|\)</span> is the Euclidean distance, <span class="arithmatex">\(w\)</span> is the chosen weight function, 
+and <span class="arithmatex">\(\bar{w} = \sum_{m=1}^{M}w(\mathbf{x}_{m})/M\)</span>.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -703,33 +694,73 @@ distribution at the normalized prediction error <span class="arithmatex">\(\omeg
     </thead>
     <tbody>
         <tr>
-          <td><code>mu</code></td>
+          <td><code>forecasts</code></td>
           <td>
-                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
           </td>
-          <td><p>Mean of the forecast normal distribution.</p></td>
+          <td><p>The predicted forecast ensemble, where the ensemble dimension is by default
+represented by the second last axis and the variables dimension by the last axis.</p></td>
           <td>
               <em>required</em>
           </td>
         </tr>
         <tr>
-          <td><code>sigma</code></td>
+          <td><code>observations</code></td>
           <td>
-                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
           </td>
-          <td><p>Standard deviation of the forecast normal distribution.</p></td>
+          <td><p>The observed values, where the variables dimension is by default the last axis.</p></td>
           <td>
               <em>required</em>
           </td>
         </tr>
         <tr>
-          <td><code>observation</code></td>
+          <td><code>w_func</code></td>
           <td>
-                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+                <code><span title="typing">tp</span>.<span title="typing.Callable">Callable</span></code>
           </td>
-          <td><p>The observed values.</p></td>
+          <td><p>Weight function used to emphasise particular outcomes.</p></td>
           <td>
-              <em>required</em>
+                <code>lambda x: 1.0</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>w_funcargs</code></td>
+          <td>
+                <code>tuple</code>
+          </td>
+          <td><p>Additional arguments to the weight function.</p></td>
+          <td>
+                <code>()</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>m_axis</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The axis corresponding to the ensemble dimension. Defaults to -2.</p></td>
+          <td>
+                <code>-2</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>v_axis</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The axis corresponding to the variables dimension. Defaults to -1.</p></td>
+          <td>
+                <code>-1</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>backend</code></td>
+          <td>
+          </td>
+          <td><p>The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.</p></td>
+          <td>
+                <code>&#39;numba&#39;</code>
           </td>
         </tr>
     </tbody>
@@ -745,45 +776,39 @@ distribution at the normalized prediction error <span class="arithmatex">\(\omeg
     </thead>
     <tbody>
         <tr>
-<td><code>crps</code></td>          <td>
-                <code>array_like</code>
+<td><code>owenergy_score</code></td>          <td>
+                <code>ArrayLike of shape (...)</code>
           </td>
-          <td><p>The CRPS between Normal(mu, sigma) and obs.</p></td>
+          <td><p>The computed Outcome-Weighted Energy Score.</p></td>
         </tr>
     </tbody>
   </table>
-
-<p><strong>Examples:</strong></p>
-    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">scoringrules</span> <span class="kn">import</span> <span class="n">crps</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">crps</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-</code></pre></div>
 
   </div>
 
-</div><p><br/><br/>
-</p>
-
+</div>
 
 <div class="doc doc-object doc-function">
 
 
 
-<h4 id="scoringrules.crps_lognormal" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">crps_lognormal</span><span class="p">(</span><span class="n">mulog</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">sigmalog</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;numpy&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span></code>
+<h4 id="scoringrules.twenergy_score" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">twenergy_score</span><span class="p">(</span><span class="n">forecasts</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="n">v_func</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="n">v_funcargs</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span> <span class="o">*</span><span class="p">,</span> <span class="n">m_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">v_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="s1">&#39;numba&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>
 
 </h4>
 
 
   <div class="doc doc-contents first">
   
-      <p>Compute the closed form of the CRPS for the lognormal distribution.</p>
-<p>It is based on the formulation introduced by
-<a href="https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2521">Baran and Lerch (2015)</a></p>
-<div class="arithmatex">\[ \mathrm{CRPS}(\mathrm{log}\mathcal{N}(\mu, \sigma), y) =
-y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
-\left[ \Phi(\omega - \sigma) + \Phi(\frac{\sigma}{\sqrt{2}}) \right]\]</div>
-<p>where <span class="arithmatex">\(\Phi\)</span> is the CDF of the standard normal distribution and
-<span class="arithmatex">\(\omega = \frac{\mathrm{log}y - \mu}{\sigma}\)</span>.</p>
+      <p>Compute the Threshold-Weighted Energy Score (twES) for a finite multivariate ensemble.</p>
+<p>Computation is performed using the ensemble representation of the twES in
+<a href="https://arxiv.org/abs/2202.12732">Allen et al. (2022)</a>:</p>
+<div class="arithmatex">\[
+    \mathrm{twES}(F_{ens}, \mathbf{y}) = \frac{1}{M} \sum_{m = 1}^{M} \| v(\mathbf{x}_{m}) - v(\mathbf{y}) \| - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} \| v(\mathbf{x}_{m}) - v(\mathbf{x}_{j}) \|,
+\]</div>
+<p>where <span class="arithmatex">\(F_{ens}\)</span> is the ensemble forecast <span class="arithmatex">\(\mathbf{x}_{1}, \dots, \mathbf{x}_{M}\)</span> with
+<span class="arithmatex">\(M\)</span> members, <span class="arithmatex">\(\| \cdotp \|\)</span> is the Euclidean distance, and <span class="arithmatex">\(v\)</span> is the chaining function 
+used to target particular outcomes.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -797,23 +822,73 @@ y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
     </thead>
     <tbody>
         <tr>
-          <td><code>mulog</code></td>
+          <td><code>forecasts</code></td>
           <td>
-                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
           </td>
-          <td><p>Mean of the normal underlying distribution.</p></td>
+          <td><p>The predicted forecast ensemble, where the ensemble dimension is by default
+represented by the second last axis and the variables dimension by the last axis.</p></td>
           <td>
               <em>required</em>
           </td>
         </tr>
         <tr>
-          <td><code>sigmalog</code></td>
+          <td><code>observations</code></td>
           <td>
-                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
           </td>
-          <td><p>Standard deviation of the underlying normal distribution.</p></td>
+          <td><p>The observed values, where the variables dimension is by default the last axis.</p></td>
           <td>
               <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>v_func</code></td>
+          <td>
+                <code><span title="typing">tp</span>.<span title="typing.Callable">Callable</span></code>
+          </td>
+          <td><p>Chaining function used to emphasise particular outcomes.</p></td>
+          <td>
+                <code>lambda x: x</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>v_funcargs</code></td>
+          <td>
+                <code>tuple</code>
+          </td>
+          <td><p>Additional arguments to the chaining function.</p></td>
+          <td>
+                <code>()</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>m_axis</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The axis corresponding to the ensemble dimension. Defaults to -2.</p></td>
+          <td>
+                <code>-2</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>v_axis</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The axis corresponding to the variables dimension. Defaults to -1.</p></td>
+          <td>
+                <code>-1</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>backend</code></td>
+          <td>
+          </td>
+          <td><p>The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.</p></td>
+          <td>
+                <code>&#39;numba&#39;</code>
           </td>
         </tr>
     </tbody>
@@ -829,21 +904,143 @@ y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
     </thead>
     <tbody>
         <tr>
-<td><code>crps</code></td>          <td>
-                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+<td><code>twenergy_score</code></td>          <td>
+                <code>ArrayLike of shape (...)</code>
           </td>
-          <td><p>The CRPS between Lognormal(mu, sigma) and obs.</p></td>
+          <td><p>The computed Threshold-Weighted Energy Score.</p></td>
         </tr>
     </tbody>
   </table>
-      <h6 id="scoringrules.crps_lognormal--notes">Notes</h6>
-<p>The mean and standard deviation are not the values for the distribution itself,
-but of the underlying normal distribution it is derived from.</p>
 
-<p><strong>Examples:</strong></p>
-    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">scoringrules</span> <span class="kn">import</span> <span class="n">crps</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">crps</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-</code></pre></div>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h4 id="scoringrules.vrenergy_score" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">vrenergy_score</span><span class="p">(</span><span class="n">forecasts</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="n">w_func</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">w_funcargs</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span> <span class="o">*</span><span class="p">,</span> <span class="n">m_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">v_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="s1">&#39;numba&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>
+
+</h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Compute the Vertically Re-scaled Energy Score (vrES) for a finite multivariate ensemble.</p>
+<p>Computation is performed using the ensemble representation of the twES in
+<a href="https://arxiv.org/abs/2202.12732">Allen et al. (2022)</a>:</p>
+<div class="arithmatex">\[
+\begin{split}
+    \mathrm{vrES}(F_{ens}, \mathbf{y}) = &amp; \frac{1}{M} \sum_{m = 1}^{M} \| \mathbf{x}_{m} - \mathbf{y} \| w(\mathbf{x}_{m}) w(\mathbf{y}) - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} \| \mathbf{x}_{m} - \mathbf{x}_{j} \| w(\mathbf{x}_{m}) w(\mathbf{x_{j}}) \\
+        &amp; + \left( \frac{1}{M} \sum_{m = 1}^{M} \| \mathbf{x}_{m} \| w(\mathbf{x}_{m}) - \| \mathbf{y} \| w(\mathbf{y}) \right) \left( \frac{1}{M} \sum_{m = 1}^{M} w(\mathbf{x}_{m}) - w(\mathbf{y}) \right),
+\end{split}
+\]</div>
+<p>where <span class="arithmatex">\(F_{ens}\)</span> is the ensemble forecast <span class="arithmatex">\(\mathbf{x}_{1}, \dots, \mathbf{x}_{M}\)</span> with
+<span class="arithmatex">\(M\)</span> members, and <span class="arithmatex">\(v\)</span> is the chaining function used to target particular outcomes.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>forecasts</code></td>
+          <td>
+                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
+          </td>
+          <td><p>The predicted forecast ensemble, where the ensemble dimension is by default
+represented by the second last axis and the variables dimension by the last axis.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>observations</code></td>
+          <td>
+                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
+          </td>
+          <td><p>The observed values, where the variables dimension is by default the last axis.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>w_func</code></td>
+          <td>
+                <code><span title="typing">tp</span>.<span title="typing.Callable">Callable</span></code>
+          </td>
+          <td><p>Weight function used to emphasise particular outcomes.</p></td>
+          <td>
+                <code>lambda x: 1.0</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>w_funcargs</code></td>
+          <td>
+                <code>tuple</code>
+          </td>
+          <td><p>Additional arguments to the weight function.</p></td>
+          <td>
+                <code>()</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>m_axis</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The axis corresponding to the ensemble dimension. Defaults to -2.</p></td>
+          <td>
+                <code>-2</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>v_axis</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The axis corresponding to the variables dimension. Defaults to -1.</p></td>
+          <td>
+                <code>-1</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>backend</code></td>
+          <td>
+          </td>
+          <td><p>The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.</p></td>
+          <td>
+                <code>&#39;numba&#39;</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>vrenergy_score</code></td>          <td>
+                <code>ArrayLike of shape (...)</code>
+          </td>
+          <td><p>The computed Vertically Re-scaled Energy Score.</p></td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 

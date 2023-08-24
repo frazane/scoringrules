@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../crps/analytical/">
+        <link rel="prev" href="../crps/weighted/">
       
       
-        <link rel="next" href="../variogram/">
+        <link rel="next" href="ensemble/">
       
       <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.13">
@@ -365,6 +365,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crps/weighted/" class="md-nav__link">
+        Weighted versions
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -393,49 +407,43 @@
     
   
   
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Energy Score
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        Energy Score
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
     
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
-        <li class="md-nav__item">
-  <a href="#scoringrules.energy_score" class="md-nav__link">
-    energy_score()
-  </a>
-  
-</li>
       
-    </ul>
-  
-</nav>
       
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" checked>
+      
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index md-nav__link--active">
+          <a href="./">Energy Score</a>
+          
+            <label for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_2_4">
+          <span class="md-nav__icon md-icon"></span>
+          Energy Score
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="ensemble/" class="md-nav__link">
+        Ensemble-based estimation
+      </a>
     </li>
   
 
@@ -447,9 +455,84 @@
   
   
     <li class="md-nav__item">
-      <a href="../variogram/" class="md-nav__link">
-        Variogram Score
+      <a href="weighted/" class="md-nav__link">
+        Weighted versions
       </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+      
+      
+      
+        
+        
+        <div class="md-nav__link md-nav__link--index ">
+          <a href="../variogram/">Variogram Score</a>
+          
+            <label for="__nav_2_5">
+              <span class="md-nav__icon md-icon"></span>
+            </label>
+          
+        </div>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_5">
+          <span class="md-nav__icon md-icon"></span>
+          Variogram Score
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../variogram/ensemble/" class="md-nav__link">
+        Ensemble-based estimation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../variogram/weighted/" class="md-nav__link">
+        Weighted versions
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -488,8 +571,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#scoringrules.energy_score" class="md-nav__link">
-    energy_score()
+  <a href="#ensemble-forecasts" class="md-nav__link">
+    Ensemble forecasts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#weighted-energy-scores" class="md-nav__link">
+    Weighted energy scores
   </a>
   
 </li>
@@ -513,111 +603,70 @@
 
 
 <h1 id="energy-score">Energy Score</h1>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-<h4 id="scoringrules.energy_score" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">energy_score</span><span class="p">(</span><span class="n">forecasts</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">m_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">v_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="s1">&#39;numba&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>
-
-</h4>
-
-
-  <div class="doc doc-contents first">
-  
-      <p>Compute the Energy Score for a finite multivariate ensemble.</p>
-<p>The Energy Score is a multivariate scoring rule expressed as</p>
-<div class="arithmatex">\[ES(F, \mathbf{y}) = E_{F} ||\mathbf{X} - \mathbf{y}||
-- \frac{1}{2}E_{F} ||\mathbf{X} - \mathbf{X'}||,\]</div>
-<p>where <span class="arithmatex">\(\mathbf{X}\)</span> and <span class="arithmatex">\(\mathbf{X'}\)</span> are independent samples from <span class="arithmatex">\(F\)</span>
-and <span class="arithmatex">\(||\cdot||\)</span> is the euclidean norm over the input dimensions (the variables).</p>
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>forecasts</code></td>
-          <td>
-                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
-          </td>
-          <td><p>The predicted forecast ensemble, where the ensemble dimension is by default
-represented by the second last axis and the variables dimension by the last axis.</p></td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>observations</code></td>
-          <td>
-                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
-          </td>
-          <td><p>The observed values, where the variables dimension is by default the last axis.</p></td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>m_axis</code></td>
-          <td>
-                <code>int</code>
-          </td>
-          <td><p>The axis corresponding to the ensemble dimension. Defaults to -2.</p></td>
-          <td>
-                <code>-2</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>v_axis</code></td>
-          <td>
-                <code>int</code>
-          </td>
-          <td><p>The axis corresponding to the variables dimension. Defaults to -1.</p></td>
-          <td>
-                <code>-1</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>backend</code></td>
-          <td>
-          </td>
-          <td><p>The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.</p></td>
-          <td>
-                <code>&#39;numba&#39;</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-<th>Name</th>        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td><code>energy_score</code></td>          <td>
-                <code>ArrayLike of shape (...)</code>
-          </td>
-          <td><p>The computed Energy Score.</p></td>
-        </tr>
-    </tbody>
-  </table>
-
-  </div>
-
+<p>The energy score (ES) is a scoring rule for evaluating multivariate probabilistic forecasts.
+It is defined as </p>
+<div class="arithmatex">\[\text{ES}(F, \mathbf{y})= \mathbb{E} \| \mathbf{X} - \mathbf{y} \| - \frac{1}{2} \mathbb{E} \| \mathbf{X} - \mathbf{X}^{\prime} \|, \]</div>
+<p>where <span class="arithmatex">\(\mathbf{y} \in \mathbb{R}^{d}\)</span> is the multivariate observation (<span class="arithmatex">\(d &gt; 1\)</span>), and 
+<span class="arithmatex">\(\mathbf{X}\)</span> and <span class="arithmatex">\(\mathbf{X}^{\prime}\)</span> are independent random variables that follow the
+multivariate forecast distribution <span class="arithmatex">\(F\)</span> (Gneiting and Raftery, 2007)<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>. 
+If the dimension <span class="arithmatex">\(d\)</span> were equal to one, the energy score would reduce to the continuous ranked probability score (CRPS). </p>
+<p><br/><br/></p>
+<h2 id="ensemble-forecasts">Ensemble forecasts</h2>
+<p>While multivariate probabilistic forecasts could belong to a parametric family of 
+distributions, such as a multivariate normal distribution, it is more common in practice
+that these forecasts are ensemble forecasts; that is, the forecast is comprised of a 
+predictive sample <span class="arithmatex">\(\mathbf{x}_{1}, \dots, \mathbf{x}_{M}\)</span>, 
+where each ensemble member <span class="arithmatex">\(\mathbf{x}_{1}, \dots, \mathbf{x}_{M} \in \R^{d}\)</span>. </p>
+<p>In this case, the expectations in the definition of the energy score can be replaced by
+sample means over the ensemble members, yielding the following representation of the energy
+score when evaluating an ensemble forecast <span class="arithmatex">\(F_{ens}\)</span> with <span class="arithmatex">\(M\)</span> members:</p>
+<div class="arithmatex">\[\text{ES}(F_{ens}, \mathbf{y})= \frac{1}{M} \sum_{m=1}^{M} \| \mathbf{x}_{m} - \mathbf{y} \| - \frac{1}{2 M^{2}} \sum_{m=1}^{M} \sum_{j=1}^{M} \| \mathbf{x}_{m} - \mathbf{x}_{j} \|. \]</div>
+<p><br/><br/></p>
+<h2 id="weighted-energy-scores">Weighted energy scores</h2>
+<p>The energy score provides a measure of overall forecast performance. However, it is often
+the case that certain outcomes are of more interest than others, making it desirable to
+assign more weight to these outcomes when evaluating forecast performance. This can be 
+achieved using weighted scoring rules. Weighted scoring rules typically introduce a
+weight function into conventional scoring rules, and users can choose the weight function
+depending on what outcomes they want to emphasise. Allen et al. (2022)<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup> 
+discuss three weighted versions of the energy score. These are all available in <code>scoringrules</code>. </p>
+<p>Firstly, the outcome-weighted energy score (originally introduced by Holzmann and Klar (2014)<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup>) 
+is defined as </p>
+<div class="arithmatex">\[\text{owES}(F, \mathbf{y}; w)= \frac{1}{\bar{w}} \mathbb{E} \| \mathbf{X} - \mathbf{y} \| w(\mathbf{X}) w(\mathbf{y}) - \frac{1}{2 \bar{w}^{2}} \mathbb{E} \| \mathbf{X} - \mathbf{X}^{\prime} \| w(\mathbf{X})w(\mathbf{X}^{\prime})w(\mathbf{y}), \]</div>
+<p>where <span class="arithmatex">\(w : \mathbb{R}^{d} \to [0, \infty)\)</span> is the non-negative weight function used to 
+target particular multivariate outcomes, and <span class="arithmatex">\(\bar{w} = \mathbb{E}[w(X)]\)</span>.
+As before, <span class="arithmatex">\(\mathbf{X}, \mathbf{X}^{\prime} \sim F\)</span> are independent.</p>
+<p>Secondly, Allen et al. (2022) introduced the threshold-weighted energy score as</p>
+<div class="arithmatex">\[\text{twES}(F, \mathbf{y}; v)= \mathbb{E} \| v(\mathbf{X}) - v(\mathbf{y}) \| - \frac{1}{2} \mathbb{E} \| v(\mathbf{X}) - v(\mathbf{X}^{\prime}) \|, \]</div>
+<p>where <span class="arithmatex">\(v : \mathbb{R}^{d} \to \mathbb{R}^{d}\)</span> is a so-called chaining function.
+The threshold-weighted energy score transforms the forecasts and observations according 
+to the chaining function <span class="arithmatex">\(v\)</span>, prior to calculating the unweighted energy score. Choosing
+a chaining function is generally more difficult than choosing a weight function when
+emphasising particular outcomes.</p>
+<p>As an alternative, the vertically re-scaled energy score is defined as </p>
+<div class="arithmatex">\[\text{vrES}(F, \mathbf{y}; w, \mathbf{x}_{0})= \mathbb{E} \| \mathbf{X} - \mathbf{y} \| w(\mathbf{X}) w(\mathbf{y}) - \frac{1}{2} \mathbb{E} \| \mathbf{X} - \mathbf{X}^{\prime} \| w(\mathbf{X})w(\mathbf{X}^{\prime}) + \left( \mathbb{E} \| \mathbf{X} - \mathbf{x}_{0} \| w(\mathbf{X}) - \| \mathbf{y} - \mathbf{x}_{0} \| w(\mathbf{y}) \right) \left(\mathbb{E}[w(\mathbf{X})] - w(\mathbf{y}) \right), \]</div>
+<p>where <span class="arithmatex">\(w : \mathbb{R}^{d} \to [0, \infty)\)</span> is the non-negative weight function used to 
+target particular multivariate outcomes, and <span class="arithmatex">\(\mathbf{x}_{0} \in \mathbb{R}^{d}\)</span>. Typically,
+<span class="arithmatex">\(\mathbf{x}_{0}\)</span> is chosen to be zero.</p>
+<p>Each of these weighted energy scores targets particular outcomes in a different way. 
+Further details regarding the differences between these scoring rules, as well as choices 
+for the weight and chaining functions, can be found in Allen et al. (2022). The weighted
+energy scores can easily be computed for ensemble forecasts by
+replacing the expectations with sample means over the ensemble members.</p>
+<p><br/><br/></p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Tilmann Gneiting and Adrian E Raftery. Strictly Proper Scoring Rules, Prediction, and Estimation. <em>Journal of the American Statistical Association</em>, 2007. URL: <a href="https://doi.org/10.1198/016214506000001437">https://doi.org/10.1198/016214506000001437</a>, <a href="https://doi.org/10.1198/016214506000001437">doi:10.1198/016214506000001437</a>.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>Sam Allen, David Ginsbourger, and Johanna Ziegel. Evaluating forecasts for high-impact events using transformed kernel scores. <em>arXiv preprint arXiv:2202.12732</em>, 2022.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>Hajo Holzmann and Bernhard Klar. Focusing on regions of interest in forecast evaluation. <em>The Annals of Applied Statistics</em>, 11:2404–2431, 2017.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+</ol>
 </div>
 
 

@@ -11,17 +11,17 @@
       
       
       
-        <link rel="prev" href="../ensemble/">
+        <link rel="prev" href="../analytical/">
       
       
-        <link rel="next" href="../weighted/">
+        <link rel="next" href="../../energy/">
       
       <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.13">
     
     
       
-        <title>Analytical formulations - scoringrules</title>
+        <title>Weighted versions - scoringrules</title>
       
     
     
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#scoringrules.crps_normal" class="md-skip">
+        <a href="#scoringrules.owcrps_ensemble" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Analytical formulations
+              Weighted versions
             
           </span>
         </div>
@@ -357,6 +357,20 @@
               
   
   
+  
+    <li class="md-nav__item">
+      <a href="../analytical/" class="md-nav__link">
+        Analytical formulations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
     
   
   
@@ -367,12 +381,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Analytical formulations
+          Weighted versions
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Analytical formulations
+        Weighted versions
       </a>
       
         
@@ -389,29 +403,23 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#scoringrules.crps_normal" class="md-nav__link">
-    crps_normal()
+  <a href="#scoringrules.owcrps_ensemble" class="md-nav__link">
+    owcrps_ensemble()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#scoringrules.crps_lognormal" class="md-nav__link">
-    crps_lognormal()
-  </a>
-  
-    <nav class="md-nav" aria-label="crps_lognormal()">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#scoringrules.crps_lognormal--notes" class="md-nav__link">
-    Notes
+  <a href="#scoringrules.twcrps_ensemble" class="md-nav__link">
+    twcrps_ensemble()
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.vrcrps_ensemble" class="md-nav__link">
+    vrcrps_ensemble()
+  </a>
   
 </li>
       
@@ -419,20 +427,6 @@
   
 </nav>
       
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../weighted/" class="md-nav__link">
-        Weighted versions
-      </a>
     </li>
   
 
@@ -626,29 +620,23 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#scoringrules.crps_normal" class="md-nav__link">
-    crps_normal()
+  <a href="#scoringrules.owcrps_ensemble" class="md-nav__link">
+    owcrps_ensemble()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#scoringrules.crps_lognormal" class="md-nav__link">
-    crps_lognormal()
-  </a>
-  
-    <nav class="md-nav" aria-label="crps_lognormal()">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#scoringrules.crps_lognormal--notes" class="md-nav__link">
-    Notes
+  <a href="#scoringrules.twcrps_ensemble" class="md-nav__link">
+    twcrps_ensemble()
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.vrcrps_ensemble" class="md-nav__link">
+    vrcrps_ensemble()
+  </a>
   
 </li>
       
@@ -670,26 +658,27 @@
   
 
 
-  <h1>Analytical formulations</h1>
+  <h1>Weighted versions</h1>
 
 <div class="doc doc-object doc-function">
 
 
 
-<h4 id="scoringrules.crps_normal" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">crps_normal</span><span class="p">(</span><span class="n">mu</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;numpy&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span></code>
+<h4 id="scoringrules.owcrps_ensemble" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">owcrps_ensemble</span><span class="p">(</span><span class="n">forecasts</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="n">w_func</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w_funcargs</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span> <span class="o">*</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;numba&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>
 
 </h4>
 
 
   <div class="doc doc-contents first">
   
-      <p>Compute the closed form of the CRPS for the normal distribution.</p>
-<p>It is based on the following formulation from
-<a href="https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml">Geiting et al. (2005)</a>:</p>
-<div class="arithmatex">\[ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},\]</div>
-<p>where <span class="arithmatex">\(\Phi(ω)\)</span> and <span class="arithmatex">\(\phi(ω)\)</span> are respectively the CDF and PDF of the standard normal
-distribution at the normalized prediction error <span class="arithmatex">\(\omega = \frac{y - \mu}{\sigma}\)</span>.</p>
+      <p>Estimate the Outcome-Weighted Continuous Ranked Probability Score (owCRPS) for a finite ensemble.</p>
+<p>Computation is performed using the ensemble representation of the owCRPS in
+<a href="https://arxiv.org/abs/2202.12732">Allen et al. (2022)</a>:</p>
+<div class="arithmatex">\[ \mathrm{owCRPS}(F_{ens}, y) = \frac{1}{M \bar{w}} \sum_{m = 1}^{M} |x_{m} - y|w(x_{m})w(y) - \frac{1}{2 M^{2} \bar{w}^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m} - x_{j}|w(x_{m})w(x_{j})w(y),\]</div>
+<p>where <span class="arithmatex">\(F_{ens}(x) = \sum_{m=1}^{M} 1\{ x_{m} \leq x \}/M\)</span> is the empirical 
+distribution function associated with an ensemble forecast <span class="arithmatex">\(x_{1}, \dots, x_{M}\)</span> with
+<span class="arithmatex">\(M\)</span> members, <span class="arithmatex">\(w\)</span> is the chosen weight function, and <span class="arithmatex">\(\bar{w} = \sum_{m=1}^{M}w(x_{m})/M\)</span>.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -703,35 +692,66 @@ distribution at the normalized prediction error <span class="arithmatex">\(\omeg
     </thead>
     <tbody>
         <tr>
-          <td><code>mu</code></td>
+          <td><code>forecasts</code></td>
           <td>
-                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
           </td>
-          <td><p>Mean of the forecast normal distribution.</p></td>
+          <td><p>The predicted forecast ensemble, where the ensemble dimension is by default
+represented by the last axis.</p></td>
           <td>
               <em>required</em>
           </td>
         </tr>
         <tr>
-          <td><code>sigma</code></td>
+          <td><code>observations</code></td>
           <td>
-                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
-          </td>
-          <td><p>Standard deviation of the forecast normal distribution.</p></td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>observation</code></td>
-          <td>
-                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+                <code><span title="scoringrules._wcrps.ArrayLike">ArrayLike</span></code>
           </td>
           <td><p>The observed values.</p></td>
           <td>
               <em>required</em>
           </td>
         </tr>
+        <tr>
+          <td><code>w_func</code></td>
+          <td>
+                <code><span title="typing">tp</span>.<span title="typing.Callable">Callable</span></code>
+          </td>
+          <td><p>Weight function used to emphasise particular outcomes.</p></td>
+          <td>
+                <code>lambda x: np.ones_like(x)</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>w_funcargs</code></td>
+          <td>
+                <code>tuple</code>
+          </td>
+          <td><p>Additional arguments to the weight function.</p></td>
+          <td>
+                <code>()</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>axis</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The axis corresponding to the ensemble. Default is the last axis.</p></td>
+          <td>
+                <code>-1</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>backend</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.</p></td>
+          <td>
+                <code>&#39;numba&#39;</code>
+          </td>
+        </tr>
     </tbody>
   </table>
 
@@ -745,45 +765,42 @@ distribution at the normalized prediction error <span class="arithmatex">\(\omeg
     </thead>
     <tbody>
         <tr>
-<td><code>crps</code></td>          <td>
-                <code>array_like</code>
+<td><code>owcrps</code></td>          <td>
+                <code><span title="scoringrules._wcrps.ArrayLike">ArrayLike</span></code>
           </td>
-          <td><p>The CRPS between Normal(mu, sigma) and obs.</p></td>
+          <td><p>The owCRPS between the forecast ensemble and obs for the chosen weight function.</p></td>
         </tr>
     </tbody>
   </table>
 
 <p><strong>Examples:</strong></p>
     <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">scoringrules</span> <span class="kn">import</span> <span class="n">crps</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">crps</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">owcrps</span><span class="o">.</span><span class="n">ensemble</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
 </code></pre></div>
 
   </div>
 
-</div><p><br/><br/>
-</p>
-
+</div>
 
 <div class="doc doc-object doc-function">
 
 
 
-<h4 id="scoringrules.crps_lognormal" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">crps_lognormal</span><span class="p">(</span><span class="n">mulog</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">sigmalog</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;numpy&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span></code>
+<h4 id="scoringrules.twcrps_ensemble" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">twcrps_ensemble</span><span class="p">(</span><span class="n">forecasts</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="n">v_func</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="n">v_funcargs</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span> <span class="o">*</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;numba&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>
 
 </h4>
 
 
   <div class="doc doc-contents first">
   
-      <p>Compute the closed form of the CRPS for the lognormal distribution.</p>
-<p>It is based on the formulation introduced by
-<a href="https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2521">Baran and Lerch (2015)</a></p>
-<div class="arithmatex">\[ \mathrm{CRPS}(\mathrm{log}\mathcal{N}(\mu, \sigma), y) =
-y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
-\left[ \Phi(\omega - \sigma) + \Phi(\frac{\sigma}{\sqrt{2}}) \right]\]</div>
-<p>where <span class="arithmatex">\(\Phi\)</span> is the CDF of the standard normal distribution and
-<span class="arithmatex">\(\omega = \frac{\mathrm{log}y - \mu}{\sigma}\)</span>.</p>
+      <p>Estimate the Threshold-Weighted Continuous Ranked Probability Score (twCRPS) for a finite ensemble.</p>
+<p>Computation is performed using the ensemble representation of the twCRPS in
+<a href="https://arxiv.org/abs/2202.12732">Allen et al. (2022)</a>:</p>
+<div class="arithmatex">\[ \mathrm{twCRPS}(F_{ens}, y) = \frac{1}{M} \sum_{m = 1}^{M} |v(x_{m}) - v(y)| - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |v(x_{m}) - v(x_{j})|,\]</div>
+<p>where <span class="arithmatex">\(F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M\)</span> is the empirical 
+distribution function associated with an ensemble forecast <span class="arithmatex">\(x_{1}, \dots, x_{M}\)</span> with
+<span class="arithmatex">\(M\)</span> members, and <span class="arithmatex">\(v\)</span> is the chaining function used to target particular outcomes.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -797,23 +814,64 @@ y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
     </thead>
     <tbody>
         <tr>
-          <td><code>mulog</code></td>
+          <td><code>forecasts</code></td>
           <td>
-                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
           </td>
-          <td><p>Mean of the normal underlying distribution.</p></td>
+          <td><p>The predicted forecast ensemble, where the ensemble dimension is by default
+represented by the last axis.</p></td>
           <td>
               <em>required</em>
           </td>
         </tr>
         <tr>
-          <td><code>sigmalog</code></td>
+          <td><code>observations</code></td>
           <td>
-                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+                <code><span title="scoringrules._wcrps.ArrayLike">ArrayLike</span></code>
           </td>
-          <td><p>Standard deviation of the underlying normal distribution.</p></td>
+          <td><p>The observed values.</p></td>
           <td>
               <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>v_func</code></td>
+          <td>
+                <code><span title="typing">tp</span>.<span title="typing.Callable">Callable</span></code>
+          </td>
+          <td><p>Chaining function used to emphasise particular outcomes.</p></td>
+          <td>
+                <code>lambda x: x</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>v_funcargs</code></td>
+          <td>
+                <code>tuple</code>
+          </td>
+          <td><p>Additional arguments to the chaining function.</p></td>
+          <td>
+                <code>()</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>axis</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The axis corresponding to the ensemble. Default is the last axis.</p></td>
+          <td>
+                <code>-1</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>backend</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.</p></td>
+          <td>
+                <code>&#39;numba&#39;</code>
           </td>
         </tr>
     </tbody>
@@ -829,20 +887,144 @@ y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
     </thead>
     <tbody>
         <tr>
-<td><code>crps</code></td>          <td>
-                <code><span title="scoringrules._crps.ArrayLike">ArrayLike</span></code>
+<td><code>twcrps</code></td>          <td>
+                <code><span title="scoringrules._wcrps.ArrayLike">ArrayLike</span></code>
           </td>
-          <td><p>The CRPS between Lognormal(mu, sigma) and obs.</p></td>
+          <td><p>The twCRPS between the forecast ensemble and obs for the chosen chaining function.</p></td>
         </tr>
     </tbody>
   </table>
-      <h6 id="scoringrules.crps_lognormal--notes">Notes</h6>
-<p>The mean and standard deviation are not the values for the distribution itself,
-but of the underlying normal distribution it is derived from.</p>
 
 <p><strong>Examples:</strong></p>
     <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">scoringrules</span> <span class="kn">import</span> <span class="n">crps</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">crps</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">twcrps</span><span class="o">.</span><span class="n">ensemble</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
+</code></pre></div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h4 id="scoringrules.vrcrps_ensemble" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">vrcrps_ensemble</span><span class="p">(</span><span class="n">forecasts</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span> <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="n">w_func</span><span class="p">:</span> <span class="n">tp</span><span class="o">.</span><span class="n">Callable</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">w_funcargs</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span> <span class="o">*</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;numba&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>
+
+</h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Estimate the Vertically Re-scaled Continuous Ranked Probability Score (vrCRPS) for a finite ensemble.</p>
+<p>Computation is performed using the ensemble representation of the vrCRPS in
+<a href="https://arxiv.org/abs/2202.12732">Allen et al. (2022)</a>:</p>
+<div class="arithmatex">\[
+\begin{split}
+    \mathrm{vrCRPS}(F_{ens}, y) = &amp; \frac{1}{M} \sum_{m = 1}^{M} |x_{m} - y|w(x_{m})w(y) - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m} - x_{j}|w(x_{m})w(x_{j}) \\
+        &amp; + \left( \frac{1}{M} \sum_{m = 1}^{M} |x_{m}| w(x_{m}) - |y| w(y) \right) \left( \frac{1}{M} \sum_{m = 1}^{M} w(x_{m}) - w(y) \right),
+\end{split}
+\]</div>
+<p>where <span class="arithmatex">\(F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M\)</span> is the empirical 
+distribution function associated with an ensemble forecast <span class="arithmatex">\(x_{1}, \dots, x_{M}\)</span> with
+<span class="arithmatex">\(M\)</span> members, <span class="arithmatex">\(w\)</span> is the chosen weight function, and <span class="arithmatex">\(\bar{w} = \sum_{m=1}^{M}w(x_{m})/M\)</span>.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>forecasts</code></td>
+          <td>
+                <code><span title="scoringrules.backend.arrayapi.Array">Array</span></code>
+          </td>
+          <td><p>The predicted forecast ensemble, where the ensemble dimension is by default
+represented by the last axis.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>observations</code></td>
+          <td>
+                <code><span title="scoringrules._wcrps.ArrayLike">ArrayLike</span></code>
+          </td>
+          <td><p>The observed values.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>w_func</code></td>
+          <td>
+                <code><span title="typing">tp</span>.<span title="typing.Callable">Callable</span></code>
+          </td>
+          <td><p>Weight function used to emphasise particular outcomes.</p></td>
+          <td>
+                <code>lambda x: np.ones_like(x)</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>w_funcargs</code></td>
+          <td>
+                <code>tuple</code>
+          </td>
+          <td><p>Additional arguments to the weight function.</p></td>
+          <td>
+                <code>()</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>axis</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>The axis corresponding to the ensemble. Default is the last axis.</p></td>
+          <td>
+                <code>-1</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>backend</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.</p></td>
+          <td>
+                <code>&#39;numba&#39;</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>vrcrps</code></td>          <td>
+                <code><span title="scoringrules._wcrps.ArrayLike">ArrayLike</span></code>
+          </td>
+          <td><p>The vrCRPS between the forecast ensemble and obs for the chosen weight function.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+<p><strong>Examples:</strong></p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">scoringrules</span> <span class="kn">import</span> <span class="n">crps</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">vrcrps</span><span class="o">.</span><span class="n">ensemble</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
 </code></pre></div>
 
   </div>
