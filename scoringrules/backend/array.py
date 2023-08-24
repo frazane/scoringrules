@@ -484,8 +484,10 @@ class ArrayAPIBackend(AbstractBackend):
         e_1 = self.np.sum(self.np.abs(obs[..., None] - fcts) * fw, axis=-1) * ow / (M * wbar)
         e_2 = self.np.sum(
             self.np.abs(
-                self.np.expand_dims(fcts * fw, axis=-1) - self.np.expand_dims(fcts * fw, axis=-2)
-            ),
+                self.np.expand_dims(fcts, axis=-1) - self.np.expand_dims(fcts, axis=-2)
+            ) * (
+                self.np.expand_dims(fw, axis=-1) * self.np.expand_dims(fw, axis=-2)
+                ),
             axis=(-1, -2),
         ) 
         e_2 *= ow / (M**2 * wbar**2)
@@ -497,11 +499,13 @@ class ArrayAPIBackend(AbstractBackend):
         e_1 = self.np.sum(self.np.abs(obs[..., None] - fcts) * fw, axis=-1) * ow / M
         e_2 = self.np.sum(
             self.np.abs(
-                self.np.expand_dims(fcts * fw, axis=-1) - self.np.expand_dims(fcts * fw, axis=-2)
-            ),
+                self.np.expand_dims(fcts, axis=-1) - self.np.expand_dims(fcts, axis=-2)
+            ) * (
+                self.np.expand_dims(fw, axis=-1) * self.np.expand_dims(fw, axis=-2)
+                ),
             axis=(-1, -2),
         ) / (M**2)
-        e_3 = (self.np.mean(self.np.abs(fcts) * fw, axis=-1) - obs[..., None] * ow[..., None])
+        e_3 = (self.np.mean(self.np.abs(fcts) * fw, axis=-1) - self.np.abs(obs) * ow)
         e_3 *= (self.np.mean(fw, axis=1) - ow)
         return e_1 - 0.5 * e_2 + e_3
 
