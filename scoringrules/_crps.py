@@ -138,8 +138,49 @@ def crps_lognormal(
     return srb[backend].crps_lognormal(mulog, sigmalog, observation)
 
 
+def crps_logistic(
+    mu: ArrayLike,
+    sigma: ArrayLike,
+    observation: ArrayLike,
+    /,
+    *,
+    backend: str = "numpy",
+) -> ArrayLike:
+    r"""Compute the closed form of the CRPS for the logistic distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(\mathcal{L}(\mu, \sigma), y) = \sigma \left\{ \omega - 2 \log F(\omega) - 1 \right\}, $$
+
+    where $F(\omega)$ is the CDF of the standard logistic distribution at the 
+    normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
+
+    Parameters
+    ----------
+    mu: ArrayLike
+        Location parameter of the forecast logistic distribution.
+    sigma: ArrayLike
+        Scale parameter of the forecast logistic distribution.
+    observation: ArrayLike
+        Observed values.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS for the Logistic(mu, sigma) forecasts given the observations.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.logistic(0.1, 0.4, 0.0)
+    """
+    return srb[backend].crps_logistic(mu, sigma, observation)
+
+
 __all__ = [
     "crps_ensemble",
     "crps_normal",
     "crps_lognormal",
+    "crps_logistic",
 ]

@@ -24,6 +24,13 @@ def _norm_pdf(x: float) -> float:
     return out
 
 
+@njit(["float32(float32)", "float64(float64)"])
+def _logis_cdf(x: float) -> float:
+    """Cumulative distribution function for the standard logistic distribution."""
+    out: float = 1.0 / (1.0 + math.exp(-x))
+    return out
+
+
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _crps_normal_ufunc(mu: float, sigma: float, observation: float) -> float:
     ω = (observation - mu) / sigma
@@ -42,6 +49,12 @@ def _crps_lognormal_ufunc(mulog: float, sigmalog: float, observation: float) -> 
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_logistic_ufunc(mu: float, sigma: float, observation: float) -> float:
+    ω = (observation - mu) / sigma
+    out: float = sigma * (ω - 2 * np.log(_logis_cdf(ω)) - 1)
+    return out
+
+
 def _logs_normal_ufunc(mu: np.ndarray, sigma: np.ndarray, observation: np.ndarray):
     ω = (observation - mu) / sigma
     return -np.log(_norm_pdf(ω) / sigma)
@@ -259,6 +272,80 @@ def _crps_ensemble_akr_circperm_gufunc(
 
 @guvectorize(
     [
+        "void(float32[:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:], float64[:])",
+    ],
+    "(n),(),(n),()->()",
+)
+def _owcrps_ensemble_nrg_gufunc(
+    forecasts: np.ndarray,
+    observation: np.ndarray,
+    fw: np.ndarray,
+    ow: np.ndarray,
+    out: np.ndarray
+):
+    """Outcome-weighted CRPS estimator based on the energy form."""
+    obs = observation[0]
+    ow = ow[0]
+    M = forecasts.shape[-1]
+
+    if np.isnan(obs):
+        out[0] = np.nan
+        return
+
+    e_1 = 0.0
+    e_2 = 0.0
+
+    for i, x_i in enumerate(forecasts):
+        e_1 += abs(x_i - obs) * fw[i] * ow
+        for j, x_j in enumerate(forecasts):
+            e_2 += abs(x_i - x_j) * fw[i] * fw[j] * ow
+
+    wbar = np.mean(fw)
+
+    out[0] = e_1 / (M * wbar) - 0.5 * e_2 / ((M * wbar) ** 2)
+    
+    
+@guvectorize(
+    [
+        "void(float32[:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:], float64[:])",
+    ],
+    "(n),(),(n),()->()",
+)
+def _vrcrps_ensemble_nrg_gufunc(
+    forecasts: np.ndarray,
+    observation: np.ndarray,
+    fw: np.ndarray,
+    ow: np.ndarray,
+    out: np.ndarray
+):
+    """Vertically re-scaled CRPS estimator based on the energy form."""
+    obs = observation[0]
+    ow = ow[0]
+    M = forecasts.shape[-1]
+
+    if np.isnan(obs):
+        out[0] = np.nan
+        return
+
+    e_1 = 0.0
+    e_2 = 0.0
+
+    for i, x_i in enumerate(forecasts):
+        e_1 += abs(x_i - obs) * fw[i] * ow
+        for j, x_j in enumerate(forecasts):
+            e_2 += abs(x_i - x_j) * fw[i] * fw[j]
+
+    wbar = np.mean(fw)
+    wabs_x = np.mean(np.abs(forecasts) * fw)
+    wabs_y = abs(obs) * ow
+
+    out[0] = e_1 / M - 0.5 * e_2 / (M ** 2) + (wabs_x - wabs_y)*(wbar - ow)
+    
+
+@guvectorize(
+    [
         "void(float32[:,:], float32[:], float32[:])",
         "void(float64[:,:], float64[:], float64[:])",
     ],
@@ -277,7 +364,63 @@ def _energy_score_gufunc(
         for j in range(M):
             e_2 += float(np.linalg.norm(forecasts[i] - forecasts[j]))
 
-    out[0] = e_1 - 0.5 / (M * (M - 1)) * e_2
+    out[0] = e_1 / M - 0.5 / (M**2) * e_2
+    
+    
+@guvectorize(
+    [
+        "void(float32[:,:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:,:], float64[:], float64[:], float64[:], float64[:])",
+    ],
+    "(m,d),(d),(m),()->()",
+)
+def _owenergy_score_gufunc(
+    forecasts: np.ndarray, observations: np.ndarray, fw: np.ndarray, ow: np.ndarray, out: np.ndarray
+):
+    """Compute the Outcome-Weighted Energy Score for a finite ensemble."""
+    M = forecasts.shape[0]
+    ow = ow[0]
+
+    e_1 = 0.0
+    e_2 = 0.0
+    for i in range(M):
+        e_1 += float(np.linalg.norm(forecasts[i] - observations) * fw[i] * ow)
+        for j in range(M):
+            e_2 += float(np.linalg.norm(forecasts[i] - forecasts[j]) * fw[i] * fw[j] * ow)           
+
+    wbar = np.mean(fw)
+
+    out[0] = e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2)
+
+
+@guvectorize(
+    [
+        "void(float32[:,:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:,:], float64[:], float64[:], float64[:], float64[:])",
+    ],
+    "(m,d),(d),(m),()->()",
+)
+def _vrenergy_score_gufunc(
+    forecasts: np.ndarray, observations: np.ndarray, fw: np.ndarray, ow: np.ndarray, out: np.ndarray
+):
+    """Compute the Vertically Re-scaled Energy Score for a finite ensemble."""
+    M = forecasts.shape[0]
+    ow = ow[0]
+
+    e_1 = 0.0
+    e_2 = 0.0
+    wabs_x = 0.0
+    for i in range(M):
+        e_1 += float(np.linalg.norm(forecasts[i] - observations) * fw[i] * ow)
+        wabs_x += np.linalg.norm(forecasts[i]) * fw[i]
+        for j in range(M):
+            e_2 += float(np.linalg.norm(forecasts[i] - forecasts[j]) * fw[i] * fw[j])
+
+    wabs_x = wabs_x / M
+    wbar = np.mean(fw)
+    wabs_y = np.linalg.norm(observations) * ow
+
+    out[0] = e_1 / M - 0.5 * e_2 / (M ** 2) + (wabs_x - wabs_y)*(wbar - ow)
 
 
 @vectorize(["float32(float32, float32)", "float64(float64, float64)"])
@@ -298,20 +441,90 @@ def _brier_score_ufunc(forecast, observation):
         "void(float32[:,:], float32[:], float32, float32[:])",
         "void(float64[:,:], float64[:], float64, float64[:])",
     ],
-    "(d,m),(d),()->()",
+    "(m,d),(d),()->()",
 )
 def _variogram_score_gufunc(forecasts, observation, p, out):
-    D = forecasts.shape[-2]
-    M = forecasts.shape[-1]
+    M = forecasts.shape[-2]
+    D = forecasts.shape[-1]
     out[0] = 0.0
     for i in range(D):
         for j in range(D):
             vfcts = 0.0
             for m in range(M):
-                vfcts += abs(forecasts[i, m] - forecasts[j, m]) ** p
+                vfcts += abs(forecasts[m, i] - forecasts[m, j]) ** p
             vfcts = vfcts / M
             vobs = abs(observation[i] - observation[j]) ** p
             out[0] += (vobs - vfcts) ** 2
+
+
+@guvectorize(
+    [
+        "void(float32[:,:], float32[:], float32, float32[:], float32, float32[:])",
+        "void(float64[:,:], float64[:], float64, float64[:], float64, float64[:])",
+    ],
+    "(m,d),(d),(),(m),()->()",
+)
+def _owvariogram_score_gufunc(forecasts, observation, p, fw, ow, out):
+    M = forecasts.shape[-2]
+    D = forecasts.shape[-1]
+        
+    e_1 = 0.0
+    e_2 = 0.0
+    for k in range(M):
+        for i in range(D):
+            for j in range(D):   
+                rho1 = abs(forecasts[k, i] - forecasts[k, j]) ** p
+                rho2 = abs(observation[i] - observation[j]) ** p
+                e_1 += (rho1 - rho2) ** 2 * fw[k] * ow
+        for m in range(M): 
+            for i in range(D):
+                for j in range(D):   
+                    rho1 = abs(forecasts[k, i] - forecasts[k, j]) ** p
+                    rho2 = abs(forecasts[m, i] - forecasts[m, j]) ** p
+                    e_2 += (rho1 - rho2) ** 2 * fw[k] * fw[m] * ow  
+
+    wbar = np.mean(fw)
+
+    out[0] = e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2)
+    
+
+@guvectorize(
+    [
+        "void(float32[:,:], float32[:], float32, float32[:], float32, float32[:])",
+        "void(float64[:,:], float64[:], float64, float64[:], float64, float64[:])",
+    ],
+    "(m,d),(d),(),(m),()->()",
+)
+def _vrvariogram_score_gufunc(forecasts, observation, p, fw, ow, out):
+    M = forecasts.shape[-2]
+    D = forecasts.shape[-1]
+    
+    e_1 = 0.0
+    e_2 = 0.0
+    e_3_x = 0.0
+    for k in range(M):
+        for i in range(D):
+            for j in range(D):   
+                rho1 = abs(forecasts[k, i] - forecasts[k, j]) ** p
+                rho2 = abs(observation[i] - observation[j]) ** p
+                e_1 += (rho1 - rho2) ** 2 * fw[k] * ow
+                e_3_x += (rho1) ** 2 * fw[k]
+        for m in range(M):
+            for i in range(D):
+                for j in range(D):   
+                    rho1 = abs(forecasts[k, i] - forecasts[k, j]) ** p
+                    rho2 = abs(forecasts[m, i] - forecasts[m, j]) ** p
+                    e_2 += (rho1 - rho2) ** 2 * fw[k] * fw[m]
+
+    e_3_x *= 1/M
+    wbar = np.mean(fw)
+    e_3_y = 0.0
+    for i in range(D):
+        for j in range(D):   
+            rho1 = abs(observation[i] - observation[j]) ** p
+            e_3_y += (rho1) ** 2 * ow
+
+    out[0] = e_1 / M - 0.5 * e_2 / (M ** 2) + (e_3_x - e_3_y)*(wbar - ow)
 
 
 __all__ = [
@@ -324,8 +537,15 @@ __all__ = [
     "_crps_ensemble_qd_gufunc",
     "_crps_normal_ufunc",
     "_crps_lognormal_ufunc",
+    "_crps_logistic_ufunc",
+    "_owcrps_ensemble_nrg_gufunc",
+    "_vrcrps_ensemble_nrg_gufunc",
     "_logs_normal_ufunc",
     "_energy_score_gufunc",
+    "_owenergy_score_gufunc",
+    "_vrenergy_score_gufunc",
     "_brier_score_ufunc",
     "_variogram_score_gufunc",
+    "_owvariogram_score_gufunc",
+    "_vrvariogram_score_gufunc",
 ]
