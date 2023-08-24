@@ -171,16 +171,11 @@ class ArrayAPIBackend(AbstractBackend):
         E_1 = self.np.sum(err_norm, axis=m_axis) / M
 
         ens_diff = self.np.expand_dims(fcts, axis=m_axis) - self.np.expand_dims(
-            fcts, axis=m_axis - 1
+            fcts, axis=(m_axis - 1)
         )
-        ens_diff = self.np.where(ens_diff == 0.0, self.np.ones_like(ens_diff), ens_diff)
         spread_norm = self.np.linalg.norm(ens_diff, axis=v_axis, keepdims=True)
-        spread_norm = self.np.where(
-            self.np.eye(M, M, dtype=bool), self.np.zeros_like(spread_norm), spread_norm
-        )
-        E_2 = self.np.sum(spread_norm, axis=(m_axis, m_axis - 1), keepdims=True) / (
-            M * (M - 1)
-        )
+        
+        E_2 = self.np.sum(spread_norm, axis=(m_axis, m_axis - 1)) / (M**2)
         return self.np.squeeze(E_1 - 0.5 * E_2)
     
     def owenergy_score(
@@ -197,23 +192,27 @@ class ArrayAPIBackend(AbstractBackend):
 
         w_func_wrap = lambda x: w_func(x, *w_funcargs)
         fw = self.np.apply_along_axis(w_func_wrap, axis=-1, arr=fcts)
-        ow = self.np.apply_along_axis(w_func_wrap, axis=0, arr=obs)
-        wbar = self.np.mean(fw)
+        ow = self.np.apply_along_axis(w_func_wrap, axis=-1, arr=obs)
+        wbar = self.np.mean(fw, axis=-1, keepdims=True)
 
         err_norm = self.np.linalg.norm(
             fcts - self.np.expand_dims(obs, axis=m_axis), axis=v_axis, keepdims=True
         )
-        E_1 = self.np.sum(err_norm * self.np.expand_dims(fw, axis=v_axis) * ow, axis=m_axis) / (M * wbar)
+        E_1 = self.np.sum(err_norm * 
+                          self.np.expand_dims(fw, axis=v_axis) * 
+                          self.np.expand_dims(ow, axis=(m_axis, v_axis)), 
+                          axis=m_axis) / (M * wbar)
 
         ens_diff = self.np.expand_dims(fcts, axis=m_axis) - self.np.expand_dims(
-            fcts, axis=m_axis - 1
+            fcts, axis=(m_axis - 1)
         )
         spread_norm = self.np.linalg.norm(ens_diff, axis=v_axis, keepdims=True)
         
-        fw_diff = self.np.expand_dims(fw, axis=m_axis)*self.np.expand_dims(fw, axis=v_axis)
-        E_2 = self.np.sum(spread_norm * self.np.expand_dims(fw_diff, axis=-1) * ow,
-                          axis=(m_axis, m_axis - 1),
-                          keepdims=True) / (M**2 + wbar**2)
+        fw_diff = self.np.expand_dims(fw, axis=m_axis) * self.np.expand_dims(fw, axis=v_axis)
+        E_2 = self.np.sum(spread_norm * 
+                          self.np.expand_dims(fw_diff, axis=-1) * 
+                          ow[..., None, None, None],
+                          axis=(m_axis, m_axis - 1)) / (M**2 * wbar**2)
         return self.np.squeeze(E_1 - 0.5 * E_2)
     
     def twenergy_score(
@@ -253,27 +252,30 @@ class ArrayAPIBackend(AbstractBackend):
 
         w_func_wrap = lambda x: w_func(x, *w_funcargs)
         fw = self.np.apply_along_axis(w_func_wrap, axis=-1, arr=fcts)
-        ow = self.np.apply_along_axis(w_func_wrap, axis=0, arr=obs)
+        ow = self.np.apply_along_axis(w_func_wrap, axis=-1, arr=obs)
+        wbar = self.np.mean(fw, axis=-1)
 
         err_norm = self.np.linalg.norm(
             fcts - self.np.expand_dims(obs, axis=m_axis), axis=v_axis, keepdims=True
         )
-        E_1 = self.np.sum(err_norm * self.np.expand_dims(fw, axis=v_axis) * ow, axis=m_axis) / M
+        E_1 = self.np.sum(err_norm * 
+                          self.np.expand_dims(fw, axis=v_axis) * 
+                          self.np.expand_dims(ow, axis=(m_axis, v_axis)), 
+                          axis=m_axis) / M
 
         ens_diff = self.np.expand_dims(fcts, axis=m_axis) - self.np.expand_dims(
-            fcts, axis=m_axis - 1
+            fcts, axis=(m_axis - 1)
         )
         spread_norm = self.np.linalg.norm(ens_diff, axis=v_axis, keepdims=True)
         
-        fw_diff = self.np.expand_dims(fw, axis=m_axis)*self.np.expand_dims(fw, axis=v_axis)
-        E_2 = self.np.sum(spread_norm * self.np.expand_dims(fw_diff, axis=-1),
-                          axis=(m_axis, m_axis - 1),
-                          keepdims=True) / (M ** 2)
+        fw_diff = self.np.expand_dims(fw, axis=m_axis) * self.np.expand_dims(fw, axis=v_axis)
+        E_2 = self.np.sum(spread_norm * 
+                          self.np.expand_dims(fw_diff, axis=-1),
+                          axis=(m_axis, m_axis - 1)) / (M**2)
         
-        wbar = self.np.mean(fw)
-        rhobar = self.np.mean(self.np.linalg.norm(fcts, axis=v_axis) * fw)
-        E_3 = (rhobar - self.np.linalg.norm(obs) * ow) * (wbar - ow)
-        return self.np.squeeze(E_1 - 0.5 * E_2 + E_3)
+        rhobar = self.np.mean(self.np.linalg.norm(fcts, axis=v_axis) * fw, axis=(m_axis + 1))
+        E_3 = (rhobar - self.np.linalg.norm(obs, axis=-1) * ow) * (wbar - ow)
+        return self.np.squeeze(E_1 - 0.5 * E_2 + self.np.expand_dims(E_3, axis=-1))
 
     def brier_score(self, fcts: ArrayLike, obs: ArrayLike) -> Array:
         """Compute the Brier Score for predicted probabilities of events."""
@@ -335,8 +337,8 @@ class ArrayAPIBackend(AbstractBackend):
 
         w_func_wrap = lambda x: w_func(x, *w_funcargs)
         fw = self.np.apply_along_axis(w_func_wrap, axis=-1, arr=forecasts)
-        ow = self.np.apply_along_axis(w_func_wrap, axis=0, arr=observations)
-        wbar = self.np.mean(fw)
+        ow = self.np.apply_along_axis(w_func_wrap, axis=-1, arr=observations)
+        wbar = self.np.mean(fw, axis=-1)
 
         M: int = forecasts.shape[-2]
         fct_diff = (
@@ -345,18 +347,21 @@ class ArrayAPIBackend(AbstractBackend):
             )
             ** p
         )
-        fct_diff = self.np.transpose(fct_diff, axes=(1, 2, 0))
+
         obs_diff = (
             self.np.abs(observations[..., None] - observations[..., None, :]) ** p
         )
-        
+        obs_diff = self.np.expand_dims(obs_diff, axis=-3)
         e_1 = (fct_diff - obs_diff) ** 2
-        e_1 = self.np.sum(e_1, axis=(0, 1))
-        e_1 = self.np.sum(e_1 * fw * ow) / (M * wbar)
+        e_1 = self.np.sum(e_1, axis=(-2, -1))
+        e_1 = self.np.sum(e_1 * fw * self.np.expand_dims(ow, axis=-1), axis=-1) / (M * wbar)
         
-        e_2 = (fct_diff[:, :, :, self.np.newaxis] - fct_diff[:, :, self.np.newaxis, :]) ** 2
-        e_2 = self.np.sum(e_2, axis=(0, 1))
-        e_2 = self.np.sum(e_2 * self.np.outer(fw, fw) * ow) / (M**2 * wbar**2)
+        e_2 = (self.np.expand_dims(fct_diff, axis=-3) - self.np.expand_dims(fct_diff, axis=-4)) ** 2
+        e_2 = self.np.sum(e_2, axis=(-2, -1))
+        
+        fw_diff = self.np.expand_dims(fw, axis=m_axis) * self.np.expand_dims(fw, axis=v_axis)
+        e_2 = self.np.sum(e_2 * fw_diff * self.np.expand_dims(ow, axis=(-2, -1)), 
+                          axis=(-2, -1)) / (M**2 * wbar**2)
         
         out = e_1 - 0.5 * e_2
         return out
@@ -365,9 +370,9 @@ class ArrayAPIBackend(AbstractBackend):
         self,
         forecasts: Array,
         observations: Array,
+        p: float = 1,
         v_func: tp.Callable = lambda x, *args: x,
         v_funcargs: tuple = (),
-        p: float = 1,
         m_axis: int = -2,
         v_axis: int = -1,
     ) -> Array:
@@ -403,8 +408,8 @@ class ArrayAPIBackend(AbstractBackend):
 
         w_func_wrap = lambda x: w_func(x, *w_funcargs)
         fw = self.np.apply_along_axis(w_func_wrap, axis=-1, arr=forecasts)
-        ow = self.np.apply_along_axis(w_func_wrap, axis=0, arr=observations)
-        wbar = self.np.mean(fw)
+        ow = self.np.apply_along_axis(w_func_wrap, axis=-1, arr=observations)
+        wbar = self.np.mean(fw, axis=-1)
 
         M: int = forecasts.shape[-2]
         fct_diff = (
@@ -413,22 +418,23 @@ class ArrayAPIBackend(AbstractBackend):
             )
             ** p
         )
-        fct_diff = self.np.transpose(fct_diff, axes=(1, 2, 0))
+
         obs_diff = (
             self.np.abs(observations[..., None] - observations[..., None, :]) ** p
         )
+        e_1 = (fct_diff - self.np.expand_dims(obs_diff, axis=-3)) ** 2
+        e_1 = self.np.sum(e_1, axis=(-2, -1))
+        e_1 = self.np.sum(e_1 * fw * self.np.expand_dims(ow, axis=-1), axis=-1) / M
         
-        e_1 = (fct_diff - obs_diff) ** 2
-        e_1 = self.np.sum(e_1, axis=(0, 1))
-        e_1 = self.np.sum(e_1 * fw * ow) / M
+        e_2 = (self.np.expand_dims(fct_diff, axis=-3) - self.np.expand_dims(fct_diff, axis=-4)) ** 2
+        e_2 = self.np.sum(e_2, axis=(-2, -1))
         
-        e_2 = (fct_diff[:, :, :, self.np.newaxis] - fct_diff[:, :, self.np.newaxis, :]) ** 2
-        e_2 = self.np.sum(e_2, axis=(0, 1))
-        e_2 = self.np.sum(e_2 * self.np.outer(fw, fw)) / (M**2)
+        fw_diff = self.np.expand_dims(fw, axis=m_axis) * self.np.expand_dims(fw, axis=v_axis)
+        e_2 = self.np.sum(e_2 * fw_diff, axis=(-2, -1)) / (M**2)
         
-        e_3 = self.np.sum(fct_diff ** 2, axis=(0, 1))
-        e_3 = self.np.sum(e_3 * fw) / M
-        e_3 -= self.np.sum(obs_diff ** 2) * ow
+        e_3 = self.np.sum(fct_diff ** 2, axis=(-2, -1))
+        e_3 = self.np.sum(e_3 * fw, axis=-1) / M
+        e_3 -= self.np.sum(obs_diff ** 2, axis=(-2, -1)) * ow
         e_3 *= (wbar - ow)
         
         out = e_1 - 0.5 * e_2 + e_3

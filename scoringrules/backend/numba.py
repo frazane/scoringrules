@@ -188,7 +188,7 @@ class NumbaBackend(AbstractBackend):
 
         w_func_wrap = lambda x: w_func(x, *w_funcargs)
         fw = np.apply_along_axis(w_func_wrap, axis=-1, arr=forecasts)
-        ow = np.apply_along_axis(w_func_wrap, axis=0, arr=observations)
+        ow = np.apply_along_axis(w_func_wrap, axis=-1, arr=observations)
         return _owenergy_score_gufunc(forecasts, observations, fw, ow)
 
     @staticmethod
@@ -229,7 +229,7 @@ class NumbaBackend(AbstractBackend):
             
         w_func_wrap = lambda x: w_func(x, *w_funcargs)
         fw = np.apply_along_axis(w_func_wrap, axis=-1, arr=forecasts)
-        ow = np.apply_along_axis(w_func_wrap, axis=0, arr=observations)
+        ow = np.apply_along_axis(w_func_wrap, axis=-1, arr=observations)
         
         return _vrenergy_score_gufunc(forecasts, observations, fw, ow)
 
@@ -274,7 +274,7 @@ class NumbaBackend(AbstractBackend):
 
         w_func_wrap = lambda x: w_func(x, *w_funcargs)
         fw = np.apply_along_axis(w_func_wrap, axis=-1, arr=forecasts)
-        ow = np.apply_along_axis(w_func_wrap, axis=0, arr=observations)
+        ow = np.apply_along_axis(w_func_wrap, axis=-1, arr=observations)
         return _owvariogram_score_gufunc(forecasts, observations, p, fw, ow)
     
     @staticmethod
@@ -317,7 +317,7 @@ class NumbaBackend(AbstractBackend):
 
         w_func_wrap = lambda x: w_func(x, *w_funcargs)
         fw = np.apply_along_axis(w_func_wrap, axis=-1, arr=forecasts)
-        ow = np.apply_along_axis(w_func_wrap, axis=0, arr=observations)
+        ow = np.apply_along_axis(w_func_wrap, axis=-1, arr=observations)
         return _vrvariogram_score_gufunc(forecasts, observations, p, fw, ow)
 
     def __repr__(self) -> str:
