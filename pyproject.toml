@@ -1,8 +1,11 @@
 [tool.poetry]
 name = "scoringrules"
-version = "0.2.0"
+version = "0.3.0"
 description = "Scoring rules for probabilistic forecast evaluation."
-authors = ["Francesco Zanetta <zanetta.francesco@gmail.com>"]
+authors = [
+  "Francesco Zanetta <zanetta.francesco@gmail.com>",
+  "Sam Allen <sam.allen@unibe.ch>",
+]
 homepage = "https://github.com/frazane/scoringrules"
 documentation = "https://frazane.github.io/scoringrules/"
 keywords = ["probabilistic", "forecasting", "verification"]
