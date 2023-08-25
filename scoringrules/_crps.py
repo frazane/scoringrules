@@ -153,7 +153,7 @@ def crps_logistic(
 
     $$ \mathrm{CRPS}(\mathcal{L}(\mu, \sigma), y) = \sigma \left\{ \omega - 2 \log F(\omega) - 1 \right\}, $$
 
-    where $F(\omega)$ is the CDF of the standard logistic distribution at the 
+    where $F(\omega)$ is the CDF of the standard logistic distribution at the
     normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
 
     Parameters

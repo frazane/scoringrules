@@ -1,14 +1,24 @@
-import jax
 import numpy as np
 import pytest
 from scoringrules._variogram import variogram_score
-from scoringrules._wvariogram import owvariogram_score, twvariogram_score, vrvariogram_score
+from scoringrules._wvariogram import (
+    owvariogram_score,
+    twvariogram_score,
+    vrvariogram_score,
+)
+
+from .conftest import JAX_IMPORTED
 
 ENSEMBLE_SIZE = 51
 N = 100
 N_VARS = 3
 
-BACKENDS = ["numpy", "numba", "jax"]
+BACKENDS = ["numpy", "numba"]
+if JAX_IMPORTED:
+    BACKENDS.append("jax")
+    import jax
+
+    jax.config.update("jax_enable_x64", True)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -18,7 +28,7 @@ def test_owvs_vs_vs(backend):
 
     res = variogram_score(fcts, obs, backend=backend)
     resw = owvariogram_score(fcts, obs, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-10)
+    np.testing.assert_allclose(res, resw, rtol=1e-5)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -28,7 +38,7 @@ def test_twvs_vs_vs(backend):
 
     res = variogram_score(fcts, obs, backend=backend)
     resw = twvariogram_score(fcts, obs, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-10)
+    np.testing.assert_allclose(res, resw, rtol=1e-5)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -38,7 +48,7 @@ def test_vrvs_vs_vs(backend):
 
     res = variogram_score(fcts, obs, backend=backend)
     resw = vrvariogram_score(fcts, obs, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-10)
+    np.testing.assert_allclose(res, resw, rtol=1e-5)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

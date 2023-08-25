@@ -28,7 +28,7 @@ def owvariogram_score(
         \mathrm{owVS}(F_{ens}, \mathbf{y}) = & \frac{1}{M \bar{w}} \sum_{m=1}^{M} \sum_{i,j=1}^{D}(|y_{i} - y_{j}|^{p} - |x_{m,i} - x_{m,j}|^{p})^{2} w(\mathbf{x}_{m}) w(\mathbf{y}) \\
             & - \frac{1}{2 M^{2} \bar{w}^{2}} \sum_{k,m=1}^{M} \sum_{i,j=1}^{D} \left( |x_{k,i} - x_{k,j}|^{p} - |x_{m,i} - x_{m,j}|^{p} \right)^{2} w(\mathbf{x}_{k}) w(\mathbf{x}_{m}) w(\mathbf{y}),
     \end{split}
-    \] 
+    \]
 
     where $F_{ens}$ is the ensemble forecast $\mathbf{x}_{1}, \dots, \mathbf{x}_{M}$ with
     $M$ members, $w$ is the chosen weight function, and $\bar{w} = \sum_{m=1}^{M}w(\mathbf{x}_{m})/M$.
@@ -59,13 +59,7 @@ def owvariogram_score(
         The computed Outcome-Weighted Variogram Score.
     """
     return srb[backend].owvariogram_score(
-        forecasts, 
-        observations, 
-        p,
-        w_func, 
-        w_funcargs, 
-        m_axis=m_axis, 
-        v_axis=v_axis
+        forecasts, observations, p, w_func, w_funcargs, m_axis=m_axis, v_axis=v_axis
     )
 
 
@@ -88,7 +82,7 @@ def twvariogram_score(
 
     \[
         \mathrm{twVS}(F_{ens}, \mathbf{y}) = \sum_{i,j=1}^{D}(|v(\mathbf{y})_i - v(\mathbf{y})_{j}|^{p} - \frac{1}{M} \sum_{m=1}^{M}|v(\mathbf{x}_{m})_{i} - v(\mathbf{x}_{m})_{j}|^{p})^{2},
-    \] 
+    \]
 
     where $F_{ens}$ is the ensemble forecast $\mathbf{x}_{1}, \dots, \mathbf{x}_{M}$ with
     $M$ members, and $v$ is the chaining function used to target particular outcomes.
@@ -112,20 +106,15 @@ def twvariogram_score(
         The axis corresponding to the variables dimension. Defaults to -1.
     backend: str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
-        
+
+
     Returns
     -------
     twvariogram_score: ArrayLike of shape (...)
         The computed Threshold-Weighted Variogram Score.
     """
     return srb[backend].twvariogram_score(
-        forecasts, 
-        observations, 
-        p,
-        v_func, 
-        v_funcargs, 
-        m_axis=m_axis, 
-        v_axis=v_axis
+        forecasts, observations, p, v_func, v_funcargs, m_axis=m_axis, v_axis=v_axis
     )
 
 
@@ -152,7 +141,7 @@ def vrvariogram_score(
             & - \frac{1}{2 M^{2}} \sum_{k,m=1}^{M} \sum_{i,j=1}^{D} \left( |x_{k,i} - x_{k,j}|^{p} - |x_{m,i} - x_{m,j}|^{p} \right)^{2} w(\mathbf{x}_{k}) w(\mathbf{x}_{m})) \\
             & + \left( \frac{1}{M} \sum_{m = 1}^{M} \sum_{i,j=1}^{D}(|x_{m,i} - x_{m,j}|^{p} w(\mathbf{x}_{m}) - \sum_{i,j=1}^{D}(|y_{i} - y_{j}|^{p} w(\mathbf{y}) \right) \left( \frac{1}{M} \sum_{m = 1}^{M} w(\mathbf{x}_{m}) - w(\mathbf{y}) \right),
     \end{split}
-    \] 
+    \]
 
     where $F_{ens}$ is the ensemble forecast $\mathbf{x}_{1}, \dots, \mathbf{x}_{M}$ with
     $M$ members, $w$ is the chosen weight function, and $\bar{w} = \sum_{m=1}^{M}w(\mathbf{x}_{m})/M$.
@@ -183,11 +172,5 @@ def vrvariogram_score(
         The computed Vertically Re-scaled Variogram Score.
     """
     return srb[backend].vrvariogram_score(
-        forecasts, 
-        observations, 
-        p,
-        w_func, 
-        w_funcargs, 
-        m_axis=m_axis, 
-        v_axis=v_axis
+        forecasts, observations, p, w_func, w_funcargs, m_axis=m_axis, v_axis=v_axis
     )

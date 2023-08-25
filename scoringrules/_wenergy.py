@@ -24,10 +24,10 @@ def owenergy_score(
 
     \[
         \mathrm{owES}(F_{ens}, \mathbf{y}) = \frac{1}{M \bar{w}} \sum_{m = 1}^{M} \| \mathbf{x}_{m} - \mathbf{y} \| w(\mathbf{x}_{m}) w(\mathbf{y}) - \frac{1}{2 M^{2} \bar{w}^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} \| \mathbf{x}_{m} - \mathbf{x}_{j} \| w(\mathbf{x}_{m}) w(\mathbf{x}_{j}) w(\mathbf{y}),
-    \] 
+    \]
 
     where $F_{ens}$ is the ensemble forecast $\mathbf{x}_{1}, \dots, \mathbf{x}_{M}$ with
-    $M$ members, $\| \cdotp \|$ is the Euclidean distance, $w$ is the chosen weight function, 
+    $M$ members, $\| \cdotp \|$ is the Euclidean distance, $w$ is the chosen weight function,
     and $\bar{w} = \sum_{m=1}^{M}w(\mathbf{x}_{m})/M$.
 
 
@@ -55,12 +55,7 @@ def owenergy_score(
         The computed Outcome-Weighted Energy Score.
     """
     return srb[backend].owenergy_score(
-        forecasts, 
-        observations, 
-        w_func, 
-        w_funcargs, 
-        m_axis=m_axis, 
-        v_axis=v_axis
+        forecasts, observations, w_func, w_funcargs, m_axis=m_axis, v_axis=v_axis
     )
 
 
@@ -82,10 +77,10 @@ def twenergy_score(
 
     \[
         \mathrm{twES}(F_{ens}, \mathbf{y}) = \frac{1}{M} \sum_{m = 1}^{M} \| v(\mathbf{x}_{m}) - v(\mathbf{y}) \| - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} \| v(\mathbf{x}_{m}) - v(\mathbf{x}_{j}) \|,
-    \] 
+    \]
 
     where $F_{ens}$ is the ensemble forecast $\mathbf{x}_{1}, \dots, \mathbf{x}_{M}$ with
-    $M$ members, $\| \cdotp \|$ is the Euclidean distance, and $v$ is the chaining function 
+    $M$ members, $\| \cdotp \|$ is the Euclidean distance, and $v$ is the chaining function
     used to target particular outcomes.
 
 
@@ -113,12 +108,7 @@ def twenergy_score(
         The computed Threshold-Weighted Energy Score.
     """
     return srb[backend].twenergy_score(
-        forecasts, 
-        observations, 
-        v_func, 
-        v_funcargs, 
-        m_axis=m_axis, 
-        v_axis=v_axis
+        forecasts, observations, v_func, v_funcargs, m_axis=m_axis, v_axis=v_axis
     )
 
 
@@ -143,7 +133,7 @@ def vrenergy_score(
         \mathrm{vrES}(F_{ens}, \mathbf{y}) = & \frac{1}{M} \sum_{m = 1}^{M} \| \mathbf{x}_{m} - \mathbf{y} \| w(\mathbf{x}_{m}) w(\mathbf{y}) - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} \| \mathbf{x}_{m} - \mathbf{x}_{j} \| w(\mathbf{x}_{m}) w(\mathbf{x_{j}}) \\
             & + \left( \frac{1}{M} \sum_{m = 1}^{M} \| \mathbf{x}_{m} \| w(\mathbf{x}_{m}) - \| \mathbf{y} \| w(\mathbf{y}) \right) \left( \frac{1}{M} \sum_{m = 1}^{M} w(\mathbf{x}_{m}) - w(\mathbf{y}) \right),
     \end{split}
-    \] 
+    \]
 
     where $F_{ens}$ is the ensemble forecast $\mathbf{x}_{1}, \dots, \mathbf{x}_{M}$ with
     $M$ members, and $v$ is the chaining function used to target particular outcomes.
@@ -173,10 +163,5 @@ def vrenergy_score(
         The computed Vertically Re-scaled Energy Score.
     """
     return srb[backend].vrenergy_score(
-        forecasts, 
-        observations, 
-        w_func, 
-        w_funcargs, 
-        m_axis=m_axis, 
-        v_axis=v_axis
+        forecasts, observations, w_func, w_funcargs, m_axis=m_axis, v_axis=v_axis
     )

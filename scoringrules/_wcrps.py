@@ -1,5 +1,6 @@
-import numpy as np
 import typing as tp
+
+import numpy as np
 
 from scoringrules.backend import backends as srb
 from scoringrules.backend.arrayapi import Array
@@ -24,7 +25,7 @@ def twcrps_ensemble(
 
     $$ \mathrm{twCRPS}(F_{ens}, y) = \frac{1}{M} \sum_{m = 1}^{M} |v(x_{m}) - v(y)| - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |v(x_{m}) - v(x_{j})|,$$
 
-    where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical 
+    where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical
     distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
     $M$ members, and $v$ is the chaining function used to target particular outcomes.
 
@@ -61,7 +62,7 @@ def twcrps_ensemble(
         v_funcargs,
         axis=axis,
     )
-    
+
 
 def owcrps_ensemble(
     forecasts: Array,
@@ -74,13 +75,13 @@ def owcrps_ensemble(
     backend: str = "numba",
 ) -> Array:
     r"""Estimate the Outcome-Weighted Continuous Ranked Probability Score (owCRPS) for a finite ensemble.
-    
+
     Computation is performed using the ensemble representation of the owCRPS in
     [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
 
     $$ \mathrm{owCRPS}(F_{ens}, y) = \frac{1}{M \bar{w}} \sum_{m = 1}^{M} |x_{m} - y|w(x_{m})w(y) - \frac{1}{2 M^{2} \bar{w}^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m} - x_{j}|w(x_{m})w(x_{j})w(y),$$
 
-    where $F_{ens}(x) = \sum_{m=1}^{M} 1\{ x_{m} \leq x \}/M$ is the empirical 
+    where $F_{ens}(x) = \sum_{m=1}^{M} 1\{ x_{m} \leq x \}/M$ is the empirical
     distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
     $M$ members, $w$ is the chosen weight function, and $\bar{w} = \sum_{m=1}^{M}w(x_{m})/M$.
 
@@ -117,8 +118,8 @@ def owcrps_ensemble(
         w_funcargs,
         axis=axis,
     )
-    
-    
+
+
 def vrcrps_ensemble(
     forecasts: Array,
     observations: ArrayLike,
@@ -139,9 +140,9 @@ def vrcrps_ensemble(
         \mathrm{vrCRPS}(F_{ens}, y) = & \frac{1}{M} \sum_{m = 1}^{M} |x_{m} - y|w(x_{m})w(y) - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m} - x_{j}|w(x_{m})w(x_{j}) \\
             & + \left( \frac{1}{M} \sum_{m = 1}^{M} |x_{m}| w(x_{m}) - |y| w(y) \right) \left( \frac{1}{M} \sum_{m = 1}^{M} w(x_{m}) - w(y) \right),
     \end{split}
-    \] 
+    \]
 
-    where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical 
+    where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical
     distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
     $M$ members, $w$ is the chosen weight function, and $\bar{w} = \sum_{m=1}^{M}w(x_{m})/M$.
 
@@ -178,8 +179,8 @@ def vrcrps_ensemble(
         w_funcargs,
         axis=axis,
     )
-    
-    
+
+
 __all__ = [
     "twcrps_ensemble",
     "owcrps_ensemble",

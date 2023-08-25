@@ -13,17 +13,17 @@ from .gufuncs import (
     _crps_ensemble_nrg_gufunc,
     _crps_ensemble_pwm_gufunc,
     _crps_ensemble_qd_gufunc,
+    _crps_logistic_ufunc,
     _crps_lognormal_ufunc,
     _crps_normal_ufunc,
-    _crps_logistic_ufunc,
-    _owcrps_ensemble_nrg_gufunc,
-    _vrcrps_ensemble_nrg_gufunc,
     _energy_score_gufunc,
-    _owenergy_score_gufunc,
-    _vrenergy_score_gufunc,
     _logs_normal_ufunc,
-    _variogram_score_gufunc,
+    _owcrps_ensemble_nrg_gufunc,
+    _owenergy_score_gufunc,
     _owvariogram_score_gufunc,
+    _variogram_score_gufunc,
+    _vrcrps_ensemble_nrg_gufunc,
+    _vrenergy_score_gufunc,
     _vrvariogram_score_gufunc,
 )
 
@@ -92,7 +92,7 @@ class NumbaBackend(AbstractBackend):
     ) -> Array:
         """Compute the CRPS for a log normal distribution."""
         return _crps_lognormal_ufunc(mulog, sigmalog, observation)
-    
+
     @staticmethod
     def crps_logistic(mu: ArrayLike, sigma: ArrayLike, observation: ArrayLike) -> Array:
         """Compute the CRPS for a logistic distribution."""
@@ -109,7 +109,7 @@ class NumbaBackend(AbstractBackend):
         """Compute the Outcome-Weighted CRPS for a finite ensemble."""
         if axis != -1:
             forecasts = np.moveaxis(forecasts, axis, -1)
-            
+
         fw = w_func(forecasts, *w_funcargs)
         ow = w_func(observations, *w_funcargs)
         return _owcrps_ensemble_nrg_gufunc(forecasts, observations, fw, ow)
@@ -125,7 +125,7 @@ class NumbaBackend(AbstractBackend):
         """Compute the Threshold-Weighted CRPS for a finite ensemble."""
         if axis != -1:
             forecasts = np.moveaxis(forecasts, axis, -1)
-            
+
         v_forecasts = v_func(forecasts, *v_funcargs)
         v_observations = v_func(observations, *v_funcargs)
         return _crps_ensemble_nrg_gufunc(v_forecasts, v_observations)
@@ -206,11 +206,11 @@ class NumbaBackend(AbstractBackend):
         if v_axis != -1:
             forecasts = np.moveaxis(forecasts, v_axis, -1)
             observations = np.moveaxis(observations, v_axis, -1)
-            
+
         v_forecasts = v_func(forecasts, *v_funcargs)
         v_observations = v_func(observations, *v_funcargs)
         return _energy_score_gufunc(v_forecasts, v_observations)
-    
+
     @staticmethod
     def vrenergy_score(
         forecasts: Array,
@@ -226,11 +226,11 @@ class NumbaBackend(AbstractBackend):
         if v_axis != -1:
             forecasts = np.moveaxis(forecasts, v_axis, -1)
             observations = np.moveaxis(observations, v_axis, -1)
-            
+
         w_func_wrap = lambda x: w_func(x, *w_funcargs)
         fw = np.apply_along_axis(w_func_wrap, axis=-1, arr=forecasts)
         ow = np.apply_along_axis(w_func_wrap, axis=-1, arr=observations)
-        
+
         return _vrenergy_score_gufunc(forecasts, observations, fw, ow)
 
     @staticmethod
@@ -254,7 +254,7 @@ class NumbaBackend(AbstractBackend):
             observations = np.moveaxis(observations, v_axis, -1)
 
         return _variogram_score_gufunc(forecasts, observations, p)
-    
+
     @staticmethod
     def owvariogram_score(
         forecasts: Array,
@@ -276,7 +276,7 @@ class NumbaBackend(AbstractBackend):
         fw = np.apply_along_axis(w_func_wrap, axis=-1, arr=forecasts)
         ow = np.apply_along_axis(w_func_wrap, axis=-1, arr=observations)
         return _owvariogram_score_gufunc(forecasts, observations, p, fw, ow)
-    
+
     @staticmethod
     def twvariogram_score(
         forecasts: Array,
@@ -297,7 +297,7 @@ class NumbaBackend(AbstractBackend):
         v_forecasts = v_func(forecasts, *v_funcargs)
         v_observations = v_func(observations, *v_funcargs)
         return _variogram_score_gufunc(v_forecasts, v_observations, p)
-    
+
     @staticmethod
     def vrvariogram_score(
         forecasts: Array,

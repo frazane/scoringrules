@@ -1,7 +1,7 @@
+import typing as tp
 from types import ModuleType
 
 import numpy as np
-import typing as tp
 
 from .arrayapi import Array, ArrayAPIProtocol
 from .base import AbstractBackend
@@ -114,7 +114,7 @@ class ArrayAPIBackend(AbstractBackend):
         out = self._owcrps_ensemble_nrg(fcts, obs, fw, ow)
 
         return out
-    
+
     def twcrps_ensemble(
         self,
         fcts: Array,
@@ -128,14 +128,14 @@ class ArrayAPIBackend(AbstractBackend):
 
         if axis != -1:
             fcts = self.np.moveaxis(fcts, axis, -1)
-            
+
         v_fcts = v_func(fcts, *v_funcargs)
         v_obs = v_func(obs, *v_funcargs)
 
         out = self._crps_ensemble_nrg(v_fcts, v_obs)
 
         return out
-    
+
     def vrcrps_ensemble(
         self,
         fcts: Array,
@@ -149,14 +149,14 @@ class ArrayAPIBackend(AbstractBackend):
 
         if axis != -1:
             fcts = self.np.moveaxis(fcts, axis, -1)
-            
+
         fw = w_func(fcts, *w_funcargs)
         ow = w_func(obs, *w_funcargs)
 
         out = self._vrcrps_ensemble_nrg(fcts, obs, fw, ow)
 
         return out
-    
+
     def energy_score(self, fcts: Array, obs: Array, m_axis=-2, v_axis=-1) -> Array:
         """
         Compute the energy score based on a finite ensemble.
@@ -174,17 +174,17 @@ class ArrayAPIBackend(AbstractBackend):
             fcts, axis=(m_axis - 1)
         )
         spread_norm = self.np.linalg.norm(ens_diff, axis=v_axis, keepdims=True)
-        
+
         E_2 = self.np.sum(spread_norm, axis=(m_axis, m_axis - 1)) / (M**2)
         return self.np.squeeze(E_1 - 0.5 * E_2)
-    
+
     def owenergy_score(
         self,
         fcts: Array,
         obs: Array,
         w_func: tp.Callable = lambda x, *args: 1.0,
         w_funcargs: tuple = (),
-        m_axis=-2, 
+        m_axis=-2,
         v_axis=-1,
     ) -> Array:
         """Compute the outcome-weighted energy score based on a finite ensemble."""
@@ -198,23 +198,29 @@ class ArrayAPIBackend(AbstractBackend):
         err_norm = self.np.linalg.norm(
             fcts - self.np.expand_dims(obs, axis=m_axis), axis=v_axis, keepdims=True
         )
-        E_1 = self.np.sum(err_norm * 
-                          self.np.expand_dims(fw, axis=v_axis) * 
-                          self.np.expand_dims(ow, axis=(m_axis, v_axis)), 
-                          axis=m_axis) / (M * wbar)
+        E_1 = self.np.sum(
+            err_norm
+            * self.np.expand_dims(fw, axis=v_axis)
+            * self.np.expand_dims(ow, axis=(m_axis, v_axis)),
+            axis=m_axis,
+        ) / (M * wbar)
 
         ens_diff = self.np.expand_dims(fcts, axis=m_axis) - self.np.expand_dims(
             fcts, axis=(m_axis - 1)
         )
         spread_norm = self.np.linalg.norm(ens_diff, axis=v_axis, keepdims=True)
-        
-        fw_diff = self.np.expand_dims(fw, axis=m_axis) * self.np.expand_dims(fw, axis=v_axis)
-        E_2 = self.np.sum(spread_norm * 
-                          self.np.expand_dims(fw_diff, axis=-1) * 
-                          ow[..., None, None, None],
-                          axis=(m_axis, m_axis - 1)) / (M**2 * wbar**2)
+
+        fw_diff = self.np.expand_dims(fw, axis=m_axis) * self.np.expand_dims(
+            fw, axis=v_axis
+        )
+        E_2 = self.np.sum(
+            spread_norm
+            * self.np.expand_dims(fw_diff, axis=-1)
+            * ow[..., None, None, None],
+            axis=(m_axis, m_axis - 1),
+        ) / (M**2 * wbar**2)
         return self.np.squeeze(E_1 - 0.5 * E_2)
-    
+
     def twenergy_score(
         self,
         fcts: Array,
@@ -222,29 +228,27 @@ class ArrayAPIBackend(AbstractBackend):
         v_func: tp.Callable = lambda x, *args: x,
         v_funcargs: tuple = (),
         m_axis=-2,
-        v_axis=-1
+        v_axis=-1,
     ) -> Array:
-        """
-        Compute the threshold-weighted energy score based on a finite ensemble.
-        """
+        """Compute the threshold-weighted energy score based on a finite ensemble."""
         if m_axis != -2:
             fcts = self.np.moveaxis(fcts, m_axis, -2)
             v_axis = v_axis - 1 if v_axis != 0 else v_axis
         if v_axis != -1:
             fcts = self.np.moveaxis(fcts, v_axis, -1)
             obs = self.np.moveaxis(obs, v_axis, -1)
-        
+
         v_fcts = v_func(fcts, *v_funcargs)
         v_obs = v_func(obs, *v_funcargs)
         return self.energy_score(v_fcts, v_obs)
-    
+
     def vrenergy_score(
         self,
         fcts: Array,
         obs: Array,
         w_func: tp.Callable = lambda x, *args: 1.0,
         w_funcargs: tuple = (),
-        m_axis=-2, 
+        m_axis=-2,
         v_axis=-1,
     ) -> Array:
         """Compute the vertically re-scaled energy score based on a finite ensemble."""
@@ -258,22 +262,32 @@ class ArrayAPIBackend(AbstractBackend):
         err_norm = self.np.linalg.norm(
             fcts - self.np.expand_dims(obs, axis=m_axis), axis=v_axis, keepdims=True
         )
-        E_1 = self.np.sum(err_norm * 
-                          self.np.expand_dims(fw, axis=v_axis) * 
-                          self.np.expand_dims(ow, axis=(m_axis, v_axis)), 
-                          axis=m_axis) / M
+        E_1 = (
+            self.np.sum(
+                err_norm
+                * self.np.expand_dims(fw, axis=v_axis)
+                * self.np.expand_dims(ow, axis=(m_axis, v_axis)),
+                axis=m_axis,
+            )
+            / M
+        )
 
         ens_diff = self.np.expand_dims(fcts, axis=m_axis) - self.np.expand_dims(
             fcts, axis=(m_axis - 1)
         )
         spread_norm = self.np.linalg.norm(ens_diff, axis=v_axis, keepdims=True)
-        
-        fw_diff = self.np.expand_dims(fw, axis=m_axis) * self.np.expand_dims(fw, axis=v_axis)
-        E_2 = self.np.sum(spread_norm * 
-                          self.np.expand_dims(fw_diff, axis=-1),
-                          axis=(m_axis, m_axis - 1)) / (M**2)
-        
-        rhobar = self.np.mean(self.np.linalg.norm(fcts, axis=v_axis) * fw, axis=(m_axis + 1))
+
+        fw_diff = self.np.expand_dims(fw, axis=m_axis) * self.np.expand_dims(
+            fw, axis=v_axis
+        )
+        E_2 = self.np.sum(
+            spread_norm * self.np.expand_dims(fw_diff, axis=-1),
+            axis=(m_axis, m_axis - 1),
+        ) / (M**2)
+
+        rhobar = self.np.mean(
+            self.np.linalg.norm(fcts, axis=v_axis) * fw, axis=(m_axis + 1)
+        )
         E_3 = (rhobar - self.np.linalg.norm(obs, axis=-1) * ow) * (wbar - ow)
         return self.np.squeeze(E_1 - 0.5 * E_2 + self.np.expand_dims(E_3, axis=-1))
 
@@ -306,17 +320,18 @@ class ArrayAPIBackend(AbstractBackend):
         M: int = forecasts.shape[-2]
         fct_diff = (
             self.np.abs(
-                self.np.expand_dims(forecasts, v_axis) - self.np.expand_dims(forecasts, m_axis)
+                self.np.expand_dims(forecasts, v_axis)
+                - self.np.expand_dims(forecasts, m_axis)
             )
             ** p
         )
-        vfcts = self.np.sum(fct_diff, axis=(m_axis-1)) / M
+        vfcts = self.np.sum(fct_diff, axis=(m_axis - 1)) / M
         obs_diff = (
             self.np.abs(observations[..., None] - observations[..., None, :]) ** p
         )
         out = self.np.sum((obs_diff - vfcts) ** 2, axis=(-2, -1))
         return out
-    
+
     def owvariogram_score(
         self,
         forecasts: Array,
@@ -343,7 +358,8 @@ class ArrayAPIBackend(AbstractBackend):
         M: int = forecasts.shape[-2]
         fct_diff = (
             self.np.abs(
-                self.np.expand_dims(forecasts, v_axis) - self.np.expand_dims(forecasts, m_axis)
+                self.np.expand_dims(forecasts, v_axis)
+                - self.np.expand_dims(forecasts, m_axis)
             )
             ** p
         )
@@ -354,18 +370,26 @@ class ArrayAPIBackend(AbstractBackend):
         obs_diff = self.np.expand_dims(obs_diff, axis=-3)
         e_1 = (fct_diff - obs_diff) ** 2
         e_1 = self.np.sum(e_1, axis=(-2, -1))
-        e_1 = self.np.sum(e_1 * fw * self.np.expand_dims(ow, axis=-1), axis=-1) / (M * wbar)
-        
-        e_2 = (self.np.expand_dims(fct_diff, axis=-3) - self.np.expand_dims(fct_diff, axis=-4)) ** 2
+        e_1 = self.np.sum(e_1 * fw * self.np.expand_dims(ow, axis=-1), axis=-1) / (
+            M * wbar
+        )
+
+        e_2 = (
+            self.np.expand_dims(fct_diff, axis=-3)
+            - self.np.expand_dims(fct_diff, axis=-4)
+        ) ** 2
         e_2 = self.np.sum(e_2, axis=(-2, -1))
-        
-        fw_diff = self.np.expand_dims(fw, axis=m_axis) * self.np.expand_dims(fw, axis=v_axis)
-        e_2 = self.np.sum(e_2 * fw_diff * self.np.expand_dims(ow, axis=(-2, -1)), 
-                          axis=(-2, -1)) / (M**2 * wbar**2)
-        
+
+        fw_diff = self.np.expand_dims(fw, axis=m_axis) * self.np.expand_dims(
+            fw, axis=v_axis
+        )
+        e_2 = self.np.sum(
+            e_2 * fw_diff * self.np.expand_dims(ow, axis=(-2, -1)), axis=(-2, -1)
+        ) / (M**2 * wbar**2)
+
         out = e_1 - 0.5 * e_2
         return out
-    
+
     def twvariogram_score(
         self,
         forecasts: Array,
@@ -414,7 +438,8 @@ class ArrayAPIBackend(AbstractBackend):
         M: int = forecasts.shape[-2]
         fct_diff = (
             self.np.abs(
-                self.np.expand_dims(forecasts, v_axis) - self.np.expand_dims(forecasts, m_axis)
+                self.np.expand_dims(forecasts, v_axis)
+                - self.np.expand_dims(forecasts, m_axis)
             )
             ** p
         )
@@ -425,18 +450,23 @@ class ArrayAPIBackend(AbstractBackend):
         e_1 = (fct_diff - self.np.expand_dims(obs_diff, axis=-3)) ** 2
         e_1 = self.np.sum(e_1, axis=(-2, -1))
         e_1 = self.np.sum(e_1 * fw * self.np.expand_dims(ow, axis=-1), axis=-1) / M
-        
-        e_2 = (self.np.expand_dims(fct_diff, axis=-3) - self.np.expand_dims(fct_diff, axis=-4)) ** 2
+
+        e_2 = (
+            self.np.expand_dims(fct_diff, axis=-3)
+            - self.np.expand_dims(fct_diff, axis=-4)
+        ) ** 2
         e_2 = self.np.sum(e_2, axis=(-2, -1))
-        
-        fw_diff = self.np.expand_dims(fw, axis=m_axis) * self.np.expand_dims(fw, axis=v_axis)
+
+        fw_diff = self.np.expand_dims(fw, axis=m_axis) * self.np.expand_dims(
+            fw, axis=v_axis
+        )
         e_2 = self.np.sum(e_2 * fw_diff, axis=(-2, -1)) / (M**2)
-        
-        e_3 = self.np.sum(fct_diff ** 2, axis=(-2, -1))
+
+        e_3 = self.np.sum(fct_diff**2, axis=(-2, -1))
         e_3 = self.np.sum(e_3 * fw, axis=-1) / M
-        e_3 -= self.np.sum(obs_diff ** 2, axis=(-2, -1)) * ow
-        e_3 *= (wbar - ow)
-        
+        e_3 -= self.np.sum(obs_diff**2, axis=(-2, -1)) * ow
+        e_3 *= wbar - ow
+
         out = e_1 - 0.5 * e_2 + e_3
         return out
 
@@ -483,36 +513,42 @@ class ArrayAPIBackend(AbstractBackend):
         β_1 = self.np.sum(fcts * self.np.arange(M), axis=-1) / (M * (M - 1))
         return expected_diff + β_0 - 2.0 * β_1
 
-    def _owcrps_ensemble_nrg(self, fcts: Array, obs: Array, fw: Array, ow: Array) -> Array:
+    def _owcrps_ensemble_nrg(
+        self, fcts: Array, obs: Array, fw: Array, ow: Array
+    ) -> Array:
         """Outcome-Weighted CRPS estimator based on the energy form."""
         M: int = fcts.shape[-1]
         wbar = self.np.mean(fw, axis=1)
-        e_1 = self.np.sum(self.np.abs(obs[..., None] - fcts) * fw, axis=-1) * ow / (M * wbar)
+        e_1 = (
+            self.np.sum(self.np.abs(obs[..., None] - fcts) * fw, axis=-1)
+            * ow
+            / (M * wbar)
+        )
         e_2 = self.np.sum(
             self.np.abs(
                 self.np.expand_dims(fcts, axis=-1) - self.np.expand_dims(fcts, axis=-2)
-            ) * (
-                self.np.expand_dims(fw, axis=-1) * self.np.expand_dims(fw, axis=-2)
-                ),
+            )
+            * (self.np.expand_dims(fw, axis=-1) * self.np.expand_dims(fw, axis=-2)),
             axis=(-1, -2),
-        ) 
+        )
         e_2 *= ow / (M**2 * wbar**2)
         return e_1 - 0.5 * e_2
-    
-    def _vrcrps_ensemble_nrg(self, fcts: Array, obs: Array, fw: Array, ow: Array) -> Array:
+
+    def _vrcrps_ensemble_nrg(
+        self, fcts: Array, obs: Array, fw: Array, ow: Array
+    ) -> Array:
         """Vertically Re-scaled CRPS estimator based on the energy form."""
         M: int = fcts.shape[-1]
         e_1 = self.np.sum(self.np.abs(obs[..., None] - fcts) * fw, axis=-1) * ow / M
         e_2 = self.np.sum(
             self.np.abs(
                 self.np.expand_dims(fcts, axis=-1) - self.np.expand_dims(fcts, axis=-2)
-            ) * (
-                self.np.expand_dims(fw, axis=-1) * self.np.expand_dims(fw, axis=-2)
-                ),
+            )
+            * (self.np.expand_dims(fw, axis=-1) * self.np.expand_dims(fw, axis=-2)),
             axis=(-1, -2),
         ) / (M**2)
-        e_3 = (self.np.mean(self.np.abs(fcts) * fw, axis=-1) - self.np.abs(obs) * ow)
-        e_3 *= (self.np.mean(fw, axis=1) - ow)
+        e_3 = self.np.mean(self.np.abs(fcts) * fw, axis=-1) - self.np.abs(obs) * ow
+        e_3 *= self.np.mean(fw, axis=1) - ow
         return e_1 - 0.5 * e_2 + e_3
 
     def _norm_cdf(self, x: ArrayLike) -> Array:
@@ -525,7 +561,7 @@ class ArrayAPIBackend(AbstractBackend):
 
     def _logis_cdf(self, x: ArrayLike) -> Array:
         """Cumulative distribution function for the standard logistic distribution."""
-        return (1 / (1 + np.exp(-x)))
+        return 1 / (1 + np.exp(-x))
 
     def __repr__(self) -> str:
         return f"NumpyAPIBackend('{self.backend_name}')"

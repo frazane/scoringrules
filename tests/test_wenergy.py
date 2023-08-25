@@ -1,14 +1,17 @@
-import jax
 import numpy as np
 import pytest
 from scoringrules._energy import energy_score
 from scoringrules._wenergy import owenergy_score, twenergy_score, vrenergy_score
 
+from .conftest import JAX_IMPORTED
+
 ENSEMBLE_SIZE = 51
 N = 100
 N_VARS = 3
 
-BACKENDS = ["numpy", "numba", "jax"]
+BACKENDS = ["numpy", "numba"]
+if JAX_IMPORTED:
+    BACKENDS.append("jax")
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
