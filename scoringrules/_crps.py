@@ -2,6 +2,7 @@ from typing import TypeVar
 
 from scoringrules.backend import backends as srb
 from scoringrules.backend.arrayapi import Array
+from scoringrules.core import crps
 
 ArrayLike = TypeVar("ArrayLike", Array, float)
 
