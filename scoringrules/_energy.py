@@ -2,7 +2,7 @@ import typing as tp
 
 from scoringrules.core import energy
 from scoringrules.core.typing import Array, ArrayLike
-from scoringrules.new_backend import _NUMBA_IMPORTED, backends
+from scoringrules.backend import _NUMBA_IMPORTED, backends
 
 
 def energy_score(

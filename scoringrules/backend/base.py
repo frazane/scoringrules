@@ -1,7 +1,3 @@
-"""A minimal subset of array API standard functions from
-https://github.com/data-apis/array-api/tree/accf8c20d8fae9b760e59a40ab43b556fd8410cb/src/array_api_stubs/_2022_12
-with few modifications.
-"""
 import abc
 import typing as tp
 

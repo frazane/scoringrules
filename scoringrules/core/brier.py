@@ -1,6 +1,6 @@
 
 from scoringrules.core.typing import Array, ArrayLike
-from scoringrules.new_backend import backends
+from scoringrules.backend import backends
 
 EPSILON = 1e-5
 

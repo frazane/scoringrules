@@ -1,42 +1,23 @@
 from scoringrules.core.crps.guguncs import estimator_gufuncs
 from scoringrules.core.typing import Array, ArrayLike
-from scoringrules.new_backend import _NUMBA_IMPORTED, backends
+from scoringrules.backend import _NUMBA_IMPORTED, backends
 
 
 def ensemble(
     fcts: Array,
     obs: ArrayLike,
-    axis: int = -1,
-    sorted_ensemble: bool = False,
     estimator: str = "pwm",
     backend: str | None = None,
 ) -> Array:
     """Compute the CRPS for a finite ensemble."""
-    B = backends.active if backend is None else backends[backend]
 
-    if estimator not in estimator_gufuncs:
-        raise ValueError(
-            f"{estimator} is not a valid estimator. "
-            f"Must be one of {estimator_gufuncs.keys()}"
-            )
-
-    if axis != -1:
-        fcts = B.moveaxis(fcts, axis, -1)
-
-    if not sorted_ensemble and estimator not in ["nrg","akr","akr_circperm","fair"]:
-        fcts = B.sort(fcts, axis=-1)
-
-    if B.name == "numpy" and _NUMBA_IMPORTED:
-        return estimator_gufuncs[estimator](fcts, obs)
-
-    obs: Array = B.asarray(obs)
 
     if estimator == "nrg":
-        out = _crps_ensemble_nrg(fcts, obs)
+        out = _crps_ensemble_nrg(fcts, obs, backend=backend)
     elif estimator == "pwm":
-        out = _crps_ensemble_pwm(fcts, obs)
+        out = _crps_ensemble_pwm(fcts, obs, backend=backend)
     elif estimator == "fair":
-        out = _crps_ensemble_fair(fcts, obs)
+        out = _crps_ensemble_fair(fcts, obs, backend=backend)
     else:
         raise ValueError(
             f"{estimator} can only be used with `numpy` "

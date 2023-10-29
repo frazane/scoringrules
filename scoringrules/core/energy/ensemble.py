@@ -1,7 +1,7 @@
 import typing as tp
 
 from scoringrules.core.typing import Array, ArrayLike
-from scoringrules.new_backend import backends
+from scoringrules.backend import backends
 
 
 def energy_score(fcts: Array, obs: Array, m_axis=-2, v_axis=-1, backend=None) -> Array:

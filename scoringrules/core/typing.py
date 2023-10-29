@@ -7,4 +7,4 @@ if tp.TYPE_CHECKING:
 
     _array = NDArray | JaxArray | Tensor
     Array = tp.TypeVar("Array", bound=_array)
-    ArrayLike = tp.TypeVar("ArrayLike", bound=_array | float)
+    ArrayLike = tp.TypeVar("ArrayLike", bound=_array | float | int)
