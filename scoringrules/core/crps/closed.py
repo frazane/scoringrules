@@ -1,6 +1,6 @@
+from scoringrules.core.stats import _logis_cdf, _norm_cdf, _norm_pdf
 from scoringrules.core.typing import Array, ArrayLike
 from scoringrules.new_backend import backends
-
 
 
 def normal(mu: ArrayLike, sigma: ArrayLike, obs: ArrayLike, backend: str | None = None) -> Array:
@@ -28,21 +28,3 @@ def logistic(mu: ArrayLike, sigma: ArrayLike, obs: ArrayLike, backend: str | Non
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma
     return sigma * (ω - 2 * B.log(_logis_cdf(ω)) - 1)
-
-
-def _norm_cdf(x: ArrayLike, backend: str | None = None) -> Array:
-    """Cumulative distribution function for the standard normal distribution."""
-    B = backends.active if backend is None else backends[backend]
-    return (1.0 + B.erf(x / B.sqrt(2.0))) / 2.0
-
-
-def _norm_pdf(x: ArrayLike, backend: str | None = None) -> Array:
-    """Probability density function for the standard normal distribution."""
-    B = backends.active if backend is None else backends[backend]
-    return (1.0 / B.sqrt(2.0 * B.pi)) * B.exp(-(x**2) / 2)
-
-
-def _logis_cdf(x: ArrayLike, backend: str | None = None) -> Array:
-    """Cumulative distribution function for the standard logistic distribution."""
-    B = backends.active if backend is None else backends[backend]
-    return 1 / (1 + B.exp(-x))

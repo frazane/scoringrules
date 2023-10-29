@@ -4,9 +4,9 @@ with few modifications.
 """
 import abc
 import typing as tp
-import torch
 
-Array = tp.TypeVar("Array")
+from scoringrules.core.typing import Array, ArrayLike
+
 Dtype = tp.TypeVar("Dtype")
 
 
@@ -23,7 +23,7 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def asarray(
         self,
-        obj: Array | bool | int | float,
+        obj: ArrayLike,
         /,
         *,
         dtype: Dtype | None = None,
@@ -170,7 +170,7 @@ class ArrayBackend(abc.ABC):
 
     @abc.abstractmethod
     def erf(self, x: Array) -> Array:
-        """ERF"""
+        """ERF."""
 
 
 if __name__ == "__main__":

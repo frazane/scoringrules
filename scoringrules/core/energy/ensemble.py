@@ -1,12 +1,10 @@
 import typing as tp
 
-from scoringrules.core.typing import Array
-from scoringrules.new_backend import backends, _NUMBA_IMPORTED
+from scoringrules.core.typing import Array, ArrayLike
+from scoringrules.new_backend import backends
 
 
-def energy_score(
-    fcts: Array, obs: Array, m_axis=-2, v_axis=-1, backend= None
-) -> Array:
+def energy_score(fcts: Array, obs: Array, m_axis=-2, v_axis=-1, backend=None) -> Array:
     """
     Compute the energy score based on a finite ensemble.
 
@@ -22,31 +20,26 @@ def energy_score(
     del err_norm
     ens_diff = B.expand_dims(fcts, axis=m_axis) - B.expand_dims(fcts, axis=(m_axis - 1))
     spread_norm = B.norm(ens_diff, axis=v_axis, keepdims=True)
-    del ens_diff
     E_2 = B.sum(spread_norm, axis=(m_axis, m_axis - 1)) / (M**2)
-    del spread_norm
+    del spread_norm, ens_diff
     return B.squeeze(E_1 - 0.5 * E_2)
 
 
 def owenergy_score(
     fcts: Array,
     obs: Array,
-    w_func: tp.Callable = lambda x, *args: 1.0,
-    w_funcargs: tuple = (),
+    w_func: tp.Callable[[ArrayLike], ArrayLike],
     m_axis=-2,
     v_axis=-1,
     backend: str | None = None,
 ) -> Array:
     """Compute the outcome-weighted energy score based on a finite ensemble."""
     B = backends.active if backend is None else backends[backend]
-    M: int = fcts.shape[m_axis]
-
-    w_func_wrap = lambda x: w_func(x, *w_funcargs)
-    fw = B.apply_along_axis(w_func_wrap, axis=-1, arr=fcts)
-    ow = B.apply_along_axis(w_func_wrap, axis=-1, arr=obs)
+    M = fcts.shape[m_axis]
+    fw, ow = map(w_func, (fcts, obs))
     wbar = B.mean(fw, axis=-1, keepdims=True)
 
-    err_norm = B.linalg.norm(
+    err_norm = B.norm(
         fcts - B.expand_dims(obs, axis=m_axis), axis=v_axis, keepdims=True
     )
     E_1 = B.sum(
@@ -67,34 +60,10 @@ def owenergy_score(
     return B.squeeze(E_1 - 0.5 * E_2)
 
 
-def twenergy_score(
-    fcts: Array,
-    obs: Array,
-    v_func: tp.Callable = lambda x, *args: x,
-    v_funcargs: tuple = (),
-    m_axis=-2,
-    v_axis=-1,
-    backend: str | None = None,
-) -> Array:
-    """Compute the threshold-weighted energy score based on a finite ensemble."""
-    B = backends.active if backend is None else backends[backend]
-    if m_axis != -2:
-        fcts = B.moveaxis(fcts, m_axis, -2)
-        v_axis = v_axis - 1 if v_axis != 0 else v_axis
-    if v_axis != -1:
-        fcts = B.moveaxis(fcts, v_axis, -1)
-        obs = B.moveaxis(obs, v_axis, -1)
-
-    v_fcts = v_func(fcts, *v_funcargs)
-    v_obs = v_func(obs, *v_funcargs)
-    return self.energy_score(v_fcts, v_obs)
-
-
 def vrenergy_score(
     fcts: Array,
     obs: Array,
-    w_func: tp.Callable = lambda x, *args: 1.0,
-    w_funcargs: tuple = (),
+    w_func: tp.Callable[[ArrayLike], ArrayLike],
     m_axis=-2,
     v_axis=-1,
     backend: str | None = None,
@@ -103,12 +72,10 @@ def vrenergy_score(
     B = backends.active if backend is None else backends[backend]
     M: int = fcts.shape[m_axis]
 
-    w_func_wrap = lambda x: w_func(x, *w_funcargs)
-    fw = B.apply_along_axis(w_func_wrap, axis=-1, arr=fcts)
-    ow = B.apply_along_axis(w_func_wrap, axis=-1, arr=obs)
+    fw, ow = map(w_func, (fcts, obs))
     wbar = B.mean(fw, axis=-1)
 
-    err_norm = B.linalg.norm(
+    err_norm = B.norm(
         fcts - B.expand_dims(obs, axis=m_axis), axis=v_axis, keepdims=True
     )
     E_1 = (

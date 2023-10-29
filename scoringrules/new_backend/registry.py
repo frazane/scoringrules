@@ -1,11 +1,10 @@
-from importlib.util import find_spec
-import typing as tp
-
 import sys
+import typing as tp
+from importlib.util import find_spec
 
-from .base import ArrayBackend, Array
-from .numpy import NumpyBackend
+from .base import Array, ArrayBackend
 from .jax import JaxBackend
+from .numpy import NumpyBackend
 from .torch import TorchBackend
 
 Backend = ArrayBackend[Array]
@@ -18,7 +17,7 @@ class BackendsRegistry(dict[str, Backend]):
 
         if "jax" in sys.modules:
             self["jax"] = JaxBackend()
-        
+
         if "torch" in sys.modules:
             self["torch"] = TorchBackend()
 
@@ -40,14 +39,13 @@ class BackendsRegistry(dict[str, Backend]):
                 f"The backend '{backend_name}' is not available. "
                 f"You need to install '{backend_name}'."
             )
-        
+
         if backend_name == "jax":
             self["jax"] = JaxBackend()
         elif backend_name == "torch":
             self["torch"] = TorchBackend()
 
     def __getitem__(self, __key: str) -> Backend:
-
         """Get a backend from the registry."""
         try:
             return super().__getitem__(__key)
@@ -63,7 +61,7 @@ class BackendsRegistry(dict[str, Backend]):
     @property
     def active(self) -> Backend:
         return self[self._active]
-    
+
 class BackendNotAvailable(Exception):
     """Raised if a backend library cannot be imported."""
 

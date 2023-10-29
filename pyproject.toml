@@ -84,6 +84,7 @@ select = [
 ]
 ignore = [
   "D100",
+  "D102",
   "D103",
   "D104",
   "D105",
@@ -97,6 +98,8 @@ ignore = [
   "F722",
   "PLR2004",
   "PLR0913",
+  "TCH004",
+  "PLW0603",
 ]
 unfixable = ["ERA001", "F401", "F841", "T201", "T203"]
 src = ["scoringrules", "tests"]

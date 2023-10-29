@@ -1,8 +1,6 @@
 import typing as tp
 from importlib import import_module
 
-from torch._tensor import Tensor
-
 from .base import ArrayBackend
 
 if tp.TYPE_CHECKING:
@@ -16,9 +14,10 @@ Dtype = tp.TypeVar("Dtype")
 
 
 class TorchBackend(ArrayBackend[Tensor]):
+    """Torch backend."""
 
     pi: torch.asarray(torch.pi)
-    
+
     def __init__(self) -> None:
         global torch
         if torch is None and not tp.TYPE_CHECKING:
@@ -150,7 +149,7 @@ class TorchBackend(ArrayBackend[Tensor]):
 
     def norm(self, x: Tensor, axis: int | tuple[int, ...] | None = None) -> Tensor:
         return torch.norm(x, dim=axis)
-    
+
     def erf(self, x: Tensor) -> Tensor:
         return torch.special.erf(x)
 

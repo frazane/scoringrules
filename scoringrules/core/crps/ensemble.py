@@ -1,6 +1,6 @@
-from scoringrules.core.typing import Array, ArrayLike
-from scoringrules.new_backend import backends, _NUMBA_IMPORTED
 from scoringrules.core.crps.guguncs import estimator_gufuncs
+from scoringrules.core.typing import Array, ArrayLike
+from scoringrules.new_backend import _NUMBA_IMPORTED, backends
 
 
 def ensemble(
@@ -19,7 +19,7 @@ def ensemble(
             f"{estimator} is not a valid estimator. "
             f"Must be one of {estimator_gufuncs.keys()}"
             )
-    
+
     if axis != -1:
         fcts = B.moveaxis(fcts, axis, -1)
 
@@ -28,7 +28,7 @@ def ensemble(
 
     if B.name == "numpy" and _NUMBA_IMPORTED:
         return estimator_gufuncs[estimator](fcts, obs)
-    
+
     obs: Array = B.asarray(obs)
 
     if estimator == "nrg":

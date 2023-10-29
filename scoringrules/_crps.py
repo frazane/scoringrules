@@ -1,10 +1,7 @@
-from typing import TypeVar
+import typing as tp
 
 from scoringrules.backend import backends as srb
-from scoringrules.backend.arrayapi import Array
-from scoringrules.core import crps
-
-ArrayLike = TypeVar("ArrayLike", Array, float)
+from scoringrules.core.typing import Array, ArrayLike
 
 
 def crps_ensemble(
@@ -181,9 +178,8 @@ def crps_logistic(
 def twcrps_ensemble(
     forecasts: Array,
     observations: ArrayLike,
+    v_func: tp.Callable[[ArrayLike], ArrayLike],
     /,
-    v_func: tp.Callable = lambda x, *args: x,
-    v_funcargs: tuple = (),
     *,
     axis: int = -1,
     backend: str = "numba",
@@ -237,12 +233,11 @@ def twcrps_ensemble(
 def owcrps_ensemble(
     forecasts: Array,
     observations: ArrayLike,
+    w_func: tp.Callable[[ArrayLike], ArrayLike],
     /,
-    w_func: tp.Callable = lambda x, *args: np.ones_like(x),
-    w_funcargs: tuple = (),
     *,
     axis: int = -1,
-    backend: str = "numba",
+    backend: str | None = None,
 ) -> Array:
     r"""Estimate the Outcome-Weighted Continuous Ranked Probability Score (owCRPS) for a finite ensemble.
 
@@ -285,7 +280,6 @@ def owcrps_ensemble(
         forecasts,
         observations,
         w_func,
-        w_funcargs,
         axis=axis,
     )
 
@@ -293,9 +287,8 @@ def owcrps_ensemble(
 def vrcrps_ensemble(
     forecasts: Array,
     observations: ArrayLike,
+    w_func: tp.Callable[[ArrayLike], ArrayLike],
     /,
-    w_func: tp.Callable = lambda x, *args: np.ones_like(x),
-    w_funcargs: tuple = (),
     *,
     axis: int = -1,
     backend: str = "numba",

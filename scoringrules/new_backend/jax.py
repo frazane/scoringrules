@@ -1,7 +1,6 @@
 import typing as tp
 from importlib import import_module
 
-
 if tp.TYPE_CHECKING:
     import jax.numpy as jnp
     import jax.scipy as jsp
@@ -15,11 +14,13 @@ Dtype = tp.TypeVar("Dtype")
 
 
 class JaxBackend(ArrayBackend[Array]):
+    """Jax backend."""
+
     def __init__(self):
         global jnp, jsp
         if jnp is None and jsp is None and not tp.TYPE_CHECKING:
             jnp = import_module("jax.numpy")
-            jsp = import_module("jax.numpy")
+            jsp = import_module("jax.scipy")
 
     def asarray(
         self, obj: Array | bool | int | float, /, *, dtype: Dtype | None = None
@@ -144,7 +145,7 @@ class JaxBackend(ArrayBackend[Array]):
 
     def erf(self, x: Array) -> Array:
         return jsp.special.erf(x)
-    
+
 if __name__ == "__main__":
     B = JaxBackend()
     out = B.mean(jnp.ones(10))

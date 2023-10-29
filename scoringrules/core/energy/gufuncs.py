@@ -1,5 +1,6 @@
-from numba import guvectorize
 import numpy as np
+from numpy.typing import NDArray
+from numba import guvectorize
 
 
 @guvectorize(
@@ -10,7 +11,9 @@ import numpy as np
     "(m,d),(d)->()",
 )
 def _energy_score_gufunc(
-    forecasts: np.ndarray, observations: np.ndarray, out: np.ndarray
+    forecasts: NDArray[np.float32 | np.float64],
+    observations: NDArray[np.float32 | np.float64],
+    out: NDArray[np.float32 | np.float64],
 ):
     """Compute the Energy Score for a finite ensemble."""
     M = forecasts.shape[0]
@@ -33,11 +36,11 @@ def _energy_score_gufunc(
     "(m,d),(d),(m),()->()",
 )
 def _owenergy_score_gufunc(
-    forecasts: np.ndarray,
-    observations: np.ndarray,
-    fw: np.ndarray,
-    ow: np.ndarray,
-    out: np.ndarray,
+    forecasts: NDArray[np.float32 | np.float64],
+    observations: NDArray[np.float32 | np.float64],
+    fw: NDArray[np.float32 | np.float64],
+    ow: NDArray[np.float32 | np.float64],
+    out: NDArray[np.float32 | np.float64],
 ):
     """Compute the Outcome-Weighted Energy Score for a finite ensemble."""
     M = forecasts.shape[0]
@@ -65,11 +68,11 @@ def _owenergy_score_gufunc(
     "(m,d),(d),(m),()->()",
 )
 def _vrenergy_score_gufunc(
-    forecasts: np.ndarray,
-    observations: np.ndarray,
-    fw: np.ndarray,
-    ow: np.ndarray,
-    out: np.ndarray,
+    forecasts: NDArray[np.float32 | np.float64],
+    observations: NDArray[np.float32 | np.float64],
+    fw: NDArray[np.float32 | np.float64],
+    ow: NDArray[np.float32 | np.float64],
+    out: NDArray[np.float32 | np.float64],
 ):
     """Compute the Vertically Re-scaled Energy Score for a finite ensemble."""
     M = forecasts.shape[0]

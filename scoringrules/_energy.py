@@ -1,9 +1,8 @@
-from typing import TypeVar
+import typing as tp
 
-from scoringrules.backend import backends as srb
-from scoringrules.backend.arrayapi import Array
-
-ArrayLike = TypeVar("ArrayLike", Array, float)
+from scoringrules.core import energy
+from scoringrules.core.typing import Array, ArrayLike
+from scoringrules.new_backend import _NUMBA_IMPORTED, backends
 
 
 def energy_score(
@@ -28,10 +27,10 @@ def energy_score(
 
     Parameters
     ----------
-    forecasts: ArrayLike of shape (..., D, M)
+    forecasts: Array of shape (..., D, M)
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
-    observations: ArrayLike of shape (...,D)
+    observations: Array of shape (...,D)
         The observed values, where the variables dimension is by default the last axis.
     m_axis: int
         The axis corresponding to the ensemble dimension. Defaults to -2.
@@ -42,21 +41,79 @@ def energy_score(
 
     Returns
     -------
-    energy_score: ArrayLike of shape (...)
+    energy_score: Array of shape (...)
         The computed Energy Score.
     """
-    return srb[backend].energy_score(
-        forecasts, observations, m_axis=m_axis, v_axis=v_axis
-    )
+    B = backends.active if backend is None else backends[backend]
 
+    if B.name == "numpy" and _NUMBA_IMPORTED:
+        if m_axis != -2:
+            forecasts = B.moveaxis(forecasts, m_axis, -2)
+        if v_axis != -1:
+            forecasts = B.moveaxis(forecasts, v_axis, -1)
+            observations = B.moveaxis(observations, v_axis, -1)
+
+        return energy._energy_score_gufunc(forecasts, observations)
+
+    return energy.nrg(forecasts, observations, m_axis, v_axis, backend=backend)
+
+
+def twenergy_score(
+    forecasts: Array,
+    observations: Array,
+    v_func: tp.Callable[[ArrayLike], ArrayLike],
+    /,
+    *,
+    m_axis: int = -2,
+    v_axis: int = -1,
+    backend="numba",
+) -> Array:
+    r"""Compute the Threshold-Weighted Energy Score (twES) for a finite multivariate ensemble.
+
+    Computation is performed using the ensemble representation of the twES in
+    [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
+
+    \[
+        \mathrm{twES}(F_{ens}, \mathbf{y}) = \frac{1}{M} \sum_{m = 1}^{M} \| v(\mathbf{x}_{m}) - v(\mathbf{y}) \| - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} \| v(\mathbf{x}_{m}) - v(\mathbf{x}_{j}) \|,
+    \]
+
+    where $F_{ens}$ is the ensemble forecast $\mathbf{x}_{1}, \dots, \mathbf{x}_{M}$ with
+    $M$ members, $\| \cdotp \|$ is the Euclidean distance, and $v$ is the chaining function
+    used to target particular outcomes.
+
+
+    Parameters
+    ----------
+    forecasts: ArrayLike of shape (..., M, D)
+        The predicted forecast ensemble, where the ensemble dimension is by default
+        represented by the second last axis and the variables dimension by the last axis.
+    observations: ArrayLike of shape (...,D)
+        The observed values, where the variables dimension is by default the last axis.
+    v_func: tp.Callable
+        Chaining function used to emphasise particular outcomes.
+    m_axis: int
+        The axis corresponding to the ensemble dimension. Defaults to -2.
+    v_axis: int or tuple(int)
+        The axis corresponding to the variables dimension. Defaults to -1.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    twenergy_score: ArrayLike of shape (...)
+        The computed Threshold-Weighted Energy Score.
+    """
+    forecasts, observations = map(v_func, (forecasts, observations))
+    return energy_score(
+        forecasts, observations, m_axis=m_axis, v_axis=v_axis, backend=backend
+    )
 
 
 def owenergy_score(
     forecasts: Array,
     observations: Array,
+    w_func: tp.Callable[[ArrayLike], ArrayLike],
     /,
-    w_func: tp.Callable = lambda x, *args: 1.0,
-    w_funcargs: tuple = (),
     *,
     m_axis: int = -2,
     v_axis: int = -1,
@@ -99,70 +156,27 @@ def owenergy_score(
     owenergy_score: ArrayLike of shape (...)
         The computed Outcome-Weighted Energy Score.
     """
-    return srb[backend].owenergy_score(
-        forecasts, observations, w_func, w_funcargs, m_axis=m_axis, v_axis=v_axis
-    )
+    B = backends.active if backend is None else backends[backend]
 
+    if B.name == "numpy" and _NUMBA_IMPORTED:
+        if m_axis != -2:
+            forecasts = B.moveaxis(forecasts, m_axis, -2)
+        if v_axis != -1:
+            forecasts = B.moveaxis(forecasts, v_axis, -1)
+            observations = B.moveaxis(observations, v_axis, -1)
+        
+        fcts_weights, obs_weights = map(w_func, (forecasts, observations))
 
-def twenergy_score(
-    forecasts: Array,
-    observations: Array,
-    /,
-    v_func: tp.Callable = lambda x, *args: x,
-    v_funcargs: tuple = (),
-    *,
-    m_axis: int = -2,
-    v_axis: int = -1,
-    backend="numba",
-) -> Array:
-    r"""Compute the Threshold-Weighted Energy Score (twES) for a finite multivariate ensemble.
+        return energy._owenergy_score_gufunc(forecasts, observations, fcts_weights, obs_weights)
 
-    Computation is performed using the ensemble representation of the twES in
-    [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
-
-    \[
-        \mathrm{twES}(F_{ens}, \mathbf{y}) = \frac{1}{M} \sum_{m = 1}^{M} \| v(\mathbf{x}_{m}) - v(\mathbf{y}) \| - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} \| v(\mathbf{x}_{m}) - v(\mathbf{x}_{j}) \|,
-    \]
-
-    where $F_{ens}$ is the ensemble forecast $\mathbf{x}_{1}, \dots, \mathbf{x}_{M}$ with
-    $M$ members, $\| \cdotp \|$ is the Euclidean distance, and $v$ is the chaining function
-    used to target particular outcomes.
-
-
-    Parameters
-    ----------
-    forecasts: ArrayLike of shape (..., M, D)
-        The predicted forecast ensemble, where the ensemble dimension is by default
-        represented by the second last axis and the variables dimension by the last axis.
-    observations: ArrayLike of shape (...,D)
-        The observed values, where the variables dimension is by default the last axis.
-    v_func: tp.Callable
-        Chaining function used to emphasise particular outcomes.
-    v_funcargs: tuple
-        Additional arguments to the chaining function.
-    m_axis: int
-        The axis corresponding to the ensemble dimension. Defaults to -2.
-    v_axis: int or tuple(int)
-        The axis corresponding to the variables dimension. Defaults to -1.
-    backend: str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
-
-    Returns
-    -------
-    twenergy_score: ArrayLike of shape (...)
-        The computed Threshold-Weighted Energy Score.
-    """
-    return srb[backend].twenergy_score(
-        forecasts, observations, v_func, v_funcargs, m_axis=m_axis, v_axis=v_axis
-    )
+    return energy.ownrg(forecasts, observations, w_func, m_axis, v_axis, backend=backend)
 
 
 def vrenergy_score(
     forecasts: Array,
     observations: Array,
+    w_func: tp.Callable[[ArrayLike], ArrayLike],
     /,
-    w_func: tp.Callable = lambda x, *args: 1.0,
-    w_funcargs: tuple = (),
     *,
     m_axis: int = -2,
     v_axis: int = -1,
@@ -208,5 +222,5 @@ def vrenergy_score(
         The computed Vertically Re-scaled Energy Score.
     """
     return srb[backend].vrenergy_score(
-        forecasts, observations, w_func, w_funcargs, m_axis=m_axis, v_axis=v_axis
+        forecasts, observations, w_func, m_axis=m_axis, v_axis=v_axis
     )
