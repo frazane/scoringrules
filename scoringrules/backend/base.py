@@ -1,174 +1,177 @@
+"""A minimal subset of array API standard functions from
+https://github.com/data-apis/array-api/tree/accf8c20d8fae9b760e59a40ab43b556fd8410cb/src/array_api_stubs/_2022_12
+with few modifications.
+"""
+import abc
 import typing as tp
-from abc import abstractmethod
 
-from .arrayapi import Array
+from scoringrules.core.typing import Array, ArrayLike
 
-ArrayLike = tp.TypeVar("ArrayLike", Array, float)
+Dtype = tp.TypeVar("Dtype")
 
 
-class AbstractBackend:
-    """The abstract backend class."""
+class ArrayBackend(abc.ABC):
+    """The python array API standard implemented as Protocol for static typing."""
 
-    backend_name: str
+    name: str
+    e: float = 2.718281828459045
+    inf = float("inf")
+    nan = float("nan")
+    newaxis = None
+    pi: float = 3.141592653589793
 
-    @abstractmethod
-    def crps_ensemble(
+    @abc.abstractmethod
+    def asarray(
         self,
-        forecasts: Array,
-        observations: ArrayLike,
+        obj: ArrayLike,
+        /,
+        *,
+        dtype: Dtype | None = None,
+    ) -> Array:
+        """Convert the input to an array."""
+
+    @abc.abstractmethod
+    def mean(
+        self,
+        x: Array,
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> Array:
+        """Calculate the arithmetic mean of the input array ``x``."""
+
+    @abc.abstractmethod
+    def moveaxis(
+        self,
+        x: Array,
+        /,
+        source: tuple[int, ...] | int,
+        destination: tuple[int, ...] | int,
+    ) -> Array:
+        """Permutes the axes (dimensions) of an array ``x``."""
+
+    @abc.abstractmethod
+    def sum(
+        self,
+        x: Array,
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        dtype: Dtype | None = None,
+        keepdims: bool = False,
+    ) -> Array:
+        """Calculate the sum of the input array ``x``."""
+
+    @abc.abstractmethod
+    def unique_values(self, x: Array, /) -> Array:
+        """Return the unique elements of an input array ``x``."""
+
+    @abc.abstractmethod
+    def concat(
+        self, arrays: tuple[Array, ...] | list[Array], /, *, axis: int | None = 0
+    ) -> Array:
+        """Join a sequence of arrays along an existing axis."""
+
+    @abc.abstractmethod
+    def expand_dims(self, x: Array, /, *, axis: int = 0) -> Array:
+        """Expand the shape of an array by inserting a new axis (dimension) of size one at the position specified by ``axis``."""
+
+    @abc.abstractmethod
+    def squeeze(
+        self, x: Array, /, *, axis: int | tuple[int, ...] | None = None
+    ) -> Array:
+        """Remove singleton dimensions (axes) from ``x``."""
+
+    @abc.abstractmethod
+    def stack(
+        self, arrays: tuple[Array, ...] | list[Array], /, *, axis: int = 0
+    ) -> Array:
+        """Join a sequence of arrays along a new axis."""
+
+    @abc.abstractmethod
+    def arange(
+        self,
+        start: int | float,
+        /,
+        stop: int | float | None = None,
+        step: int | float = 1,
+        *,
+        dtype: Dtype | None = None,
+    ) -> Array:
+        """Return evenly spaced values within the half-open interval ``[start, stop)`` as a one-dimensional array."""
+
+    @abc.abstractmethod
+    def zeros(
+        self,
+        shape: int | tuple[int, ...],
+        *,
+        dtype: Dtype | None = None,
+    ) -> Array:
+        """Return a new array having a specified ``shape`` and filled with zeros."""
+
+    @abc.abstractmethod
+    def abs(self, x: Array, /) -> Array:
+        """Calculate the absolute value for each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def exp(self, x: Array, /) -> Array:
+        """Calculate an implementation-dependent approximation to the exponential function for each element ``x_i`` of the input array ``x`` (``e`` raised to the power of ``x_i``, where ``e`` is the base of the natural logarithm)."""
+
+    @abc.abstractmethod
+    def isnan(self, x: Array, /) -> Array:
+        """Test each element ``x_i`` of the input array ``x`` to determine whether the element is ``NaN``."""
+
+    @abc.abstractmethod
+    def log(self, x: Array, /) -> Array:
+        """Calculate an implementation-dependent approximation to the natural (base ``e``) logarithm for each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def sqrt(self, x: Array, /) -> Array:
+        """Calculate the principal square root for each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def all(
+        self,
+        x: Array,
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> Array:
+        """Test whether all input array elements evaluate to ``True`` along a specified axis."""
+
+    @abc.abstractmethod
+    def any(
+        self,
+        x: Array,
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> Array:
+        """Test whether any input array element evaluates to ``True`` along a specified axis."""
+
+    @abc.abstractmethod
+    def sort(
+        self,
+        x: Array,
+        /,
+        *,
         axis: int = -1,
-        sorted_ensemble: bool = False,
-        estimator: str = "pwm",
+        descending: bool = False,
+        stable: bool = True,
     ) -> Array:
-        """Compute the CRPS for a finite ensemble."""
+        """Return a sorted copy of an input array ``x``."""
 
-    @abstractmethod
-    def crps_normal(self, mu: ArrayLike, sigma: ArrayLike, obs: ArrayLike) -> Array:
-        """Compute the CRPS for the normal distribution."""
+    @abc.abstractmethod
+    def norm(self, x: Array) -> Array:
+        """Computes the matrix norm of a matrix (or a stack of matrices) ``x``."""
 
-    @abstractmethod
-    def crps_lognormal(
-        self, mulog: ArrayLike, sigmalog: ArrayLike, obs: ArrayLike
-    ) -> Array:
-        """Compute the CRPS for the log normal distribution."""
+    @abc.abstractmethod
+    def erf(self, x: Array) -> Array:
+        """ERF."""
 
-    @abstractmethod
-    def crps_logistic(self, mu: ArrayLike, sigma: ArrayLike, obs: ArrayLike) -> Array:
-        """Compute the CRPS for the logistic distribution."""
 
-    @abstractmethod
-    def owcrps_ensemble(
-        self,
-        forecasts: Array,
-        observations: ArrayLike,
-        w_func: tp.Callable,
-        w_funcargs: tuple,
-        axis: int = -1,
-    ) -> Array:
-        """Compute the Outcome-Weighted CRPS for a finite ensemble."""
-
-    @abstractmethod
-    def twcrps_ensemble(
-        self,
-        forecasts: Array,
-        observations: ArrayLike,
-        v_func: tp.Callable,
-        v_funcargs: tuple,
-        axis: int = -1,
-    ) -> Array:
-        """Compute the Threshold-Weighted CRPS for a finite ensemble."""
-
-    @abstractmethod
-    def vrcrps_ensemble(
-        self,
-        forecasts: Array,
-        observations: ArrayLike,
-        w_func: tp.Callable,
-        w_funcargs: tuple,
-        axis: int = -1,
-    ) -> Array:
-        """Compute the Vertically Re-scaled CRPS for a finite ensemble."""
-
-    def logs_normal(
-        self,
-        mu: ArrayLike,
-        sigma: ArrayLike,
-        observation: ArrayLike,
-    ) -> Array:
-        """Compute the logarithmic score for the normal distribution."""
-
-    @abstractmethod
-    def energy_score(
-        self, fcts: Array, obs: Array, m_axis: int = -2, v_axis: int = -1
-    ) -> Array:
-        """Compute the Energy Score for a multivariate finite ensemble."""
-
-    @abstractmethod
-    def owenergy_score(
-        self,
-        fcts: Array,
-        obs: Array,
-        w_func: tp.Callable,
-        w_funcargs: tuple,
-        m_axis: int = -2,
-        v_axis: int = -1,
-    ) -> Array:
-        """Compute the Outcome-Weighted Energy Score for a multivariate finite ensemble."""
-
-    @abstractmethod
-    def twenergy_score(
-        self,
-        fcts: Array,
-        obs: Array,
-        v_func: tp.Callable,
-        v_funcargs: tuple,
-        m_axis: int = -2,
-        v_axis: int = -1,
-    ) -> Array:
-        """Compute the Threshold-Weighted Energy Score for a multivariate finite ensemble."""
-
-    @abstractmethod
-    def vrenergy_score(
-        self,
-        fcts: Array,
-        obs: Array,
-        w_func: tp.Callable,
-        w_funcargs: tuple,
-        m_axis: int = -2,
-        v_axis: int = -1,
-    ) -> Array:
-        """Compute the Vertically Re-scaled Energy Score for a multivariate finite ensemble."""
-
-    @abstractmethod
-    def variogram_score(
-        self,
-        fcts: Array,
-        obs: Array,
-        p: float = 1.0,
-        m_axis: int = -2,
-        v_axisc: int = -1,
-    ) -> Array:
-        """Compute the Variogram Score for a multivariate finite ensemble."""
-
-    @abstractmethod
-    def owvariogram_score(
-        self,
-        fcts: Array,
-        obs: Array,
-        w_func: tp.Callable,
-        w_funcargs: tuple,
-        p: float = 1.0,
-        m_axis: int = -2,
-        v_axisc: int = -1,
-    ) -> Array:
-        """Compute the Outcome-Weighted Variogram Score for a multivariate finite ensemble."""
-
-    @abstractmethod
-    def twvariogram_score(
-        self,
-        fcts: Array,
-        obs: Array,
-        v_func: tp.Callable,
-        v_funcargs: tuple,
-        p: float = 1.0,
-        m_axis: int = -2,
-        v_axisc: int = -1,
-    ) -> Array:
-        """Compute the Threshold-Weighted Variogram Score for a multivariate finite ensemble."""
-
-    @abstractmethod
-    def vrvariogram_score(
-        self,
-        fcts: Array,
-        obs: Array,
-        w_func: tp.Callable,
-        w_funcargs: tuple,
-        p: float = 1.0,
-        m_axis: int = -2,
-        v_axisc: int = -1,
-    ) -> Array:
-        """Compute the Vertically Re-scaled Variogram Score for a multivariate finite ensemble."""
-
-    @abstractmethod
-    def brier_score(self, fcts: ArrayLike, obs: ArrayLike) -> Array:
-        """Compute the Brier Score for predicted probabilities."""
+if __name__ == "__main__":
+    B = ArrayBackend()
