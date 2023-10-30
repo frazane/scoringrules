@@ -1,8 +1,8 @@
 from typing import TypeVar
 
 from scoringrules.backend import backends
-from scoringrules.core.typing import ArrayLike, Array
 from scoringrules.core import brier
+from scoringrules.core.typing import Array, ArrayLike
 
 
 def brier_score(

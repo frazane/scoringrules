@@ -1,5 +1,5 @@
-from scoringrules.core.typing import Array, ArrayLike
 from scoringrules.backend import backends
+from scoringrules.core.typing import Array, ArrayLike
 
 
 def _norm_cdf(x: ArrayLike, backend: str | None = None) -> Array:

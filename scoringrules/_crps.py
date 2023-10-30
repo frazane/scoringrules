@@ -1,8 +1,8 @@
 import typing as tp
 
-from scoringrules.backend import backends, _NUMBA_IMPORTED
-from scoringrules.core.typing import Array, ArrayLike
+from scoringrules.backend import _NUMBA_IMPORTED, backends
 from scoringrules.core import crps
+from scoringrules.core.typing import Array, ArrayLike
 
 
 def crps_ensemble(
@@ -61,7 +61,7 @@ def crps_ensemble(
     if B.name == "numpy" and _NUMBA_IMPORTED:
         return crps.estimator_gufuncs[estimator](forecasts, observations)
 
-    return crps.ensemble(forecasts, observations, axis, estimator, backend=backend)
+    return crps._approx(forecasts, observations, axis, estimator, backend=backend)
 
 
 def twcrps_ensemble(
@@ -95,7 +95,7 @@ def twcrps_ensemble(
     v_func: tp.Callable
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold $t$ by projecting forecasts and observations
-        to $\[t, \inf)$. 
+        to $\[t, \inf)$.
     v_funcargs: tuple
         Additional arguments to the chaining function.
     axis: int
@@ -113,7 +113,6 @@ def twcrps_ensemble(
     >>> from scoringrules import crps
     >>> twcrps.ensemble(pred, obs)
     """
-
     forecasts, observations = map(v_func, (forecasts, observations))
     return crps_ensemble(
         forecasts,
@@ -131,6 +130,7 @@ def owcrps_ensemble(
     /,
     *,
     axis: int = -1,
+    estimator: tp.Literal["nrg"] = "nrg",
     backend: str | None = None,
 ) -> Array:
     r"""Estimate the Outcome-Weighted Continuous Ranked Probability Score (owCRPS) for a finite ensemble.
@@ -170,12 +170,18 @@ def owcrps_ensemble(
     >>> from scoringrules import crps
     >>> owcrps.ensemble(pred, obs)
     """
-    return srb[backend].owcrps_ensemble(
-        forecasts,
-        observations,
-        w_func,
-        axis=axis,
-    )
+    B = backends.active if backend is None else backends[backend]
+
+    if estimator != "nrg":
+        raise ValueError("Only the energy form of the estimator is available "
+                         "for the outcome-weighted CRPS.")
+    if axis != -1:
+        forecasts = B.moveaxis(forecasts, axis, -1)
+
+    if B.name == "numpy" and _NUMBA_IMPORTED:
+        return crps.estimator_gufuncs["tw" + estimator](forecasts, observations)
+
+    return crps.ow_ensemble(forecasts, observations, axis, estimator, backend=backend)
 
 
 def vrcrps_ensemble(

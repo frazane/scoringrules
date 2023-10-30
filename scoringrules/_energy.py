@@ -1,8 +1,8 @@
 import typing as tp
 
+from scoringrules.backend import _NUMBA_IMPORTED, backends
 from scoringrules.core import energy
 from scoringrules.core.typing import Array, ArrayLike
-from scoringrules.backend import _NUMBA_IMPORTED, backends
 
 
 def energy_score(
@@ -164,7 +164,7 @@ def owenergy_score(
         if v_axis != -1:
             forecasts = B.moveaxis(forecasts, v_axis, -1)
             observations = B.moveaxis(observations, v_axis, -1)
-        
+
         fcts_weights, obs_weights = map(w_func, (forecasts, observations))
 
         return energy._owenergy_score_gufunc(forecasts, observations, fcts_weights, obs_weights)

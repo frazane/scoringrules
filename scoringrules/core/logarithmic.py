@@ -1,6 +1,6 @@
+from scoringrules.backend import backends
 from scoringrules.core.stats import _norm_pdf
 from scoringrules.core.typing import Array, ArrayLike
-from scoringrules.backend import backends
 
 
 def normal(

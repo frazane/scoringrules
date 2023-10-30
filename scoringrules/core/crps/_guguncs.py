@@ -346,6 +346,7 @@ estimator_gufuncs = {
     "nrg": _crps_ensemble_nrg_gufunc,
     "pwm": _crps_ensemble_pwm_gufunc,
     "qd": _crps_ensemble_qd_gufunc,
+    "ownrg": _owcrps_ensemble_nrg_gufunc,
 }
 
 __all__ = [

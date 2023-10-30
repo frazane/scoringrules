@@ -1,6 +1,6 @@
 import numpy as np
-from numpy.typing import NDArray
 from numba import guvectorize
+from numpy.typing import NDArray
 
 
 @guvectorize(
