@@ -1,14 +1,17 @@
-from scoringrules.backend import _NUMBA_IMPORTED, backends
-from scoringrules.core.crps._guguncs import estimator_gufuncs
-from scoringrules.core.typing import Array, ArrayLike
+import typing as tp
+
+from scoringrules.backend import backends
+
+if tp.TYPE_CHECKING:
+    from scoringrules.core.typing import Array, ArrayLike
 
 
 def ensemble(
-    fcts: Array,
-    obs: ArrayLike,
+    fcts: "Array",
+    obs: "ArrayLike",
     estimator: str = "pwm",
     backend: str | None = None,
-) -> Array:
+) -> "Array":
     """Compute the CRPS for a finite ensemble."""
     if estimator == "nrg":
         out = _crps_ensemble_nrg(fcts, obs, backend=backend)
@@ -25,7 +28,9 @@ def ensemble(
     return out
 
 
-def _crps_ensemble_fair(fcts: Array, obs: Array, backend: str | None = None) -> Array:
+def _crps_ensemble_fair(
+    fcts: "Array", obs: "Array", backend: str | None = None
+) -> "Array":
     """Fair version of the CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
     M: int = fcts.shape[-1]
@@ -37,7 +42,9 @@ def _crps_ensemble_fair(fcts: Array, obs: Array, backend: str | None = None) -> 
     return e_1 - 0.5 * e_2
 
 
-def _crps_ensemble_nrg(fcts: Array, obs: Array, backend: str | None = None) -> Array:
+def _crps_ensemble_nrg(
+    fcts: "Array", obs: "Array", backend: str | None = None
+) -> "Array":
     """CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
     M: int = fcts.shape[-1]
@@ -49,7 +56,9 @@ def _crps_ensemble_nrg(fcts: Array, obs: Array, backend: str | None = None) -> A
     return e_1 - 0.5 * e_2
 
 
-def _crps_ensemble_pwm(fcts: Array, obs: Array, backend: str | None = None) -> Array:
+def _crps_ensemble_pwm(
+    fcts: "Array", obs: "Array", backend: str | None = None
+) -> "Array":
     """CRPS estimator based on the probability weighted moment (PWM) form."""
     B = backends.active if backend is None else backends[backend]
     M: int = fcts.shape[-1]
@@ -60,12 +69,12 @@ def _crps_ensemble_pwm(fcts: Array, obs: Array, backend: str | None = None) -> A
 
 
 def ow_ensemble(
-    fcts: Array,
-    obs: Array,
-    fw: Array,
-    ow: Array,
+    fcts: "Array",
+    obs: "Array",
+    fw: "Array",
+    ow: "Array",
     backend: str | None = None,
-) -> Array:
+) -> "Array":
     """Outcome-Weighted CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
     M: int = fcts.shape[-1]
@@ -81,12 +90,12 @@ def ow_ensemble(
 
 
 def vr_ensemble(
-    fcts: Array,
-    obs: Array,
-    fw: Array,
-    ow: Array,
+    fcts: "Array",
+    obs: "Array",
+    fw: "Array",
+    ow: "Array",
     backend: str | None = None,
-) -> Array:
+) -> "Array":
     """Vertically Re-scaled CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
     M: int = fcts.shape[-1]

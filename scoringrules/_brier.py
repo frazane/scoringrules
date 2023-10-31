@@ -1,13 +1,18 @@
-from typing import TypeVar
+import typing as tp
 
-from scoringrules.backend import backends
 from scoringrules.core import brier
-from scoringrules.core.typing import Array, ArrayLike
+
+if tp.TYPE_CHECKING:
+    from scoringrules.core.typing import Array, ArrayLike
 
 
 def brier_score(
-    forecasts: ArrayLike, observations: ArrayLike, /, *, backend="numpy"
-) -> Array:
+    forecasts: "ArrayLike",
+    observations: "ArrayLike",
+    /,
+    *,
+    backend: tp.Literal["numpy", "jax", "torch"] | None = None,
+) -> "Array":
     r"""
     Compute the Brier Score (BS).
 

@@ -1,20 +1,22 @@
 import typing as tp
 
-from scoringrules.backend import _NUMBA_IMPORTED, backends
+from scoringrules.backend import backends
 from scoringrules.core import crps
-from scoringrules.core.typing import Array, ArrayLike
+
+if tp.TYPE_CHECKING:
+    from scoringrules.core.typing import Array, ArrayLike
 
 
 def crps_ensemble(
-    forecasts: Array,
-    observations: ArrayLike,
+    forecasts: "Array",
+    observations: "ArrayLike",
     /,
-    *,
     axis: int = -1,
+    *,
     sorted_ensemble: bool = False,
     estimator: str = "pwm",
-    backend: str = "numba",
-) -> Array:
+    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+) -> "Array":
     r"""Estimate the Continuous Ranked Probability Score (CRPS) for a finite ensemble.
 
     Parameters
@@ -45,6 +47,7 @@ def crps_ensemble(
     >>> crps.ensemble(pred, obs)
     """
     B = backends.active if backend is None else backends[backend]
+    forecasts, observations = map(B.asarray, (forecasts, observations))
 
     if estimator not in crps.estimator_gufuncs:
         raise ValueError(
@@ -58,22 +61,22 @@ def crps_ensemble(
     if not sorted_ensemble and estimator not in ["nrg", "akr", "akr_circperm", "fair"]:
         forecasts = B.sort(forecasts, axis=-1)
 
-    if B.name == "numpy" and _NUMBA_IMPORTED:
+    if backend == "numba":
         return crps.estimator_gufuncs[estimator](forecasts, observations)
 
-    return crps._approx(forecasts, observations, axis, estimator, backend=backend)
+    return crps.ensemble(forecasts, observations, estimator, backend=backend)
 
 
 def twcrps_ensemble(
-    forecasts: Array,
-    observations: ArrayLike,
-    v_func: tp.Callable[[ArrayLike], ArrayLike],
+    forecasts: "Array",
+    observations: "ArrayLike",
+    v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
-    *,
     axis: int = -1,
+    *,
     sorted_ensemble: bool = False,
-    backend: str | None = None,
-) -> Array:
+    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+) -> "Array":
     r"""Estimate the Threshold-Weighted Continuous Ranked Probability Score (twCRPS) for a finite ensemble.
 
     Computation is performed using the ensemble representation of the twCRPS in
@@ -124,15 +127,15 @@ def twcrps_ensemble(
 
 
 def owcrps_ensemble(
-    forecasts: Array,
-    observations: ArrayLike,
-    w_func: tp.Callable[[ArrayLike], ArrayLike],
+    forecasts: "Array",
+    observations: "ArrayLike",
+    w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
-    *,
     axis: int = -1,
+    *,
     estimator: tp.Literal["nrg"] = "nrg",
-    backend: str | None = None,
-) -> Array:
+    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+) -> "Array":
     r"""Estimate the Outcome-Weighted Continuous Ranked Probability Score (owCRPS) for a finite ensemble.
 
     Computation is performed using the ensemble representation of the owCRPS in
@@ -173,26 +176,35 @@ def owcrps_ensemble(
     B = backends.active if backend is None else backends[backend]
 
     if estimator != "nrg":
-        raise ValueError("Only the energy form of the estimator is available "
-                         "for the outcome-weighted CRPS.")
+        raise ValueError(
+            "Only the energy form of the estimator is available "
+            "for the outcome-weighted CRPS."
+        )
     if axis != -1:
         forecasts = B.moveaxis(forecasts, axis, -1)
 
-    if B.name == "numpy" and _NUMBA_IMPORTED:
-        return crps.estimator_gufuncs["tw" + estimator](forecasts, observations)
+    fcts_weights, obs_weights = map(w_func, (forecasts, observations))
 
-    return crps.ow_ensemble(forecasts, observations, axis, estimator, backend=backend)
+    if backend == "numba":
+        return crps.estimator_gufuncs["ow" + estimator](
+            forecasts, observations, fcts_weights, obs_weights
+        )
+
+    return crps.ow_ensemble(
+        forecasts, observations, fcts_weights, obs_weights, backend=backend
+    )
 
 
 def vrcrps_ensemble(
-    forecasts: Array,
-    observations: ArrayLike,
-    w_func: tp.Callable[[ArrayLike], ArrayLike],
+    forecasts: "Array",
+    observations: "ArrayLike",
+    w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
-    *,
     axis: int = -1,
-    backend: str = "numba",
-) -> Array:
+    *,
+    estimator: tp.Literal["nrg"] = "nrg",
+    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+) -> "Array":
     r"""Estimate the Vertically Re-scaled Continuous Ranked Probability Score (vrCRPS) for a finite ensemble.
 
     Computation is performed using the ensemble representation of the vrCRPS in
@@ -235,23 +247,36 @@ def vrcrps_ensemble(
     >>> from scoringrules import crps
     >>> vrcrps.ensemble(pred, obs)
     """
-    return srb[backend].vrcrps_ensemble(
-        forecasts,
-        observations,
-        w_func,
-        w_funcargs,
-        axis=axis,
+    B = backends.active if backend is None else backends[backend]
+
+    if estimator != "nrg":
+        raise ValueError(
+            "Only the energy form of the estimator is available "
+            "for the outcome-weighted CRPS."
+        )
+    if axis != -1:
+        forecasts = B.moveaxis(forecasts, axis, -1)
+
+    fcts_weights, obs_weights = map(w_func, (forecasts, observations))
+
+    if backend == "numba":
+        return crps.estimator_gufuncs["vr" + estimator](
+            forecasts, observations, fcts_weights, obs_weights
+        )
+
+    return crps.vr_ensemble(
+        forecasts, observations, fcts_weights, obs_weights, backend=backend
     )
 
 
 def crps_normal(
-    mu: ArrayLike,
-    sigma: ArrayLike,
-    observation: ArrayLike,
+    mu: "ArrayLike",
+    sigma: "ArrayLike",
+    observation: "ArrayLike",
     /,
     *,
-    backend: str = "numpy",
-) -> ArrayLike:
+    backend: tp.Literal["numpy", "jax", "torch"] | None = None,
+) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the normal distribution.
 
     It is based on the following formulation from
@@ -281,15 +306,15 @@ def crps_normal(
     >>> from scoringrules import crps
     >>> crps.normal(0.1, 0.4, 0.0)
     """
-    return srb[backend].crps_normal(mu, sigma, observation)
+    return crps.normal(mu, sigma, observation, backend=backend)
 
 
 def crps_lognormal(
-    mulog: ArrayLike,
-    sigmalog: ArrayLike,
-    observation: ArrayLike,
-    backend: str = "numpy",
-) -> ArrayLike:
+    mulog: "ArrayLike",
+    sigmalog: "ArrayLike",
+    observation: "ArrayLike",
+    backend: tp.Literal["numpy", "jax", "torch"] | None = None,
+) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the lognormal distribution.
 
     It is based on the formulation introduced by
@@ -325,17 +350,17 @@ def crps_lognormal(
     >>> from scoringrules import crps
     >>> crps.lognormal(0.1, 0.4, 0.0)
     """
-    return srb[backend].crps_lognormal(mulog, sigmalog, observation)
+    return crps.normal(mulog, sigmalog, observation, backend=backend)
 
 
 def crps_logistic(
-    mu: ArrayLike,
-    sigma: ArrayLike,
-    observation: ArrayLike,
+    mu: "ArrayLike",
+    sigma: "ArrayLike",
+    observation: "ArrayLike",
     /,
     *,
-    backend: str = "numpy",
-) -> ArrayLike:
+    backend: tp.Literal["numpy", "jax", "torch"] | None = None,
+) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the logistic distribution.
 
     It is based on the following formulation from
@@ -365,11 +390,14 @@ def crps_logistic(
     >>> from scoringrules import crps
     >>> crps.logistic(0.1, 0.4, 0.0)
     """
-    return srb[backend].crps_logistic(mu, sigma, observation)
+    return crps.logistic(mu, sigma, observation, backend=backend)
 
 
 __all__ = [
     "crps_ensemble",
+    "twcrps_ensemble",
+    "owcrps_ensemble",
+    "vrcrps_ensemble",
     "crps_normal",
     "crps_lognormal",
     "crps_logistic",

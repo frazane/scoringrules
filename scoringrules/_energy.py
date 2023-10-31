@@ -1,19 +1,22 @@
 import typing as tp
 
-from scoringrules.backend import _NUMBA_IMPORTED, backends
+from scoringrules.backend import backends
 from scoringrules.core import energy
-from scoringrules.core.typing import Array, ArrayLike
+from scoringrules.core.utils import multivariate_shape_check
+
+if tp.TYPE_CHECKING:
+    from scoringrules.core.typing import Array, ArrayLike
 
 
 def energy_score(
-    forecasts: Array,
-    observations: Array,
+    forecasts: "Array",
+    observations: "Array",
     /,
-    *,
     m_axis: int = -2,
     v_axis: int = -1,
-    backend="numba",
-) -> Array:
+    *,
+    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+) -> "Array":
     r"""Compute the Energy Score for a finite multivariate ensemble.
 
     The Energy Score is a multivariate scoring rule expressed as
@@ -27,15 +30,16 @@ def energy_score(
 
     Parameters
     ----------
-    forecasts: Array of shape (..., D, M)
+    forecasts: Array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
-    observations: Array of shape (...,D)
+    observations: Array
         The observed values, where the variables dimension is by default the last axis.
     m_axis: int
-        The axis corresponding to the ensemble dimension. Defaults to -2.
-    v_axis: int or tuple(int)
-        The axis corresponding to the variables dimension. Defaults to -1.
+        The axis corresponding to the ensemble dimension on the forecasts array. Defaults to -2.
+    v_axis: int
+        The axis corresponding to the variables dimension on the forecasts array (or the observations
+        array with an extra dimension on `m_axis`). Defaults to -1.
     backend: str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -44,30 +48,26 @@ def energy_score(
     energy_score: Array of shape (...)
         The computed Energy Score.
     """
-    B = backends.active if backend is None else backends[backend]
+    forecasts, observations = multivariate_shape_check(
+        forecasts, observations, m_axis, v_axis, backend=backend
+    )
 
-    if B.name == "numpy" and _NUMBA_IMPORTED:
-        if m_axis != -2:
-            forecasts = B.moveaxis(forecasts, m_axis, -2)
-        if v_axis != -1:
-            forecasts = B.moveaxis(forecasts, v_axis, -1)
-            observations = B.moveaxis(observations, v_axis, -1)
-
+    if backend == "numba":
         return energy._energy_score_gufunc(forecasts, observations)
 
-    return energy.nrg(forecasts, observations, m_axis, v_axis, backend=backend)
+    return energy.nrg(forecasts, observations, backend=backend)
 
 
 def twenergy_score(
-    forecasts: Array,
-    observations: Array,
-    v_func: tp.Callable[[ArrayLike], ArrayLike],
+    forecasts: "Array",
+    observations: "Array",
+    v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
-    *,
     m_axis: int = -2,
     v_axis: int = -1,
-    backend="numba",
-) -> Array:
+    *,
+    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+) -> "Array":
     r"""Compute the Threshold-Weighted Energy Score (twES) for a finite multivariate ensemble.
 
     Computation is performed using the ensemble representation of the twES in
@@ -110,15 +110,15 @@ def twenergy_score(
 
 
 def owenergy_score(
-    forecasts: Array,
-    observations: Array,
-    w_func: tp.Callable[[ArrayLike], ArrayLike],
+    forecasts: "Array",
+    observations: "Array",
+    w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
-    *,
     m_axis: int = -2,
     v_axis: int = -1,
-    backend="numba",
-) -> Array:
+    *,
+    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+) -> "Array":
     r"""Compute the Outcome-Weighted Energy Score (owES) for a finite multivariate ensemble.
 
     Computation is performed using the ensemble representation of the owES in
@@ -158,30 +158,33 @@ def owenergy_score(
     """
     B = backends.active if backend is None else backends[backend]
 
-    if B.name == "numpy" and _NUMBA_IMPORTED:
-        if m_axis != -2:
-            forecasts = B.moveaxis(forecasts, m_axis, -2)
-        if v_axis != -1:
-            forecasts = B.moveaxis(forecasts, v_axis, -1)
-            observations = B.moveaxis(observations, v_axis, -1)
+    forecasts, observations = multivariate_shape_check(
+        forecasts, observations, m_axis, v_axis, backend=backend
+    )
 
-        fcts_weights, obs_weights = map(w_func, (forecasts, observations))
+    fcts_weights = B.apply_along_axis(w_func, forecasts, -1)
+    obs_weights = B.apply_along_axis(w_func, observations, -1)
 
-        return energy._owenergy_score_gufunc(forecasts, observations, fcts_weights, obs_weights)
+    if backend == "numba":
+        return energy._owenergy_score_gufunc(
+            forecasts, observations, fcts_weights, obs_weights
+        )
 
-    return energy.ownrg(forecasts, observations, w_func, m_axis, v_axis, backend=backend)
+    return energy.ownrg(
+        forecasts, observations, fcts_weights, obs_weights, backend=backend
+    )
 
 
 def vrenergy_score(
-    forecasts: Array,
-    observations: Array,
-    w_func: tp.Callable[[ArrayLike], ArrayLike],
+    forecasts: "Array",
+    observations: "Array",
+    w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     *,
     m_axis: int = -2,
     v_axis: int = -1,
-    backend="numba",
-) -> Array:
+    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+) -> "Array":
     r"""Compute the Vertically Re-scaled Energy Score (vrES) for a finite multivariate ensemble.
 
     Computation is performed using the ensemble representation of the twES in
@@ -221,6 +224,20 @@ def vrenergy_score(
     vrenergy_score: ArrayLike of shape (...)
         The computed Vertically Re-scaled Energy Score.
     """
-    return srb[backend].vrenergy_score(
-        forecasts, observations, w_func, m_axis=m_axis, v_axis=v_axis
+    B = backends.active if backend is None else backends[backend]
+
+    forecasts, observations = multivariate_shape_check(
+        forecasts, observations, m_axis, v_axis, backend=backend
+    )
+
+    fcts_weights = B.apply_along_axis(w_func, forecasts, -1)
+    obs_weights = B.apply_along_axis(w_func, observations, -1)
+
+    if backend == "numba":
+        return energy._vrenergy_score_gufunc(
+            forecasts, observations, fcts_weights, obs_weights
+        )
+
+    return energy.vrnrg(
+        forecasts, observations, fcts_weights, obs_weights, backend=backend
     )
