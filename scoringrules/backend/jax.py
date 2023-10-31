@@ -145,7 +145,7 @@ class JaxBackend(ArrayBackend):
         descending: bool = False,
     ) -> "Array":
         x = -x if descending else x
-        out = jnp.sort(x, axis=axis)
+        out = jnp.sort(x, axis=axis)  # TODO: this is slow! why?
         return -out if descending else out
 
     def norm(self, x: "Array", axis: int | tuple[int, ...] | None = None) -> "Array":

@@ -312,7 +312,6 @@ def _logis_cdf(x: float) -> float:
     return out
 
 
-
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _crps_normal_ufunc(mu: float, sigma: float, observation: float) -> float:
     ω = (observation - mu) / sigma
@@ -323,7 +322,7 @@ def _crps_normal_ufunc(mu: float, sigma: float, observation: float) -> float:
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _crps_lognormal_ufunc(mulog: float, sigmalog: float, observation: float) -> float:
     ω = (np.log(observation) - mulog) / sigmalog
-    ex = 2 * np.exp(mulog + sigmalog ** 2 / 2)
+    ex = 2 * np.exp(mulog + sigmalog**2 / 2)
     out: float = observation * (2 * _norm_cdf(ω) - 1) - ex * (
         _norm_cdf(ω - sigmalog) + _norm_cdf(sigmalog / np.sqrt(2)) - 1
     )
@@ -337,7 +336,6 @@ def _crps_logistic_ufunc(mu: float, sigma: float, observation: float) -> float:
     return out
 
 
-
 estimator_gufuncs = {
     "akr_circperm": _crps_ensemble_akr_circperm_gufunc,
     "akr": _crps_ensemble_akr_gufunc,
@@ -347,6 +345,7 @@ estimator_gufuncs = {
     "pwm": _crps_ensemble_pwm_gufunc,
     "qd": _crps_ensemble_qd_gufunc,
     "ownrg": _owcrps_ensemble_nrg_gufunc,
+    "vrnrg": _vrcrps_ensemble_nrg_gufunc,
 }
 
 __all__ = [

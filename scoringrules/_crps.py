@@ -74,6 +74,7 @@ def twcrps_ensemble(
     /,
     axis: int = -1,
     *,
+    estimator: str = "pwm",
     sorted_ensemble: bool = False,
     backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
 ) -> "Array":
@@ -122,6 +123,7 @@ def twcrps_ensemble(
         observations,
         axis=axis,
         sorted_ensemble=sorted_ensemble,
+        estimator=estimator,
         backend=backend,
     )
 

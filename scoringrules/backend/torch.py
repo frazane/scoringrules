@@ -93,7 +93,7 @@ class TorchBackend(ArrayBackend):
         *,
         dtype: Dtype | None = None,
     ) -> "Tensor":
-        return torch.arange(start, stop, step, dtype=dtype)
+        return torch.arange(start)  # TODO: fix this
 
     def zeros(
         self,
@@ -147,7 +147,7 @@ class TorchBackend(ArrayBackend):
         descending: bool = False,
         stable: bool = True,
     ) -> "Tensor":
-        return torch.sort(x, stable=stable, dim=axis, descending=descending)
+        return torch.sort(x, stable=stable, dim=axis, descending=descending)[0]
 
     def norm(self, x: "Tensor", axis: int | tuple[int, ...] | None = None) -> "Tensor":
         return torch.norm(x, dim=axis)
