@@ -39,6 +39,8 @@ pytest = "^7.3.1"
 mypy = "^1.3.0"
 jax = { extras = ["cpu"], version = "^0.4.10" }
 dask = "^2023.7.1"
+xarray = "^2023.10.1"
+torch = { version = ">=2.0.0, !=2.0.1, !=2.1.0" }
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -82,6 +84,7 @@ select = [
 ]
 ignore = [
   "D100",
+  "D102",
   "D103",
   "D104",
   "D105",
@@ -95,16 +98,15 @@ ignore = [
   "F722",
   "PLR2004",
   "PLR0913",
+  "TCH004",
+  "PLW0603",
 ]
 unfixable = ["ERA001", "F401", "F841", "T201", "T203"]
 src = ["scoringrules", "tests"]
 target-version = "py310"
 
 [tool.ruff.per-file-ignores]
-"scoringrules/crps.py" = ["PLW2901"]
-"scoringrules/backend/gufuncs.py" = ["PLW2901"]
-"scoringrules/backend/arrayapi/array_type.py" = ["D"]
-"scoringrules/backend/arrayapi/functions.py" = ["D"]
+"scoringrules/core/crps/_gufuncs.py" = ["PLW2901"]
 
 
 [tool.ruff.pydocstyle]

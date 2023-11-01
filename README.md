@@ -6,7 +6,7 @@ Scoringrules is a python package for the evaluation of probabilistic forecasts, 
             margin-right: auto;
             width: 70%">
 
-| :exclamation:  This package is a work in progress, expect breaking changes :exclamation:|
+| :exclamation:  This package is a work in progress, expect bugs and breaking changes :exclamation:|
 |---------------------------------------------------|
 
 </div>
@@ -15,8 +15,8 @@ Scoringrules is a python package for the evaluation of probabilistic forecasts, 
 ## Features
 
 - **Fast and flexible** computations of several probabilistic univariate and multivariate verification metrics
-- **Multiple engines**: scoringrules currently supports numpy, numba and JAX
-- **Didactic approach** to probabilistic forecast evaluation and scoring rules
+- **Multiple backends**: scoringrules supports numpy (accelerated with numba), jax and pytorch, making it useful for optimization
+- **Didactic approach** to probabilistic forecast evaluation and scoring rules through clear code and extensive documentation
 
 
 ## Example

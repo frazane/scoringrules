@@ -6,3 +6,9 @@ try:
     JAX_IMPORTED = True
 except BackendNotAvailable:
     JAX_IMPORTED = False
+
+try:
+    register_backend("torch")
+    TORCH_IMPORTED = True
+except BackendNotAvailable:
+    TORCH_IMPORTED = False

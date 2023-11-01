@@ -1,22 +1,23 @@
 import typing as tp
 
-from scoringrules.backend import backends as srb
-from scoringrules.backend.arrayapi import Array
+from scoringrules.core import logarithmic
 
-ArrayLike = tp.TypeVar("ArrayLike", Array, float)
+if tp.TYPE_CHECKING:
+    from scoringrules.core.typing import Array, ArrayLike
 
 
 def logs_normal(
-    mu: ArrayLike,
-    sigma: ArrayLike,
-    observation: ArrayLike,
+    mu: "ArrayLike",
+    sigma: "ArrayLike",
+    observation: "ArrayLike",
     /,
     *,
-    backend: tp.Literal["numba", "numpy", "jax"] = "numpy",
-) -> Array:
+    negative: bool = True,
+    backend: tp.Literal["numpy", "jax", "torch"] | None = None,
+) -> "Array":
     r"""Compute the logarithmic score (LS) for the normal distribution.
 
-    This score is equivalent to the negative log likelihood.
+    This score is equivalent to the negative log likelihood (if `negative = True`)
 
     Parameters
     ----------
@@ -40,4 +41,6 @@ def logs_normal(
     >>> sr.logs_normal(0.1, 0.4, 0.0)
     >>> 0.033898
     """
-    return srb[backend].logs_normal(mu, sigma, observation)
+    return logarithmic.normal(
+        mu, sigma, observation, negative=negative, backend=backend
+    )

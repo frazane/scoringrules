@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from scoringrules import _crps
 
-from .conftest import JAX_IMPORTED
+from .conftest import JAX_IMPORTED, TORCH_IMPORTED
 
 ENSEMBLE_SIZE = 51
 N = 100
@@ -12,6 +12,8 @@ ESTIMATORS = ["nrg", "fair", "pwm", "int", "qd", "akr", "akr_circperm"]
 BACKENDS = ["numpy", "numba"]
 if JAX_IMPORTED:
     BACKENDS.append("jax")
+if TORCH_IMPORTED:
+    BACKENDS.append("torch")
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
@@ -23,7 +25,7 @@ def test_ensemble(estimator, backend):
     fcts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
     # test exceptions
-    if backend in ["numpy", "jax"]:
+    if backend in ["numpy", "jax", "torch"]:
         if estimator not in ["nrg", "fair", "pwm"]:
             with pytest.raises(ValueError):
                 _crps.crps_ensemble(fcts, obs, estimator=estimator, backend=backend)
@@ -31,11 +33,13 @@ def test_ensemble(estimator, backend):
 
     # non-negative values
     res = _crps.crps_ensemble(fcts, obs, estimator=estimator, backend=backend)
+    res = np.asarray(res)
     assert not np.any(res < 0.0)
 
     # approx zero when perfect forecast
     perfect_fcts = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
     res = _crps.crps_ensemble(perfect_fcts, obs, estimator=estimator, backend=backend)
+    res = np.asarray(res)
     assert not np.any(res - 0.0 > 0.0001)
 
 
@@ -47,6 +51,7 @@ def test_normal(backend):
 
     # non-negative values
     res = _crps.crps_normal(mu, sigma, obs, backend=backend)
+    res = np.asarray(res)
     assert not np.any(np.isnan(res))
     assert not np.any(res < 0.0)
 
@@ -54,6 +59,7 @@ def test_normal(backend):
     mu = obs + np.random.randn(N) * 1e-6
     sigma = abs(np.random.randn(N)) * 1e-6
     res = _crps.crps_normal(mu, sigma, obs, backend=backend)
+    res = np.asarray(res)
 
     assert not np.any(np.isnan(res))
     assert not np.any(res - 0.0 > 0.0001)
@@ -67,6 +73,7 @@ def test_lognormal(backend):
 
     # non-negative values
     res = _crps.crps_lognormal(mulog, sigmalog, obs, backend=backend)
+    res = np.asarray(res)
     assert not np.any(np.isnan(res))
     assert not np.any(res < 0.0)
 
@@ -74,6 +81,7 @@ def test_lognormal(backend):
     mulog = np.log(obs) + np.random.randn(N) * 1e-6
     sigmalog = abs(np.random.randn(N)) * 1e-6
     res = _crps.crps_lognormal(mulog, sigmalog, obs, backend=backend)
+    res = np.asarray(res)
 
     assert not np.any(np.isnan(res))
     assert not np.any(res - 0.0 > 0.0001)
