@@ -352,7 +352,7 @@ def crps_lognormal(
     >>> from scoringrules import crps
     >>> crps.lognormal(0.1, 0.4, 0.0)
     """
-    return crps.normal(mulog, sigmalog, observation, backend=backend)
+    return crps.lognormal(mulog, sigmalog, observation, backend=backend)
 
 
 def crps_logistic(

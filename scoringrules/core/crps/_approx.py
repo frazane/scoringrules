@@ -49,10 +49,7 @@ def _crps_ensemble_nrg(
     B = backends.active if backend is None else backends[backend]
     M: int = fcts.shape[-1]
     e_1 = B.sum(B.abs(obs[..., None] - fcts), axis=-1) / M
-    e_2 = B.sum(
-        B.abs(B.expand_dims(fcts, axis=-1) - B.expand_dims(fcts, axis=-2)),
-        axis=(-1, -2),
-    ) / (M**2)
+    e_2 = B.sum(B.abs(fcts[..., None] - fcts[..., None, :]), (-1, -2)) / (M**2)
     return e_1 - 0.5 * e_2
 
 
@@ -78,11 +75,10 @@ def ow_ensemble(
     """Outcome-Weighted CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
     M: int = fcts.shape[-1]
-    wbar = B.mean(fw, axis=1)
+    wbar = B.mean(fw, axis=-1)
     e_1 = B.sum(B.abs(obs[..., None] - fcts) * fw, axis=-1) * ow / (M * wbar)
     e_2 = B.sum(
-        B.abs(B.expand_dims(fcts, axis=-1) - B.expand_dims(fcts, axis=-2))
-        * (B.expand_dims(fw, axis=-1) * B.expand_dims(fw, axis=-2)),
+        B.abs(fcts[..., None] - fcts[..., None, :]) * fw[..., None] * fw[..., None, :],
         axis=(-1, -2),
     )
     e_2 *= ow / (M**2 * wbar**2)

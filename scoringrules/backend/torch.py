@@ -75,12 +75,11 @@ class TorchBackend(ArrayBackend):
         if isinstance(axis, int):
             return torch.unsqueeze(x, dim=axis)
         elif isinstance(axis, tuple | list):
-            axis = sorted([a if a >= 0 else x.ndim + a for a in axis])
-            acc = 0
-            for a in axis:
-                x = torch.unsqueeze(x, a + acc)
-                acc += 1
-            return x
+            out_ndim = len(axis) + x.ndim
+            axis = [a + out_ndim if a < 0 else a for a in axis]
+            shape_it = iter(x.shape)
+            shape = [1 if ax in axis else next(shape_it) for ax in range(out_ndim)]
+            return x.reshape(shape)
 
     def squeeze(
         self, x: "Tensor", /, *, axis: int | tuple[int, ...] | None = None

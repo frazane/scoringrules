@@ -2,7 +2,7 @@ import typing as tp
 
 from scoringrules.backend import backends
 from scoringrules.core import variogram
-from scoringrules.core.utils import multivariate_shape_check
+from scoringrules.core.utils import multivariate_array_check
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array
@@ -50,7 +50,7 @@ def variogram_score(
     variogram_score: Array
         The computed Variogram Score.
     """
-    forecasts, observations = multivariate_shape_check(
+    forecasts, observations = multivariate_array_check(
         forecasts, observations, m_axis, v_axis, backend=backend
     )
 
@@ -109,12 +109,9 @@ def twvariogram_score(
     twvariogram_score: ArrayLike of shape (...)
         The computed Threshold-Weighted Variogram Score.
     """
-    forecasts, observations = multivariate_shape_check(
-        forecasts, observations, m_axis, v_axis, backend=backend
-    )
     forecasts, observations = map(v_func, (forecasts, observations))
     return variogram_score(
-        forecasts, observations, v_func, m_axis, v_axis, p=p, backend=backend
+        forecasts, observations, m_axis, v_axis, p=p, backend=backend
     )
 
 
@@ -171,7 +168,7 @@ def owvariogram_score(
     """
     B = backends.active if backend is None else backends[backend]
 
-    forecasts, observations = multivariate_shape_check(
+    forecasts, observations = multivariate_array_check(
         forecasts, observations, m_axis, v_axis, backend=backend
     )
 
@@ -242,7 +239,7 @@ def vrvariogram_score(
     """
     B = backends.active if backend is None else backends[backend]
 
-    forecasts, observations = multivariate_shape_check(
+    forecasts, observations = multivariate_array_check(
         forecasts, observations, m_axis, v_axis, backend=backend
     )
 

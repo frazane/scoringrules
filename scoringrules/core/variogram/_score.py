@@ -17,7 +17,7 @@ def variogram_score(
     M: int = fcst.shape[-2]
     fcst_diff = B.expand_dims(fcst, -2) - B.expand_dims(fcst, -1)  # (... M D D)
     vfcts = B.sum(B.abs(fcst_diff) ** p, axis=-3) / M  # (... D D)
-    obs_diff = B.expand_dims(obs, -2) - B.expand_dims(obs, -2)  # (... D D)
+    obs_diff = B.expand_dims(obs, -2) - B.expand_dims(obs, -1)  # (... D D)
     vobs = B.abs(obs_diff) ** p  # (... D D)
     return B.sum((vobs - vfcts) ** 2, axis=(-2, -1))  # (...)
 
@@ -38,7 +38,7 @@ def owvariogram_score(
     fcst_diff = B.expand_dims(fcst, -2) - B.expand_dims(fcst, -1)  # (... M D D)
     fcst_diff = B.abs(fcst_diff) ** p  # (... M D D)
 
-    obs_diff = B.expand_dims(obs, -2) - B.expand_dims(obs, -2)  # (... D D)
+    obs_diff = B.expand_dims(obs, -2) - B.expand_dims(obs, -1)  # (... D D)
     obs_diff = B.abs(obs_diff) ** p  # (... D D)
     del fcst, obs
 
