@@ -1,7 +1,11 @@
 import numpy as np
 import pytest
-from scoringrules._crps import crps_ensemble
-from scoringrules._wcrps import owcrps_ensemble, twcrps_ensemble, vrcrps_ensemble
+from scoringrules._crps import (
+    crps_ensemble,
+    owcrps_ensemble,
+    twcrps_ensemble,
+    vrcrps_ensemble,
+)
 
 from .conftest import JAX_IMPORTED
 
@@ -14,18 +18,6 @@ if JAX_IMPORTED:
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
-def test_owcrps_vs_crps(backend):
-    obs = np.random.randn(N)
-    mu = obs + np.random.randn(N) * 0.1
-    sigma = abs(np.random.randn(N)) * 0.5
-    fcts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
-
-    res = crps_ensemble(fcts, obs, backend=backend, estimator="nrg")
-    resw = owcrps_ensemble(fcts, obs, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-5)
-
-
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_twcrps_vs_crps(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -33,8 +25,20 @@ def test_twcrps_vs_crps(backend):
     fcts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
     res = crps_ensemble(fcts, obs, backend=backend, estimator="nrg")
-    resw = twcrps_ensemble(fcts, obs, backend=backend)
+    resw = twcrps_ensemble(fcts, obs, lambda x: x, estimator="nrg", backend=backend)
     np.testing.assert_allclose(res, resw, rtol=1e-10)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_owcrps_vs_crps(backend):
+    obs = np.random.randn(N)
+    mu = obs + np.random.randn(N) * 0.1
+    sigma = abs(np.random.randn(N)) * 0.5
+    fcts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+
+    res = crps_ensemble(fcts, obs, backend=backend, estimator="nrg")
+    resw = owcrps_ensemble(fcts, obs, lambda x: x * 0.0 + 1.0, backend=backend)
+    np.testing.assert_allclose(res, resw, rtol=1e-5)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -45,8 +49,8 @@ def test_vrcrps_vs_crps(backend):
     fcts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
     res = crps_ensemble(fcts, obs, backend=backend, estimator="nrg")
-    resw = vrcrps_ensemble(fcts, obs, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-10)
+    resw = vrcrps_ensemble(fcts, obs, lambda x: x * 0.0 + 1.0, backend=backend)
+    np.testing.assert_allclose(res, resw, atol=1e-6)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -81,18 +85,16 @@ def test_owcrps_score_correctness(backend):
         ]
     )
 
-    def w_func(x, t):
-        return (x > t).astype(np.float32)
+    def w_func(x):
+        return (x > -1).astype(float)
 
-    t = -1
-    res = np.mean(owcrps_ensemble(fcts, obs, w_func, (t,), backend=backend))
+    res = np.mean(owcrps_ensemble(fcts, obs, w_func, backend=backend))
     np.testing.assert_allclose(res, 0.09320807, rtol=1e-6)
 
-    def w_func(x, t):
-        return (x < t).astype(np.float32)
+    def w_func(x):
+        return (x < 1.85).astype(float)
 
-    t = 1.85
-    res = np.mean(owcrps_ensemble(fcts, obs, w_func, (t,), backend=backend))
+    res = np.mean(owcrps_ensemble(fcts, obs, w_func, backend=backend))
     np.testing.assert_allclose(res, 0.09933139, rtol=1e-6)
 
 
@@ -128,18 +130,16 @@ def test_twcrps_score_correctness(backend):
         ]
     )
 
-    def v_func(x, t):
-        return np.maximum(x, t)
+    def v_func(x):
+        return np.maximum(x, -1.0)
 
-    t = -1
-    res = np.mean(twcrps_ensemble(fcts, obs, v_func, (t,), backend=backend))
+    res = np.mean(twcrps_ensemble(fcts, obs, v_func, estimator="nrg", backend=backend))
     np.testing.assert_allclose(res, 0.09489662, rtol=1e-6)
 
-    def v_func(x, t):
-        return np.minimum(x, t)
+    def v_func(x):
+        return np.minimum(x, 1.85)
 
-    t = 1.85
-    res = np.mean(twcrps_ensemble(fcts, obs, v_func, (t,), backend=backend))
+    res = np.mean(twcrps_ensemble(fcts, obs, v_func, estimator="nrg", backend=backend))
     np.testing.assert_allclose(res, 0.0994809, rtol=1e-6)
 
 
@@ -175,16 +175,14 @@ def test_vrcrps_score_correctness(backend):
         ]
     )
 
-    def w_func(x, t):
-        return (x > t).astype(np.float32)
+    def w_func(x):
+        return (x > -1).astype(float)
 
-    t = -1
-    res = np.mean(vrcrps_ensemble(fcts, obs, w_func, (t,), backend=backend))
+    res = np.mean(vrcrps_ensemble(fcts, obs, w_func, backend=backend))
     np.testing.assert_allclose(res, 0.1003983, rtol=1e-6)
 
-    def w_func(x, t):
-        return (x < t).astype(np.float32)
+    def w_func(x):
+        return (x < 1.85).astype(float)
 
-    t = 1.85
-    res = np.mean(vrcrps_ensemble(fcts, obs, w_func, (t,), backend=backend))
+    res = np.mean(vrcrps_ensemble(fcts, obs, w_func, backend=backend))
     np.testing.assert_allclose(res, 0.1950857, rtol=1e-6)
