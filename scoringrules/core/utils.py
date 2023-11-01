@@ -17,18 +17,15 @@ def _multivariate_shape_compatibility(fcts, obs, m_axis) -> None:
 def _multivariate_shape_permute(fcts, obs, m_axis, v_axis, backend=None):
     B = backends.active if backend is None else backends[backend]
     v_axis_obs = v_axis - 1 if m_axis < v_axis else v_axis
-
-    if m_axis != -2:
-        fcts = B.moveaxis(fcts, m_axis, _M_AXIS)
-    if v_axis != -1:
-        fcts = B.moveaxis(fcts, v_axis, _V_AXIS)
-        obs = B.moveaxis(obs, v_axis_obs, _V_AXIS)
-
+    fcts = B.moveaxis(fcts, (m_axis, v_axis), (_M_AXIS, _V_AXIS))
+    obs = B.moveaxis(obs, v_axis_obs, _V_AXIS)
     return fcts, obs
 
 
-def multivariate_shape_check(fcts, obs, m_axis, v_axis, backend=None):
+def multivariate_array_check(fcts, obs, m_axis, v_axis, backend=None):
     """Check and adapt the shapes of multivariate forecasts and observations arrays."""
+    B = backends.active if backend is None else backends[backend]
+    fcts, obs = map(B.asarray, (fcts, obs))
     m_axis = m_axis if m_axis >= 0 else fcts.ndim + m_axis
     v_axis = v_axis if v_axis >= 0 else fcts.ndim + v_axis
     _multivariate_shape_compatibility(fcts, obs, m_axis)

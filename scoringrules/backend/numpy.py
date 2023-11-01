@@ -44,8 +44,8 @@ class NumpyBackend(ArrayBackend):
         self,
         x: "NDArray",
         /,
-        *,
         axis: int | tuple[int, ...] | None = None,
+        *,
         dtype: Dtype | None = None,
         keepdims: bool = False,
     ) -> "NDArray":
@@ -63,7 +63,7 @@ class NumpyBackend(ArrayBackend):
     ) -> "NDArray":
         return np.concatenate(arrays, axis=axis)
 
-    def expand_dims(self, x: "NDArray", /, *, axis: int = 0) -> "NDArray":
+    def expand_dims(self, x: "NDArray", /, axis: int = 0) -> "NDArray":
         return np.expand_dims(x, axis=axis)
 
     def squeeze(
@@ -142,7 +142,7 @@ class NumpyBackend(ArrayBackend):
     def norm(
         self, x: "NDArray", axis: int | tuple[int, ...] | None = None
     ) -> "NDArray":
-        return np.linalg.norm(x, axis)
+        return np.linalg.norm(x, axis=axis)
 
     def erf(self, x):
         return erf(x)

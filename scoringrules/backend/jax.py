@@ -57,8 +57,8 @@ class JaxBackend(ArrayBackend):
         self,
         x: "Array",
         /,
-        *,
         axis: int | tuple[int, ...] | None = None,
+        *,
         dtype: Dtype | None = None,
         keepdims: bool = False,
     ) -> "Array":
@@ -72,7 +72,7 @@ class JaxBackend(ArrayBackend):
     ) -> "Array":
         return jnp.concatenate(arrays, axis=axis)
 
-    def expand_dims(self, x: "Array", /, *, axis: int = 0) -> "Array":
+    def expand_dims(self, x: "Array", /, axis: int = 0) -> "Array":
         return jnp.expand_dims(x, axis=axis)
 
     def squeeze(
@@ -149,16 +149,18 @@ class JaxBackend(ArrayBackend):
         return -out if descending else out
 
     def norm(self, x: "Array", axis: int | tuple[int, ...] | None = None) -> "Array":
-        return jnp.linalg.norm(x, axis)
+        return jnp.linalg.norm(x, axis=axis)
 
     def erf(self, x: "Array") -> "Array":
         return jsp.special.erf(x)
 
-    def apply_along_axis(self, func1d: tp.Callable, x: "Array", axis: int):
+    def apply_along_axis(
+        self, func1d: tp.Callable[["Array"], "Array"], x: "Array", axis: int
+    ):
         try:
-            vaxes = tuple(set(range(x.ndim)) - set([axis]))
-            return jax.vmap(func1d, in_axes=vaxes, out_axes=vaxes)(x)
-        except ValueError:
+            x_shape = list(x.shape)
+            return jax.vmap(func1d)(x.reshape(-1, x_shape.pop(axis))).reshape(x_shape)
+        except Exception:
             return jnp.apply_along_axis(func1d, axis, x)
 
 

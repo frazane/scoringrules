@@ -9,7 +9,7 @@ Dtype = tp.TypeVar("Dtype")
 
 
 class ArrayBackend(abc.ABC):
-    """The python array API standard implemented as Protocol for static typing."""
+    """The abstract class for array backends."""
 
     name: str
     e: float = 2.718281828459045
@@ -170,9 +170,7 @@ class ArrayBackend(abc.ABC):
         """Return the error function."""
 
     @abc.abstractmethod
-    def apply_along_axis(func1d: tp.Callable, x: "Array", axis: int) -> "Array":
+    def apply_along_axis(
+        self, func1d: tp.Callable[["Array"], "Array"], x: "Array", axis: int
+    ) -> "Array":
         """Apply a function along a given axis of the input array."""
-
-
-if __name__ == "__main__":
-    B = ArrayBackend()

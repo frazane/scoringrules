@@ -2,7 +2,7 @@ import typing as tp
 
 from scoringrules.backend import backends
 from scoringrules.core import energy
-from scoringrules.core.utils import multivariate_shape_check
+from scoringrules.core.utils import multivariate_array_check
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike
@@ -48,7 +48,8 @@ def energy_score(
     energy_score: Array of shape (...)
         The computed Energy Score.
     """
-    forecasts, observations = multivariate_shape_check(
+    backend = backend if backend is not None else backends._active
+    forecasts, observations = multivariate_array_check(
         forecasts, observations, m_axis, v_axis, backend=backend
     )
 
@@ -158,7 +159,7 @@ def owenergy_score(
     """
     B = backends.active if backend is None else backends[backend]
 
-    forecasts, observations = multivariate_shape_check(
+    forecasts, observations = multivariate_array_check(
         forecasts, observations, m_axis, v_axis, backend=backend
     )
 
@@ -226,7 +227,7 @@ def vrenergy_score(
     """
     B = backends.active if backend is None else backends[backend]
 
-    forecasts, observations = multivariate_shape_check(
+    forecasts, observations = multivariate_array_check(
         forecasts, observations, m_axis, v_axis, backend=backend
     )
 

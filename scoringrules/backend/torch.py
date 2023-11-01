@@ -57,8 +57,8 @@ class TorchBackend(ArrayBackend):
         self,
         x: "Tensor",
         /,
-        *,
         axis: int | tuple[int, ...] | None = None,
+        *,
         keepdims: bool = False,
     ) -> "Tensor":
         return torch.sum(x, axis=axis, keepdim=keepdims)
@@ -71,8 +71,16 @@ class TorchBackend(ArrayBackend):
     ) -> "Tensor":
         return torch.concat(arrays, axis=axis)
 
-    def expand_dims(self, x: "Tensor", /, *, axis: int = 0) -> "Tensor":
-        return torch.unsqueeze(x, dim=axis)
+    def expand_dims(self, x: "Tensor", /, axis: int | tuple[int] = 0) -> "Tensor":
+        if isinstance(axis, int):
+            return torch.unsqueeze(x, dim=axis)
+        elif isinstance(axis, tuple | list):
+            axis = sorted([a if a >= 0 else x.ndim + a for a in axis])
+            acc = 0
+            for a in axis:
+                x = torch.unsqueeze(x, a + acc)
+                acc += 1
+            return x
 
     def squeeze(
         self, x: "Tensor", /, *, axis: int | tuple[int, ...] | None = None
@@ -155,11 +163,13 @@ class TorchBackend(ArrayBackend):
     def erf(self, x: "Tensor") -> "Tensor":
         return torch.special.erf(x)
 
-    def apply_along_axis(self, func1d: tp.Callable, x: "Tensor", axis: int):
+    def apply_along_axis(
+        self, func1d: tp.Callable[["Tensor"], "Tensor"], x: "Tensor", axis: int
+    ):
         try:
-            vaxes = tuple(set(range(x.ndim)) - set([axis]))
-            return torch.vmap(func1d, in_dims=vaxes, out_dims=vaxes)(x)
-        except ValueError:
+            x_shape = list(x.shape)
+            return torch.vmap(func1d)(x.reshape(-1, x_shape.pop(axis))).reshape(x_shape)
+        except Exception:
             return torch.stack(
                 [func1d(x_i) for x_i in torch.unbind(x, dim=axis)], dim=axis
             )

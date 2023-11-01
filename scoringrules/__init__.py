@@ -23,13 +23,14 @@ from scoringrules._variogram import (
     variogram_score,
     vrvariogram_score,
 )
-from scoringrules.backend import register_backend
+from scoringrules.backend import backends, register_backend
 
 __version__ = version("scoringrules")
 
 
 __all__ = [
     "register_backend",
+    "backends",
     "crps_ensemble",
     "crps_normal",
     "crps_lognormal",
