@@ -2,16 +2,6 @@
 
 Scoringrules is a python package for the evaluation of probabilistic forecasts, inspired by R's [scoringRules](https://cran.r-project.org/web/packages/scoringRules/index.html) package.
 
-<div style="margin-left: 25%;
-            margin-right: auto;
-            width: 70%">
-
-| :exclamation:  This package is a work in progress, expect bugs and breaking changes :exclamation:|
-|---------------------------------------------------|
-
-</div>
-
-
 ## Features
 
 - **Fast and flexible** computations of several probabilistic univariate and multivariate verification metrics
