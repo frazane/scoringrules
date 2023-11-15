@@ -13,7 +13,7 @@ def logs_normal(
     /,
     *,
     negative: bool = True,
-    backend: tp.Literal["numpy", "jax", "torch"] | None = None,
+    backend: tp.Literal["numpy", "jax", "torch", "tensorflow"] | None = None,
 ) -> "Array":
     r"""Compute the logarithmic score (LS) for the normal distribution.
 

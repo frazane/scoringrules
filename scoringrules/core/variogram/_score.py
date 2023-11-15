@@ -10,7 +10,7 @@ def variogram_score(
     fcst: "Array",  # (... M D)
     obs: "Array",  # (... D)
     p: float = 1,
-    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
 ) -> "Array":
     """Compute the Variogram Score for a multivariate finite ensemble."""
     B = backends.active if backend is None else backends[backend]
@@ -28,7 +28,7 @@ def owvariogram_score(
     fw: "Array",
     ow: "Array",
     p: float = 1,
-    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
 ) -> "Array":
     """Compute the Outcome-Weighted Variogram Score for a multivariate finite ensemble."""
     B = backends.active if backend is None else backends[backend]
@@ -63,7 +63,7 @@ def vrvariogram_score(
     fw: "Array",
     ow: "Array",
     p: float = 1,
-    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
 ) -> "Array":
     """Compute the Vertically Re-scaled Variogram Score for a multivariate finite ensemble."""
     B = backends.active if backend is None else backends[backend]

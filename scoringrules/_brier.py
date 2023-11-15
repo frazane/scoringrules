@@ -11,7 +11,7 @@ def brier_score(
     observations: "ArrayLike",
     /,
     *,
-    backend: tp.Literal["numpy", "jax", "torch"] | None = None,
+    backend: tp.Literal["numpy", "jax", "torch", "tensorflow"] | None = None,
 ) -> "Array":
     r"""
     Compute the Brier Score (BS).

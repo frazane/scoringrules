@@ -12,3 +12,9 @@ try:
     TORCH_IMPORTED = True
 except BackendNotAvailable:
     TORCH_IMPORTED = False
+
+try:
+    register_backend("tensorflow")
+    TENSORFLOW_IMPORTED = True
+except BackendNotAvailable:
+    TENSORFLOW_IMPORTED = False
