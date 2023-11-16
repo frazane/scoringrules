@@ -14,7 +14,9 @@ def normal(
     B = backends.active if backend is None else backends[backend]
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma
-    return sigma * (ω * (2 * _norm_cdf(ω) - 1) + 2 * _norm_pdf(ω) - 1 / B.sqrt(B.pi))
+    return sigma * (
+        ω * (2.0 * _norm_cdf(ω) - 1.0) + 2.0 * _norm_pdf(ω) - 1.0 / B.sqrt(B.pi)
+    )
 
 
 def lognormal(

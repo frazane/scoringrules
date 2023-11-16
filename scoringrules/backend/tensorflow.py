@@ -1,5 +1,5 @@
-import typing as tp
 import math
+import typing as tp
 from importlib import import_module
 
 from .base import ArrayBackend
@@ -9,8 +9,10 @@ if tp.TYPE_CHECKING:
 
     Tensor = tf.Tensor
     TensorLike = Tensor | bool | float | int
+    DTYPE = tf.float32
 else:
     tf = None
+    DTYPE = None
 Dtype = tp.TypeVar("Dtype")
 
 
@@ -20,11 +22,11 @@ class TensorflowBackend(ArrayBackend):
     name = "tensorflow"
 
     def __init__(self) -> None:
-        global tf
+        global tf, DTYPE
         if tf is None and not tp.TYPE_CHECKING:
             tf = import_module("tensorflow")
-
-        self.pi = tf.constant(math.pi)
+            DTYPE = tf.float32
+        self.pi = tf.constant(math.pi, dtype=DTYPE)
 
     def asarray(
         self,
@@ -33,6 +35,8 @@ class TensorflowBackend(ArrayBackend):
         *,
         dtype: Dtype | None = None,
     ) -> "Tensor":
+        if dtype is None:
+            dtype = DTYPE
         return tf.convert_to_tensor(obj, dtype=dtype)
 
     def mean(
@@ -76,10 +80,16 @@ class TensorflowBackend(ArrayBackend):
     ) -> "Tensor":
         return tf.concat(arrays, axis=axis)
 
-    def expand_dims(
-        self, x: "Tensor", /, axis: int | tuple[int] = 0
-    ) -> "Tensor":
-        return tf.expand_dims(x, axis=axis)
+    # tf.expand_dims() doesn't support tuples in v2.15
+    def expand_dims(self, x: "Tensor", /, axis: int | tuple[int] = 0) -> "Tensor":
+        if isinstance(axis, int):
+            return tf.expand_dims(x, axis=axis)
+        elif isinstance(axis, tuple | list):
+            out_ndim = len(axis) + x.ndim
+            axis = [a + out_ndim if a < 0 else a for a in axis]
+            shape_it = iter(x.shape)
+            shape = [1 if ax in axis else next(shape_it) for ax in range(out_ndim)]
+            return tf.reshape(x, shape=shape)
 
     def squeeze(
         self, x: "Tensor", /, *, axis: int | tuple[int, ...] | None = None
@@ -100,6 +110,8 @@ class TensorflowBackend(ArrayBackend):
         *,
         dtype: Dtype | None = None,
     ) -> "Tensor":
+        if dtype is None:
+            dtype = DTYPE
         return tf.range(start, stop, step, dtype=dtype)
 
     def zeros(
@@ -108,6 +120,8 @@ class TensorflowBackend(ArrayBackend):
         *,
         dtype: Dtype | None = None,
     ) -> "Tensor":
+        if dtype is None:
+            dtype = DTYPE
         return tf.zeros(shape, dtype=dtype)
 
     def abs(self, x: "Tensor") -> "Tensor":
@@ -116,8 +130,15 @@ class TensorflowBackend(ArrayBackend):
     def exp(self, x: "Tensor") -> "Tensor":
         return tf.math.exp(x)
 
-    def isnan(self, x: "Tensor") -> "Tensor":
-        return tf.math.is_nan(x)
+    def isnan(
+        self,
+        x: "Tensor",
+        *,
+        dtype: Dtype | None = None,
+    ) -> "Tensor":
+        if dtype is None:
+            dtype = DTYPE
+        return tf.cast(tf.math.is_nan(x), dtype=dtype)
 
     def log(self, x: "Tensor") -> "Tensor":
         return tf.math.log(x)
@@ -132,8 +153,11 @@ class TensorflowBackend(ArrayBackend):
         *,
         axis: int | tuple[int, ...] | None = None,
         keepdims: bool = False,
+        dtype: Dtype | None = None,
     ) -> "Tensor":
-        return tf.math.reduce_any(x, axis=axis, keepdims=keepdims)
+        if dtype is None:
+            dtype = DTYPE
+        return tf.cast(tf.math.reduce_any(x, axis=axis, keepdims=keepdims), dtype=dtype)
 
     def all(
         self,
@@ -142,8 +166,11 @@ class TensorflowBackend(ArrayBackend):
         *,
         axis: int | tuple[int, ...] | None = None,
         keepdims: bool = False,
+        dtype: Dtype | None = None,
     ) -> "Tensor":
-        return tf.math.reduce_all(x, axis=axis, keepdims=keepdims)
+        if dtype is None:
+            dtype = DTYPE
+        return tf.cast(tf.math.reduce_all(x, axis=axis, keepdims=keepdims), dtype=dtype)
 
     def sort(
         self,
@@ -154,11 +181,9 @@ class TensorflowBackend(ArrayBackend):
         descending: bool = False,
     ) -> "Tensor":
         direction = "DESCENDING" if descending else "ASCENDING"
-        return tf.sort(x, axis=axis, direction=direction)[0]
+        return tf.sort(x, axis=axis, direction=direction)
 
-    def norm(
-        self, x: "Tensor", axis: int | tuple[int, ...] | None = None
-    ) -> "Tensor":
+    def norm(self, x: "Tensor", axis: int | tuple[int, ...] | None = None) -> "Tensor":
         return tf.norm(x, axis=axis)
 
     def erf(self, x: "Tensor") -> "Tensor":
@@ -168,8 +193,8 @@ class TensorflowBackend(ArrayBackend):
         self, func1d: tp.Callable[["Tensor"], "Tensor"], x: "Tensor", axis: int
     ):
         try:
-            x_shape = list(tf.shape(x))
-            flat = tf.map_fn(func1d, tf.reshape(x_shape.pop(axis), [-1]))
+            x_shape = x.shape.as_list()
+            flat = tf.map_fn(func1d, tf.reshape(x, [-1, x_shape.pop(axis)]))
             return tf.reshape(flat, x_shape)
         except Exception:
             return tf.stack(

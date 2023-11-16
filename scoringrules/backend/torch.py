@@ -143,7 +143,10 @@ class TorchBackend(ArrayBackend):
         axis: int | tuple[int, ...] | None = None,
         keepdims: bool = False,
     ) -> "Tensor":
-        return torch.all(x, dim=axis, keepdim=keepdims)
+        if axis is None:
+            return torch.all(x)
+        else:
+            return torch.all(x, dim=axis, keepdim=keepdims)
 
     def sort(
         self,

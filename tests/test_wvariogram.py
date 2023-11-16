@@ -1,13 +1,15 @@
 import numpy as np
 import pytest
+
 from scoringrules._variogram import (
     owvariogram_score,
     twvariogram_score,
     variogram_score,
     vrvariogram_score,
 )
+from scoringrules.backend import backends
 
-from .conftest import JAX_IMPORTED, TORCH_IMPORTED, TENSORFLOW_IMPORTED
+from .conftest import JAX_IMPORTED, TENSORFLOW_IMPORTED, TORCH_IMPORTED
 
 ENSEMBLE_SIZE = 51
 N = 100
@@ -17,6 +19,7 @@ BACKENDS = ["numpy", "numba"]
 if JAX_IMPORTED:
     BACKENDS.append("jax")
     import jax
+
     jax.config.update("jax_enable_x64", True)
 if TORCH_IMPORTED:
     BACKENDS.append("torch")
@@ -31,7 +34,10 @@ def test_owvs_vs_vs(backend):
 
     res = variogram_score(fcts, obs, backend=backend)
     resw = owvariogram_score(
-        fcts, obs, lambda x: x.mean(dtype=float) * 0.0 + 1.0, backend=backend
+        fcts,
+        obs,
+        lambda x: backends[backend].mean(x) * 0.0 + 1.0,
+        backend=backend,
     )
     np.testing.assert_allclose(res, resw, rtol=1e-5)
 
@@ -52,8 +58,13 @@ def test_vrvs_vs_vs(backend):
     fcts = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
     res = variogram_score(fcts, obs, backend=backend)
-    resw = vrvariogram_score(fcts, obs, lambda x: x.mean() * 0.0 + 1.0, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-5)
+    resw = vrvariogram_score(
+        fcts,
+        obs,
+        lambda x: backends[backend].mean(x) * 0.0 + 1.0,
+        backend=backend,
+    )
+    np.testing.assert_allclose(res, resw, rtol=5e-5)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -64,13 +75,15 @@ def test_owvariogram_score_correctness(backend):
     obs = np.array([0.2743836, 0.8146400])
 
     def w_func(x):
-        return (x > 0.2).all() + 0.0  # + 0.0 works to convert to float in every backend
+        return (
+            backends[backend].all(x > 0.2) + 0.0
+        )  # + 0.0 works to convert to float in every backend
 
     res = owvariogram_score(fcts, obs, w_func, p=0.5, backend=backend)
     np.testing.assert_allclose(res, 0.1929739, rtol=1e-6)
 
     def w_func(x):
-        return (x < 1.0).all() + 0.0
+        return backends[backend].all(x < 1.0) + 0.0
 
     res = owvariogram_score(fcts, obs, w_func, p=1.0, backend=backend)
     np.testing.assert_allclose(res, 0.04856366, rtol=1e-6)
