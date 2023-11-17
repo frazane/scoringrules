@@ -15,7 +15,7 @@ def energy_score(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
 ) -> "Array":
     r"""Compute the Energy Score for a finite multivariate ensemble.
 
@@ -67,7 +67,7 @@ def twenergy_score(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
 ) -> "Array":
     r"""Compute the Threshold-Weighted Energy Score (twES) for a finite multivariate ensemble.
 
@@ -118,7 +118,7 @@ def owenergy_score(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
 ) -> "Array":
     r"""Compute the Outcome-Weighted Energy Score (owES) for a finite multivariate ensemble.
 
@@ -184,7 +184,7 @@ def vrenergy_score(
     *,
     m_axis: int = -2,
     v_axis: int = -1,
-    backend: tp.Literal["numba", "numpy", "jax", "torch"] | None = None,
+    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
 ) -> "Array":
     r"""Compute the Vertically Re-scaled Energy Score (vrES) for a finite multivariate ensemble.
 

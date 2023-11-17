@@ -14,6 +14,7 @@ from .base import ArrayBackend
 from .jax import JaxBackend
 from .numpy import NumpyBackend
 from .torch import TorchBackend
+from .tensorflow import TensorflowBackend
 
 
 class BackendsRegistry(dict[str, ArrayBackend]):
@@ -28,6 +29,9 @@ class BackendsRegistry(dict[str, ArrayBackend]):
         if "torch" in sys.modules:
             self["torch"] = TorchBackend()
 
+        if "tensorflow" in sys.modules:
+            self["tensorflow"] = TensorflowBackend()
+
         self._active = "numpy"
 
         if _NUMBA_IMPORTED:
@@ -38,13 +42,13 @@ class BackendsRegistry(dict[str, ArrayBackend]):
     def available_backends(self):
         """Find if a backend library is available without importing it."""
         avail_backends = ["numpy"]
-        for b in ["numba", "jax", "torch"]:
+        for b in ["numba", "jax", "torch", "tensorflow"]:
             if find_spec(b) is not None:
                 avail_backends.append(b)
         return avail_backends
 
-    def register_backend(self, backend_name: tp.Literal["jax", "torch"]):
-        """Register a backend. Currently supported backends are numpy, numba and jax."""
+    def register_backend(self, backend_name: tp.Literal["jax", "torch", "tensorflow"]):
+        """Register a backend. Currently supported backends are numpy, numba, jax, torch and tensorflow."""
         if backend_name not in self.available_backends:
             raise BackendNotAvailable(
                 f"The backend '{backend_name}' is not available. "
@@ -55,6 +59,8 @@ class BackendsRegistry(dict[str, ArrayBackend]):
             self["jax"] = JaxBackend()
         elif backend_name == "torch":
             self["torch"] = TorchBackend()
+        elif backend_name == "tensorflow":
+            self["tensorflow"] = TensorflowBackend()
 
     def __getitem__(self, __key: str) -> ArrayBackend:
         """Get a backend from the registry."""

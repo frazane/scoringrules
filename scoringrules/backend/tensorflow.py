@@ -1,29 +1,32 @@
+import math
 import typing as tp
 from importlib import import_module
 
 from .base import ArrayBackend
 
 if tp.TYPE_CHECKING:
-    import torch
+    import tensorflow as tf
 
-    Tensor = torch.Tensor
+    Tensor = tf.Tensor
     TensorLike = Tensor | bool | float | int
+    DTYPE = tf.float32
 else:
-    torch = None
+    tf = None
+    DTYPE = None
 Dtype = tp.TypeVar("Dtype")
 
 
-class TorchBackend(ArrayBackend):
-    """Torch backend."""
+class TensorflowBackend(ArrayBackend):
+    """Tensorflow backend"""
 
-    name = "torch"
+    name = "tensorflow"
 
     def __init__(self) -> None:
-        global torch
-        if torch is None and not tp.TYPE_CHECKING:
-            torch = import_module("torch")
-
-        self.pi = torch.asarray(torch.pi)
+        global tf, DTYPE
+        if tf is None and not tp.TYPE_CHECKING:
+            tf = import_module("tensorflow")
+            DTYPE = tf.float32
+        self.pi = tf.constant(math.pi, dtype=DTYPE)
 
     def asarray(
         self,
@@ -32,7 +35,9 @@ class TorchBackend(ArrayBackend):
         *,
         dtype: Dtype | None = None,
     ) -> "Tensor":
-        return torch.asarray(obj, dtype=dtype)
+        if dtype is None:
+            dtype = DTYPE
+        return tf.convert_to_tensor(obj, dtype=dtype)
 
     def mean(
         self,
@@ -42,7 +47,7 @@ class TorchBackend(ArrayBackend):
         axis: int | tuple[int, ...] | None = None,
         keepdims: bool = False,
     ) -> "Tensor":
-        return torch.mean(x, axis=axis, keepdim=keepdims)
+        return tf.math.reduce_mean(x, axis=axis, keepdims=keepdims)
 
     def moveaxis(
         self,
@@ -51,7 +56,7 @@ class TorchBackend(ArrayBackend):
         source: tuple[int, ...] | int,
         destination: tuple[int, ...] | int,
     ) -> "Tensor":
-        return torch.moveaxis(x, source, destination)
+        return tf.experimental.numpy.moveaxis(x, source, destination)
 
     def sum(
         self,
@@ -61,35 +66,40 @@ class TorchBackend(ArrayBackend):
         *,
         keepdims: bool = False,
     ) -> "Tensor":
-        return torch.sum(x, axis=axis, keepdim=keepdims)
+        return tf.math.reduce_sum(x, axis=axis, keepdims=keepdims)
 
     def unique_values(self, x: "Tensor", /) -> "Tensor":
-        return torch.unique(x)
+        return tf.unique(x)
 
     def concat(
-        self, arrays: tuple["Tensor", ...] | list["Tensor"], /, *, axis: int | None = 0
+        self,
+        arrays: tuple["Tensor", ...] | list["Tensor"],
+        /,
+        *,
+        axis: int | None = 0,
     ) -> "Tensor":
-        return torch.concat(arrays, axis=axis)
+        return tf.concat(arrays, axis=axis)
 
+    # tf.expand_dims() doesn't support tuples in v2.15
     def expand_dims(self, x: "Tensor", /, axis: int | tuple[int] = 0) -> "Tensor":
         if isinstance(axis, int):
-            return torch.unsqueeze(x, dim=axis)
+            return tf.expand_dims(x, axis=axis)
         elif isinstance(axis, tuple | list):
             out_ndim = len(axis) + x.ndim
             axis = [a + out_ndim if a < 0 else a for a in axis]
             shape_it = iter(x.shape)
             shape = [1 if ax in axis else next(shape_it) for ax in range(out_ndim)]
-            return x.reshape(shape)
+            return tf.reshape(x, shape=shape)
 
     def squeeze(
         self, x: "Tensor", /, *, axis: int | tuple[int, ...] | None = None
     ) -> "Tensor":
-        return torch.squeeze(x, dim=axis)
+        return tf.squeeze(x, axis=axis)
 
     def stack(
         self, arrays: tuple["Tensor", ...] | list["Tensor"], /, *, axis: int = 0
     ) -> "Tensor":
-        return torch.stack(arrays, dim=axis)
+        return tf.stack(arrays, axis=axis)
 
     def arange(
         self,
@@ -100,7 +110,9 @@ class TorchBackend(ArrayBackend):
         *,
         dtype: Dtype | None = None,
     ) -> "Tensor":
-        return torch.arange(start)  # TODO: fix this
+        if dtype is None:
+            dtype = DTYPE
+        return tf.range(start, stop, step, dtype=dtype)
 
     def zeros(
         self,
@@ -108,22 +120,31 @@ class TorchBackend(ArrayBackend):
         *,
         dtype: Dtype | None = None,
     ) -> "Tensor":
-        return torch.zeros(shape, dtype=dtype)
+        if dtype is None:
+            dtype = DTYPE
+        return tf.zeros(shape, dtype=dtype)
 
     def abs(self, x: "Tensor") -> "Tensor":
-        return torch.abs(x)
+        return tf.math.abs(x)
 
     def exp(self, x: "Tensor") -> "Tensor":
-        return torch.exp(x)
+        return tf.math.exp(x)
 
-    def isnan(self, x: "Tensor") -> "Tensor":
-        return torch.isnan(x)
+    def isnan(
+        self,
+        x: "Tensor",
+        *,
+        dtype: Dtype | None = None,
+    ) -> "Tensor":
+        if dtype is None:
+            dtype = DTYPE
+        return tf.cast(tf.math.is_nan(x), dtype=dtype)
 
     def log(self, x: "Tensor") -> "Tensor":
-        return torch.log(x)
+        return tf.math.log(x)
 
     def sqrt(self, x: "Tensor") -> "Tensor":
-        return torch.sqrt(x)
+        return tf.math.sqrt(x)
 
     def any(
         self,
@@ -132,8 +153,11 @@ class TorchBackend(ArrayBackend):
         *,
         axis: int | tuple[int, ...] | None = None,
         keepdims: bool = False,
+        dtype: Dtype | None = None,
     ) -> "Tensor":
-        return torch.any(x, dim=axis, keepdim=keepdims)
+        if dtype is None:
+            dtype = DTYPE
+        return tf.cast(tf.math.reduce_any(x, axis=axis, keepdims=keepdims), dtype=dtype)
 
     def all(
         self,
@@ -142,11 +166,11 @@ class TorchBackend(ArrayBackend):
         *,
         axis: int | tuple[int, ...] | None = None,
         keepdims: bool = False,
+        dtype: Dtype | None = None,
     ) -> "Tensor":
-        if axis is None:
-            return torch.all(x)
-        else:
-            return torch.all(x, dim=axis, keepdim=keepdims)
+        if dtype is None:
+            dtype = DTYPE
+        return tf.cast(tf.math.reduce_all(x, axis=axis, keepdims=keepdims), dtype=dtype)
 
     def sort(
         self,
@@ -155,28 +179,29 @@ class TorchBackend(ArrayBackend):
         *,
         axis: int = -1,
         descending: bool = False,
-        stable: bool = True,
     ) -> "Tensor":
-        return torch.sort(x, stable=stable, dim=axis, descending=descending)[0]
+        direction = "DESCENDING" if descending else "ASCENDING"
+        return tf.sort(x, axis=axis, direction=direction)
 
     def norm(self, x: "Tensor", axis: int | tuple[int, ...] | None = None) -> "Tensor":
-        return torch.norm(x, dim=axis)
+        return tf.norm(x, axis=axis)
 
     def erf(self, x: "Tensor") -> "Tensor":
-        return torch.special.erf(x)
+        return tf.math.erf(x)
 
     def apply_along_axis(
         self, func1d: tp.Callable[["Tensor"], "Tensor"], x: "Tensor", axis: int
     ):
         try:
-            x_shape = list(x.shape)
-            return torch.vmap(func1d)(x.reshape(-1, x_shape.pop(axis))).reshape(x_shape)
+            x_shape = x.shape.as_list()
+            flat = tf.map_fn(func1d, tf.reshape(x, [-1, x_shape.pop(axis)]))
+            return tf.reshape(flat, x_shape)
         except Exception:
-            return torch.stack(
-                [func1d(x_i) for x_i in torch.unbind(x, dim=axis)], dim=axis
+            return tf.stack(
+                [func1d(x_i) for x_i in tf.unstack(x, axis=axis)], axis=axis
             )
 
 
 if __name__ == "__main__":
-    B = TorchBackend()
-    out = B.mean(torch.ones(10))
+    B = TensorflowBackend()
+    out = B.mean(tf.ones(10))

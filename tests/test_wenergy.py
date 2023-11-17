@@ -1,13 +1,15 @@
 import numpy as np
 import pytest
+
 from scoringrules._energy import (
     energy_score,
     owenergy_score,
     twenergy_score,
     vrenergy_score,
 )
+from scoringrules.backend import backends
 
-from .conftest import JAX_IMPORTED, TORCH_IMPORTED
+from .conftest import JAX_IMPORTED, TENSORFLOW_IMPORTED, TORCH_IMPORTED
 
 ENSEMBLE_SIZE = 51
 N = 100
@@ -16,9 +18,10 @@ N_VARS = 3
 BACKENDS = ["numpy", "numba"]
 if JAX_IMPORTED:
     BACKENDS.append("jax")
-
 if TORCH_IMPORTED:
     BACKENDS.append("torch")
+if TENSORFLOW_IMPORTED:
+    BACKENDS.append("tensorflow")
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -27,7 +30,12 @@ def test_owes_vs_es(backend):
     fcts = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
     res = energy_score(fcts, obs, backend=backend)
-    resw = owenergy_score(fcts, obs, lambda x: x.mean() * 0.0 + 1.0, backend=backend)
+    resw = owenergy_score(
+        fcts,
+        obs,
+        lambda x: backends[backend].mean(x) * 0.0 + 1.0,
+        backend=backend,
+    )
     np.testing.assert_allclose(res, resw, atol=1e-7)
 
 
@@ -47,7 +55,12 @@ def test_vres_vs_es(backend):
     fcts = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
     res = energy_score(fcts, obs, backend=backend)
-    resw = vrenergy_score(fcts, obs, lambda x: x.mean() * 0.0 + 1.0, backend=backend)
+    resw = vrenergy_score(
+        fcts,
+        obs,
+        lambda x: backends[backend].mean(x) * 0.0 + 1.0,
+        backend=backend,
+    )
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
 
@@ -59,13 +72,13 @@ def test_owenergy_score_correctness(backend):
     obs = np.array([0.2743836, 0.8146400])
 
     def w_func(x):
-        return (x > 0.2).all()
+        return backends[backend].all(x > 0.2)
 
     res = owenergy_score(fcts, obs, w_func, backend=backend)
     np.testing.assert_allclose(res, 0.2274243, rtol=1e-6)
 
     def w_func(x):
-        return (x < 1.0).all()
+        return backends[backend].all(x < 1.0)
 
     res = owenergy_score(fcts, obs, w_func, backend=backend)
     np.testing.assert_allclose(res, 0.3345418, rtol=1e-6)
