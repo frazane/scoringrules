@@ -3,13 +3,13 @@ import typing as tp
 from scoringrules.backend import backends
 
 if tp.TYPE_CHECKING:
-    from scoringrules.core.typing import Array, ArrayLike
+    from scoringrules.core.typing import Array, ArrayLike, Backend
 
 EPSILON = 1e-5
 
 
 def brier_score(
-    fcts: "ArrayLike", obs: "ArrayLike", backend: str | None = None
+    fcts: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
     """Compute the Brier Score for predicted probabilities of events."""
     B = backends.active if backend is None else backends[backend]

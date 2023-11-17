@@ -9,3 +9,5 @@ if tp.TYPE_CHECKING:
     _array = NDArray | JaxArray | torchTensor | tensorflowTensor
     Array = tp.TypeVar("Array", bound=_array)
     ArrayLike = tp.TypeVar("ArrayLike", bound=_array | float | int)
+
+    Backend = tp.Literal["numpy", "numba", "jax", "torch", "tensorflow"] | None

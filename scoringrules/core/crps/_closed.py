@@ -4,11 +4,11 @@ from scoringrules.backend import backends
 from scoringrules.core.stats import _logis_cdf, _norm_cdf, _norm_pdf
 
 if tp.TYPE_CHECKING:
-    from scoringrules.core.typing import Array, ArrayLike
+    from scoringrules.core.typing import Array, ArrayLike, Backend
 
 
 def normal(
-    mu: "ArrayLike", sigma: "ArrayLike", obs: "ArrayLike", backend: str | None = None
+    mu: "ArrayLike", sigma: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
     """Compute the CRPS for the normal distribution."""
     B = backends.active if backend is None else backends[backend]
@@ -23,7 +23,7 @@ def lognormal(
     mulog: "ArrayLike",
     sigmalog: "ArrayLike",
     obs: "ArrayLike",
-    backend: str | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the lognormal distribution."""
     B = backends.active if backend is None else backends[backend]
@@ -36,7 +36,7 @@ def lognormal(
 
 
 def logistic(
-    mu: "ArrayLike", sigma: "ArrayLike", obs: "ArrayLike", backend: str | None = None
+    mu: "ArrayLike", sigma: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
     """Compute the CRPS for the normal distribution."""
     B = backends.active if backend is None else backends[backend]

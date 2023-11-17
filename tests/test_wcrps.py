@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from scoringrules._crps import (
     crps_ensemble,
     owcrps_ensemble,
@@ -7,14 +8,10 @@ from scoringrules._crps import (
     vrcrps_ensemble,
 )
 
-from .conftest import JAX_IMPORTED
+from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 51
 N = 100
-
-BACKENDS = ["numpy", "numba"]
-if JAX_IMPORTED:
-    BACKENDS.append("jax")
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -88,13 +85,13 @@ def test_owcrps_score_correctness(backend):
     def w_func(x):
         return (x > -1).astype(float)
 
-    res = np.mean(owcrps_ensemble(fcts, obs, w_func, backend=backend))
+    res = np.mean(np.float64(owcrps_ensemble(fcts, obs, w_func, backend=backend)))
     np.testing.assert_allclose(res, 0.09320807, rtol=1e-6)
 
     def w_func(x):
         return (x < 1.85).astype(float)
 
-    res = np.mean(owcrps_ensemble(fcts, obs, w_func, backend=backend))
+    res = np.mean(np.float64(owcrps_ensemble(fcts, obs, w_func, backend=backend)))
     np.testing.assert_allclose(res, 0.09933139, rtol=1e-6)
 
 
@@ -133,13 +130,17 @@ def test_twcrps_score_correctness(backend):
     def v_func(x):
         return np.maximum(x, -1.0)
 
-    res = np.mean(twcrps_ensemble(fcts, obs, v_func, estimator="nrg", backend=backend))
+    res = np.mean(
+        np.float64(twcrps_ensemble(fcts, obs, v_func, estimator="nrg", backend=backend))
+    )
     np.testing.assert_allclose(res, 0.09489662, rtol=1e-6)
 
     def v_func(x):
         return np.minimum(x, 1.85)
 
-    res = np.mean(twcrps_ensemble(fcts, obs, v_func, estimator="nrg", backend=backend))
+    res = np.mean(
+        np.float64(twcrps_ensemble(fcts, obs, v_func, estimator="nrg", backend=backend))
+    )
     np.testing.assert_allclose(res, 0.0994809, rtol=1e-6)
 
 
@@ -178,11 +179,11 @@ def test_vrcrps_score_correctness(backend):
     def w_func(x):
         return (x > -1).astype(float)
 
-    res = np.mean(vrcrps_ensemble(fcts, obs, w_func, backend=backend))
+    res = np.mean(np.float64(vrcrps_ensemble(fcts, obs, w_func, backend=backend)))
     np.testing.assert_allclose(res, 0.1003983, rtol=1e-6)
 
     def w_func(x):
         return (x < 1.85).astype(float)
 
-    res = np.mean(vrcrps_ensemble(fcts, obs, w_func, backend=backend))
+    res = np.mean(np.float64(vrcrps_ensemble(fcts, obs, w_func, backend=backend)))
     np.testing.assert_allclose(res, 0.1950857, rtol=1e-6)

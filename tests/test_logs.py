@@ -2,14 +2,10 @@ import numpy as np
 import pytest
 from scoringrules import _logs
 
-from .conftest import JAX_IMPORTED
+from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 51
 N = 100
-
-BACKENDS = ["numpy", "numba"]
-if JAX_IMPORTED:
-    BACKENDS.append("jax")
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
