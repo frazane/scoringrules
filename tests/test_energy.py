@@ -3,19 +3,11 @@ import numpy as np
 import pytest
 from scoringrules._energy import energy_score
 
-from .conftest import JAX_IMPORTED, TORCH_IMPORTED, TENSORFLOW_IMPORTED
+from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 51
 N = 100
 N_VARS = 3
-
-BACKENDS = ["numpy", "numba"]
-if JAX_IMPORTED:
-    BACKENDS.append("jax")
-if TORCH_IMPORTED:
-    BACKENDS.append("torch")
-if TENSORFLOW_IMPORTED:
-    BACKENDS.append("tensorflow")
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

@@ -5,7 +5,7 @@ from scoringrules.core import variogram
 from scoringrules.core.utils import multivariate_array_check
 
 if tp.TYPE_CHECKING:
-    from scoringrules.core.typing import Array
+    from scoringrules.core.typing import Array, Backend
 
 
 def variogram_score(
@@ -16,7 +16,7 @@ def variogram_score(
     v_axis: int = -1,
     *,
     p: float = 1.0,
-    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Variogram Score for a finite multivariate ensemble.
 
@@ -69,7 +69,7 @@ def twvariogram_score(
     v_axis: int = -1,
     *,
     p: float = 1.0,
-    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Threshold-Weighted Variogram Score (twVS) for a finite multivariate ensemble.
 
@@ -124,7 +124,7 @@ def owvariogram_score(
     v_axis: int = -1,
     *,
     p: float = 1.0,
-    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Outcome-Weighted Variogram Score (owVS) for a finite multivariate ensemble.
 
@@ -194,7 +194,7 @@ def vrvariogram_score(
     v_axis: int = -1,
     *,
     p: float = 1.0,
-    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Vertically Re-scaled Variogram Score (vrVS) for a finite multivariate ensemble.
 

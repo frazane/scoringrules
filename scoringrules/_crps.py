@@ -4,7 +4,7 @@ from scoringrules.backend import backends
 from scoringrules.core import crps
 
 if tp.TYPE_CHECKING:
-    from scoringrules.core.typing import Array, ArrayLike
+    from scoringrules.core.typing import Array, ArrayLike, Backend
 
 
 def crps_ensemble(
@@ -15,7 +15,7 @@ def crps_ensemble(
     *,
     sorted_ensemble: bool = False,
     estimator: str = "pwm",
-    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the Continuous Ranked Probability Score (CRPS) for a finite ensemble.
 
@@ -76,7 +76,7 @@ def twcrps_ensemble(
     *,
     estimator: str = "pwm",
     sorted_ensemble: bool = False,
-    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the Threshold-Weighted Continuous Ranked Probability Score (twCRPS) for a finite ensemble.
 
@@ -136,7 +136,7 @@ def owcrps_ensemble(
     axis: int = -1,
     *,
     estimator: tp.Literal["nrg"] = "nrg",
-    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the Outcome-Weighted Continuous Ranked Probability Score (owCRPS) for a finite ensemble.
 
@@ -192,6 +192,9 @@ def owcrps_ensemble(
             forecasts, observations, fcts_weights, obs_weights
         )
 
+    forecasts, observations, fcts_weights, obs_weights = map(
+        B.asarray, (forecasts, observations, fcts_weights, obs_weights)
+    )
     return crps.ow_ensemble(
         forecasts, observations, fcts_weights, obs_weights, backend=backend
     )
@@ -205,7 +208,7 @@ def vrcrps_ensemble(
     axis: int = -1,
     *,
     estimator: tp.Literal["nrg"] = "nrg",
-    backend: tp.Literal["numba", "numpy", "jax", "torch", "tensorflow"] | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the Vertically Re-scaled Continuous Ranked Probability Score (vrCRPS) for a finite ensemble.
 
@@ -266,6 +269,9 @@ def vrcrps_ensemble(
             forecasts, observations, fcts_weights, obs_weights
         )
 
+    forecasts, observations, fcts_weights, obs_weights = map(
+        B.asarray, (forecasts, observations, fcts_weights, obs_weights)
+    )
     return crps.vr_ensemble(
         forecasts, observations, fcts_weights, obs_weights, backend=backend
     )
@@ -277,7 +283,7 @@ def crps_normal(
     observation: "ArrayLike",
     /,
     *,
-    backend: tp.Literal["numpy", "jax", "torch", "tensorflow"] | None = None,
+    backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the normal distribution.
 
@@ -315,7 +321,7 @@ def crps_lognormal(
     mulog: "ArrayLike",
     sigmalog: "ArrayLike",
     observation: "ArrayLike",
-    backend: tp.Literal["numpy", "jax", "torch", "tensorflow"] | None = None,
+    backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the lognormal distribution.
 
@@ -361,7 +367,7 @@ def crps_logistic(
     observation: "ArrayLike",
     /,
     *,
-    backend: tp.Literal["numpy", "jax", "torch", "tensorflow"] | None = None,
+    backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the logistic distribution.
 

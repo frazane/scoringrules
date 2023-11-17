@@ -3,7 +3,7 @@ import typing as tp
 from scoringrules.core import logarithmic
 
 if tp.TYPE_CHECKING:
-    from scoringrules.core.typing import Array, ArrayLike
+    from scoringrules.core.typing import Array, ArrayLike, Backend
 
 
 def logs_normal(
@@ -13,7 +13,7 @@ def logs_normal(
     /,
     *,
     negative: bool = True,
-    backend: tp.Literal["numpy", "jax", "torch", "tensorflow"] | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the logarithmic score (LS) for the normal distribution.
 

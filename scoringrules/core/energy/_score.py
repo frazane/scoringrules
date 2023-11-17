@@ -3,7 +3,7 @@ import typing as tp
 from scoringrules.backend import backends
 
 if tp.TYPE_CHECKING:
-    from scoringrules.core.typing import Array
+    from scoringrules.core.typing import Array, Backend
 
 
 def energy_score(
@@ -32,7 +32,7 @@ def owenergy_score(
     obs: "Array",  # (... D)
     fw: "Array",  # (... M)
     ow: "Array",  # (...)
-    backend: str | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the outcome-weighted energy score based on a finite ensemble."""
     B = backends.active if backend is None else backends[backend]
@@ -57,7 +57,7 @@ def vrenergy_score(
     obs: "Array",
     fw: "Array",
     ow: "Array",
-    backend: str | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the vertically re-scaled energy score based on a finite ensemble."""
     B = backends.active if backend is None else backends[backend]

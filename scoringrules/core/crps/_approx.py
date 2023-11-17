@@ -3,14 +3,14 @@ import typing as tp
 from scoringrules.backend import backends
 
 if tp.TYPE_CHECKING:
-    from scoringrules.core.typing import Array, ArrayLike
+    from scoringrules.core.typing import Array, ArrayLike, Backend
 
 
 def ensemble(
     fcts: "Array",
     obs: "ArrayLike",
     estimator: str = "pwm",
-    backend: str | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for a finite ensemble."""
     if estimator == "nrg":
@@ -29,7 +29,7 @@ def ensemble(
 
 
 def _crps_ensemble_fair(
-    fcts: "Array", obs: "Array", backend: str | None = None
+    fcts: "Array", obs: "Array", backend: "Backend" = None
 ) -> "Array":
     """Fair version of the CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
@@ -43,7 +43,7 @@ def _crps_ensemble_fair(
 
 
 def _crps_ensemble_nrg(
-    fcts: "Array", obs: "Array", backend: str | None = None
+    fcts: "Array", obs: "Array", backend: "Backend" = None
 ) -> "Array":
     """CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
@@ -54,7 +54,7 @@ def _crps_ensemble_nrg(
 
 
 def _crps_ensemble_pwm(
-    fcts: "Array", obs: "Array", backend: str | None = None
+    fcts: "Array", obs: "Array", backend: "Backend" = None
 ) -> "Array":
     """CRPS estimator based on the probability weighted moment (PWM) form."""
     B = backends.active if backend is None else backends[backend]
@@ -70,7 +70,7 @@ def ow_ensemble(
     obs: "Array",
     fw: "Array",
     ow: "Array",
-    backend: str | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     """Outcome-Weighted CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
@@ -90,7 +90,7 @@ def vr_ensemble(
     obs: "Array",
     fw: "Array",
     ow: "Array",
-    backend: str | None = None,
+    backend: "Backend" = None,
 ) -> "Array":
     """Vertically Re-scaled CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
