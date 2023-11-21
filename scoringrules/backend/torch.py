@@ -123,7 +123,7 @@ class TorchBackend(ArrayBackend):
         return torch.log(x)
 
     def sqrt(self, x: "Tensor") -> "Tensor":
-        return torch.sqrt(x)
+        return torch.sqrt(torch.asarray(x))
 
     def any(
         self,
