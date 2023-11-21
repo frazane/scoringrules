@@ -15,7 +15,9 @@ def normal(
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma
     return sigma * (
-        ω * (2.0 * _norm_cdf(ω) - 1.0) + 2.0 * _norm_pdf(ω) - 1.0 / B.sqrt(B.pi)
+        ω * (2.0 * _norm_cdf(ω, backend=backend) - 1.0)
+        + 2.0 * _norm_pdf(ω, backend=backend)
+        - 1.0 / B.sqrt(B.pi)
     )
 
 
@@ -30,8 +32,10 @@ def lognormal(
     mulog, sigmalog, obs = map(B.asarray, (mulog, sigmalog, obs))
     ω = (B.log(obs) - mulog) / sigmalog
     ex = 2 * B.exp(mulog + sigmalog**2 / 2)
-    return obs * (2.0 * _norm_cdf(ω) - 1) - ex * (
-        _norm_cdf(ω - sigmalog) + _norm_cdf(sigmalog / B.sqrt(B.asarray(2.0))) - 1
+    return obs * (2.0 * _norm_cdf(ω, backend=backend) - 1) - ex * (
+        _norm_cdf(ω - sigmalog, backend=backend)
+        + _norm_cdf(sigmalog / B.sqrt(B.asarray(2.0)), backend=backend)
+        - 1
     )
 
 
@@ -42,4 +46,4 @@ def logistic(
     B = backends.active if backend is None else backends[backend]
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma
-    return sigma * (ω - 2 * B.log(_logis_cdf(ω)) - 1)
+    return sigma * (ω - 2 * B.log(_logis_cdf(ω, backend=backend)) - 1)
