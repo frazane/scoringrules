@@ -16,6 +16,7 @@ from scoringrules._energy import (
     twenergy_score,
     vrenergy_score,
 )
+from scoringrules._error_spread import error_spread_score
 from scoringrules._logs import logs_normal
 from scoringrules._variogram import (
     owvariogram_score,
@@ -40,6 +41,7 @@ __all__ = [
     "vrcrps_ensemble",
     "logs_normal",
     "brier_score",
+    "error_spread_score",
     "energy_score",
     "owenergy_score",
     "twenergy_score",

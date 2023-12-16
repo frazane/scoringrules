@@ -1,4 +1,3 @@
-import sys
 import typing as tp
 from importlib.util import find_spec
 
@@ -20,7 +19,7 @@ _ALL_BACKENDS_MAP = {
 }
 
 try:
-    import numba  # type: ignore
+    import numba  # noqa: F401
 
     _NUMBA_IMPORTED = True
 except ImportError:
@@ -31,8 +30,9 @@ class BackendsRegistry(dict[str, ArrayBackend]):
     """A dict-like container of registered backends."""
 
     def __init__(self):
-        for backend in self.available_backends:
-            self.register_backend(backend)
+        self.register_backend("numpy")
+        if _NUMBA_IMPORTED:
+            self.register_backend("numba")
 
         self._active = "numba" if _NUMBA_IMPORTED else "numpy"
 

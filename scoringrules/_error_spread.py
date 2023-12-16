@@ -15,7 +15,18 @@ def error_spread_score(
     *,
     backend: "Backend" = None,
 ) -> "Array":
-    r"""Estimate the Continuous Ranked Probability Score (CRPS) for a finite ensemble.
+    r"""Compute the error-spread score (ESS) for a finite ensemble.
+
+    The error spread score [(Christensen et al., 2015)](https://doi.org/10.1002/qj.2375) is given by:
+    $$ ESS = \left(s^2 - e^2 - e \cdot s \cdot g\right)^2 $$
+    where the mean $m$, variance $s^2$, and skewness $g$ of the ensemble forecast of size $F$ are computed as follows:
+
+    $$ m = \frac{1}{F} \sum_{f=1}^{F} X_f$$
+    $$ s^2 = \frac{1}{F-1} \sum_{f=1}^{F} (X_f - m)^2 $$
+    $$ g = \frac{F}{(F-1)(F-2)} \sum_{f=1}^{F} \left(\frac{X_f - m}{s}\right)^3 $$
+
+    The error in the ensemble mean $e$ is calculated as:
+    $ e = m - y$, where y is the observed value.
 
     Parameters
     ----------
@@ -31,13 +42,8 @@ def error_spread_score(
 
     Returns
     -------
-    crps: ArrayLike
-        The CRPS between the forecast ensemble and obs.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.ensemble(pred, obs)
+    - Array
+        An array of error spread scores for each ensemble forecast, which should be averaged to get meaningful values.
     """
     B = backends.active if backend is None else backends[backend]
     forecasts, observations = map(B.asarray, (forecasts, observations))
@@ -45,4 +51,4 @@ def error_spread_score(
     if axis != -1:
         forecasts = B.moveaxis(forecasts, axis, -1)
 
-    return error_spread.error_spread_score(forecasts, observations, backend=backend)
+    return error_spread.ess(forecasts, observations, backend=backend)
