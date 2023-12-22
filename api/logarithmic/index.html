@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../energy/weighted/">
+        <link rel="prev" href="../crps/weighted/">
       
       
-        <link rel="next" href="ensemble/">
+        <link rel="next" href="../error_spread/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Variogram Score - scoringrules</title>
+        <title>Logarithmic Score - scoringrules</title>
       
     
     
@@ -83,7 +83,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#variogram-score" class="md-skip">
+        <a href="#logarithmic-score" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Variogram Score
+              Logarithmic Score
             
           </span>
         </div>
@@ -448,9 +448,29 @@
                 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../logarithmic/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Logarithmic Score
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -459,6 +479,33 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.logs_normal" class="md-nav__link">
+    logs_normal()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -580,25 +627,23 @@
                 
   
   
-    
-  
   
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="./" class="md-nav__link md-nav__link--active">
+            <a href="../variogram/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -609,13 +654,13 @@
             </a>
             
               
-              <label class="md-nav__link md-nav__link--active" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_6">
             <span class="md-nav__icon md-icon"></span>
             Variogram Score
@@ -628,7 +673,7 @@
   
   
     <li class="md-nav__item">
-      <a href="ensemble/" class="md-nav__link">
+      <a href="../variogram/ensemble/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -648,7 +693,7 @@
   
   
     <li class="md-nav__item">
-      <a href="weighted/" class="md-nav__link">
+      <a href="../variogram/weighted/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -704,15 +749,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ensemble-forecasts" class="md-nav__link">
-    Ensemble forecasts
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#weighted-variogram-scores" class="md-nav__link">
-    Weighted variogram scores
+  <a href="#scoringrules.logs_normal" class="md-nav__link">
+    logs_normal()
   </a>
   
 </li>
@@ -735,77 +773,132 @@
   
 
 
-<h1 id="variogram-score">Variogram Score</h1>
-<p>The varigoram score (VS) is a scoring rule for evaluating multivariate probabilistic forecasts.
-It is defined as </p>
-<div class="arithmatex">\[\text{VS}_{p}(F, \mathbf{y})= \sum_{i=1}^{d} \sum_{j=1}^{d} \left( \mathbb{E} | X_{i} - X_{j} |^{p} - | y_{i} - y_{j} |^{p} \right)^{2}, \]</div>
-<p>where <span class="arithmatex">\(p &gt; 0\)</span>, <span class="arithmatex">\(\mathbf{y} = (y_{1}, \dots, y_{d}) \in \mathbb{R}^{d}\)</span> is the multivariate observation (<span class="arithmatex">\(d &gt; 1\)</span>), and 
-<span class="arithmatex">\(\mathbf{X} = (X_{1}, \dots, X_{d})\)</span> is a random vector that follows the
-multivariate forecast distribution <span class="arithmatex">\(F\)</span> (Scheuerer and Hamill, 2015)<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>.
-The exponent <span class="arithmatex">\(p\)</span> is typically chosen to be 0.5 or 1.</p>
-<p>The variogram score is less sensitive to marginal forecast performance than the energy score,
-and Scheuerer and Hamill (2015) argue that it should therefore be more sensitive to errors in the 
-forecast's dependence structure.</p>
-<p><br/><br/></p>
-<h2 id="ensemble-forecasts">Ensemble forecasts</h2>
-<p>While multivariate probabilistic forecasts could belong to a parametric family of 
-distributions, such as a multivariate normal distribution, it is more common in practice
-that these forecasts are ensemble forecasts; that is, the forecast is comprised of a 
-predictive sample <span class="arithmatex">\(\mathbf{x}_{1}, \dots, \mathbf{x}_{M}\)</span>, 
-where each ensemble member <span class="arithmatex">\(\mathbf{x}_{i} = (x_{i, 1}, \dots, x_{i, d}) \in \R^{d}\)</span> for
-<span class="arithmatex">\(i = 1, \dots, M\)</span>. </p>
-<p>In this case, the expectation in the definition of the variogram score can be replaced by
-a sample mean over the ensemble members, yielding the following representation of the variogram
-score when evaluating an ensemble forecast <span class="arithmatex">\(F_{ens}\)</span> with <span class="arithmatex">\(M\)</span> members:</p>
-<div class="arithmatex">\[\text{VS}_{p}(F_{ens}, \mathbf{y})= \sum_{i=1}^{d} \sum_{j=1}^{d} \left( \frac{1}{M} \sum_{m=1}^{M} | x_{m,i} - x_{m,j} |^{p} - | y_{i} - y_{j} |^{p} \right)^{2}. \]</div>
-<p><br/><br/></p>
-<h2 id="weighted-variogram-scores">Weighted variogram scores</h2>
-<p>It is often the case that certain outcomes are of more interest than others when evaluating 
-forecast performance. These outcomes can be emphasised by employing weighted scoring rules.
-Weighted scoring rules typically introduce a weight function into conventional scoring rules, 
-and users can choose the weight function depending on what outcomes they want to emphasise. 
-Allen et al. (2022)<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup>  introduced three weighted versions of the variogram score. 
-These are all available in <code>scoringrules</code>. </p>
-<p>Firstly, the outcome-weighted variogram score (see also Holzmann and Klar (2014)<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup>) 
-is defined as </p>
-<div class="arithmatex">\[\text{owVS}_{p}(F, \mathbf{y}; w) = \frac{1}{\bar{w}} \mathbb{E} [ \rho_{p}(\mathbf{X}, \mathbf{y}) w(\mathbf{X}) w(\mathbf{y}) ] - \frac{1}{2 \bar{w}^{2}} \mathbb{E} [ \rho_{p}(\mathbf{X}, \mathbf{X}^{\prime}) w(\mathbf{X}) w(\mathbf{X}^{\prime}) w(\mathbf{y}) ], \]</div>
-<p>where</p>
-<div class="arithmatex">\[ \rho_{p}(\mathbf{x}, \mathbf{z}) = \sum_{i=1}^{d} \sum_{j=1}^{d} \left( |x_{i} - x_{j}|^{p} - |z_{i} - z_{j}|^{p} \right)^{2}, \]</div>
-<p>for <span class="arithmatex">\(\mathbf{x} = (x_{1}, \dots, x_{d}) \in \mathbb{R}^{d}\)</span> and <span class="arithmatex">\(\mathbf{z} = (z_{1}, \dots, z_{d}) \in \mathbb{R}^{d}\)</span>.</p>
-<p>Here, <span class="arithmatex">\(w : \mathbb{R}^{d} \to [0, \infty)\)</span> is the non-negative weight function used to 
-target particular multivariate outcomes, and <span class="arithmatex">\(\bar{w} = \mathbb{E}[w(X)]\)</span>.
-As before, <span class="arithmatex">\(\mathbf{X}, \mathbf{X}^{\prime} \sim F\)</span> are independent.</p>
-<p>Secondly, Allen et al. (2022) introduced the threshold-weighted variogram score as</p>
-<div class="arithmatex">\[\text{twVS}_{p}(F, \mathbf{y}; v)= \sum_{i=1}^{d} \sum_{j=1}^{d} \left( \mathbb{E} | v(\mathbf{X})_{i} - v(\mathbf{X})_{j} |^{p} - | v(\mathbf{y})_{i} - v(\mathbf{y})_{j} |^{p} \right)^{2}, \]</div>
-<p>where <span class="arithmatex">\(v : \mathbb{R}^{d} \to \mathbb{R}^{d}\)</span> is a so-called chaining function, so that
-<span class="arithmatex">\(v(\mathbf{X}) = (v(\mathbf{X})_{1}, \dots, v(\mathbf{X})_{d}) \in \mathbb{R}^{d}\)</span>. 
-The threshold-weighted variogram score transforms the forecasts and observations according 
-to the chaining function <span class="arithmatex">\(v\)</span>, prior to calculating the unweighted variogram score. Choosing
-a chaining function is generally more difficult than choosing a weight function when
-emphasising particular outcomes.</p>
-<p>As an alternative, the vertically re-scaled variogram score is defined as </p>
-<div class="arithmatex">\[\text{vrVS}_{p}(F, \mathbf{y}; w) = \mathbb{E} [ \rho_{p}(\mathbf{X}, \mathbf{y}) w(\mathbf{X}) w(\mathbf{y}) ] - \frac{1}{2} \mathbb{E} [ \rho_{p}(\mathbf{X}, \mathbf{X}^{\prime}) w(\mathbf{X}) w(\mathbf{X}^{\prime}) ] + \left( \mathbb{E} [ \rho_{p} ( \mathbf{X}, \mathbf{x}_{0} ) w(\mathbf{X}) ] - \rho_{p} ( \mathbf{y}, \mathbf{x}_{0}) w(\mathbf{y}) \right) \left(\mathbb{E}[w(\mathbf{X})] - w(\mathbf{y}) \right), \]</div>
-<p>where <span class="arithmatex">\(w\)</span> and <span class="arithmatex">\(\rho_{p}\)</span> are as defined above, and <span class="arithmatex">\(\mathbf{x}_{0} \in \mathbb{R}^{d}\)</span>. 
-Typically, <span class="arithmatex">\(\mathbf{x}_{0}\)</span> is chosen to be the zero vector.</p>
-<p>Each of these weighted variogram scores targets particular outcomes in a different way. 
-Further details regarding the differences between these scoring rules, as well as choices 
-for the weight and chaining functions, can be found in Allen et al. (2022). The weighted
-variogram scores can easily be computed for ensemble forecasts by
-replacing the expectations with sample means over the ensemble members.</p>
-<p><br/><br/></p>
-<div class="footnote">
-<hr />
-<ol>
-<li id="fn:1">
-<p>Michael Scheuerer and Thomas M. Hamill. Variogram-Based Proper Scoring Rules for Probabilistic Forecasts of Multivariate Quantities. <em>Monthly Weather Review</em>, 2015. URL: <a href="https://journals.ametsoc.org/view/journals/mwre/143/4/mwr-d-14-00269.1.xml">https://journals.ametsoc.org/view/journals/mwre/143/4/mwr-d-14-00269.1.xml</a>, <a href="https://doi.org/10.1175/MWR-D-14-00269.1">doi:10.1175/MWR-D-14-00269.1</a>.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
-</li>
-<li id="fn:2">
-<p>Sam Allen, David Ginsbourger, and Johanna Ziegel. Evaluating forecasts for high-impact events using transformed kernel scores. <em>arXiv preprint arXiv:2202.12732</em>, 2022.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
-</li>
-<li id="fn:3">
-<p>Hajo Holzmann and Bernhard Klar. Focusing on regions of interest in forecast evaluation. <em>The Annals of Applied Statistics</em>, 11:2404–2431, 2017.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
-</li>
-</ol>
+<h1 id="logarithmic-score">Logarithmic Score</h1>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h4 id="scoringrules.logs_normal" class="doc doc-heading">
+          <code class="highlight language-python"><span class="n">scoringrules</span><span class="o">.</span><span class="n">logs_normal</span><span class="p">(</span><span class="n">mu</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">negative</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="n">Backend</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span></code>
+
+</h4>
+
+
+  <div class="doc doc-contents first">
+  
+      <p>Compute the logarithmic score (LS) for the normal distribution.</p>
+<p>This score is equivalent to the negative log likelihood (if <code>negative = True</code>)</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>mu</code></td>
+          <td>
+                <code><span title="scoringrules.core.typing.ArrayLike">ArrayLike</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Mean of the forecast normal distribution.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>sigma</code></td>
+          <td>
+                <code><span title="scoringrules.core.typing.ArrayLike">ArrayLike</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Standard deviation of the forecast normal distribution.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>observation</code></td>
+          <td>
+                <code><span title="scoringrules.core.typing.ArrayLike">ArrayLike</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The observed values.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>backend</code></td>
+          <td>
+                <code><span title="scoringrules.core.typing.Backend">Backend</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The backend used for computations.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>ls</code></td>          <td>
+                <code>array_like</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The LS between Normal(mu, sigma) and obs.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+<p><strong>Examples:</strong></p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">scoringrules</span> <span class="k">as</span> <span class="nn">sr</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sr</span><span class="o">.</span><span class="n">logs_normal</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="mf">0.033898</span>
+</code></pre></div>
+
+  </div>
+
 </div>
 
 
