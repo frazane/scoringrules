@@ -84,7 +84,7 @@ class TorchBackend(ArrayBackend):
     def squeeze(
         self, x: "Tensor", /, *, axis: int | tuple[int, ...] | None = None
     ) -> "Tensor":
-        return torch.squeeze(x, dim=axis)
+        return torch.squeeze(x, dim=() if axis is None else axis)
 
     def stack(
         self, arrays: tuple["Tensor", ...] | list["Tensor"], /, *, axis: int = 0

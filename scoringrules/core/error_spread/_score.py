@@ -13,7 +13,9 @@ def error_spread_score(
     B = backends.active if backend is None else backends[backend]
     M: int = fcts.shape[-1]
     m = B.mean(fcts, axis=-1)
-    s = B.sqrt(B.sum((fcts - m) ** 2, axis=-1) / (M - 1))
-    g = B.sum(((fcts - m) / s) ** 3, axis=-1) / ((M - 1) * (M - 2))
+    s = B.sqrt(B.sum((fcts - m[...,None]) ** 2, axis=-1) / (M - 1))
+    g = B.sum(((fcts - m[...,None]) / s[...,None]) ** 3, axis=-1) / ((M - 1) * (M - 2))
     e = m - obs
-    return (s**2 - e**2 - e * s * g) ** 2
+    return B.squeeze((s**2 - e**2 - e * s * g) ** 2)
+
+
