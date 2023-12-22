@@ -94,8 +94,6 @@ def twvariogram_score(
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
     v_func: tp.Callable
         Chaining function used to emphasise particular outcomes.
-    v_funcargs: tuple
-        Additional arguments to the chaining function.
     m_axis: int
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis: int
@@ -152,8 +150,6 @@ def owvariogram_score(
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
     w_func: tp.Callable
         Weight function used to emphasise particular outcomes.
-    w_funcargs: tuple
-        Additional arguments to the weight function.
     m_axis: int
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis: int
@@ -223,8 +219,6 @@ def vrvariogram_score(
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
     w_func: tp.Callable
         Weight function used to emphasise particular outcomes.
-    w_funcargs: tuple
-        Additional arguments to the weight function.
     m_axis: int
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis: int

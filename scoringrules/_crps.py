@@ -100,8 +100,6 @@ def twcrps_ensemble(
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold $t$ by projecting forecasts and observations
         to $\[t, \inf)$.
-    v_funcargs: tuple
-        Additional arguments to the chaining function.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
     backend: str
@@ -158,8 +156,6 @@ def owcrps_ensemble(
         The observed values.
     w_func: tp.Callable
         Weight function used to emphasise particular outcomes.
-    w_funcargs: tuple
-        Additional arguments to the weight function.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
     backend: str
@@ -235,8 +231,6 @@ def vrcrps_ensemble(
         The observed values.
     w_func: tp.Callable
         Weight function used to emphasise particular outcomes.
-    w_funcargs: tuple
-        Additional arguments to the weight function.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
     backend: str

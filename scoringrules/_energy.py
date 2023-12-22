@@ -143,8 +143,6 @@ def owenergy_score(
         The observed values, where the variables dimension is by default the last axis.
     w_func: tp.Callable
         Weight function used to emphasise particular outcomes.
-    w_funcargs: tuple
-        Additional arguments to the weight function.
     m_axis: int
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis: int or tuple(int)
@@ -211,8 +209,6 @@ def vrenergy_score(
         The observed values, where the variables dimension is by default the last axis.
     w_func: tp.Callable
         Weight function used to emphasise particular outcomes.
-    w_funcargs: tuple
-        Additional arguments to the weight function.
     m_axis: int
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis: int or tuple(int)
