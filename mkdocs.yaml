@@ -13,6 +13,7 @@ nav:
       - Analytical formulations: api/crps/analytical.md
       - Weighted versions: api/crps/weighted.md
     - Logarithmic Score: api/logarithmic.md
+    - Error Spread Score: api/error_spread.md
     - Energy Score: 
       - api/energy/index.md
       - Ensemble-based estimation: api/energy/ensemble.md
