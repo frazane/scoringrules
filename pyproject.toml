@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scoringrules"
-version = "0.4.3"
+version = "0.4.4"
 description = "Scoring rules for probabilistic forecast evaluation."
 authors = [
   "Francesco Zanetta <zanetta.francesco@gmail.com>",
