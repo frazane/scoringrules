@@ -1,6 +1,6 @@
 #
 <p align="center">
-  <img src="assets/images/banner.svg#only-light" />
+  <img src="assets/images/banner_light.svg#only-light" />
 </p>
 <p align="center">
   <img src="assets/images/banner_dark.svg#only-dark" />
