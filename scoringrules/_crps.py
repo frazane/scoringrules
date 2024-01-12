@@ -99,7 +99,7 @@ def twcrps_ensemble(
     v_func: tp.Callable
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold $t$ by projecting forecasts and observations
-        to $\[t, \inf)$.
+        to $[t, \inf)$.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
     backend: str
@@ -329,6 +329,8 @@ def crps_lognormal(
     where $\Phi$ is the CDF of the standard normal distribution and
     $\omega = \frac{\mathrm{log}y - \mu}{\sigma}$.
 
+    Note that mean and standard deviation are not the values for the distribution itself,
+    but of the underlying normal distribution it is derived from.
 
     Parameters
     ----------
@@ -341,11 +343,6 @@ def crps_lognormal(
     -------
     crps: ArrayLike
         The CRPS between Lognormal(mu, sigma) and obs.
-
-    Notes
-    -----
-    The mean and standard deviation are not the values for the distribution itself,
-    but of the underlying normal distribution it is derived from.
 
     Examples
     --------
