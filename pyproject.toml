@@ -19,16 +19,16 @@ numpy = "^1.23.4"
 numba = "^0.57.0"
 
 [tool.poetry.group.docs.dependencies]
-mkdocs = "^1.4.3"
-mkdocs-material = "^9.1.11"
-mkdocstrings = { extras = ["python"], version = "^0.21.2" }
+mkdocs = "^1.5.3"
+mkdocs-material = "^9.5.3"
+mkdocstrings = { extras = ["python"], version = "^0.24.0" }
 jupyter = "^1.0.0"
 nbconvert = "7.3.1"
 ipykernel = "6.22.0"
 properscoring = "^0.1"
 matplotlib = "^3.7.1"
-mkdocs-bibtex = "^2.8.16"
-mkdocs-section-index = "^0.3.5"
+mkdocs-bibtex = "^2.11.0"
+mkdocs-section-index = "^0.3.8"
 
 
 [tool.poetry.group.dev.dependencies]

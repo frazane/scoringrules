@@ -3,7 +3,7 @@ from importlib.util import find_spec
 
 from .base import ArrayBackend
 from .jax import JaxBackend
-from .numpy import NumpyBackend
+from .numpy import NumbaBackend, NumpyBackend
 from .tensorflow import TensorflowBackend
 from .torch import TorchBackend
 
@@ -15,7 +15,7 @@ _ALL_BACKENDS_MAP = {
     "numpy": NumpyBackend,
     "torch": TorchBackend,
     "tensorflow": TensorflowBackend,
-    "numba": NumpyBackend,
+    "numba": NumbaBackend,
 }
 
 try:

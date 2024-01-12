@@ -21,8 +21,8 @@ def energy_score(
 
     The Energy Score is a multivariate scoring rule expressed as
 
-    $$ES(F, \mathbf{y}) = E_{F} ||\mathbf{X} - \mathbf{y}||
-    - \frac{1}{2}E_{F} ||\mathbf{X} - \mathbf{X'}||,$$
+    $$\text{ES}(F_{ens}, \mathbf{y})= \frac{1}{M} \sum_{m=1}^{M} \| \mathbf{x}_{m} -
+      \mathbf{y} \| - \frac{1}{2 M^{2}} \sum_{m=1}^{M} \sum_{j=1}^{M} \| \mathbf{x}_{m} - \mathbf{x}_{j} \| $$
 
     where $\mathbf{X}$ and $\mathbf{X'}$ are independent samples from $F$
     and $||\cdot||$ is the euclidean norm over the input dimensions (the variables).
@@ -164,7 +164,7 @@ def owenergy_score(
     fcts_weights = B.apply_along_axis(w_func, forecasts, -1)
     obs_weights = B.apply_along_axis(w_func, observations, -1)
 
-    if backend == "numba":
+    if B.name == "numba":
         return energy._owenergy_score_gufunc(
             forecasts, observations, fcts_weights, obs_weights
         )

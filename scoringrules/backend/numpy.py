@@ -149,3 +149,9 @@ class NumpyBackend(ArrayBackend):
 
     def apply_along_axis(self, func1d: tp.Callable, x: "NDArray", axis: int):
         return np.apply_along_axis(func1d, axis, x)
+
+
+class NumbaBackend(NumpyBackend):
+    """Numba backend."""
+
+    name = "numba"

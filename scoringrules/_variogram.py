@@ -24,7 +24,8 @@ def variogram_score(
     [(Sheuerer and Hamill, 2015)](https://journals.ametsoc.org/view/journals/mwre/143/4/mwr-d-14-00269.1.xml#bib9)
     of order $p$ is expressed as
 
-    $$VS(F, \mathbf{y}) = \sum_{i,j=1}^{D}(|y_i - y_j|^p - E_F|X_i - X_j|^p)^2 ,$$
+    $$\text{VS}_{p}(F_{ens}, \mathbf{y})= \sum_{i=1}^{d} \sum_{j=1}^{d}
+    \left( \frac{1}{M} \sum_{m=1}^{M} | x_{m,i} - x_{m,j} |^{p} - | y_{i} - y_{j} |^{p} \right)^{2}. $$
 
     where $\mathbf{X}$ and $\mathbf{X'}$ are independently sampled ensembles from from $F$.
 
