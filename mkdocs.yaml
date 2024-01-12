@@ -1,31 +1,25 @@
-site_name: scoringrules
-site_description: The documentation for the scoringrules python library.
+site_name: Scoringrules
+site_description: Documentation for scoringrules, a python library for probabilistic forecast evaluation.
 repo_name: frazane/scoringrules
 repo_url: https://github.com/frazane/scoringrules
 
 nav:
   - Home: index.md
-  - Reference:
+  - User guide: user_guide.md
+  - Contributing: contributing.md
+  - API reference:
     - Brier Score: api/brier.md
-    - Continuous Ranked Probability Score:
-      - api/crps/index.md
-      - Ensemble-based estimation: api/crps/ensemble.md
-      - Analytical formulations: api/crps/analytical.md
-      - Weighted versions: api/crps/weighted.md
+    - Continuous Ranked Probability Score: api/crps.md
     - Logarithmic Score: api/logarithmic.md
     - Error Spread Score: api/error_spread.md
-    - Energy Score: 
-      - api/energy/index.md
-      - Ensemble-based estimation: api/energy/ensemble.md
-      - Weighted versions: api/energy/weighted.md
-    - Variogram Score: 
-      - api/variogram/index.md
-      - Ensemble-based estimation: api/variogram/ensemble.md
-      - Weighted versions: api/variogram/weighted.md
+    - Energy Score: api/energy.md
+    - Variogram Score: api/variogram.md
 
 
 theme:
   name: material
+  font:
+    text: "Roboto"
 
   features:
       - navigation.sections
@@ -41,34 +35,30 @@ theme:
             icon: material/weather-night
             name: Switch to dark mode
       - scheme: slate
-        primary: custom
-        accent: amber
+        primary: white
+        # accent: amber
         toggle:
             icon: material/weather-sunny
             name: Switch to light mode
   icon:
       repo: fontawesome/brands/github
-      logo: "material/bullseye-arrow"
+
+
+  logo: "assets/images/logo.svg"
 
 
 plugins:
   - search
   - mkdocstrings:
-      default_handler: python
       handlers:
         python:
-          selection:
-            inherited_members: true
-          rendering:
-            show_root_heading: true
-            show_root_full_path: true
-            show_if_no_docstring: true
-            show_signature_annotations: true
-            show_source: false
-            members_order: source
-            heading_level: 4
           options:
             docstring_style: "numpy"
+            heading_level: 3
+            show_source: false
+            show_root_heading: true
+            separate_signature: true
+            show_signature_annotations: true
   - bibtex:
       bib_file: "docs/refs.bib"
   - section-index
@@ -76,6 +66,13 @@ plugins:
 markdown_extensions:
   - pymdownx.arithmatex:
       generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
   - footnotes
 
 extra_css:
