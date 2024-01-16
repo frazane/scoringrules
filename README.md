@@ -1,5 +1,6 @@
 <p align="center">
-  <img src="docs/assets/images/banner_light.svg#only-light" />
+  <img src="docs/assets/images/banner_light.svg#gh-light-mode-only" />
+  <img src="docs/assets/images/banner_dark.svg#gh-dark-mode-only" />
 </p>
 
 <br>
