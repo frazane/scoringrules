@@ -210,6 +210,18 @@ class TensorflowBackend(ArrayBackend):
     def maximum(self, x: "Tensor", y: "TensorLike") -> "Tensor":
         return tf.math.maximum(x, y)
 
+    def beta(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return tf.math.exp(tf.math.lgamma(x) + tf.math.lgamma(y) - tf.math.lgamma(x + y))
+
+    def betainc(self, x: "Tensor", y: "Tensor", z: "Tensor") -> "Tensor":
+        return tf.math.betainc(x, y, z)
+
+    def mbessel0(self, x: "Tensor") -> "Tensor":
+        return tf.math.bessel_i0e(x)
+
+    def mbessel1(self, x: "Tensor") -> "Tensor":
+        return tf.math.bessel_i1e(x)
+
 
 if __name__ == "__main__":
     B = TensorflowBackend()

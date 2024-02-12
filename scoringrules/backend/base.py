@@ -180,9 +180,25 @@ class ArrayBackend(abc.ABC):
         """Calculate the integer component of each element ``x_i`` of the input array ``x``."""
         
     @abc.abstractmethod
-    def minimum(self, x: "Array", y: int | float | "Array", /) -> "Array":
+    def minimum(self, x: "Array", y: "ArrayLike", /) -> "Array":
         """Calculate the minimum of each element ``x_i`` of the input array ``x`` with the value ``y``."""
         
     @abc.abstractmethod
-    def maximum(self, x: "Array", y: int | float | "Array", /) -> "Array":
+    def maximum(self, x: "Array", y: "ArrayLike", /) -> "Array":
         """Calculate the maximum of each element ``x_i`` of the input array ``x`` with the value ``y``."""
+    
+    @abc.abstractmethod
+    def beta(self, x: "Array", y: "Array", /) -> "Array":
+        """Calculate the beta function at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def betainc(self, x: "Array", y: "Array", z: "Array", /) -> "Array":
+        """Calculate the regularised incomplete beta function at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def mbessel0(self, x: "Array", /) -> "Array":
+        """Calculate the modified Bessel function of the first kind of order 0 at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def mbessel1(self, x: "Array", /) -> "Array":
+        """Calculate the modified Bessel function of the first kind of order 1 at each element ``x_i`` of the input array ``x``."""
