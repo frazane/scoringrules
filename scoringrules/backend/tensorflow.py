@@ -225,6 +225,12 @@ class TensorflowBackend(ArrayBackend):
     def gamma(self, x: "Tensor") -> "Tensor":
         return tf.math.exp(tf.math.lgamma(x))
 
+    def gammalinc(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return tf.math.igamma(x, y) * tf.math.exp(tf.math.lgamma(x))
+
+    def gammauinc(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return tf.math.igammac(x, y) * tf.math.exp(tf.math.lgamma(x))
+
     def factorial(self, n: "TensorLike") -> "TensorLike":
         return tf.math.exp(tf.math.lgamma(n+1))
 
