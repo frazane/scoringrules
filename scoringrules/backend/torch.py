@@ -176,6 +176,14 @@ class TorchBackend(ArrayBackend):
                 [func1d(x_i) for x_i in torch.unbind(x, dim=axis)], dim=axis
             )
 
+    def floor(self, x: "Tensor") -> "Tensor":
+        return torch.floor(x)
+
+    def minimum(self, x: "Tensor", y: "TensorLike") -> "Tensor":
+        return torch.minimum(x, y)
+
+    def maximum(self, x: "Tensor", y: "TensorLike") -> "Tensor":
+        return torch.maximum(x, y)
 
 if __name__ == "__main__":
     B = TorchBackend()

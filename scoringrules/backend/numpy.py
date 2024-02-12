@@ -150,6 +150,15 @@ class NumpyBackend(ArrayBackend):
     def apply_along_axis(self, func1d: tp.Callable, x: "NDArray", axis: int):
         return np.apply_along_axis(func1d, axis, x)
 
+    def floor(self, x: "NDArray") -> "NDArray":
+        return np.floor(x)
+
+    def minimum(self, x: "NDArray", y: "ArrayLike") -> "NDArray":
+        return np.minimum(x, y)
+
+    def maximum(self, x: "NDArray", y: "ArrayLike") -> "NDArray":
+        return np.maximum(x, y)
+
 
 class NumbaBackend(NumpyBackend):
     """Numba backend."""
