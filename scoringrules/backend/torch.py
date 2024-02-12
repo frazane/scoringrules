@@ -185,6 +185,19 @@ class TorchBackend(ArrayBackend):
     def maximum(self, x: "Tensor", y: "TensorLike") -> "Tensor":
         return torch.maximum(x, y)
 
+    def beta(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return torch.exp(torch.special.gammaln(x) + torch.special.gammaln(y) - torch.special.gammaln(x + y))
+
+    def betainc(self, x: "Tensor", y: "Tensor", z: "Tensor") -> "Tensor":
+        return None
+
+    def mbessel0(self, x: "Tensor") -> "Tensor":
+        return torch.special.i0(x)
+
+    def mbessel1(self, x: "Tensor") -> "Tensor":
+        return torch.special.i1(x)
+
+
 if __name__ == "__main__":
     B = TorchBackend()
     out = B.mean(torch.ones(10))

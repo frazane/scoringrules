@@ -1,7 +1,7 @@
 import typing as tp
 
 import numpy as np
-from scipy.special import erf
+from scipy.special import erf, beta, betainc, jv
 
 if tp.TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -158,6 +158,18 @@ class NumpyBackend(ArrayBackend):
 
     def maximum(self, x: "NDArray", y: "ArrayLike") -> "NDArray":
         return np.maximum(x, y)
+    
+    def beta(self, x, y):
+        return beta(x, y)
+
+    def betainc(self, x, y, z):
+        return betainc(x, y, z)
+
+    def mbessel0(self, x):
+        return jv(0, x)
+
+    def mbessel1(self, x):
+        return jv(1, x)
 
 
 class NumbaBackend(NumpyBackend):

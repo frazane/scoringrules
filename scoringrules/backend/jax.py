@@ -172,6 +172,18 @@ class JaxBackend(ArrayBackend):
     def maximum(self, x: "Array", y: "ArrayLike") -> "Array":
         return jnp.maximum(x, y)
 
+    def beta(self, x: "Array", y: "Array") -> "Array":
+        return jsp.special.beta(x, y)
+
+    def betainc(self, x: "Array", y: "Array", z: "Array") -> "Array":
+        return jsp.special.betainc(x, y, z)
+
+    def mbessel0(self, x: "Array") -> "Array":
+        return jsp.special.jv(0, x)
+
+    def mbessel1(self, x: "Array") -> "Array":
+        return jsp.special.jv(1, x)
+
 
 if __name__ == "__main__":
     B = JaxBackend()
