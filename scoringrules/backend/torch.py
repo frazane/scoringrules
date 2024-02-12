@@ -200,6 +200,12 @@ class TorchBackend(ArrayBackend):
     def gamma(self, x: "Tensor") -> "Tensor":
         return torch.exp(torch.lgamma(x))
 
+    def gammalinc(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return torch.special.gammainc(x, y) * torch.exp(torch.lgamma(x))
+
+    def gammauinc(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return torch.special.gammaincc(x, y) * torch.exp(torch.lgamma(x))
+
     def factorial(self, n: "TensorLike") -> "TensorLike":
         return torch.exp(torch.lgamma(n+1))
     

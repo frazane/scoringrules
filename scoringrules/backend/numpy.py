@@ -1,7 +1,7 @@
 import typing as tp
 
 import numpy as np
-from scipy.special import erf, beta, betainc, jv, gamma, factorial
+from scipy.special import erf, beta, betainc, jv, gamma, gammainc, gammaincc, factorial
 
 if tp.TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -159,23 +159,29 @@ class NumpyBackend(ArrayBackend):
     def maximum(self, x: "NDArray", y: "ArrayLike") -> "NDArray":
         return np.maximum(x, y)
     
-    def beta(self, x, y):
+    def beta(self, x: "NDArray", y: "NDArray") -> "NDArray":
         return beta(x, y)
 
-    def betainc(self, x, y, z):
+    def betainc(self, x: "NDArray", y: "NDArray", z: "NDArray") -> "NDArray":
         return betainc(x, y, z)
 
-    def mbessel0(self, x):
+    def mbessel0(self, x: "NDArray") -> "NDArray":
         return jv(0, x)
 
-    def mbessel1(self, x):
+    def mbessel1(self, x: "NDArray") -> "NDArray":
         return jv(1, x)
 
-    def gamma(self, x):
+    def gamma(self, x: "NDArray") -> "NDArray":
         return gamma(x)
 
-    def factorial(self, n):
+    def factorial(self, n: "ArrayLike") -> "ArrayLike":
         return factorial(n)
+
+    def gammalinc(self, x: "NDArray", y: "NDArray") -> "NDArray":
+        return gammainc(x, y) * gamma(x)
+
+    def gammauinc(self, x: "NDArray", y: "NDArray") -> "NDArray":
+        return gammaincc(x, y) * gamma(x)
 
 
 class NumbaBackend(NumpyBackend):
