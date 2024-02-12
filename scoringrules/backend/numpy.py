@@ -1,7 +1,7 @@
 import typing as tp
 
 import numpy as np
-from scipy.special import erf, beta, betainc, jv
+from scipy.special import erf, beta, betainc, jv, gamma, factorial
 
 if tp.TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -170,6 +170,12 @@ class NumpyBackend(ArrayBackend):
 
     def mbessel1(self, x):
         return jv(1, x)
+
+    def gamma(self, x):
+        return gamma(x)
+
+    def factorial(self, n):
+        return factorial(n)
 
 
 class NumbaBackend(NumpyBackend):

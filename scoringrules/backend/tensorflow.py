@@ -222,6 +222,12 @@ class TensorflowBackend(ArrayBackend):
     def mbessel1(self, x: "Tensor") -> "Tensor":
         return tf.math.bessel_i1e(x)
 
+    def gamma(self, x: "Tensor") -> "Tensor":
+        return tf.math.exp(tf.math.lgamma(x))
+
+    def factorial(self, n: "TensorLike") -> "TensorLike":
+        return tf.math.exp(tf.math.lgamma(n+1))
+
 
 if __name__ == "__main__":
     B = TensorflowBackend()

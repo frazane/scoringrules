@@ -184,6 +184,11 @@ class JaxBackend(ArrayBackend):
     def mbessel1(self, x: "Array") -> "Array":
         return jsp.special.jv(1, x)
 
+    def gamma(self, x: "Array") -> "Array":
+        return jsp.special.gamma(x)
+
+    def factorial(self, n: "ArrayLike") -> "ArrayLike":
+        return jsp.special.factorial(n)
 
 if __name__ == "__main__":
     B = JaxBackend()
