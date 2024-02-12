@@ -202,3 +202,11 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def mbessel1(self, x: "Array", /) -> "Array":
         """Calculate the modified Bessel function of the first kind of order 1 at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def gamma(self, x: "Array", /) -> "Array":
+        """Calculate the gamma function at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def factorial(self, n: "ArrayLike", /) -> "ArrayLike":
+        """Calculate the factorial of the integer ``n``."""

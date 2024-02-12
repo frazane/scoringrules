@@ -186,7 +186,7 @@ class TorchBackend(ArrayBackend):
         return torch.maximum(x, y)
 
     def beta(self, x: "Tensor", y: "Tensor") -> "Tensor":
-        return torch.exp(torch.special.gammaln(x) + torch.special.gammaln(y) - torch.special.gammaln(x + y))
+        return torch.exp(torch.lgamma(x) + torch.lgamma(y) - torch.lgamma(x + y))
 
     def betainc(self, x: "Tensor", y: "Tensor", z: "Tensor") -> "Tensor":
         return None
@@ -197,6 +197,12 @@ class TorchBackend(ArrayBackend):
     def mbessel1(self, x: "Tensor") -> "Tensor":
         return torch.special.i1(x)
 
+    def gamma(self, x: "Tensor") -> "Tensor":
+        return torch.exp(torch.lgamma(x))
+
+    def factorial(self, n: "TensorLike") -> "TensorLike":
+        return torch.exp(torch.lgamma(n+1))
+    
 
 if __name__ == "__main__":
     B = TorchBackend()
