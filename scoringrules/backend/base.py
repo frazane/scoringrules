@@ -174,3 +174,15 @@ class ArrayBackend(abc.ABC):
         self, func1d: tp.Callable[["Array"], "Array"], x: "Array", axis: int
     ) -> "Array":
         """Apply a function along a given axis of the input array."""
+        
+    @abc.abstractmethod
+    def floor(self, x: "Array", /) -> "Array":
+        """Calculate the integer component of each element ``x_i`` of the input array ``x``."""
+        
+    @abc.abstractmethod
+    def minimum(self, x: "Array", y: int | float | "Array", /) -> "Array":
+        """Calculate the minimum of each element ``x_i`` of the input array ``x`` with the value ``y``."""
+        
+    @abc.abstractmethod
+    def maximum(self, x: "Array", y: int | float | "Array", /) -> "Array":
+        """Calculate the maximum of each element ``x_i`` of the input array ``x`` with the value ``y``."""

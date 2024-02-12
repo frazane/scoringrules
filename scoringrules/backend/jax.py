@@ -163,6 +163,15 @@ class JaxBackend(ArrayBackend):
         except Exception:
             return jnp.apply_along_axis(func1d, axis, x)
 
+    def floor(self, x: "Array") -> "Array":
+        return jnp.floor(x)
+
+    def minimum(self, x: "Array", y: "ArrayLike") -> "Array":
+        return jnp.minimum(x, y)
+
+    def maximum(self, x: "Array", y: "ArrayLike") -> "Array":
+        return jnp.maximum(x, y)
+
 
 if __name__ == "__main__":
     B = JaxBackend()

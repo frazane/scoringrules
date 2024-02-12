@@ -201,6 +201,15 @@ class TensorflowBackend(ArrayBackend):
                 [func1d(x_i) for x_i in tf.unstack(x, axis=axis)], axis=axis
             )
 
+    def floor(self, x: "Tensor") -> "Tensor":
+        return tf.math.floor(x)
+
+    def minimum(self, x: "Tensor", y: "TensorLike") -> "Tensor":
+        return tf.math.minimum(x, y)
+
+    def maximum(self, x: "Tensor", y: "TensorLike") -> "Tensor":
+        return tf.math.maximum(x, y)
+
 
 if __name__ == "__main__":
     B = TensorflowBackend()
