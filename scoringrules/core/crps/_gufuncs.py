@@ -312,10 +312,61 @@ def _logis_cdf(x: float) -> float:
     return out
 
 
+@njit(["float32(float32)", "float64(float64)"])
+def _exp_cdf(x: float, rate: float) -> float:
+    """Cumulative distribution function for the exponential distribution."""
+    out: float = np.maximum(1 - math.exp(- rate * x), 0)
+    return out
+
+
+@njit(["float32(float32)", "float64(float64)"])
+def _gamma_cdf(x: float, shape: float, rate: float) -> float:
+    """Cumulative distribution function for the gamma distribution."""
+    out: float = np.maximum(np.li_gamma(shape, rate * x) / np.gamma(shape), 0)
+    return out
+
+
+@njit(["float32(float32)", "float64(float64)"])
+def _pois_cdf(x: float, mean: float) -> float:
+    """Cumulative distribution function for the Poisson distribution."""
+    out: float = np.maximum(np.ui_gamma(np.floor(x + 1), mean) / np.gamma(np.floor(x + 1)), 0)
+    return out
+
+
+@njit(["float32(float32)", "float64(float64)"])
+def _pois_pdf(x: float, mean: float) -> float:
+    """Probability mass function for the Poisson distribution."""
+    out: float = np.isinteger(x) * (mean**x * np.exp(-x) / np.factorial(x))
+    return out
+
+
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
-def _crps_normal_ufunc(mu: float, sigma: float, observation: float) -> float:
+def _crps_exponential_ufunc(rate: float, observation: float) -> float:
+    out: float = np.abs(observation) - (2 * _exp_cdf(observation, rate) / rate) + 1 / (2 * rate)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_gamma_ufunc(shape: float, rate: float, observation: float) -> float:
+    F_ab = _gamma_cdf(observation, shape, rate)
+    F_ab1 = _gamma_cdf(observation, shape + 1, rate)
+    out: float = observation * (2 * F_ab - 1) + (shape / rate) * (2 * F_ab1 - 1) - 1 / (rate * beta(0.5, shape))
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_logistic_ufunc(mu: float, sigma: float, observation: float) -> float:
     ω = (observation - mu) / sigma
-    out: float = sigma * (ω * (2 * _norm_cdf(ω) - 1) + 2 * _norm_pdf(ω) - INV_SQRT_PI)
+    out: float = sigma * (ω - 2 * np.log(_logis_cdf(ω)) - 1)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_loglogistic_ufunc(mulog: float, sigmalog: float, observation: float) -> float:
+    F_ms = 1 / (1 + np.exp( - (np.log(observation) - mulog) / sigmalog))
+    b = beta(1 + sigmalog, 1 - sigmalog)
+    I = betainc(1 + sigmalog, 1 - sigmalog, F_ms)
+    out: float = observation * (2 * F_ms - 1) - np.exp(mulog) * b * (2*I + sigmalog - 1)
     return out
 
 
@@ -330,10 +381,31 @@ def _crps_lognormal_ufunc(mulog: float, sigmalog: float, observation: float) -> 
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
-def _crps_logistic_ufunc(mu: float, sigma: float, observation: float) -> float:
+def _crps_normal_ufunc(mu: float, sigma: float, observation: float) -> float:
     ω = (observation - mu) / sigma
-    out: float = sigma * (ω - 2 * np.log(_logis_cdf(ω)) - 1)
+    out: float = sigma * (ω * (2 * _norm_cdf(ω) - 1) + 2 * _norm_pdf(ω) - INV_SQRT_PI)
     return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_poisson_ufunc(mean: float, observation: float) -> float:
+    F_m = _pois_cdf(observation, mean)
+    f_m = _pois_pdf(np.floor(observation), mean)
+    I0 = mbessel0(2 * mean)
+    I1 = mbessel1(2 * mean)
+    out: float = (y - mean) * (2 * F_m - 1) + 2 * mean * f_m - mean * np.exp(-2 * mean) * (I0 + I1)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_uniform_ufunc(min: float, max: float, lmass: float, umass: float, observation: float) -> float:
+    ω = (observation - min) / (max - min)
+    F_ω = np.minimum(np.maximum(ω, 0), 1)
+    out: float = np.abs(ω - F_ω) + (F_ω**2) * (1 - lmass - umass)  - F_ω * (1 - 2 * lmass) + ((1 - lmass - umass)**2) / 3 + (1 - lmass) * umass
+    return out
+
+
+
 
 
 estimator_gufuncs = {
@@ -356,7 +428,12 @@ __all__ = [
     "_crps_ensemble_nrg_gufunc",
     "_crps_ensemble_pwm_gufunc",
     "_crps_ensemble_qd_gufunc",
-    "_crps_normal_ufunc",
-    "_crps_lognormal_ufunc",
+    "_crps_exponential_ufunc",
+    "_crps_gamma_ufunc",
     "_crps_logistic_ufunc",
+    "_crps_loglogistic_ufunc",
+    "_crps_lognormal_ufunc",
+    "_crps_normal_ufunc",
+    "_crps_poisson_ufunc",
+    "_crps_uniform_ufunc"
 ]

@@ -1,25 +1,66 @@
 import typing as tp
 
 from scoringrules.backend import backends
-from scoringrules.core.stats import _logis_cdf, _norm_cdf, _norm_pdf
+from scoringrules.core.stats import (
+    _logis_cdf,
+    _norm_cdf,
+    _norm_pdf,
+    _exp_cdf,
+    _gamma_cdf,
+    _pois_cdf,
+    _pois_pdf
+)
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
 
+def exponential(
+    rate: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the exponential distribution."""
+    B = backends.active if backend is None else backends[backend]
+    rate, obs = map(B.asarray, (rate, obs))
+    s = B.abs(obs) - (2 * _exp_cdf(obs, rate, backend=backend) / rate) + 1 / (2 * rate)
+    return s
 
-def normal(
+def gamma(
+    shape: "ArrayLike",
+    rate: "ArrayLike",
+    scale: "ArrayLike",
+    obs: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the gamma distribution."""
+    B = backends.active if backend is None else backends[backend]
+    shape, rate, scale, obs = map(B.asarray, (shape, rate, scale, obs))
+    F_ab = _gamma_cdf(obs, shape, rate, backend=backend)
+    F_ab1 = _gamma_cdf(obs, shape + 1, rate, backend=backend)
+    s = obs * (2 * F_ab - 1) + (shape / rate) * (2 * F_ab1 - 1) - 1 / (rate * B.beta(0.5, shape))
+    return s
+
+def logistic(
     mu: "ArrayLike", sigma: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
-    """Compute the CRPS for the normal distribution."""
+    """Compute the CRPS for the logistic distribution."""
     B = backends.active if backend is None else backends[backend]
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma
-    return sigma * (
-        ω * (2.0 * _norm_cdf(ω, backend=backend) - 1.0)
-        + 2.0 * _norm_pdf(ω, backend=backend)
-        - 1.0 / B.sqrt(B.pi)
-    )
+    return sigma * (ω - 2 * B.log(_logis_cdf(ω, backend=backend)) - 1)
 
+def loglogistic(
+    mulog: "ArrayLike",
+    sigmalog: "ArrayLike",
+    obs: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the log-logistic distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mulog, sigmalog, obs = map(B.asarray, (mulog, sigmalog, obs))
+    F_ms = 1 / (1 + B.exp( - (B.log(obs) - mulog) / sigmalog))
+    b = B.beta(1 + sigmalog, 1 - sigmalog)
+    I = B.betainc(1 + sigmalog, 1 - sigmalog, F_ms)
+    s = obs * (2 * F_ms - 1) - B.exp(mulog) * b * (2*I + sigmalog - 1)
+    return s
 
 def lognormal(
     mulog: "ArrayLike",
@@ -38,12 +79,38 @@ def lognormal(
         - 1
     )
 
-
-def logistic(
+def normal(
     mu: "ArrayLike", sigma: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
     """Compute the CRPS for the normal distribution."""
     B = backends.active if backend is None else backends[backend]
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma
-    return sigma * (ω - 2 * B.log(_logis_cdf(ω, backend=backend)) - 1)
+    return sigma * (
+        ω * (2.0 * _norm_cdf(ω, backend=backend) - 1.0)
+        + 2.0 * _norm_pdf(ω, backend=backend)
+        - 1.0 / B.sqrt(B.pi)
+    )
+
+def poisson(
+    mean: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the poisson distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mean, obs = map(B.asarray, (mean, obs))
+    F_m = _pois_cdf(obs, mean, backend=backend)
+    f_m = _pois_pdf(B.floor(obs), mean, backend=backend)
+    I0 = B.mbessel0(2 * mean)
+    I1 = B.mbessel1(2 * mean)
+    s = (y - mean) * (2 * F_m - 1) + 2 * mean * f_m - mean * B.exp(-2 * mean) * (I0 + I1)
+    return s
+
+def uniform(
+    min: "ArrayLike", max: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the uniform distribution."""
+    B = backends.active if backend is None else backends[backend]
+    min, max, lmass, umass, obs = map(B.asarray, (min, max, lmass, umass, obs))
+    ω = (obs - min) / (max - min)
+    F_ω = B.minimum(B.maximum(ω, 0), 1)
+    return B.abs(ω - F_ω) + (F_ω**2) * (1 - lmass - umass)  - F_ω * (1 - 2 * lmass) + ((1 - lmass - umass)**2) / 3 + (1 - lmass) * umass

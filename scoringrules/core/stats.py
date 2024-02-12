@@ -27,19 +27,19 @@ def _logis_cdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
 def _exp_cdf(x: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the exponential distribution."""
     B = backends.active if backend is None else backends[backend]
-    return B.max(1 - B.exp(- rate * x), 0)
+    return B.maximum(1 - B.exp(- rate * x), 0)
 
 
 def _gamma_cdf(x: "ArrayLike", shape: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the gamma distribution."""
     B = backends.active if backend is None else backends[backend]
-    return B.max(B.li_gamma(shape, rate * x) / B.gamma(shape), 0)
+    return B.maximum(B.li_gamma(shape, rate * x) / B.gamma(shape), 0)
 
 
 def _pois_cdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the Poisson distribution."""
     B = backends.active if backend is None else backends[backend]
-    return B.max(B.ui_gamma(B.floor(x + 1), mean) / B.gamma(B.floor(x + 1)), 0)
+    return B.maximum(B.ui_gamma(B.floor(x + 1), mean) / B.gamma(B.floor(x + 1)), 0)
 
 
 def _pois_pdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":
