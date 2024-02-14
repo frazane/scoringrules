@@ -13,6 +13,7 @@ from scoringrules._crps import (
     crps_normal,
     crps_poisson,
     crps_uniform,
+    crps_t,
     owcrps_ensemble,
     twcrps_ensemble,
     vrcrps_ensemble,

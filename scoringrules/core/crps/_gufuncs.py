@@ -339,6 +339,17 @@ def _pois_pdf(x: float, mean: float) -> float:
     out: float = np.isinteger(x) * (mean**x * np.exp(-x) / np.factorial(x))
     return out
 
+@njit(["float32(float32)", "float64(float64)"])
+def _t_cdf(x: float, df: float) -> float:
+    """Cumulative distribution function for the standard Student's t distribution."""
+    out: float = 1 / 2 + x * hypergeo(1 / 2, (df + 1) / 2, 3 / 2, - (x**2) / df) / (np.sqrt(df) * beta(1 / 2, df / 2))
+    return out
+
+@njit(["float32(float32)", "float64(float64)"])
+def _t_pdf(x: float, df: float) -> float:
+    """Probability density function for the standard Student's t distribution."""
+    out: float = ((1 + x**2 / df)**(- (df + 1) / 2)) / (np.sqrt(df) * beta(1 / 2, df / 2))
+    return out
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _crps_exponential_ufunc(rate: float, observation: float) -> float:
@@ -369,7 +380,7 @@ def _crps_gamma_ufunc(shape: float, rate: float, observation: float) -> float:
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _crps_laplace_ufunc(location: float, scale: float, observation: float) -> float:
     ω = (observation - location) / scale
-    out: float = scale * (ω + math.exp(-ω) - 3/4
+    out: float = scale * (ω + math.exp(-ω) - 3/4)
     return out
 
 
@@ -424,6 +435,17 @@ def _crps_uniform_ufunc(min: float, max: float, lmass: float, umass: float, obse
     return out
 
 
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_t_ufunc(df: float, location: float, scale: float, observation: float) -> float:
+    ω = (observation - mu) / sigma
+    F_nu = _t_cdf(ω)
+    f_nu = _t_pdf(ω)
+    out: float = ω * (2 * F_nu - 1) + 2 * f_nu * (df + ω**2) / (df - 1) - (2 * np.sqrt(df) * beta(1 / 2, df - 1)) / ((df - 1) * beta(1 / 2, df / 2)**2)
+    return out
+
+
+
+
 
 
 
@@ -456,5 +478,6 @@ __all__ = [
     "_crps_lognormal_ufunc",
     "_crps_normal_ufunc",
     "_crps_poisson_ufunc",
-    "_crps_uniform_ufunc"
+    "_crps_uniform_ufunc",
+    "_crps_t_ufunc",
 ]

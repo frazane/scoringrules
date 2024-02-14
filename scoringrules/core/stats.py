@@ -33,16 +33,26 @@ def _exp_cdf(x: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None) -> "A
 def _gamma_cdf(x: "ArrayLike", shape: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the gamma distribution."""
     B = backends.active if backend is None else backends[backend]
-    return B.maximum(B.li_gamma(shape, rate * x) / B.gamma(shape), 0)
+    return B.maximum(B.gammalinc(shape, rate * x) / B.gamma(shape), 0)
 
 
 def _pois_cdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the Poisson distribution."""
     B = backends.active if backend is None else backends[backend]
-    return B.maximum(B.ui_gamma(B.floor(x + 1), mean) / B.gamma(B.floor(x + 1)), 0)
+    return B.maximum(B.gammauinc(B.floor(x + 1), mean) / B.gamma(B.floor(x + 1)), 0)
 
 
 def _pois_pdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Probability mass function for the Poisson distribution."""
     B = backends.active if backend is None else backends[backend]
     return B.isinteger(x) * (mean**x * B.exp(-x) / B.factorial(x))
+
+def _t_pdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard Student's t distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return ((1 + x**2 / df)**(- (df + 1) / 2)) / (B.sqrt(df) * B.beta(1 / 2, df / 2))
+
+def _t_cdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Cumulative distribution function for the standard Student's t distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return 1 / 2 + x * B.hypergeo(1 / 2, (df + 1) / 2, 3 / 2, - (x**2) / df) / (B.sqrt(df) * B.beta(1 / 2, df / 2))

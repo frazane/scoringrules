@@ -565,7 +565,7 @@ def crps_normal(
     r"""Compute the closed form of the CRPS for the normal distribution.
 
     It is based on the following formulation from
-    [Geiting et al. (2005)](https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml):
+    [Gneiting et al. (2005)](https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml):
 
     $$ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},$$
 
@@ -629,6 +629,51 @@ def crps_poisson(
     >>> crps.poisson(1, 2)
     """
     return crps.poisson(mean, observation, backend=backend)
+
+
+def crps_t(
+    df: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    observation: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the student's t distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F, y) = \sigma \left\{ \omega (2 F_{\nu} (\omega) - 1) + 2 f_{\nu} \left( \frac{\nu + \omega^{2}}{\nu - 1} \right) - \frac{2 \sqrt{\nu}}{\nu - 1} \frac{B(\frac{1}{2}, \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2}^{2})}  \right},$$
+
+    where $\omega = (y - \mu)/\sigma$, where $\nu > 1, \mu$, and $\sigma > 0$ are the 
+    degrees of freedom, location, and scale parameters respectively of the Student's t 
+    distribution, and $f_{\nu}$ and $F_{\nu}$ are the PDF and CDF of the standard Student's
+    t distribution with $\nu$ degrees of freedom.
+    
+    Parameters
+    ----------
+    df: ArrayLike
+        Degrees of freedom parameter of the forecast t distribution.
+    location: ArrayLike
+        Location parameter of the forecast t distribution.
+    sigma: ArrayLike
+        Scale parameter of the forecast t distribution.
+    observation: ArrayLike
+        The observed values.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between t(df, location, scale) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.t(1, 0.1, 0.4, 0.0)
+    """
+    return crps.t(df, location, scale, observation, backend=backend)
 
 
 def crps_uniform(

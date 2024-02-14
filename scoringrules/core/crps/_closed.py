@@ -8,7 +8,9 @@ from scoringrules.core.stats import (
     _exp_cdf,
     _gamma_cdf,
     _pois_cdf,
-    _pois_pdf
+    _pois_pdf,
+    _t_cdf,
+    _t_pdf
 )
 
 if tp.TYPE_CHECKING:
@@ -144,3 +146,15 @@ def uniform(
     ω = (obs - min) / (max - min)
     F_ω = B.minimum(B.maximum(ω, 0), 1)
     return B.abs(ω - F_ω) + (F_ω**2) * (1 - lmass - umass)  - F_ω * (1 - 2 * lmass) + ((1 - lmass - umass)**2) / 3 + (1 - lmass) * umass
+
+def t(
+    df: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the t distribution."""
+    B = backends.active if backend is None else backends[backend]
+    df, mu, sigma, obs = map(B.asarray, (df, location, scale, obs))
+    ω = (obs - mu) / sigma
+    F_nu = _t_cdf(ω)
+    f_nu = _t_pdf(ω)
+    s = ω * (2 * F_nu - 1) + 2 * f_nu * (df + ω**2) / (df - 1) - (2 * B.sqrt(df) * B.beta(1 / 2, df - 1)) / ((df - 1) * B.beta(1 / 2, df / 2)**2)
+    return sigma * s
