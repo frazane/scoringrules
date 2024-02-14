@@ -347,6 +347,18 @@ def _crps_exponential_ufunc(rate: float, observation: float) -> float:
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_beta_ufunc(shape1: float, shape2: float, lower: float, upper:float, observation: float) -> float:
+    obs_std = (observation - lower) / (upper - lower)
+    I_ab = np.betainc(shape1, shape2, obs_std)
+    I_a1b = np.betainc(shape1 + 1, shape2, obs_std)
+    F_ab = np.minimum(np.maximum(I_ab, 0), 1)
+    F_a1b = np.minimum(np.maximum(I_a1b, 0), 1)
+    bet_rat = 2 * beta(2 * shape1, 2 * shape2) / (shape1 * beta(shape1, shape2)**2)
+    out: float = obs_std * (2 * F_ab - 1) + (shape1 / (shape1 + shape2)) * ( 1 - 2 * F_a1b - bet_rat)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _crps_gamma_ufunc(shape: float, rate: float, observation: float) -> float:
     F_ab = _gamma_cdf(observation, shape, rate)
     F_ab1 = _gamma_cdf(observation, shape + 1, rate)
@@ -428,6 +440,7 @@ __all__ = [
     "_crps_ensemble_nrg_gufunc",
     "_crps_ensemble_pwm_gufunc",
     "_crps_ensemble_qd_gufunc",
+    "_crps_beta_ufunc",
     "_crps_exponential_ufunc",
     "_crps_gamma_ufunc",
     "_crps_logistic_ufunc",

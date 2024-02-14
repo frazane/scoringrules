@@ -271,6 +271,52 @@ def vrcrps_ensemble(
     )
 
 
+def crps_beta(
+    shape1: "ArrayLike",
+    shape2: "ArrayLike",
+    lower: "ArrayLike",
+    upper: "ArrayLike",
+    observation: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the beta distribution.
+    
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F_{\alpha, \beta}, y) = (u - l)\left\{ \frac{y - l}{u - l} left( 2F_{\alpha, \beta} \left( \frac{y - l}{u - l} \right) - 1 \right) + \frac{\alpha}{\alpha + \beta} \left( 1 - 2F_{\alpha + 1, \beta} \left( \frac{y - l}{u - l} \right) - \frac{2B(2\alpha, 2\beta)}{\alpha B(\alpha, \beta)^{2}} \right) \right\}.$$
+
+    where $F_{\alpha, \beta}$ is the beta distribution function with shape parameters $\alpha, \beta > 0$,
+    and lower and upper bounds $l, u \in \R$, $l < u$.
+
+    Parameters
+    ----------
+    shape1: ArrayLike
+        First shape parameter of the forecast beta distribution.
+    shape2: ArrayLike
+        Second shape parameter of the forecast beta distribution.
+    lower: ArrayLike
+        Lower bound of the forecast beta distribution.
+    upper: ArrayLike
+        Upper bound of the forecast beta distribution.
+    observation: ArrayLike
+        The observed values.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between Beta(shape1, shape2) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.beta(1.0, 1.0, 0.0, 1.0, 0.4)
+    """
+    return crps.beta(shape1, shape2, lower, upper, observation, backend=backend)
+
+
 def crps_exponential(
     rate: "ArrayLike",
     observation: "ArrayLike",
@@ -323,7 +369,7 @@ def crps_gamma(
 
     $$ \mathrm{CRPS}(F_{\alpha, \beta}, y) = y(2F_{\alpha, \beta}(y) - 1) - \frac{\alpha}{\beta} (2 F_{\alpha + 1, \beta}(y) - 1) - \frac{1}{\beta B(1/2, \alpha)}.$$
 
-    where $F_{\alpha, \beta}$ is gamma distribution function with shape parameter $\alpha > 0$
+    where $F_{\alpha, \beta}$ is the gamma distribution function with shape parameter $\alpha > 0$
     and rate parameter $\beta > 0$ (equivalently, with scale parameter $1/\beta$).
 
     Parameters
@@ -331,9 +377,9 @@ def crps_gamma(
     shape: ArrayLike
         Shape parameter of the forecast gamma distribution.
     rate: ArrayLike
-        Rate parameter of the forecast rate distribution.
+        Rate parameter of the forecast gamma distribution.
     scale: ArrayLike
-        Scale parameter of the forecast scale distribution.
+        Scale parameter of the forecast gamma distribution.
     observation: ArrayLike
         The observed values.
 

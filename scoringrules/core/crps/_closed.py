@@ -14,6 +14,27 @@ from scoringrules.core.stats import (
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
 
+def beta(
+    shape1: "ArrayLike",
+    shape2: "ArrayLike",
+    lower: "ArrayLike",
+    upper: "ArrayLike",
+    obs: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the beta distribution."""
+    B = backends.active if backend is None else backends[backend]
+    shape1, shape2, lower, upper, obs = map(B.asarray, (shape1, shape2, lower, upper, obs))
+    obs_std = (obs - lower) / (upper - lower)
+    I_ab = B.betainc(shape1, shape2, obs_std)
+    I_a1b = B.betainc(shape1 + 1, shape2, obs_std)
+    F_ab = B.minimum(B.maximum(I_ab, 0), 1)
+    F_a1b = B.minimum(B.maximum(I_a1b, 0), 1)
+    bet_rat = 2 * B.beta(2 * shape1, 2 * shape2) / (shape1 * B.beta(shape1, shape2)**2)
+    s = obs_std * (2 * F_ab - 1) + (shape1 / (shape1 + shape2)) * ( 1 - 2 * F_a1b - bet_rat)
+    return s
+
+
 def exponential(
     rate: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
 ) -> "Array":

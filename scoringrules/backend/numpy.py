@@ -174,14 +174,14 @@ class NumpyBackend(ArrayBackend):
     def gamma(self, x: "NDArray") -> "NDArray":
         return gamma(x)
 
-    def factorial(self, n: "ArrayLike") -> "ArrayLike":
-        return factorial(n)
-
     def gammalinc(self, x: "NDArray", y: "NDArray") -> "NDArray":
         return gammainc(x, y) * gamma(x)
 
     def gammauinc(self, x: "NDArray", y: "NDArray") -> "NDArray":
         return gammaincc(x, y) * gamma(x)
+
+    def factorial(self, n: "ArrayLike") -> "ArrayLike":
+        return factorial(n)
 
 
 class NumbaBackend(NumpyBackend):

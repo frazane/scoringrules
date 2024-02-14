@@ -6,6 +6,7 @@ __all__ = [
     "ensemble",
     "ow_ensemble",
     "vr_ensemble",
+    "beta",
     "exponential",
     "gamma",
     "logistic",
