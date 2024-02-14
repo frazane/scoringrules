@@ -9,6 +9,7 @@ __all__ = [
     "beta",
     "exponential",
     "gamma",
+    "laplace",
     "logistic",
     "loglogistic",
     "lognormal",

@@ -396,6 +396,45 @@ def crps_gamma(
     return crps.gamma(shape, rate, scale, observation, backend=backend)
 
 
+def crps_laplace(
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    observation: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the laplace distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F, y) = |y - \mu| + \sigma \exp ( -| y - \mu| / \sigma) - \frac{3\sigma}{4},$$
+
+    where $\mu$ and $\sigma > 0$ are the location and scale parameters of the Laplace distribution.
+
+    Parameters
+    ----------
+    location: ArrayLike
+        Location parameter of the forecast laplace distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast laplace distribution.
+    observation: ArrayLike
+        Observed values.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS for the Laplace(location, scale) forecasts given the observations.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.laplace(0.1, 0.4, 0.0)
+    """
+    return crps.laplace(location, scale, observation, backend=backend)
+
+
 def crps_logistic(
     mu: "ArrayLike",
     sigma: "ArrayLike",

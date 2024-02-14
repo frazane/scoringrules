@@ -59,6 +59,15 @@ def gamma(
     s = obs * (2 * F_ab - 1) + (shape / rate) * (2 * F_ab1 - 1) - 1 / (rate * B.beta(0.5, shape))
     return s
 
+def laplace(
+    location: "ArrayLike", scale: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the laplace distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mu, sigma, obs = map(B.asarray, (location, scale, obs))
+    ω = (obs - mu) / sigma
+    return sigma * (B.abs(ω) + B.exp(-ω) - 3/4)
+
 def logistic(
     mu: "ArrayLike", sigma: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
 ) -> "Array":

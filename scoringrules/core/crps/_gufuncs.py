@@ -367,6 +367,13 @@ def _crps_gamma_ufunc(shape: float, rate: float, observation: float) -> float:
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_laplace_ufunc(location: float, scale: float, observation: float) -> float:
+    ω = (observation - location) / scale
+    out: float = scale * (ω + math.exp(-ω) - 3/4
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _crps_logistic_ufunc(mu: float, sigma: float, observation: float) -> float:
     ω = (observation - mu) / sigma
     out: float = sigma * (ω - 2 * np.log(_logis_cdf(ω)) - 1)
@@ -443,6 +450,7 @@ __all__ = [
     "_crps_beta_ufunc",
     "_crps_exponential_ufunc",
     "_crps_gamma_ufunc",
+    "_crps_laplace_ufunc",
     "_crps_logistic_ufunc",
     "_crps_loglogistic_ufunc",
     "_crps_lognormal_ufunc",
