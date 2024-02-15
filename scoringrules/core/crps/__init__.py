@@ -10,7 +10,8 @@ from ._closed import (
     normal, 
     poisson, 
     uniform,
-    t
+    t,
+    tpexponential,
 )
 from ._gufuncs import estimator_gufuncs
 
@@ -29,5 +30,6 @@ __all__ = [
     "poisson",
     "uniform",
     "t",
+    "tpexponential",
     "estimator_gufuncs",
 ]

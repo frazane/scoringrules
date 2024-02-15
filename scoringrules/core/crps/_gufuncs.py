@@ -312,52 +312,52 @@ def _logis_cdf(x: float) -> float:
     return out
 
 
-@njit(["float32(float32)", "float64(float64)"])
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
 def _exp_cdf(x: float, rate: float) -> float:
     """Cumulative distribution function for the exponential distribution."""
     out: float = np.maximum(1 - math.exp(- rate * x), 0)
     return out
 
 
-@njit(["float32(float32)", "float64(float64)"])
+@njit(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _gamma_cdf(x: float, shape: float, rate: float) -> float:
     """Cumulative distribution function for the gamma distribution."""
     out: float = np.maximum(np.li_gamma(shape, rate * x) / np.gamma(shape), 0)
     return out
 
 
-@njit(["float32(float32)", "float64(float64)"])
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
 def _pois_cdf(x: float, mean: float) -> float:
     """Cumulative distribution function for the Poisson distribution."""
     out: float = np.maximum(np.ui_gamma(np.floor(x + 1), mean) / np.gamma(np.floor(x + 1)), 0)
     return out
 
 
-@njit(["float32(float32)", "float64(float64)"])
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
 def _pois_pdf(x: float, mean: float) -> float:
     """Probability mass function for the Poisson distribution."""
     out: float = np.isinteger(x) * (mean**x * np.exp(-x) / np.factorial(x))
     return out
 
-@njit(["float32(float32)", "float64(float64)"])
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
 def _t_cdf(x: float, df: float) -> float:
     """Cumulative distribution function for the standard Student's t distribution."""
     out: float = 1 / 2 + x * hypergeo(1 / 2, (df + 1) / 2, 3 / 2, - (x**2) / df) / (np.sqrt(df) * beta(1 / 2, df / 2))
     return out
 
-@njit(["float32(float32)", "float64(float64)"])
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
 def _t_pdf(x: float, df: float) -> float:
     """Probability density function for the standard Student's t distribution."""
     out: float = ((1 + x**2 / df)**(- (df + 1) / 2)) / (np.sqrt(df) * beta(1 / 2, df / 2))
     return out
 
-@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+@vectorize(["float32(float32, float32)", "float64(float64, float64)"])
 def _crps_exponential_ufunc(rate: float, observation: float) -> float:
     out: float = np.abs(observation) - (2 * _exp_cdf(observation, rate) / rate) + 1 / (2 * rate)
     return out
 
 
-@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+@vectorize(["float32(float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64)"])
 def _crps_beta_ufunc(shape1: float, shape2: float, lower: float, upper:float, observation: float) -> float:
     obs_std = (observation - lower) / (upper - lower)
     I_ab = np.betainc(shape1, shape2, obs_std)
@@ -417,7 +417,7 @@ def _crps_normal_ufunc(mu: float, sigma: float, observation: float) -> float:
     return out
 
 
-@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+@vectorize(["float32(float32, float32)", "float64(float64, float64)"])
 def _crps_poisson_ufunc(mean: float, observation: float) -> float:
     F_m = _pois_cdf(observation, mean)
     f_m = _pois_pdf(np.floor(observation), mean)
@@ -427,7 +427,7 @@ def _crps_poisson_ufunc(mean: float, observation: float) -> float:
     return out
 
 
-@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+@vectorize(["float32(float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64)"])
 def _crps_uniform_ufunc(min: float, max: float, lmass: float, umass: float, observation: float) -> float:
     ω = (observation - min) / (max - min)
     F_ω = np.minimum(np.maximum(ω, 0), 1)
@@ -435,18 +435,21 @@ def _crps_uniform_ufunc(min: float, max: float, lmass: float, umass: float, obse
     return out
 
 
-@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+@vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
 def _crps_t_ufunc(df: float, location: float, scale: float, observation: float) -> float:
-    ω = (observation - mu) / sigma
+    ω = (observation - location) / scale
     F_nu = _t_cdf(ω)
     f_nu = _t_pdf(ω)
     out: float = ω * (2 * F_nu - 1) + 2 * f_nu * (df + ω**2) / (df - 1) - (2 * np.sqrt(df) * beta(1 / 2, df - 1)) / ((df - 1) * beta(1 / 2, df / 2)**2)
     return out
 
-
-
-
-
+@vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _crps_tpexponential_ufunc(scale1: float, scale2: float, location: float, observation: float) -> float:
+    ω = (observation - location)
+    scalei = scale2
+    if ω < 0: scalei = scale1
+    out: float = np.abs(ω) + 2 * (scalei**2) * math.exp( - np.abs(ω) / scalei) / (scale1 + scale2) - 2 * (scalei**2) / (scale1 + scale2) + (scale1**3 + scale2**3) / (2 * (scale1 + scale2)**2)
+    return out
 
 
 estimator_gufuncs = {
@@ -480,4 +483,5 @@ __all__ = [
     "_crps_poisson_ufunc",
     "_crps_uniform_ufunc",
     "_crps_t_ufunc",
+    "_crps_tpexponential_ufunc",
 ]

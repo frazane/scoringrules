@@ -631,51 +631,6 @@ def crps_poisson(
     return crps.poisson(mean, observation, backend=backend)
 
 
-def crps_t(
-    df: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
-    observation: "ArrayLike",
-    /,
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the student's t distribution.
-
-    It is based on the following formulation from
-    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
-
-    $$ \mathrm{CRPS}(F, y) = \sigma \left\{ \omega (2 F_{\nu} (\omega) - 1) + 2 f_{\nu} \left( \frac{\nu + \omega^{2}}{\nu - 1} \right) - \frac{2 \sqrt{\nu}}{\nu - 1} \frac{B(\frac{1}{2}, \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2}^{2})}  \right},$$
-
-    where $\omega = (y - \mu)/\sigma$, where $\nu > 1, \mu$, and $\sigma > 0$ are the 
-    degrees of freedom, location, and scale parameters respectively of the Student's t 
-    distribution, and $f_{\nu}$ and $F_{\nu}$ are the PDF and CDF of the standard Student's
-    t distribution with $\nu$ degrees of freedom.
-    
-    Parameters
-    ----------
-    df: ArrayLike
-        Degrees of freedom parameter of the forecast t distribution.
-    location: ArrayLike
-        Location parameter of the forecast t distribution.
-    sigma: ArrayLike
-        Scale parameter of the forecast t distribution.
-    observation: ArrayLike
-        The observed values.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS between t(df, location, scale) and obs.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.t(1, 0.1, 0.4, 0.0)
-    """
-    return crps.t(df, location, scale, observation, backend=backend)
-
-
 def crps_uniform(
     min: "ArrayLike",
     max: "ArrayLike",
@@ -722,17 +677,111 @@ def crps_uniform(
     """
     return crps.uniform(min, max, lmass, umass, observation, backend=backend)
 
+
+def crps_t(
+    df: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    observation: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the student's t distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F, y) = \sigma \left\{ \omega (2 F_{\nu} (\omega) - 1) + 2 f_{\nu} \left( \frac{\nu + \omega^{2}}{\nu - 1} \right) - \frac{2 \sqrt{\nu}}{\nu - 1} \frac{B(\frac{1}{2}, \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2}^{2})}  \right},$$
+
+    where $\omega = (y - \mu)/\sigma$, where $\nu > 1, \mu$, and $\sigma > 0$ are the 
+    degrees of freedom, location, and scale parameters respectively of the Student's t 
+    distribution, and $f_{\nu}$ and $F_{\nu}$ are the PDF and CDF of the standard Student's
+    t distribution with $\nu$ degrees of freedom.
+    
+    Parameters
+    ----------
+    df: ArrayLike
+        Degrees of freedom parameter of the forecast t distribution.
+    location: ArrayLike
+        Location parameter of the forecast t distribution.
+    sigma: ArrayLike
+        Scale parameter of the forecast t distribution.
+    observation: ArrayLike
+        The observed values.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between t(df, location, scale) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.t(1, 0.1, 0.4, 0.0)
+    """
+    return crps.t(df, location, scale, observation, backend=backend)
+
+
+def crps_tpexponential(
+    scale1: "ArrayLike",
+    scale2: "ArrayLike",
+    location: "ArrayLike",
+    observation: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the two-piece exponential distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F_{\sigma_{1}, \sigma_{2},\mu}, y) = | y - \mu | + \frac{2 \sigma_{i}^{2}}{\sigma_{1} + \sigma_{2}} \left[ \exp \left( - \frac{| y - \mu |}{\sigma_{i}} \right) - 1 \right] + \frac{\sigma_{1}^{3} + \sigma_{2}^{3}}{2 ( \sigma_{1} + \sigma_{2}) ^{2}}, $$
+
+    where $F_{\sigma_{1}, \sigma_{2},\mu}$ is the CDF of the two-piece exponential distribution
+    with shape parameters $\sigma_{1}, \sigma_{2} > 0$ and location parameter $\mu$, with 
+    $\sigma_{i} = \sigma_{1}$ if $y < \mu$ and $\sigma_{i} = \sigma_{2}$ if $y \ge \mu$.
+    
+    Parameters
+    ----------
+    scale1: ArrayLike
+        First scale parameter of the forecast two-piece exponential distribution.
+    scale2: ArrayLike
+        Second scale parameter of the forecast two-piece exponential distribution.
+    location: ArrayLike
+        Location parameter of the forecast two-piece exponential distribution.
+    observation: ArrayLike
+        The observed values.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between 2pExp(scale1, scale2, location) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.2pexponential(1.0, 1.0, 0.0, 0.4)
+    """
+    return crps.tpexponential(scale1, scale2, location, observation, backend=backend)
+
+
 __all__ = [
     "crps_ensemble",
     "twcrps_ensemble",
     "owcrps_ensemble",
     "vrcrps_ensemble",
+    "crps_beta",
     "crps_exponential",
     "crps_gamma",
+    "crps_laplace",
     "crps_logistic",
     "crps_loglogistic"
     "crps_lognormal",
     "crps_normal",
     "crps_poisson",
     "crps_uniform",
+    "crps_t",
+    "crps_tpexponential"
 ]

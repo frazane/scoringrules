@@ -158,3 +158,15 @@ def t(
     f_nu = _t_pdf(ω)
     s = ω * (2 * F_nu - 1) + 2 * f_nu * (df + ω**2) / (df - 1) - (2 * B.sqrt(df) * B.beta(1 / 2, df - 1)) / ((df - 1) * B.beta(1 / 2, df / 2)**2)
     return sigma * s
+
+def tpexponential(
+    scale1: "ArrayLike", scale2: "ArrayLike", location: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the two-piece exponential distribution."""
+    B = backends.active if backend is None else backends[backend]
+    scale1, scale2, location, obs = map(B.asarray, (scale1, scale2, location, obs))
+    ω = (obs - location)
+    scalei = scale2
+    if ω < 0: scalei = scale1
+    s = B.abs(ω) + 2 * (scalei**2) *B.exp( - B.abs(ω) / scalei) / (scale1 + scale2) - 2 * (scalei**2) / (scale1 + scale2) + (scale1**3 + scale2**3) / (2 * (scale1 + scale2)**2)
+    return s
