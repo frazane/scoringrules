@@ -762,9 +762,47 @@ def crps_tpexponential(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.2pexponential(1.0, 1.0, 0.0, 0.4)
+    >>> crps.tpexponential(1.0, 1.0, 0.0, 0.4)
     """
     return crps.tpexponential(scale1, scale2, location, observation, backend=backend)
+
+
+def crps_tpnorm(
+    scale1: "ArrayLike",
+    scale2: "ArrayLike",
+    location: "ArrayLike",
+    observation: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the two-piece normal distribution.
+
+    It is based on the formulation from
+    [Gneiting and Thorarinsdottir (2010)](https://arxiv.org/abs/1010.2318).
+    
+    Parameters
+    ----------
+    scale1: ArrayLike
+        First scale parameter of the forecast two-piece exponential distribution.
+    scale2: ArrayLike
+        Second scale parameter of the forecast two-piece exponential distribution.
+    location: ArrayLike
+        Location parameter of the forecast two-piece exponential distribution.
+    observation: ArrayLike
+        The observed values.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between 2pNorm(scale1, scale2, location) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.tpnorm(1.0, 1.0, 0.0, 0.4)
+    """
+    return crps.tpnorm(scale1, scale2, location, observation, backend=backend)
 
 
 __all__ = [
@@ -777,11 +815,12 @@ __all__ = [
     "crps_gamma",
     "crps_laplace",
     "crps_logistic",
-    "crps_loglogistic"
+    "crps_loglogistic",
     "crps_lognormal",
     "crps_normal",
     "crps_poisson",
     "crps_uniform",
     "crps_t",
-    "crps_tpexponential"
+    "crps_tpexponential",
+    "crps_tpnorm"
 ]

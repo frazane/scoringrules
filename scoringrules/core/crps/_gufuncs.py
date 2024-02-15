@@ -443,12 +443,21 @@ def _crps_t_ufunc(df: float, location: float, scale: float, observation: float) 
     out: float = ω * (2 * F_nu - 1) + 2 * f_nu * (df + ω**2) / (df - 1) - (2 * np.sqrt(df) * beta(1 / 2, df - 1)) / ((df - 1) * beta(1 / 2, df / 2)**2)
     return out
 
+
 @vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
 def _crps_tpexponential_ufunc(scale1: float, scale2: float, location: float, observation: float) -> float:
     ω = (observation - location)
     scalei = scale2
     if ω < 0: scalei = scale1
     out: float = np.abs(ω) + 2 * (scalei**2) * math.exp( - np.abs(ω) / scalei) / (scale1 + scale2) - 2 * (scalei**2) / (scale1 + scale2) + (scale1**3 + scale2**3) / (2 * (scale1 + scale2)**2)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _crps_tpnorm_ufunc(scale1: float, scale2: float, location: float, observation: float) -> float:
+    crps1 = _crps_gtcnorm_ufunc(-float("inf"), 0, 0, scale2 / (scale1 + scale2), np.minimum(0, observation - location) / scale1)
+    crps2 = _crps_gtcnorm_ufunc(0, float("inf"), scale2 / (scale1 + scale2), 0, np.maximum(0, observation - location) / scale2)
+    out: float = scale1 * crps1 + scale2 * crps2
     return out
 
 
@@ -484,4 +493,5 @@ __all__ = [
     "_crps_uniform_ufunc",
     "_crps_t_ufunc",
     "_crps_tpexponential_ufunc",
+    "_crps_tpnorm_ufunc",
 ]

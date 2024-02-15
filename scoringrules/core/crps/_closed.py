@@ -170,3 +170,13 @@ def tpexponential(
     if ω < 0: scalei = scale1
     s = B.abs(ω) + 2 * (scalei**2) *B.exp( - B.abs(ω) / scalei) / (scale1 + scale2) - 2 * (scalei**2) / (scale1 + scale2) + (scale1**3 + scale2**3) / (2 * (scale1 + scale2)**2)
     return s
+
+def tpnorm(
+    scale1: "ArrayLike", scale2: "ArrayLike", location: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the two-piece normal distribution."""
+    B = backends.active if backend is None else backends[backend]
+    scale1, scale2, location, obs = map(B.asarray, (scale1, scale2, location, obs))
+    crps1 = gtcnorm(-float("inf"), 0, 0, scale2 / (scale1 + scale2), B.minimum(0, obs - location) / scale1)
+    crps2 = gtcnorm(0, float("inf"), scale2 / (scale1 + scale2), 0, B.maximum(0, obs - location) / scale2)
+    return scale1 * crps1 + scale2 * crps2

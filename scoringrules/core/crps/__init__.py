@@ -12,6 +12,7 @@ from ._closed import (
     uniform,
     t,
     tpexponential,
+    tpnorm,
 )
 from ._gufuncs import estimator_gufuncs
 
@@ -31,5 +32,6 @@ __all__ = [
     "uniform",
     "t",
     "tpexponential",
+    "tpnorm",
     "estimator_gufuncs",
 ]
