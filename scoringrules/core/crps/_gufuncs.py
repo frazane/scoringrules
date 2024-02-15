@@ -369,6 +369,28 @@ def _gev_cdf(x: float, shape: float) -> float:
             out: float = 1.0
     return out
 
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
+def _gpd_cdf(x: float, shape: float) -> float:
+    """Cumulative distribution function for the standard GPD distribution."""
+    if shape == 0.0:
+        if x < 0:
+            out: float = 0.0
+        else:
+            out: float = 1 - math.exp(-x)
+    elif shape > 0.0:
+        if x < 0:
+            out: float = 0.0
+        else:
+            out: float = (1 - (1 + shape * x)**(- 1 / shape))
+    else:
+        if x < 0:
+            out: float = 0.0
+        elif x < 1 / np.abs(shape):
+            out: float = (1 - (1 + shape * x)**(- 1 / shape))
+        else:
+            out: float = 1.0
+    return out
+
 @vectorize(["float32(float32, float32)", "float64(float64, float64)"])
 def _crps_exponential_ufunc(rate: float, observation: float) -> float:
     out: float = np.abs(observation) - (2 * _exp_cdf(observation, rate) / rate) + 1 / (2 * rate)
@@ -421,7 +443,15 @@ def _crps_gev_ufunc(shape: float, location: float, scale: float, observation: fl
         s = ω * (2 * F_xi - 1) - 2 * G_xi - (1 - (2 - 2**shape) * np.gamma(1 - shape)) / shape
     else:
         s = -ω - 2 * np.Ei(math.log(F_xi)) + EULERMASCHERONI - math.log(2)
-    out: float = s
+    out: float = scale * s
+    return out
+
+@vectorize(["float32(float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64)"])
+def _crps_gpd_ufunc(shape: float, location: float, scale: float, mass: float, observation: float) -> float:
+    ω = (observation - location) / scale
+    F_xi = _gev_cdf(ω, shape)
+    s = np.abs(ω) - 2 * (1 - mass) * (1 - (1 - F_xi)**(1 - shape)) / (1 - shape) + ((1 - mass)**2) / (2 - shape)
+    out: float = scale * s
     return out
 
 
@@ -548,6 +578,7 @@ __all__ = [
     "_crps_exponentialM_ufunc",
     "_crps_gamma_ufunc",
     "_crps_gev_ufunc",
+    "_crps_gpd_ufunc",
     "_crps_laplace_ufunc",
     "_crps_logistic_ufunc",
     "_crps_loglaplace_ufunc",

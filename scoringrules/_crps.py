@@ -501,6 +501,55 @@ def crps_gev(
     return crps.gev(shape, location, scale, observation, backend=backend)
 
 
+def crps_gpd(
+    shape: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    mass: "ArrayLike",
+    observation: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the generalised pareto distribution (GPD).
+    
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F_{M, \xi}, y) = |y| - \frac{2 (1 - M)}{1 - \xi} \left( 1 - (1 - F_{\xi}(y))^{1 - \xi} \right) + \frac{(1 - M)^{2}}{2 - \xi}, $$
+
+    $$ \mathrm{CRPS}(F_{M, \xi, \mu, \sigma}, y) = \sigma \mathrm{CRPS} \left( F_{M, \xi}, \frac{y - \mu}{\sigma} \right), $$
+
+    where $F_{M, \xi, \mu, \sigma}$ is the GPD distribution function with shape parameter $\xi < 1$,
+    location parameter $\mu$, scale parameter $\sigma > 0$, and point mass $M \in [0, 1]$ at the lower
+    boundary. $F_{M, \xi} = F_{M, \xi, 0, 1}$.
+   
+    Parameters
+    ----------
+    shape: ArrayLike
+        Shape parameter of the forecast GPD distribution.
+    location: ArrayLike
+        Location parameter of the forecast GPD distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast GPD distribution.
+    mass: ArrayLike
+        Mass parameter at the lower boundary of the forecast GPD distribution.
+    observation: ArrayLike
+        The observed values.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between GPD(shape, location, scale, mass) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.gpd(1.0, 0.0, 1.0, 0.0, 0.4)
+    """
+    return crps.gpd(shape, location, scale, mass, observation, backend=backend)
+
+
 def crps_laplace(
     location: "ArrayLike",
     scale: "ArrayLike",
@@ -965,6 +1014,7 @@ __all__ = [
     "crps_exponentialM",
     "crps_gamma",
     "crps_gev",
+    "crps_gpd",
     "crps_laplace",
     "crps_logistic",
     "crps_loglaplace",

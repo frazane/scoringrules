@@ -11,7 +11,8 @@ from scoringrules.core.stats import (
     _pois_pdf,
     _t_cdf,
     _t_pdf,
-    _gev_cdf
+    _gev_cdf,
+    _gpd_cdf
 )
 
 if tp.TYPE_CHECKING:
@@ -92,6 +93,22 @@ def gev(
     s0 = -ω - 2 * B.Ei(B.log(F_xi)) + EULERMASCHERONI - B.log(2)
     spm = ω * (2 * F_xi - 1) - 2 * G_xi - (1 - (2 - 2**shape) * B.gamma(1 - shape)) / shape
     s = B.iszero(shape) * s0 + (1 - B.iszero(shape)) * spm
+    return scale * s
+
+def gpd(
+    shape: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    mass: "ArrayLike",
+    obs: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the GPD distribution."""
+    B = backends.active if backend is None else backends[backend]
+    shape, location, scale, mass, obs = map(B.asarray, (shape, location, scale, mass, obs))
+    ω = (obs - location) / scale
+    F_xi = _gpd_cdf(ω, shape)
+    s = B.abs(ω) - 2 * (1 - mass) * (1 - (1 - F_xi)**(1 - shape)) / (1 - shape) + ((1 - mass)**2) / (2 - shape) 
     return scale * s
 
 def laplace(
