@@ -375,6 +375,14 @@ def _crps_exponential_ufunc(rate: float, observation: float) -> float:
     return out
 
 
+@vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _crps_exponentialM_ufunc(mass: float, location: float, scale: float, observation: float) -> float:
+    ω = (observation - location) / scale
+    F_y = np.maximum(1 - math.exp(-ω), 0)
+    out: float = np.abs(ω) - 2 * (1 - mass) * F_y + ((1 - mass)**2) / 2
+    return out
+
+
 @vectorize(["float32(float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64)"])
 def _crps_beta_ufunc(shape1: float, shape2: float, lower: float, upper:float, observation: float) -> float:
     obs_std = (observation - lower) / (upper - lower)
@@ -537,6 +545,7 @@ __all__ = [
     "_crps_ensemble_qd_gufunc",
     "_crps_beta_ufunc",
     "_crps_exponential_ufunc",
+    "_crps_exponentialM_ufunc",
     "_crps_gamma_ufunc",
     "_crps_gev_ufunc",
     "_crps_laplace_ufunc",

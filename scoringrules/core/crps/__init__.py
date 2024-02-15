@@ -2,6 +2,7 @@ from ._approx import ensemble, ow_ensemble, vr_ensemble
 from ._closed import (
     beta,
     exponential,
+    exponentialM,
     gamma,
     gev,
     laplace,
@@ -24,6 +25,7 @@ __all__ = [
     "vr_ensemble",
     "beta",
     "exponential",
+    "exponentialM",
     "gamma",
     "gev",
     "laplace",

@@ -37,7 +37,6 @@ def beta(
     s = obs_std * (2 * F_ab - 1) + (shape1 / (shape1 + shape2)) * ( 1 - 2 * F_a1b - bet_rat)
     return s
 
-
 def exponential(
     rate: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
@@ -45,6 +44,17 @@ def exponential(
     B = backends.active if backend is None else backends[backend]
     rate, obs = map(B.asarray, (rate, obs))
     s = B.abs(obs) - (2 * _exp_cdf(obs, rate, backend=backend) / rate) + 1 / (2 * rate)
+    return s
+
+def exponentialM(
+    mass: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the standard exponential distribution with a point mass at the boundary."""
+    B = backends.active if backend is None else backends[backend]
+    mass, location, scale, obs = map(B.asarray, (mass, location, scale, obs))
+    ω = (obs - location) / scale
+    F_y = B.maximum(1 - B.exp(-ω), 0)
+    s = B.abs(ω) - 2 * (1 - mass) * F_y + ((1 - mass)**2) / 2
     return s
 
 def gamma(

@@ -353,6 +353,57 @@ def crps_exponential(
     return crps.exponential(rate, observation, backend=backend)
 
 
+def crps_exponentialM(
+    mass: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    observation: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the standard exponential distribution with a point mass at the boundary.
+    
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F_{M}, y) = |y| - 2 (1 - M) F(y) + \frac{(1 - M)**2}{2}, $$
+    
+    $$ \mathrm{CRPS}(F_{M, \mu, \sigma}, y) = \sigma \mathrm{CRPS} \left( F_{M}, \frac{y - \mu}{\sigma} \right), $$
+
+    where $F_{M, \mu, \sigma}$ is standard exponential distribution function generalised
+    using a location parameter $\mu$ and scale parameter $\sigma < 0$ and a point mass $M \in [0, 1]$
+    at $\mu$, $F_{M} = F_{M, 0, 1}$, and
+    
+    $$ F(y) = 1 - \exp(-y) $$
+    
+    for $y \geq 0$, and 0 otherwise.
+
+
+    Parameters
+    ----------
+    mass: ArrayLike
+        Mass parameter of the forecast exponential distribution.
+    location: ArrayLike
+        Location parameter of the forecast exponential distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast exponential distribution.
+    observation: ArrayLike
+        The observed values.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between ExpM(mass, location, scale) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.exponentialM(0.2, 0.0, 1.0, 0.4)
+    """
+    return crps.exponentialM(mass, location, scale, observation, backend=backend)
+
+
 def crps_gamma(
     shape: "ArrayLike",
     rate: "ArrayLike",
@@ -911,6 +962,7 @@ __all__ = [
     "vrcrps_ensemble",
     "crps_beta",
     "crps_exponential",
+    "crps_exponentialM",
     "crps_gamma",
     "crps_gev",
     "crps_laplace",
