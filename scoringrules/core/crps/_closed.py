@@ -84,7 +84,7 @@ def gev(
     B = backends.active if backend is None else backends[backend]
     shape, location, scale, obs = map(B.asarray, (shape, location, scale, obs))
     ω = (obs - location) / scale
-    F_xi = _gev_cdf(ω, shape)
+    F_xi = _gev_cdf(ω, shape, backend=backend)
     G_p = B.ispositive(ω + 1 / shape) * (F_p / shape) + B.gammauinc(1 - shape, - B.log(F_p)) / shape
     G_m = B.isnegative(ω + 1 / shape) * (F_p / shape) + B.gammauinc(1 - shape, - B.log(F_p)) / shape + \
         (1 - B.isnegative(ω + 1 / shape)) * (B.gamma(1 - shape) - 1) / shape
@@ -107,9 +107,89 @@ def gpd(
     B = backends.active if backend is None else backends[backend]
     shape, location, scale, mass, obs = map(B.asarray, (shape, location, scale, mass, obs))
     ω = (obs - location) / scale
-    F_xi = _gpd_cdf(ω, shape)
+    F_xi = _gpd_cdf(ω, shape, backend=backend)
     s = B.abs(ω) - 2 * (1 - mass) * (1 - (1 - F_xi)**(1 - shape)) / (1 - shape) + ((1 - mass)**2) / (2 - shape) 
     return scale * s
+
+def gtclogistic(
+    location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the generalised truncated and censored logistic distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mu, sigma, lower, upper, lmass, umass, obs = map(B.asarray, (location, scale, lower, upper, lmass, umass, obs))
+    ω = (obs - mu) / sigma
+    u = (upper - mu) / sigma
+    l = (lower - mu) / sigma
+    z = B.minimum(B.maximum(ω, l), u)
+    F_u = _logis_cdf(u, backend=backend)
+    F_l = _logis_cdf(l, backend=backend)
+    F_mu = _logis_cdf(-u, backend=backend)
+    F_ml = _logis_cdf(-l, backend=backend)
+    F_mz = _logis_cdf(-z, backend=backend)
+    G_u = u * F_u + B.log(F_mu)
+    G_l = l * F_l + B.log(F_ml)
+    H_u = F_u - u * F_u**2 + (1 - 2 * F_u) * B.log(F_mu)
+    H_l = F_l - l * F_l**2 + (1 - 2 * F_l) * B.log(F_ml)
+    c = (1 - lmass + umass) / (F_u - F_l)
+    s1 = B.abs(ω - z) + u * umass**2 - l * lmass**2
+    s2 = c * z * ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass)
+    s3 = c * (2 * B.log(F_mz) - 2 * G_u * umass - 2 * G_l * lmass)
+    s4 = c**2 * (H_u - H_l)
+    return sigma * (s1 - s2 - s3 - s4)
+
+def gtcnormal(
+    location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the generalised truncated and censored normal distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mu, sigma, lower, upper, lmass, umass, obs = map(B.asarray, (location, scale, lower, upper, lmass, umass, obs))
+    ω = (obs - mu) / sigma
+    u = (upper - mu) / sigma
+    l = (lower - mu) / sigma
+    z = B.minimum(B.maximum(ω, l), u)
+    F_u = _norm_cdf(u, backend=backend)
+    F_l = _norm_cdf(l, backend=backend)
+    F_z = _norm_cdf(z, backend=backend)
+    F_u2 = _norm_cdf(u * B.sqrt(2), backend=backend)
+    F_l2 = _norm_cdf(l * B.sqrt(2), backend=backend)
+    f_u = _norm_pdf(u, backend=backend)
+    f_l = _norm_pdf(l, backend=backend)
+    f_z = _norm_pdf(z, backend=backend)
+    c = (1 - lmass + umass) / (F_u - F_l)
+    s1 = B.abs(ω - z) + u * umass**2 - l * lmass**2
+    s2 = c * z * (2 * F_z * - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass))
+    s3 = c * (2 * f_z - 2 * f_u * umass - 2 * f_l * lmass)
+    s4 = c**2 * (F_u2 - F_l2) / B.sqrt(B.pi)
+    return sigma * (s1 + s2 + s3 - s4)
+
+def gtct(
+    df: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the generalised truncated and censored t distribution."""
+    B = backends.active if backend is None else backends[backend]
+    df, mu, sigma, lower, upper, lmass, umass, obs = map(B.asarray, (df, location, scale, lower, upper, lmass, umass, obs))
+    ω = (obs - mu) / sigma
+    u = (upper - mu) / sigma
+    l = (lower - mu) / sigma
+    z = B.minimum(B.maximum(ω, l), u)
+    F_u = _t_cdf(u, df, backend=backend)
+    F_l = _t_cdf(l, df, backend=backend)
+    F_z = _t_cdf(z, df, backend=backend)
+    f_u = _t_cdf(u, df, backend=backend)
+    f_l = _t_pdf(l, df, backend=backend)
+    f_z = _t_pdf(z, df, backend=backend)
+    G_u = - f_u * (df + u**2) / (df - 1)
+    G_l = - f_l * (df + l**2) / (df - 1)
+    G_z = - f_z * (df + z**2) / (df - 1)
+    H_u = ((u / B.abs(u)) * B.betainc(1 / 2, df - 1 / 2, (u**2) / (df + u**2)) + 1) / 2
+    H_l = ((l / B.abs(l))  * B.betainc(1 / 2, df - 1 / 2, (l**2) / (df + l**2)) + 1) / 2
+    Bbar = (2 * B.sqrt(df) / (df - 1)) * B.beta(1 / 2, df - 1 / 2) / B.beta(1 / 2, df / 2)
+    c = (1 - lmass + umass) / (F_u - F_l)
+    s1 = B.abs(ω - z) + u * umass**2 - l * lmass**2
+    s2 = c * z * (2 * F_z - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass))
+    s3 = 2 * c * (G_z - G_u * umass - G_l * lmass)
+    s4 = c**2 * Bbar * (H_u - H_l)
+    return sigma * (s1 + s2 - s3 - s4)
 
 def laplace(
     location: "ArrayLike", scale: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None

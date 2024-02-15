@@ -446,13 +446,97 @@ def _crps_gev_ufunc(shape: float, location: float, scale: float, observation: fl
     out: float = scale * s
     return out
 
+
 @vectorize(["float32(float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64)"])
 def _crps_gpd_ufunc(shape: float, location: float, scale: float, mass: float, observation: float) -> float:
     ω = (observation - location) / scale
-    F_xi = _gev_cdf(ω, shape)
+    F_xi = _gpd_cdf(ω, shape)
     s = np.abs(ω) - 2 * (1 - mass) * (1 - (1 - F_xi)**(1 - shape)) / (1 - shape) + ((1 - mass)**2) / (2 - shape)
     out: float = scale * s
     return out
+
+
+@vectorize(["float32(float32, float32, float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64, float64, float64)"])
+def _crps_gtclogistic_ufunc(location: float, scale: float, lower: float, upper: float, lmass: float, umass: float, observation: float) -> float:
+    ω = (observation - location) / scale
+    u = (upper - location) / scale
+    l = (lower - location) / scale
+    z = np.minimum(np.maximum(ω, l), u)
+    F_u = _logis_cdf(u)
+    F_l = _logis_cdf(l)
+    F_mu = _logis_cdf(-u)
+    F_ml = _logis_cdf(-l)
+    F_mz = _logis_cdf(-z)
+    G_u = u * F_u + math.log(F_mu)
+    G_l = l * F_l + math.log(F_ml)
+    H_u = F_u - u * F_u**2 + (1 - 2 * F_u) * math.log(F_mu)
+    H_l = F_l - l * F_l**2 + (1 - 2 * F_l) * math.log(F_ml)
+    c = (1 - lmass + umass) / (F_u - F_l)
+    s1 = np.abs(ω - z) + u * umass**2 - l * lmass**2
+    s2 = c * z * ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass)
+    s3 = c * (2 * math.log(F_mz) - 2 * G_u * umass - 2 * G_l * lmass)
+    s4 = c**2 * (H_u - H_l)
+    out: float = scale * (s1 - s2 - s3 - s4)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64, float64, float64)"])
+def _crps_gtcnormal_ufunc(location: float, scale: float, lower: float, upper: float, lmass: float, umass: float, observation: float) -> float:
+    ω = (observation - location) / scale
+    u = (upper - location) / scale
+    l = (lower - location) / scale
+    z = np.minimum(np.maximum(ω, l), u)
+    F_u = _norm_cdf(u)
+    F_l = _norm_cdf(l)
+    F_z = _norm_cdf(z)
+    F_u2 = _norm_cdf(u * np.sqrt(2))
+    F_l2 = _norm_cdf(l * np.sqrt(2))
+    f_u = _norm_pdf(u)
+    f_l = _norm_pdf(l)
+    f_z = _norm_pdf(z)
+    c = (1 - lmass + umass) / (F_u - F_l)
+    s1 = np.abs(ω - z) + u * umass**2 - l * lmass**2
+    s2 = c * z * (2 * F_z * - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass))
+    s3 = c * (2 * f_z - 2 * f_u * umass - 2 * f_l * lmass)
+    s4 = c**2 * (F_u2 - F_l2) / np.sqrt(np.pi)
+    out: float = scale * (s1 + s2 + s3 - s4)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64, float64, float64, float64)"])
+def _crps_gtclogistic_ufunc(df: float, location: float, scale: float, lower: float, upper: float, lmass: float, umass: float, observation: float) -> float:
+    ω = (observation - location) / scale
+    u = (upper - location) / scale
+    l = (lower - location) / scale
+    z = np.minimum(np.maximum(ω, l), u)
+    F_u = _t_cdf(u, df)
+    F_l = _t_cdf(l, df)
+    F_z = _t_cdf(z, df)
+    f_u = _t_cdf(u, df)
+    f_l = _t_pdf(l, df)
+    f_z = _t_pdf(z, df)
+    G_u = - f_u * (df + u**2) / (df - 1)
+    G_l = - f_l * (df + l**2) / (df - 1)
+    G_z = - f_z * (df + z**2) / (df - 1)
+    H_u = ((u / np.abs(u)) * betainc(1 / 2, df - 1 / 2, (u**2) / (df + u**2)) + 1) / 2
+    H_l = ((l / np.abs(l))  * betainc(1 / 2, df - 1 / 2, (l**2) / (df + l**2)) + 1) / 2
+    Bbar = (2 * np.sqrt(df) / (df - 1)) * beta(1 / 2, df - 1 / 2) / beta(1 / 2, df / 2)
+    c = (1 - lmass + umass) / (F_u - F_l)
+    s1 = np.abs(ω - z) + u * umass**2 - l * lmass**2
+    s2 = c * z * (2 * F_z - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass))
+    s3 = 2 * c * (G_z - G_u * umass - G_l * lmass)
+    s4 = c**2 * Bbar * (H_u - H_l)
+    out: float = scale * (s1 + s2 - s3 - s4)
+    return out
+
+
+def gtclogistic(
+    location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the generalised truncated and censored logistic distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mu, sigma, lower, upper, lmass, umass, obs = map(B.asarray, (location, scale, lower, upper, lmass, umass, obs))
+ 
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
@@ -565,6 +649,7 @@ estimator_gufuncs = {
     "vrnrg": _vrcrps_ensemble_nrg_gufunc,
 }
 
+
 __all__ = [
     "_crps_ensemble_akr_circperm_gufunc",
     "_crps_ensemble_akr_gufunc",
@@ -579,6 +664,9 @@ __all__ = [
     "_crps_gamma_ufunc",
     "_crps_gev_ufunc",
     "_crps_gpd_ufunc",
+    "_crps_gtclogistic_ufunc",
+    "_crps_gtcnormal_ufunc",
+    "_crps_gtct_ufunc",
     "_crps_laplace_ufunc",
     "_crps_logistic_ufunc",
     "_crps_loglaplace_ufunc",
