@@ -8,6 +8,7 @@ from scoringrules._crps import (
     crps_gamma,
     crps_laplace,
     crps_logistic,
+    crps_loglaplace,
     crps_loglogistic,
     crps_lognormal,
     crps_normal,
@@ -48,6 +49,7 @@ __all__ = [
     "crps_gamma",
     "crps_laplace",
     "crps_logistic",
+    "crps_loglaplace",
     "crps_loglogistic"
     "crps_lognormal",
     "crps_normal",

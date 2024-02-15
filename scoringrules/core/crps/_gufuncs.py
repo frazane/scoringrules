@@ -392,6 +392,20 @@ def _crps_logistic_ufunc(mu: float, sigma: float, observation: float) -> float:
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_loglaplace_ufunc(locationlog: float, scalelog: float, observation: float) -> float:
+    if observation <= 0:
+        F_ls = 0
+    elif observation < math.exp(locationlog):
+        F_ls = math.exp((math.log(observation) - locationlog) / scalelog) / 2
+        A = (1 - (2 * F_ls)**(1 + scalelog)) / (1 + scalelog)
+    else:
+        F_ls = 1 - math.exp((math.log(observation) - locationlog) / scalelog) / 2
+        A = (- (2 * (1 - F_ls))**(1 - scalelog)) / (1 - scalelog)
+    out: float = observation * (2 * F_ls - 1) + math.exp(locationlog) * (A + scalelog / (4 - scalelog**2))
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _crps_loglogistic_ufunc(mulog: float, sigmalog: float, observation: float) -> float:
     F_ms = 1 / (1 + np.exp( - (np.log(observation) - mulog) / sigmalog))
     b = beta(1 + sigmalog, 1 - sigmalog)
@@ -486,6 +500,7 @@ __all__ = [
     "_crps_gamma_ufunc",
     "_crps_laplace_ufunc",
     "_crps_logistic_ufunc",
+    "_crps_loglaplace_ufunc",
     "_crps_loglogistic_ufunc",
     "_crps_lognormal_ufunc",
     "_crps_normal_ufunc",

@@ -79,6 +79,24 @@ def logistic(
     ω = (obs - mu) / sigma
     return sigma * (ω - 2 * B.log(_logis_cdf(ω, backend=backend)) - 1)
 
+def loglaplace(
+    locationlog: "ArrayLike",
+    scalelog: "ArrayLike",
+    obs: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the log-laplace distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mulog, sigmalog, obs = map(B.asarray, (locationlog, scalelog, obs))
+    d = obs - B.exp(mulog)
+    F_ls = B.ispositive(d) * B.exp((B.log(obs) - mulog) / sigmalog) / 2 + \
+        (1 - B.ispositive(d)) * (1 - B.exp((B.log(obs) - mulog) / sigmalog) / 2)
+    F_ls = B.isnan(F_ls) * 0 + (1 - B.isnan(F_ls)) * F_ls 
+    A = B.ispositive(d) * (1 - (2 * F_ls)**(1 + sigmalog)) / (1 + sigmalog) + \
+        (1 - B.ispositive(d)) * (- (2 * (1 - F_ls))**(1 - sigmalog)) / (1 - sigmalog)    
+    s = obs * (2 * F_ls - 1) + B.exp(locationlog) * (A + sigmalog / (4 - sigmalog**2))
+    return s
+
 def loglogistic(
     mulog: "ArrayLike",
     sigmalog: "ArrayLike",

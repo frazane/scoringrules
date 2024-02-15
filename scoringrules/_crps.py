@@ -475,6 +475,51 @@ def crps_logistic(
     return crps.logistic(mu, sigma, observation, backend=backend)
 
 
+def crps_loglaplace(
+    locationlog: "ArrayLike",
+    scalelog: "ArrayLike",
+    observation: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the log-laplace distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F_{\mu, \sigma}, y) = y (2 F_{\mu, \sigma}(y) - 1) + \exp(\mu) \left( \frac{\sigma}{4 - \sigma^{2}} + A(y) \right), $$
+
+    where $F_{\mu, \sigma}$ is the CDF of the log-laplace distribution with location parameter $\mu$ 
+    and scale parameter $\sigma \in (0, 1)$, and
+    
+    $$ A(y) = \frac{1}{1 + \sigma} \left( 1 - (2 F_{\mu, \sigma}(y) - 1)^{1 + \sigma} \right), $$
+    if $y < \exp{\mu}$, and 
+    $$ A(y) = \frac{-1}{1 - \sigma} \left( 1 - (2 (1 - F_{\mu, \sigma}(y)))^{1 - \sigma} \right), $$
+    if $y \ge \exp{\mu}$. 
+    
+    Parameters
+    ----------
+    locationlog: ArrayLike
+        Location parameter of the forecast log-laplace distribution.
+    scalelog: ArrayLike
+        Scale parameter of the forecast log-laplace distribution.
+    observation: ArrayLike
+        Observed values.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS for the Loglaplace(locationlog, scalelog) forecasts given the observations.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.loglaplace(0.1, 0.4, 0.0)
+    """
+    return crps.loglaplace(locationlog, scalelog, observation, backend=backend)
+
+
 def crps_loglogistic(
     mulog: "ArrayLike",
     sigmalog: "ArrayLike",
@@ -815,6 +860,7 @@ __all__ = [
     "crps_gamma",
     "crps_laplace",
     "crps_logistic",
+    "crps_loglaplace",
     "crps_loglogistic",
     "crps_lognormal",
     "crps_normal",
