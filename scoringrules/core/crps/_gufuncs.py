@@ -5,6 +5,7 @@ from numba import guvectorize, njit, vectorize
 
 INV_SQRT_PI = 1 / np.sqrt(np.pi)
 EPSILON = 1e-6
+EULERMASCHERONI = np.euler_gamma
 
 
 @guvectorize(
@@ -351,6 +352,23 @@ def _t_pdf(x: float, df: float) -> float:
     out: float = ((1 + x**2 / df)**(- (df + 1) / 2)) / (np.sqrt(df) * beta(1 / 2, df / 2))
     return out
 
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
+def _gev_cdf(x: float, shape: float) -> float:
+    """Cumulative distribution function for the standard GEV distribution."""
+    if shape == 0.0:
+        out: float = math.exp(- math.exp(-x))
+    elif shape > 0.0:
+        if x > (- 1 / shape):
+            out: float = math.exp(-(1 + shape * x)**(-1 / shape))
+        else:
+            out: float = 0.0
+    else:
+        if x < (- 1 / shape):
+            out: float = math.exp(-(1 + shape * x)**(-1 / shape))
+        else:
+            out: float = 1.0
+    return out
+
 @vectorize(["float32(float32, float32)", "float64(float64, float64)"])
 def _crps_exponential_ufunc(rate: float, observation: float) -> float:
     out: float = np.abs(observation) - (2 * _exp_cdf(observation, rate) / rate) + 1 / (2 * rate)
@@ -374,6 +392,28 @@ def _crps_gamma_ufunc(shape: float, rate: float, observation: float) -> float:
     F_ab = _gamma_cdf(observation, shape, rate)
     F_ab1 = _gamma_cdf(observation, shape + 1, rate)
     out: float = observation * (2 * F_ab - 1) + (shape / rate) * (2 * F_ab1 - 1) - 1 / (rate * beta(0.5, shape))
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _crps_gev_ufunc(shape: float, location: float, scale: float, observation: float) -> float:
+    ω = (observation - location) / scale
+    F_xi = _gev_cdf(ω, shape)
+    if shape > 0:
+        if ω > (- 1 / shape):
+            G_xi = (F_xi / shape) + np.gammauinc(1 - shape, - math.log(F_xi)) / shape
+        else: 
+            G_xi = 0
+        s = ω * (2 * F_xi - 1) - 2 * G_xi - (1 - (2 - 2**shape) * np.gamma(1 - shape)) / shape
+    elif shape < 0: 
+        if ω < (- 1 / shape):
+            G_xi = (F_xi / shape) + np.gammauinc(1 - shape, - math.log(F_xi)) / shape
+        else: 
+            G_xi = (np.gamma(1 - shape) - 1) / shape
+        s = ω * (2 * F_xi - 1) - 2 * G_xi - (1 - (2 - 2**shape) * np.gamma(1 - shape)) / shape
+    else:
+        s = -ω - 2 * np.Ei(math.log(F_xi)) + EULERMASCHERONI - math.log(2)
+    out: float = s
     return out
 
 
@@ -498,6 +538,7 @@ __all__ = [
     "_crps_beta_ufunc",
     "_crps_exponential_ufunc",
     "_crps_gamma_ufunc",
+    "_crps_gev_ufunc",
     "_crps_laplace_ufunc",
     "_crps_logistic_ufunc",
     "_crps_loglaplace_ufunc",

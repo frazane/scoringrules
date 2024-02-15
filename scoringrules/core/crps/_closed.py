@@ -10,7 +10,8 @@ from scoringrules.core.stats import (
     _pois_cdf,
     _pois_pdf,
     _t_cdf,
-    _t_pdf
+    _t_pdf,
+    _gev_cdf
 )
 
 if tp.TYPE_CHECKING:
@@ -61,6 +62,28 @@ def gamma(
     s = obs * (2 * F_ab - 1) + (shape / rate) * (2 * F_ab1 - 1) - 1 / (rate * B.beta(0.5, shape))
     return s
 
+def gev(
+    shape: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    obs: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the GEV distribution."""
+    B = backends.active if backend is None else backends[backend]
+    shape, location, scale, obs = map(B.asarray, (shape, location, scale, obs))
+    ω = (obs - location) / scale
+    F_xi = _gev_cdf(ω, shape)
+    G_p = B.ispositive(ω + 1 / shape) * (F_p / shape) + B.gammauinc(1 - shape, - B.log(F_p)) / shape
+    G_m = B.isnegative(ω + 1 / shape) * (F_p / shape) + B.gammauinc(1 - shape, - B.log(F_p)) / shape + \
+        (1 - B.isnegative(ω + 1 / shape)) * (B.gamma(1 - shape) - 1) / shape
+    G_xi = B.ispositive(shape) * G_p + B.isnegative(shape) * G_m
+    EULERMASCHERONI = 0.57721566490153286060651209008240243
+    s0 = -ω - 2 * B.Ei(B.log(F_xi)) + EULERMASCHERONI - B.log(2)
+    spm = ω * (2 * F_xi - 1) - 2 * G_xi - (1 - (2 - 2**shape) * B.gamma(1 - shape)) / shape
+    s = B.iszero(shape) * s0 + (1 - B.iszero(shape)) * spm
+    return scale * s
+
 def laplace(
     location: "ArrayLike", scale: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
@@ -109,7 +132,7 @@ def loglogistic(
     F_ms = 1 / (1 + B.exp( - (B.log(obs) - mulog) / sigmalog))
     b = B.beta(1 + sigmalog, 1 - sigmalog)
     I = B.betainc(1 + sigmalog, 1 - sigmalog, F_ms)
-    s = obs * (2 * F_ms - 1) - B.exp(mulog) * b * (2*I + sigmalog - 1)
+    s = obs * (2 * F_ms - 1) - B.exp(mulog) * b * (2 * I + sigmalog - 1)
     return s
 
 def lognormal(

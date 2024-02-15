@@ -56,3 +56,13 @@ def _t_cdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array
     """Cumulative distribution function for the standard Student's t distribution."""
     B = backends.active if backend is None else backends[backend]
     return 1 / 2 + x * B.hypergeo(1 / 2, (df + 1) / 2, 3 / 2, - (x**2) / df) / (B.sqrt(df) * B.beta(1 / 2, df / 2))
+
+def _gev_cdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Cumulative distribution function for the standard GEV distribution."""
+    B = backends.active if backend is None else backends[backend]
+    F_0 = B.exp(- B.exp(-x))
+    F_p = B.ispositive(x + 1 / shape) * B.exp(-(1 + shape * x)**(-1 / shape))
+    F_m = B.isnegative(x + 1 / shape) * B.exp(-(1 + shape * x)**(-1 / shape)) + \
+        (1 - B.isnegative(x + 1 / shape))
+    F_xi = B.iszero(shape) * F_0 + B.ispositive(shape) * F_p + B.isnegative(shape) * F_m
+    return F_xi

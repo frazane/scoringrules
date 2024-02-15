@@ -396,6 +396,60 @@ def crps_gamma(
     return crps.gamma(shape, rate, scale, observation, backend=backend)
 
 
+def crps_gev(
+    shape: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    observation: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the generalised extreme value (GEV) distribution.
+    
+    It is based on the following formulation from
+    [Friederichs and Thorarinsdottir (2012)](doi/10.1002/env.2176):
+
+    \begin{equation}
+        \mathrm{CRPS}(F_{\xi}, y) = 
+        \begin{cases}{
+        - y - 2\text{Ei}(\log(F_{\xi}(y))) + \gamma - \log 2, \quad \text{if} \xi = 0,
+        y( 2 F_{\xi}(y) - 1) - 2 G_{\xi}(y) - \frac{1 - (2 - 2^{\xi}) \Gamma (1 - \xi)}{\xi}, \quad \text{if} \xi \neq 0,    
+        }
+    \end{equation}
+
+    $$ \mathrm{CRPS}(F_{\xi, \mu, \sigma}, y) = \sigma \mathrm{CRPS} \left( F_{\xi}, \frac{y - \mu}{\sigma} \right), $$
+
+    where $F_{\xi, \mu, \sigma}$ is the GEV distribution function with shape parameter $\xi$,
+    location parameter $\mu$ and scale parameter $\sigma > 0$, and $F_{\xi} = F_{\xi, 0, 1}$.
+   
+    $$ G_{\xi}(y) = - \frac{F_{\xi}(y)}{\xi} + \frac{\Gamma_{u} (1 - \xi, - \log F_{\xi}(y)}{\xi}, $$
+    if $y > -1/\xi$, and $G_{\xi}(y) = 0$ otherwise.
+
+    Parameters
+    ----------
+    shape: ArrayLike
+        Shape parameter of the forecast GEV distribution.
+    location: ArrayLike
+        Location parameter of the forecast GEV distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast GEV distribution.
+    observation: ArrayLike
+        The observed values.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between GEV(shape, location, scale) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.gev(1.0, 0.0, 1.0, 0.4)
+    """
+    return crps.gev(shape, location, scale, observation, backend=backend)
+
+
 def crps_laplace(
     location: "ArrayLike",
     scale: "ArrayLike",
@@ -858,6 +912,7 @@ __all__ = [
     "crps_beta",
     "crps_exponential",
     "crps_gamma",
+    "crps_gev",
     "crps_laplace",
     "crps_logistic",
     "crps_loglaplace",
