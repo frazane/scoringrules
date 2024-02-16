@@ -3,6 +3,7 @@ from importlib.metadata import version
 from scoringrules._brier import brier_score
 from scoringrules._crps import (
     crps_beta,
+    crps_binomial,
     crps_ensemble,
     crps_exponential,
     crps_exponentialM,

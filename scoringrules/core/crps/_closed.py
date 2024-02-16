@@ -12,7 +12,9 @@ from scoringrules.core.stats import (
     _t_cdf,
     _t_pdf,
     _gev_cdf,
-    _gpd_cdf
+    _gpd_cdf,
+    _binom_pdf,
+    _binom_cdf
 )
 
 if tp.TYPE_CHECKING:
@@ -36,6 +38,21 @@ def beta(
     F_a1b = B.minimum(B.maximum(I_a1b, 0), 1)
     bet_rat = 2 * B.beta(2 * shape1, 2 * shape2) / (shape1 * B.beta(shape1, shape2)**2)
     s = obs_std * (2 * F_ab - 1) + (shape1 / (shape1 + shape2)) * ( 1 - 2 * F_a1b - bet_rat)
+    return s
+
+def binomial(
+    n: "ArrayLike",
+    prob: "ArrayLike",
+    obs: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the binomial distribution."""
+    B = backends.active if backend is None else backends[backend]
+    n, prob, obs = map(B.asarray, (n, prob, obs))
+    x = B.range(0, n)
+    f_np = _binom_pdf(x, n, prob, backend=backend)
+    F_np = _binom_cdf(x, n, prob, backend=backend) 
+    s = B.sum(f_np * (B.ispositive(x - obs) - F_np + f_np / 2) * (x - obs))
     return s
 
 def exponential(

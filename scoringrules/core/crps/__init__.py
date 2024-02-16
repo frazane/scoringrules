@@ -1,6 +1,7 @@
 from ._approx import ensemble, ow_ensemble, vr_ensemble
 from ._closed import (
     beta,
+    binomial,
     exponential,
     exponentialM,
     gamma,

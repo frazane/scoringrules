@@ -391,6 +391,21 @@ def _gpd_cdf(x: float, shape: float) -> float:
             out: float = 1.0
     return out
 
+
+@njit(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _binom_pdf(x: int, n: int, prob: float) -> float:
+    """Probability density function for the binomial distribution."""
+    out: float = comb(n, x) * prob**x * (1 - prob)**x
+    return out
+
+
+@njit(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _binom_cdf(x: float, n: int, prob: float) -> float:
+    """Cumulative distribution function for the binomial distribution."""
+    out: float = betainc(n - np.floor(x), np.floor(x) + 1, 1 - prob)
+    return out
+
+
 @vectorize(["float32(float32, float32)", "float64(float64, float64)"])
 def _crps_exponential_ufunc(rate: float, observation: float) -> float:
     out: float = np.abs(observation) - (2 * _exp_cdf(observation, rate) / rate) + 1 / (2 * rate)
@@ -406,7 +421,7 @@ def _crps_exponentialM_ufunc(mass: float, location: float, scale: float, observa
 
 
 @vectorize(["float32(float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64)"])
-def _crps_beta_ufunc(shape1: float, shape2: float, lower: float, upper:float, observation: float) -> float:
+def _crps_beta_ufunc(shape1: float, shape2: float, lower: float, upper: float, observation: float) -> float:
     obs_std = (observation - lower) / (upper - lower)
     I_ab = np.betainc(shape1, shape2, obs_std)
     I_a1b = np.betainc(shape1 + 1, shape2, obs_std)
@@ -414,6 +429,16 @@ def _crps_beta_ufunc(shape1: float, shape2: float, lower: float, upper:float, ob
     F_a1b = np.minimum(np.maximum(I_a1b, 0), 1)
     bet_rat = 2 * beta(2 * shape1, 2 * shape2) / (shape1 * beta(shape1, shape2)**2)
     out: float = obs_std * (2 * F_ab - 1) + (shape1 / (shape1 + shape2)) * ( 1 - 2 * F_a1b - bet_rat)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_binomial_ufunc(n: int, prob: float, observation: float) -> float:
+    x = np.arange(0, n)
+    f_np = _binom_pdf(x, n, prob)
+    F_np = _binom_cdf(x, n, prob)
+    ind = (x > y).astype(int)
+    out: float = np.sum(f_np * (ind - F_np + f_np / 2) * (x - observation))
     return out
 
 
@@ -659,6 +684,7 @@ __all__ = [
     "_crps_ensemble_pwm_gufunc",
     "_crps_ensemble_qd_gufunc",
     "_crps_beta_ufunc",
+    "_crps_binomial_ufunc",
     "_crps_exponential_ufunc",
     "_crps_exponentialM_ufunc",
     "_crps_gamma_ufunc",
