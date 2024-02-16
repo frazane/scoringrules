@@ -406,6 +406,22 @@ def _binom_cdf(x: float, n: int, prob: float) -> float:
     return out
 
 
+@njit(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _hypergeo_pdf(x: int, m: int, n: int, k: int) -> float:
+    """Probability density function for the hypergeometric distribution."""
+    out: float = comb(m, x) * comb(n, k - x) / comb(m + n, k)
+    return out
+
+
+@njit(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _hypergeo_cdf(x: float, m: int, n: int, k: int) -> float:
+    """Cumulative distribution function for the hypergeometric distribution."""
+    out: float = _hypergeo_pdf(0, m, n, k)
+    for i in range(np.floor(x)):
+        out += _hypergeo_pdf(i, m, n, k)
+    return out
+
+
 @vectorize(["float32(float32, float32)", "float64(float64, float64)"])
 def _crps_exponential_ufunc(rate: float, observation: float) -> float:
     out: float = np.abs(observation) - (2 * _exp_cdf(observation, rate) / rate) + 1 / (2 * rate)
@@ -428,7 +444,7 @@ def _crps_beta_ufunc(shape1: float, shape2: float, lower: float, upper: float, o
     F_ab = np.minimum(np.maximum(I_ab, 0), 1)
     F_a1b = np.minimum(np.maximum(I_a1b, 0), 1)
     bet_rat = 2 * beta(2 * shape1, 2 * shape2) / (shape1 * beta(shape1, shape2)**2)
-    out: float = obs_std * (2 * F_ab - 1) + (shape1 / (shape1 + shape2)) * ( 1 - 2 * F_a1b - bet_rat)
+    out: float = obs_std * (2 * F_ab - 1) + (shape1 / (shape1 + shape2)) * (1 - 2 * F_a1b - bet_rat)
     return out
 
 
@@ -529,7 +545,7 @@ def _crps_gtcnormal_ufunc(location: float, scale: float, lower: float, upper: fl
 
 
 @vectorize(["float32(float32, float32, float32, float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64, float64, float64, float64)"])
-def _crps_gtclogistic_ufunc(df: float, location: float, scale: float, lower: float, upper: float, lmass: float, umass: float, observation: float) -> float:
+def _crps_gtct_ufunc(df: float, location: float, scale: float, lower: float, upper: float, lmass: float, umass: float, observation: float) -> float:
     ω = (observation - location) / scale
     u = (upper - location) / scale
     l = (lower - location) / scale
@@ -555,13 +571,14 @@ def _crps_gtclogistic_ufunc(df: float, location: float, scale: float, lower: flo
     return out
 
 
-def gtclogistic(
-    location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
-) -> "Array":
-    """Compute the CRPS for the generalised truncated and censored logistic distribution."""
-    B = backends.active if backend is None else backends[backend]
-    mu, sigma, lower, upper, lmass, umass, obs = map(B.asarray, (location, scale, lower, upper, lmass, umass, obs))
- 
+@vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _crps_hypergeometric_ufunc(m: int, n: int, k: int, observation: float) -> float:
+    x = np.arange(0, n)
+    f_np = _hypergeo_pdf(x, m, n, k)
+    F_np = _hypergeo_cdf(x, m, n, k)
+    ind = (x > y).astype(int)
+    out: float = np.sum(f_np * (ind - F_np + f_np / 2) * (x - observation))
+    return out
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
@@ -693,6 +710,7 @@ __all__ = [
     "_crps_gtclogistic_ufunc",
     "_crps_gtcnormal_ufunc",
     "_crps_gtct_ufunc",
+    "_crps_hypergeometric_ufunc",
     "_crps_laplace_ufunc",
     "_crps_logistic_ufunc",
     "_crps_loglaplace_ufunc",

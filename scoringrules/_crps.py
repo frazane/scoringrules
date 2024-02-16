@@ -1032,6 +1032,49 @@ def crps_ct(
     return crps.gtct(df, location, scale, lower, upper, lmass, umass, observation, backend=backend)
 
 
+def crps_hypergeometric(
+    m: "ArrayLike",
+    n: "ArrayLike",
+    k: "ArrayLike",
+    observation: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the hypergeometric distribution.
+    
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F_{m, n, k}, y) = 2 \sum_{x = 0}^{n} f_{m,n,k}(x) (1\{y < x\} - F_{m,n,k}(x) + f_{m,n,k}(x)/2) (x - y), $$
+
+    where $f_{m, n, k}$ and $F_{m, n, k}$ are the PDF and CDF of the hypergeometric distribution with 
+    population parameters $m,n = 0, 1, 2, ...$ and size parameter $k = 0, ..., m + n$. 
+
+    Parameters
+    ----------
+    m: ArrayLike
+        First population parameter of the forecast hypergeometric distribution.
+    n: ArrayLike
+        Second population parameter of the forecast hypergeometric distribution.
+    k: ArrayLike
+        Size parameter of the forecast hypergeometric distribution.
+    observation: ArrayLike
+        The observed values.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between Hypergeometric(m, n, k) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.hypergeometric(5, 5, 4, 2)
+    """
+    return crps.hypergeometric(m, n, k, observation, backend=backend)
+
+
 def crps_laplace(
     location: "ArrayLike",
     scale: "ArrayLike",
@@ -1507,6 +1550,7 @@ __all__ = [
     "crps_gtct",
     "crps_tt",
     "crps_ct",
+    "crps_hypergeometric",
     "crps_laplace",
     "crps_logistic",
     "crps_loglaplace",

@@ -14,7 +14,9 @@ from scoringrules.core.stats import (
     _gev_cdf,
     _gpd_cdf,
     _binom_pdf,
-    _binom_cdf
+    _binom_cdf,
+    _hypergeo_pdf,
+    _hypergeo_cdf
 )
 
 if tp.TYPE_CHECKING:
@@ -207,6 +209,22 @@ def gtct(
     s3 = 2 * c * (G_z - G_u * umass - G_l * lmass)
     s4 = c**2 * Bbar * (H_u - H_l)
     return sigma * (s1 + s2 - s3 - s4)
+
+def hypergeometric(
+    m: "ArrayLike",
+    n: "ArrayLike",
+    k: "ArrayLike",
+    obs: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the hypergeometric distribution."""
+    B = backends.active if backend is None else backends[backend]
+    m, n, k, obs = map(B.asarray, (m, n, k, obs))
+    x = B.range(0, n)
+    f_np = _hypergeo_pdf(x, m, n, k, backend=backend)
+    F_np = _hypergeo_cdf(x, m, n, k, backend=backend)
+    s = B.sum(f_np * (B.ispositive(x - obs) - F_np + f_np / 2) * (x - obs))
+    return s
 
 def laplace(
     location: "ArrayLike", scale: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
