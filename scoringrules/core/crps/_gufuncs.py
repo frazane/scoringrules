@@ -392,33 +392,43 @@ def _gpd_cdf(x: float, shape: float) -> float:
     return out
 
 
-@njit(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
-def _binom_pdf(x: int, n: int, prob: float) -> float:
+@njit(["float32(float32, int32, float32)", "float64(float64, int64, float64)"])
+def _binom_pdf(x: float, n: int, prob: float) -> float:
     """Probability density function for the binomial distribution."""
-    out: float = comb(n, x) * prob**x * (1 - prob)**x
+    out: float = np.isinteger(x) * comb(n, x) * prob**x * (1 - prob)**x
     return out
 
 
-@njit(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+@njit(["float32(float32, int32, float32)", "float64(float64, int64, float64)"])
 def _binom_cdf(x: float, n: int, prob: float) -> float:
     """Cumulative distribution function for the binomial distribution."""
     out: float = betainc(n - np.floor(x), np.floor(x) + 1, 1 - prob)
     return out
 
 
-@njit(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+@njit(["float32(float32, int32, int32, int32)", "float64(float64, int64, int64, int64)"])
 def _hypergeo_pdf(x: int, m: int, n: int, k: int) -> float:
     """Probability density function for the hypergeometric distribution."""
     out: float = comb(m, x) * comb(n, k - x) / comb(m + n, k)
     return out
 
 
-@njit(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+@njit(["float32(float32, int32, int32, int32)", "float64(float64, int64, int64, int64)"])
 def _hypergeo_cdf(x: float, m: int, n: int, k: int) -> float:
     """Cumulative distribution function for the hypergeometric distribution."""
     out: float = _hypergeo_pdf(0, m, n, k)
     for i in range(np.floor(x)):
         out += _hypergeo_pdf(i, m, n, k)
+    return out
+
+
+@njit(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _negbinom_cdf(x: float, n: float, prob: float) -> float:
+    """Cumulative distribution function for the negative binomial distribution."""
+    if x < 0.0:
+        out: float = 0.0
+    else:
+        out: float = betainc(n, np.floor(x + 1), prob)
     return out
 
 
@@ -629,6 +639,16 @@ def _crps_lognormal_ufunc(mulog: float, sigmalog: float, observation: float) -> 
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_negativebinomial_ufunc(n: int, prob: float, observation: float) -> float:
+    F_np = _negbinom_cdf(observation, n, prob)
+    F_n1p = _negbinom_cdf(observation - 1, n, prob)
+    F2 = hypergeo(n + 1, 1 / 2, 2, - 4 * (1 - prob) / (prob**2))
+    out: float = observation * (2 * F_np - 1) - n * (1 - prob) * (prob * (2 * F_n1p - 1) + F2) / (prob**2)
+    return out
+
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
 def _crps_normal_ufunc(mu: float, sigma: float, observation: float) -> float:
     ω = (observation - mu) / sigma
     out: float = sigma * (ω * (2 * _norm_cdf(ω) - 1) + 2 * _norm_pdf(ω) - INV_SQRT_PI)
@@ -716,6 +736,7 @@ __all__ = [
     "_crps_loglaplace_ufunc",
     "_crps_loglogistic_ufunc",
     "_crps_lognormal_ufunc",
+    "_crps_negativebinomial_ufunc",
     "_crps_normal_ufunc",
     "_crps_poisson_ufunc",
     "_crps_uniform_ufunc",
