@@ -233,6 +233,9 @@ class TensorflowBackend(ArrayBackend):
 
     def factorial(self, n: "TensorLike") -> "TensorLike":
         return tf.math.exp(tf.math.lgamma(n+1))
+    
+    def hypergeometric(self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor") -> "Tensor":
+        return tfp.math.hypergeometric.hyp2f1_small_argument(a, b, c, z)
 
 
 if __name__ == "__main__":

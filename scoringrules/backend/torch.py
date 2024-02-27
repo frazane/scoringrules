@@ -209,6 +209,9 @@ class TorchBackend(ArrayBackend):
     def factorial(self, n: "TensorLike") -> "TensorLike":
         return torch.exp(torch.lgamma(n+1))
     
+    def hypergeometric(self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor") -> "Tensor":
+        return None
+    
 
 if __name__ == "__main__":
     B = TorchBackend()

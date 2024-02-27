@@ -1,7 +1,7 @@
 import typing as tp
 
 import numpy as np
-from scipy.special import erf, beta, betainc, jv, gamma, gammainc, gammaincc, factorial
+from scipy.special import erf, beta, betainc, jv, gamma, gammainc, gammaincc, factorial, hyp2f1
 
 if tp.TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -182,6 +182,9 @@ class NumpyBackend(ArrayBackend):
 
     def factorial(self, n: "ArrayLike") -> "ArrayLike":
         return factorial(n)
+    
+    def hypergeometric(self, a: "NDArray", b: "NDArray", c: "NDArray", z: "NDArray") -> "NDArray":
+        return hyp2f1(a, b, c, z)
 
 
 class NumbaBackend(NumpyBackend):
