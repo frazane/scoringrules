@@ -1,7 +1,7 @@
 import typing as tp
 
 import numpy as np
-from scipy.special import erf, beta, betainc, jv, gamma, gammainc, gammaincc, factorial, hyp2f1, comb
+from scipy.special import erf, beta, betainc, jv, gamma, gammainc, gammaincc, factorial, hyp2f1, comb, expi
 
 if tp.TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -188,6 +188,9 @@ class NumpyBackend(ArrayBackend):
     
     def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
         return comb(n, k)
+    
+    def expi(self, x: "Array") -> "Array":
+        return expi(x)
 
 
 class NumbaBackend(NumpyBackend):

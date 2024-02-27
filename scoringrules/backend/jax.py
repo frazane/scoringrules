@@ -201,6 +201,9 @@ class JaxBackend(ArrayBackend):
     
     def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
         return jsp.special.comb(n, k)
+    
+    def expi(self, x: "Array") -> "Array":
+        return jsp.special.expi(x)
 
 if __name__ == "__main__":
     B = JaxBackend()

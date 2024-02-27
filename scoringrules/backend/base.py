@@ -226,3 +226,7 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def comb(self, n: "ArrayLike", k: "ArrayLike", /) -> "ArrayLike":
         """Calculate ``n`` choose ``k``."""
+        
+    @abc.abstractmethod
+    def expi(self, x: "Array", /) -> "Array":
+        """Calculate the exponential integral at each element ``x_i`` of the input array ``x``."""
