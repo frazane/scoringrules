@@ -17,7 +17,7 @@ Dtype = tp.TypeVar("Dtype")
 
 
 class TensorflowBackend(ArrayBackend):
-    """Tensorflow backend"""
+    """Tensorflow backend."""
 
     name = "tensorflow"
 
@@ -211,7 +211,9 @@ class TensorflowBackend(ArrayBackend):
         return tf.math.maximum(x, y)
 
     def beta(self, x: "Tensor", y: "Tensor") -> "Tensor":
-        return tf.math.exp(tf.math.lgamma(x) + tf.math.lgamma(y) - tf.math.lgamma(x + y))
+        return tf.math.exp(
+            tf.math.lgamma(x) + tf.math.lgamma(y) - tf.math.lgamma(x + y)
+        )
 
     def betainc(self, x: "Tensor", y: "Tensor", z: "Tensor") -> "Tensor":
         return tf.math.betainc(x, y, z)
@@ -232,7 +234,12 @@ class TensorflowBackend(ArrayBackend):
         return tf.math.igammac(x, y) * tf.math.exp(tf.math.lgamma(x))
 
     def factorial(self, n: "TensorLike") -> "TensorLike":
-        return tf.math.exp(tf.math.lgamma(n+1))
+        return tf.math.exp(tf.math.lgamma(n + 1))
+
+    def hypergeometric(
+        self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor"
+    ) -> "Tensor":
+        raise NotImplementedError
 
 
 if __name__ == "__main__":

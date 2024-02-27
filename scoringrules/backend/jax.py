@@ -196,6 +196,10 @@ class JaxBackend(ArrayBackend):
     def factorial(self, n: "ArrayLike") -> "ArrayLike":
         return jsp.special.factorial(n)
 
+    def hypergeometric(self, a: "Array", b: "Array", c: "Array", z: "Array"):
+        return jsp.special.hyp2f1(a, b, c, z)
+
+
 if __name__ == "__main__":
     B = JaxBackend()
     out = B.mean(jnp.ones(10))

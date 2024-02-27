@@ -1,7 +1,17 @@
 import typing as tp
 
 import numpy as np
-from scipy.special import erf, beta, betainc, jv, gamma, gammainc, gammaincc, factorial
+from scipy.special import (
+    beta,
+    betainc,
+    erf,
+    factorial,
+    gamma,
+    gammainc,
+    gammaincc,
+    hyp2f1,
+    jv,
+)
 
 if tp.TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -158,7 +168,7 @@ class NumpyBackend(ArrayBackend):
 
     def maximum(self, x: "NDArray", y: "ArrayLike") -> "NDArray":
         return np.maximum(x, y)
-    
+
     def beta(self, x: "NDArray", y: "NDArray") -> "NDArray":
         return beta(x, y)
 
@@ -174,14 +184,19 @@ class NumpyBackend(ArrayBackend):
     def gamma(self, x: "NDArray") -> "NDArray":
         return gamma(x)
 
-    def factorial(self, n: "ArrayLike") -> "ArrayLike":
-        return factorial(n)
-
     def gammalinc(self, x: "NDArray", y: "NDArray") -> "NDArray":
         return gammainc(x, y) * gamma(x)
 
     def gammauinc(self, x: "NDArray", y: "NDArray") -> "NDArray":
         return gammaincc(x, y) * gamma(x)
+
+    def factorial(self, n: "ArrayLike") -> "ArrayLike":
+        return factorial(n)
+
+    def hypergeometric(
+        self, a: "NDArray", b: "NDArray", c: "NDArray", z: "NDArray"
+    ) -> "NDArray":
+        return hyp2f1(a, b, c, z)
 
 
 class NumbaBackend(NumpyBackend):
