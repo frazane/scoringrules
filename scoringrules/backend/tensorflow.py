@@ -233,15 +233,27 @@ class TensorflowBackend(ArrayBackend):
 
     def factorial(self, n: "TensorLike") -> "TensorLike":
         return tf.math.exp(tf.math.lgamma(n+1))
-    
+
     def hypergeometric(self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor") -> "Tensor":
         return tfp.math.hypergeometric.hyp2f1_small_argument(a, b, c, z)
-    
+
     def comb(self, n: "Tensor", k: "Tensor") -> "Tensor":
         return self.factorial(n) / (self.factorial(k) * self.factorial(n - k))
-    
+
     def expi(self, x: "Tensor") -> "Tensor":
         return tf.math.special.expint(x)
+
+    def isinteger(self, x: "TensorLike") -> "TensorLike":
+        return tf.equal(x, tf.cast(x, tf.int32))
+
+    def ispositive(self, x: "TensorLike") -> "TensorLike":
+        return tf.greater(x, 0)
+
+    def isnegative(self, x: "TensorLike") -> "TensorLike":
+        return tf.less(x, 0)
+
+    def iszero(self, x: "TensorLike") -> "TensorLike":
+        return tf.equal(x, 0)
 
 
 if __name__ == "__main__":

@@ -182,15 +182,27 @@ class NumpyBackend(ArrayBackend):
 
     def factorial(self, n: "ArrayLike") -> "ArrayLike":
         return factorial(n)
-    
+
     def hypergeometric(self, a: "NDArray", b: "NDArray", c: "NDArray", z: "NDArray") -> "NDArray":
         return hyp2f1(a, b, c, z)
-    
+
     def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
         return comb(n, k)
-    
-    def expi(self, x: "Array") -> "Array":
+
+    def expi(self, x: "NDArray") -> "NDArray":
         return expi(x)
+
+    def isinteger(self, x: "ArrayLike") -> "ArrayLike":
+        return np.equal(np.mod(x, 1), 0)
+
+    def ispositive(self, x: "ArrayLike") -> "ArrayLike":
+        return x > 0
+
+    def isnegative(self, x: "ArrayLike") -> "ArrayLike":
+        return x < 0
+
+    def iszero(self, x: "ArrayLike") -> "ArrayLike":
+        return np.equal(x, 0)
 
 
 class NumbaBackend(NumpyBackend):

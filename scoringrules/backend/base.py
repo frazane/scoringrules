@@ -218,15 +218,31 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def factorial(self, n: "ArrayLike", /) -> "ArrayLike":
         """Calculate the factorial of the integer ``n``."""
-        
+
     @abc.abstractmethod
     def hypergeometric(self, a: "Array", b: "Array", c: "Array", z: "Array", /) -> "Array":
         """Calculate the hypergeometric function at each element of the inputs ``a``, ``b``, ``c``, and ``z``."""
-        
+
     @abc.abstractmethod
     def comb(self, n: "ArrayLike", k: "ArrayLike", /) -> "ArrayLike":
         """Calculate ``n`` choose ``k``."""
-        
+
     @abc.abstractmethod
     def expi(self, x: "Array", /) -> "Array":
         """Calculate the exponential integral at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def isinteger(self, x: "Array", /) -> "Array":
+        """Test whether each element of the input array ``x`` is an integer."""
+
+    @abc.abstractmethod
+    def ispositive(self, x: "Array", /) -> "Array":
+        """Test whether each element of the input array ``x`` is positive."""
+
+    @abc.abstractmethod
+    def isnegative(self, x: "Array", /) -> "Array":
+        """Test whether each element of the input array ``x`` is negative."""
+
+    @abc.abstractmethod
+    def iszero(self, x: "Array", /) -> "Array":
+        """Test whether each element of the input array ``x`` is equal to zero."""
