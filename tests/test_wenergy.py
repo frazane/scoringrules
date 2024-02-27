@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from scoringrules._energy import (
     energy_score,
     owenergy_score,

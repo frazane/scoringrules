@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 from numba import guvectorize
 
@@ -30,15 +28,14 @@ def _error_spread_score_gufunc(
 
     for i in range(M):
         s += (forecasts[i] - m) ** 2
-    s /= (M - 1)
+    s /= M - 1
     s = np.sqrt(s)
 
     for i in range(M):
         g += ((forecasts[i] - m) / s) ** 3
-    g /= ((M - 1) * (M - 2))
+    g /= (M - 1) * (M - 2)
 
     for i in range(M):
         e += forecasts[i] - observation[i]
 
     out[0] = (s**2 - e**2 - e * s * g) ** 2
-
