@@ -1,7 +1,7 @@
 import typing as tp
 
 import numpy as np
-from scipy.special import erf, beta, betainc, jv, gamma, gammainc, gammaincc, factorial, hyp2f1
+from scipy.special import erf, beta, betainc, jv, gamma, gammainc, gammaincc, factorial, hyp2f1, comb
 
 if tp.TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -185,6 +185,9 @@ class NumpyBackend(ArrayBackend):
     
     def hypergeometric(self, a: "NDArray", b: "NDArray", c: "NDArray", z: "NDArray") -> "NDArray":
         return hyp2f1(a, b, c, z)
+    
+    def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
+        return comb(n, k)
 
 
 class NumbaBackend(NumpyBackend):

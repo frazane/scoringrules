@@ -198,6 +198,9 @@ class JaxBackend(ArrayBackend):
     
     def hypergeometric(self, a: "Array", b: "Array", c: "Array", z: "Array")
         return jsp.special.hyp2f1(a, b, c, z)
+    
+    def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
+        return jsp.special.comb(n, k)
 
 if __name__ == "__main__":
     B = JaxBackend()

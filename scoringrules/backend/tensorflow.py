@@ -236,6 +236,9 @@ class TensorflowBackend(ArrayBackend):
     
     def hypergeometric(self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor") -> "Tensor":
         return tfp.math.hypergeometric.hyp2f1_small_argument(a, b, c, z)
+    
+    def comb(self, n: "Tensor", k: "Tensor") -> "Tensor":
+        return self.factorial(n) / (self.factorial(k) * self.factorial(n - k))
 
 
 if __name__ == "__main__":
