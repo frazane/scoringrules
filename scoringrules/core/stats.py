@@ -77,3 +77,25 @@ def _gpd_cdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "
     F_m = B.maximum(F_m, 0)
     F_xi = B.iszero(shape) * F_0 + B.ispositive(shape) * F_p + B.isnegative(shape) * F_m
     return F_xi
+
+def _binom_pdf(x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability mass function for the binomial distribution."""
+    B = backends.active if backend is None else backends[backend]
+    ind = B.isinteger(x) * (1 - B.isnegative(x)) * (1 - B.negative(n - x))
+    return ind * B.comb(n, x) * prob**x * (1 - prob)**(n - x)
+
+def _binom_cdf(x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Cumulative distribution function for the binomial distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return (1 - B.isnegative(x)) * B.betainc(n - B.floor(x), B.floor(x) + 1, 1 - prob)
+
+def _hypergeo_pdf(x: "ArrayLike", m: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability mass function for the hypergeometric distribution."""
+    B = backends.active if backend is None else backends[backend]
+    ind = B.isinteger(x) * B.ispositive(x) * (1 - B.isnegative(x - B.maximum(0, k - n))) * (1 - B.isnegative(B.minimum(k, m) - x))
+    return ind * B.comb(m, x) * B.comb(n, k - x) / B.comb(m + n, k)
+
+def _negbinom_cdf(x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Cumulative distribution function for the negative binomial distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return (1 - B.isnegative(x)) * B.betainc(n, B.floor(x + 1), prob)
