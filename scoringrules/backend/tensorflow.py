@@ -244,6 +244,9 @@ class TensorflowBackend(ArrayBackend):
     def comb(self, n: "Tensor", k: "Tensor") -> "Tensor":
         return self.factorial(n) / (self.factorial(k) * self.factorial(n - k))
 
+    def expi(self, x: "Tensor") -> "Tensor":
+        return tf.math.special.expint(x)
+
 
 if __name__ == "__main__":
     B = TensorflowBackend()

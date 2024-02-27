@@ -6,6 +6,7 @@ from scipy.special import (
     betainc,
     comb,
     erf,
+    expi,
     factorial,
     gamma,
     gammainc,
@@ -201,6 +202,9 @@ class NumpyBackend(ArrayBackend):
 
     def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
         return comb(n, k)
+
+    def expi(self, x: "NDArray") -> "NDArray":
+        return expi(x)
 
 
 class NumbaBackend(NumpyBackend):
