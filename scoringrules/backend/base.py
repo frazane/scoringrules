@@ -220,7 +220,9 @@ class ArrayBackend(abc.ABC):
         """Calculate the factorial of the integer ``n``."""
 
     @abc.abstractmethod
-    def hypergeometric(
-        self, a: "Array", b: "Array", c: "Array", z: "Array", /
-    ) -> "Array":
+    def hypergeometric(self, a: "Array", b: "Array", c: "Array", z: "Array") -> "Array":
         """Calculate the hypergeometric function at each element of the inputs ``a``, ``b``, ``c``, and ``z``."""
+
+    @abc.abstractmethod
+    def comb(self, n: "ArrayLike", k: "ArrayLike", /) -> "ArrayLike":
+        """Calculate ``n`` choose ``k``."""

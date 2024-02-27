@@ -214,6 +214,9 @@ class TorchBackend(ArrayBackend):
     ) -> "Tensor":
         return None
 
+    def comb(self, n: "Tensor", k: "Tensor") -> "Tensor":
+        return self.factorial(n) / (self.factorial(k) * self.factorial(n - k))
+
 
 if __name__ == "__main__":
     B = TorchBackend()

@@ -4,6 +4,7 @@ import numpy as np
 from scipy.special import (
     beta,
     betainc,
+    comb,
     erf,
     factorial,
     gamma,
@@ -197,6 +198,9 @@ class NumpyBackend(ArrayBackend):
         self, a: "NDArray", b: "NDArray", c: "NDArray", z: "NDArray"
     ) -> "NDArray":
         return hyp2f1(a, b, c, z)
+
+    def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
+        return comb(n, k)
 
 
 class NumbaBackend(NumpyBackend):
