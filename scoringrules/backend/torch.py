@@ -189,7 +189,7 @@ class TorchBackend(ArrayBackend):
         return torch.exp(torch.lgamma(x) + torch.lgamma(y) - torch.lgamma(x + y))
 
     def betainc(self, x: "Tensor", y: "Tensor", z: "Tensor") -> "Tensor":
-        return None
+        raise NotImplementedError(f"The incomplete beta function is currently not available for backend {self.name}")
 
     def mbessel0(self, x: "Tensor") -> "Tensor":
         return torch.special.i0(x)
@@ -210,13 +210,13 @@ class TorchBackend(ArrayBackend):
         return torch.exp(torch.lgamma(n+1))
 
     def hypergeometric(self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor") -> "Tensor":
-        return None
+        raise NotImplementedError(f"The hypergeometric function is currently not available for backend {self.name}")
 
     def comb(self, n: "Tensor", k: "Tensor") -> "Tensor":
         return self.factorial(n) / (self.factorial(k) * self.factorial(n - k))
 
     def expi(self, x: "Tensor") -> "Tensor":
-        return None
+        raise NotImplementedError(f"The exponential integral function is currently not available for backend {self.name}")
 
     def isinteger(self, x: "TensorLike") -> "TensorLike":
         return x == x.to(torch.int)

@@ -79,3 +79,6 @@ def test_lognormal(backend):
 
     assert not np.any(np.isnan(res))
     assert not np.any(res - 0.0 > 0.0001)
+
+
+
