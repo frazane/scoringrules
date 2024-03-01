@@ -1,7 +1,7 @@
 import typing as tp
 
 import numpy as np
-from scipy.special import erf
+from scipy.special import erf, beta, betainc, jv, gamma, gammainc, gammaincc, factorial, hyp2f1, comb, expi
 
 if tp.TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -149,6 +149,60 @@ class NumpyBackend(ArrayBackend):
 
     def apply_along_axis(self, func1d: tp.Callable, x: "NDArray", axis: int):
         return np.apply_along_axis(func1d, axis, x)
+
+    def floor(self, x: "NDArray") -> "NDArray":
+        return np.floor(x)
+
+    def minimum(self, x: "NDArray", y: "ArrayLike") -> "NDArray":
+        return np.minimum(x, y)
+
+    def maximum(self, x: "NDArray", y: "ArrayLike") -> "NDArray":
+        return np.maximum(x, y)
+    
+    def beta(self, x: "NDArray", y: "NDArray") -> "NDArray":
+        return beta(x, y)
+
+    def betainc(self, x: "NDArray", y: "NDArray", z: "NDArray") -> "NDArray":
+        return betainc(x, y, z)
+
+    def mbessel0(self, x: "NDArray") -> "NDArray":
+        return jv(0, x)
+
+    def mbessel1(self, x: "NDArray") -> "NDArray":
+        return jv(1, x)
+
+    def gamma(self, x: "NDArray") -> "NDArray":
+        return gamma(x)
+
+    def gammalinc(self, x: "NDArray", y: "NDArray") -> "NDArray":
+        return gammainc(x, y) * gamma(x)
+
+    def gammauinc(self, x: "NDArray", y: "NDArray") -> "NDArray":
+        return gammaincc(x, y) * gamma(x)
+
+    def factorial(self, n: "ArrayLike") -> "ArrayLike":
+        return factorial(n)
+
+    def hypergeometric(self, a: "NDArray", b: "NDArray", c: "NDArray", z: "NDArray") -> "NDArray":
+        return hyp2f1(a, b, c, z)
+
+    def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
+        return comb(n, k)
+
+    def expi(self, x: "NDArray") -> "NDArray":
+        return expi(x)
+
+    def isinteger(self, x: "ArrayLike") -> "ArrayLike":
+        return np.equal(np.mod(x, 1), 0)
+
+    def ispositive(self, x: "ArrayLike") -> "ArrayLike":
+        return x > 0
+
+    def isnegative(self, x: "ArrayLike") -> "ArrayLike":
+        return x < 0
+
+    def iszero(self, x: "ArrayLike") -> "ArrayLike":
+        return np.equal(x, 0)
 
 
 class NumbaBackend(NumpyBackend):

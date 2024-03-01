@@ -5,6 +5,7 @@ from numba import guvectorize, njit, vectorize
 
 INV_SQRT_PI = 1 / np.sqrt(np.pi)
 EPSILON = 1e-6
+EULERMASCHERONI = np.euler_gamma
 
 
 @guvectorize(
@@ -312,10 +313,335 @@ def _logis_cdf(x: float) -> float:
     return out
 
 
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
+def _exp_cdf(x: float, rate: float) -> float:
+    """Cumulative distribution function for the exponential distribution."""
+    out: float = np.maximum(1 - math.exp(- rate * x), 0)
+    return out
+
+
+@njit(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _gamma_cdf(x: float, shape: float, rate: float) -> float:
+    """Cumulative distribution function for the gamma distribution."""
+    raise NotImplementedError("The gamma function is currently not available for backend numba")
+    out: float = np.maximum(np.li_gamma(shape, rate * x) / np.gamma(shape), 0)
+    return out
+
+
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
+def _pois_cdf(x: float, mean: float) -> float:
+    """Cumulative distribution function for the Poisson distribution."""
+    raise NotImplementedError("The gamma function is currently not available for backend numba")
+    out: float = np.maximum(np.ui_gamma(np.floor(x + 1), mean) / np.gamma(np.floor(x + 1)), 0)
+    return out
+
+
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
+def _pois_pdf(x: float, mean: float) -> float:
+    """Probability mass function for the Poisson distribution."""
+    raise NotImplementedError("The factorial function is currently not available for backend numba")
+    out: float = np.isinteger(x) * (mean**x * np.exp(-x) / np.factorial(x))
+    return out
+
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
+def _t_cdf(x: float, df: float) -> float:
+    """Cumulative distribution function for the standard Student's t distribution."""
+    raise NotImplementedError("The hypergeometric function is currently not available for backend numba")
+    out: float = 1 / 2 + x * hypergeo(1 / 2, (df + 1) / 2, 3 / 2, - (x**2) / df) / (np.sqrt(df) * beta(1 / 2, df / 2))
+    return out
+
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
+def _t_pdf(x: float, df: float) -> float:
+    """Probability density function for the standard Student's t distribution."""
+    raise NotImplementedError("The beta function is currently not available for backend numba")
+    out: float = ((1 + x**2 / df)**(- (df + 1) / 2)) / (np.sqrt(df) * beta(1 / 2, df / 2))
+    return out
+
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
+def _gev_cdf(x: float, shape: float) -> float:
+    """Cumulative distribution function for the standard GEV distribution."""
+    if shape == 0.0:
+        out: float = math.exp(- math.exp(-x))
+    elif shape > 0.0:
+        if x > (- 1 / shape):
+            out: float = math.exp(-(1 + shape * x)**(-1 / shape))
+        else:
+            out: float = 0.0
+    else:
+        if x < (- 1 / shape):
+            out: float = math.exp(-(1 + shape * x)**(-1 / shape))
+        else:
+            out: float = 1.0
+    return out
+
+@njit(["float32(float32, float32)", "float64(float64, float64)"])
+def _gpd_cdf(x: float, shape: float) -> float:
+    """Cumulative distribution function for the standard GPD distribution."""
+    if shape == 0.0:
+        if x < 0:
+            out: float = 0.0
+        else:
+            out: float = 1 - math.exp(-x)
+    elif shape > 0.0:
+        if x < 0:
+            out: float = 0.0
+        else:
+            out: float = (1 - (1 + shape * x)**(- 1 / shape))
+    else:
+        if x < 0:
+            out: float = 0.0
+        elif x < 1 / np.abs(shape):
+            out: float = (1 - (1 + shape * x)**(- 1 / shape))
+        else:
+            out: float = 1.0
+    return out
+
+
+@njit(["float32(float32, int32, float32)", "float64(float64, int64, float64)"])
+def _binom_pdf(x: float, n: int, prob: float) -> float:
+    """Probability density function for the binomial distribution."""
+    raise NotImplementedError("The comb function is currently not available for backend numba")
+    out: float = np.isinteger(x) * comb(n, x) * prob**x * (1 - prob)**x
+    return out
+
+
+@njit(["float32(float32, int32, float32)", "float64(float64, int64, float64)"])
+def _binom_cdf(x: float, n: int, prob: float) -> float:
+    """Cumulative distribution function for the binomial distribution."""
+    raise NotImplementedError("The incomplete beta function is currently not available for backend numba")
+    out: float = betainc(n - np.floor(x), np.floor(x) + 1, 1 - prob)
+    return out
+
+
+@njit(["float32(float32, int32, int32, int32)", "float64(float64, int64, int64, int64)"])
+def _hypergeo_pdf(x: int, m: int, n: int, k: int) -> float:
+    """Probability density function for the hypergeometric distribution."""
+    raise NotImplementedError("The comb function is currently not available for backend numba")
+    out: float = comb(m, x) * comb(n, k - x) / comb(m + n, k)
+    return out
+
+
+@njit(["float32(float32, int32, int32, int32)", "float64(float64, int64, int64, int64)"])
+def _hypergeo_cdf(x: float, m: int, n: int, k: int) -> float:
+    """Cumulative distribution function for the hypergeometric distribution."""
+    raise NotImplementedError("The comb function is currently not available for backend numba")
+    out: float = _hypergeo_pdf(0, m, n, k)
+    for i in range(np.floor(x)):
+        out += _hypergeo_pdf(i, m, n, k)
+    return out
+
+
+@njit(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _negbinom_cdf(x: float, n: float, prob: float) -> float:
+    """Cumulative distribution function for the negative binomial distribution."""
+    raise NotImplementedError("The incomplete beta function is currently not available for backend numba")
+    if x < 0.0:
+        out: float = 0.0
+    else:
+        out: float = betainc(n, np.floor(x + 1), prob)
+    return out
+
+
+@vectorize(["float32(float32, float32)", "float64(float64, float64)"])
+def _crps_exponential_ufunc(rate: float, observation: float) -> float:
+    out: float = np.abs(observation) - (2 * _exp_cdf(observation, rate) / rate) + 1 / (2 * rate)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _crps_exponentialM_ufunc(mass: float, location: float, scale: float, observation: float) -> float:
+    ω = (observation - location) / scale
+    F_y = np.maximum(1 - math.exp(-ω), 0)
+    out: float = np.abs(ω) - 2 * (1 - mass) * F_y + ((1 - mass)**2) / 2
+    return out * scale
+
+
+@vectorize(["float32(float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64)"])
+def _crps_beta_ufunc(shape1: float, shape2: float, lower: float, upper: float, observation: float) -> float:
+    raise NotImplementedError("The beta function is currently not available for backend numba")
+    obs_std = (observation - lower) / (upper - lower)
+    I_ab = np.betainc(shape1, shape2, obs_std)
+    I_a1b = np.betainc(shape1 + 1, shape2, obs_std)
+    F_ab = np.minimum(np.maximum(I_ab, 0), 1)
+    F_a1b = np.minimum(np.maximum(I_a1b, 0), 1)
+    bet_rat = 2 * beta(2 * shape1, 2 * shape2) / (shape1 * beta(shape1, shape2)**2)
+    out: float = obs_std * (2 * F_ab - 1) + (shape1 / (shape1 + shape2)) * (1 - 2 * F_a1b - bet_rat)
+    return out
+
+
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
-def _crps_normal_ufunc(mu: float, sigma: float, observation: float) -> float:
+def _crps_binomial_ufunc(n: int, prob: float, observation: float) -> float:
+    raise NotImplementedError("The binomial distribution is currently not available for backend numba")
+    x = np.arange(0, n)
+    f_np = _binom_pdf(x, n, prob)
+    F_np = _binom_cdf(x, n, prob)
+    ind = (x > observation)
+    out: float = np.sum(f_np * (ind - F_np + f_np / 2) * (x - observation))
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_gamma_ufunc(shape: float, rate: float, observation: float) -> float:
+    raise NotImplementedError("The beta function is currently not available for backend numba")
+    F_ab = _gamma_cdf(observation, shape, rate)
+    F_ab1 = _gamma_cdf(observation, shape + 1, rate)
+    out: float = observation * (2 * F_ab - 1) - (shape / rate) * (2 * F_ab1 - 1) - 1 / (rate * beta(0.5, shape))
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _crps_gev_ufunc(shape: float, location: float, scale: float, observation: float) -> float:
+    raise NotImplementedError("The gamma function is currently not available for backend numba")
+    ω = (observation - location) / scale
+    F_xi = _gev_cdf(ω, shape)
+    if shape > 0:
+        if ω > (- 1 / shape):
+            G_xi = (F_xi / shape) + np.gammauinc(1 - shape, - math.log(F_xi)) / shape
+        else: 
+            G_xi = 0
+        s = ω * (2 * F_xi - 1) - 2 * G_xi - (1 - (2 - 2**shape) * np.gamma(1 - shape)) / shape
+    elif shape < 0: 
+        if ω < (- 1 / shape):
+            G_xi = (F_xi / shape) + np.gammauinc(1 - shape, - math.log(F_xi)) / shape
+        else: 
+            G_xi = (np.gamma(1 - shape) - 1) / shape
+        s = ω * (2 * F_xi - 1) - 2 * G_xi - (1 - (2 - 2**shape) * np.gamma(1 - shape)) / shape
+    else:
+        s = -ω - 2 * np.Ei(math.log(F_xi)) + EULERMASCHERONI - math.log(2)
+    out: float = scale * s
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64)"])
+def _crps_gpd_ufunc(shape: float, location: float, scale: float, mass: float, observation: float) -> float:
+    ω = (observation - location) / scale
+    F_xi = _gpd_cdf(ω, shape)
+    s = np.abs(ω) - 2 * (1 - mass) * (1 - (1 - F_xi)**(1 - shape)) / (1 - shape) + ((1 - mass)**2) / (2 - shape)
+    out: float = scale * s
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64, float64, float64)"])
+def _crps_gtclogistic_ufunc(location: float, scale: float, lower: float, upper: float, lmass: float, umass: float, observation: float) -> float:
+    ω = (observation - location) / scale
+    u = (upper - location) / scale
+    lo = (lower - location) / scale
+    z = np.minimum(np.maximum(ω, lo), u)
+    F_u = _logis_cdf(u)
+    F_l = _logis_cdf(lo)
+    F_mu = _logis_cdf(-u)
+    F_ml = _logis_cdf(-lo)
+    F_mz = _logis_cdf(-z)
+    G_u = u * F_u + math.log(F_mu)
+    G_l = lo * F_l + math.log(F_ml)
+    H_u = F_u - u * F_u**2 + (1 - 2 * F_u) * math.log(F_mu)
+    H_l = F_l - lo * F_l**2 + (1 - 2 * F_l) * math.log(F_ml)
+    c = (1 - lmass + umass) / (F_u - F_l)
+    s1 = np.abs(ω - z) + u * umass**2 - lo * lmass**2
+    s2 = c * z * ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass)
+    s3 = c * (2 * math.log(F_mz) - 2 * G_u * umass - 2 * G_l * lmass)
+    s4 = c**2 * (H_u - H_l)
+    out: float = scale * (s1 - s2 - s3 - s4)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64, float64, float64)"])
+def _crps_gtcnormal_ufunc(location: float, scale: float, lower: float, upper: float, lmass: float, umass: float, observation: float) -> float:
+    ω = (observation - location) / scale
+    u = (upper - location) / scale
+    lo = (lower - location) / scale
+    z = np.minimum(np.maximum(ω, lo), u)
+    F_u = _norm_cdf(u)
+    F_l = _norm_cdf(lo)
+    F_z = _norm_cdf(z)
+    F_u2 = _norm_cdf(u * np.sqrt(2))
+    F_l2 = _norm_cdf(lo * np.sqrt(2))
+    f_u = _norm_pdf(u)
+    f_l = _norm_pdf(lo)
+    f_z = _norm_pdf(z)
+    c = (1 - lmass + umass) / (F_u - F_l)
+    s1 = np.abs(ω - z) + u * umass**2 - lo * lmass**2
+    s2 = c * z * (2 * F_z * - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass))
+    s3 = c * (2 * f_z - 2 * f_u * umass - 2 * f_l * lmass)
+    s4 = c**2 * (F_u2 - F_l2) / np.sqrt(np.pi)
+    out: float = scale * (s1 + s2 + s3 - s4)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64, float64, float64, float64)"])
+def _crps_gtct_ufunc(df: float, location: float, scale: float, lower: float, upper: float, lmass: float, umass: float, observation: float) -> float:
+    raise NotImplementedError("The beta function is currently not available for backend numba")
+    ω = (observation - location) / scale
+    u = (upper - location) / scale
+    l = (lower - location) / scale
+    z = np.minimum(np.maximum(ω, l), u)
+    F_u = _t_cdf(u, df)
+    F_l = _t_cdf(l, df)
+    F_z = _t_cdf(z, df)
+    f_u = _t_cdf(u, df)
+    f_l = _t_pdf(l, df)
+    f_z = _t_pdf(z, df)
+    G_u = - f_u * (df + u**2) / (df - 1)
+    G_l = - f_l * (df + l**2) / (df - 1)
+    G_z = - f_z * (df + z**2) / (df - 1)
+    H_u = ((u / np.abs(u)) * betainc(1 / 2, df - 1 / 2, (u**2) / (df + u**2)) + 1) / 2
+    H_l = ((l / np.abs(l))  * betainc(1 / 2, df - 1 / 2, (l**2) / (df + l**2)) + 1) / 2
+    Bbar = (2 * np.sqrt(df) / (df - 1)) * beta(1 / 2, df - 1 / 2) / beta(1 / 2, df / 2)
+    c = (1 - lmass + umass) / (F_u - F_l)
+    s1 = np.abs(ω - z) + u * umass**2 - l * lmass**2
+    s2 = c * z * (2 * F_z - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass))
+    s3 = 2 * c * (G_z - G_u * umass - G_l * lmass)
+    s4 = c**2 * Bbar * (H_u - H_l)
+    out: float = scale * (s1 + s2 - s3 - s4)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _crps_hypergeometric_ufunc(m: int, n: int, k: int, observation: float) -> float:
+    raise NotImplementedError("The hypergeometric distribution is currently not available for backend numba")
+    x = np.arange(0, n)
+    f_np = _hypergeo_pdf(x, m, n, k)
+    F_np = _hypergeo_cdf(x, m, n, k)
+    ind = (x > observation)
+    out: float = np.sum(f_np * (ind - F_np + f_np / 2) * (x - observation))
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_laplace_ufunc(location: float, scale: float, observation: float) -> float:
+    ω = (observation - location) / scale
+    out: float = scale * (ω + math.exp(-ω) - 3/4)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_logistic_ufunc(mu: float, sigma: float, observation: float) -> float:
     ω = (observation - mu) / sigma
-    out: float = sigma * (ω * (2 * _norm_cdf(ω) - 1) + 2 * _norm_pdf(ω) - INV_SQRT_PI)
+    out: float = sigma * (ω - 2 * np.log(_logis_cdf(ω)) - 1)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_loglaplace_ufunc(locationlog: float, scalelog: float, observation: float) -> float:
+    if observation <= 0:
+        F_ls = 0
+    elif observation < math.exp(locationlog):
+        F_ls = math.exp((math.log(observation) - locationlog) / scalelog) / 2
+        A = (1 - (2 * F_ls)**(1 + scalelog)) / (1 + scalelog)
+    else:
+        F_ls = 1 - math.exp((math.log(observation) - locationlog) / scalelog) / 2
+        A = (- (2 * (1 - F_ls))**(1 - scalelog)) / (1 - scalelog)
+    out: float = observation * (2 * F_ls - 1) + math.exp(locationlog) * (A + scalelog / (4 - scalelog**2))
+    return out
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_loglogistic_ufunc(mulog: float, sigmalog: float, observation: float) -> float:
+    raise NotImplementedError("The beta function is currently not available for backend numba")
+    F_ms = 1 / (1 + np.exp( - (np.log(observation) - mulog) / sigmalog))
+    b = beta(1 + sigmalog, 1 - sigmalog)
+    I = betainc(1 + sigmalog, 1 - sigmalog, F_ms)
+    out: float = observation * (2 * F_ms - 1) - np.exp(mulog) * b * (2*I + sigmalog - 1)
     return out
 
 
@@ -330,9 +656,66 @@ def _crps_lognormal_ufunc(mulog: float, sigmalog: float, observation: float) -> 
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
-def _crps_logistic_ufunc(mu: float, sigma: float, observation: float) -> float:
+def _crps_negativebinomial_ufunc(n: int, prob: float, observation: float) -> float:
+    raise NotImplementedError("The hypergeometric function is currently not available for backend numba")
+    F_np = _negbinom_cdf(observation, n, prob)
+    F_n1p = _negbinom_cdf(observation - 1, n, prob)
+    F2 = hypergeo(n + 1, 1 / 2, 2, - 4 * (1 - prob) / (prob**2))
+    out: float = observation * (2 * F_np - 1) - n * (1 - prob) * (prob * (2 * F_n1p - 1) + F2) / (prob**2)
+    return out
+
+
+
+@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
+def _crps_normal_ufunc(mu: float, sigma: float, observation: float) -> float:
     ω = (observation - mu) / sigma
-    out: float = sigma * (ω - 2 * np.log(_logis_cdf(ω)) - 1)
+    out: float = sigma * (ω * (2 * _norm_cdf(ω) - 1) + 2 * _norm_pdf(ω) - INV_SQRT_PI)
+    return out
+
+
+@vectorize(["float32(float32, float32)", "float64(float64, float64)"])
+def _crps_poisson_ufunc(mean: float, observation: float) -> float:
+    raise NotImplementedError("The bessel functions are currently not available for backend numba")
+    F_m = _pois_cdf(observation, mean)
+    f_m = _pois_pdf(np.floor(observation), mean)
+    I0 = mbessel0(2 * mean)
+    I1 = mbessel1(2 * mean)
+    out: float = (observation - mean) * (2 * F_m - 1) + 2 * mean * f_m - mean * np.exp(-2 * mean) * (I0 + I1)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64)"])
+def _crps_uniform_ufunc(min: float, max: float, lmass: float, umass: float, observation: float) -> float:
+    ω = (observation - min) / (max - min)
+    F_ω = np.minimum(np.maximum(ω, 0), 1)
+    out: float = np.abs(ω - F_ω) + (F_ω**2) * (1 - lmass - umass)  - F_ω * (1 - 2 * lmass) + ((1 - lmass - umass)**2) / 3 + (1 - lmass) * umass
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _crps_t_ufunc(df: float, location: float, scale: float, observation: float) -> float:
+    raise NotImplementedError("The beta function is currently not available for backend numba")
+    ω = (observation - location) / scale
+    F_nu = _t_cdf(ω)
+    f_nu = _t_pdf(ω)
+    out: float = ω * (2 * F_nu - 1) + 2 * f_nu * (df + ω**2) / (df - 1) - (2 * np.sqrt(df) * beta(1 / 2, df - 1 / 2)) / ((df - 1) * beta(1 / 2, df / 2)**2)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _crps_tpexponential_ufunc(scale1: float, scale2: float, location: float, observation: float) -> float:
+    ω = (observation - location)
+    scalei = scale2
+    if ω < 0: scalei = scale1
+    out: float = np.abs(ω) + 2 * (scalei**2) * math.exp( - np.abs(ω) / scalei) / (scale1 + scale2) - 2 * (scalei**2) / (scale1 + scale2) + (scale1**3 + scale2**3) / (2 * (scale1 + scale2)**2)
+    return out
+
+
+@vectorize(["float32(float32, float32, float32, float32)", "float64(float64, float64, float64, float64)"])
+def _crps_tpnorm_ufunc(scale1: float, scale2: float, location: float, observation: float) -> float:
+    crps1 = _crps_gtcnormal_ufunc(0.0, 1.0, -np.inf, 0.0, 0.0, scale2 / (scale1 + scale2), np.minimum(0.0, observation - location) / scale1)
+    crps2 = _crps_gtcnormal_ufunc(0.0, 1.0, 0.0, np.inf, scale2 / (scale1 + scale2), 0.0, np.maximum(0.0, observation - location) / scale2)
+    out: float = scale1 * crps1 + scale2 * crps2
     return out
 
 
@@ -348,6 +731,7 @@ estimator_gufuncs = {
     "vrnrg": _vrcrps_ensemble_nrg_gufunc,
 }
 
+
 __all__ = [
     "_crps_ensemble_akr_circperm_gufunc",
     "_crps_ensemble_akr_gufunc",
@@ -356,7 +740,27 @@ __all__ = [
     "_crps_ensemble_nrg_gufunc",
     "_crps_ensemble_pwm_gufunc",
     "_crps_ensemble_qd_gufunc",
-    "_crps_normal_ufunc",
-    "_crps_lognormal_ufunc",
+    "_crps_beta_ufunc",
+    "_crps_binomial_ufunc",
+    "_crps_exponential_ufunc",
+    "_crps_exponentialM_ufunc",
+    "_crps_gamma_ufunc",
+    "_crps_gev_ufunc",
+    "_crps_gpd_ufunc",
+    "_crps_gtclogistic_ufunc",
+    "_crps_gtcnormal_ufunc",
+    "_crps_gtct_ufunc",
+    "_crps_hypergeometric_ufunc",
+    "_crps_laplace_ufunc",
     "_crps_logistic_ufunc",
+    "_crps_loglaplace_ufunc",
+    "_crps_loglogistic_ufunc",
+    "_crps_lognormal_ufunc",
+    "_crps_negativebinomial_ufunc",
+    "_crps_normal_ufunc",
+    "_crps_poisson_ufunc",
+    "_crps_uniform_ufunc",
+    "_crps_t_ufunc",
+    "_crps_tpexponential_ufunc",
+    "_crps_tpnorm_ufunc",
 ]
