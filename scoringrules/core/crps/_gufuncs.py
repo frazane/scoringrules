@@ -453,7 +453,7 @@ def _crps_exponentialM_ufunc(mass: float, location: float, scale: float, observa
     ω = (observation - location) / scale
     F_y = np.maximum(1 - math.exp(-ω), 0)
     out: float = np.abs(ω) - 2 * (1 - mass) * F_y + ((1 - mass)**2) / 2
-    return out
+    return out * scale
 
 
 @vectorize(["float32(float32, float32, float32, float32, float32)", "float64(float64, float64, float64, float64, float64)"])
@@ -485,7 +485,7 @@ def _crps_gamma_ufunc(shape: float, rate: float, observation: float) -> float:
     raise NotImplementedError("The beta function is currently not available for backend numba")
     F_ab = _gamma_cdf(observation, shape, rate)
     F_ab1 = _gamma_cdf(observation, shape + 1, rate)
-    out: float = observation * (2 * F_ab - 1) + (shape / rate) * (2 * F_ab1 - 1) - 1 / (rate * beta(0.5, shape))
+    out: float = observation * (2 * F_ab - 1) - (shape / rate) * (2 * F_ab1 - 1) - 1 / (rate * beta(0.5, shape))
     return out
 
 
@@ -698,7 +698,7 @@ def _crps_t_ufunc(df: float, location: float, scale: float, observation: float) 
     ω = (observation - location) / scale
     F_nu = _t_cdf(ω)
     f_nu = _t_pdf(ω)
-    out: float = ω * (2 * F_nu - 1) + 2 * f_nu * (df + ω**2) / (df - 1) - (2 * np.sqrt(df) * beta(1 / 2, df - 1)) / ((df - 1) * beta(1 / 2, df / 2)**2)
+    out: float = ω * (2 * F_nu - 1) + 2 * f_nu * (df + ω**2) / (df - 1) - (2 * np.sqrt(df) * beta(1 / 2, df - 1 / 2)) / ((df - 1) * beta(1 / 2, df / 2)**2)
     return out
 
 

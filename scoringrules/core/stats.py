@@ -33,7 +33,7 @@ def _exp_cdf(x: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None) -> "A
 def _gamma_cdf(x: "ArrayLike", shape: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the gamma distribution."""
     B = backends.active if backend is None else backends[backend]
-    return B.maximum(B.gammalinc(shape, rate * x) / B.gamma(shape), 0)
+    return B.maximum(B.gammalinc(shape, rate * B.maximum(x, 0)) / B.gamma(shape), 0)
 
 
 def _pois_cdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":
@@ -61,22 +61,26 @@ def _gev_cdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "
     """Cumulative distribution function for the standard GEV distribution."""
     B = backends.active if backend is None else backends[backend]
     F_0 = B.exp(- B.exp(-x))
-    F_p = B.ispositive(x + 1 / shape) * B.exp(-(1 + shape * x)**(-1 / shape))
-    F_m = B.isnegative(x + 1 / shape) * B.exp(-(1 + shape * x)**(-1 / shape)) + \
-        (1 - B.isnegative(x + 1 / shape))
+    F_p = B.exp(-(1 + shape * x)**(-1 / shape))
+    F_p[x <= - 1 / shape] = 0
+    F_m = B.exp(-(1 + shape * x)**(-1 / shape))
+    F_m[x >= - 1 / shape] = 1
     F_xi = B.iszero(shape) * F_0 + B.ispositive(shape) * F_p + B.isnegative(shape) * F_m
     return F_xi
 
 def _gpd_cdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the standard GPD distribution."""
     B = backends.active if backend is None else backends[backend]
-    F_0 = B.maximum(1 - B.exp(-x), 0)
-    F_p = B.maximum(1 - (1 + shape * x)**(- 1 / shape), 0)
-    F_m = B.isnegative(x - 1 / B.abs(shape)) * (1 - (1 + shape * x)**(- 1 / shape)) + \
-        (1 - B.isnegative(x - 1 / B.abs(shape)))
-    F_m = B.maximum(F_m, 0)
-    F_xi = B.iszero(shape) * F_0 + B.ispositive(shape) * F_p + B.isnegative(shape) * F_m
-    return F_xi
+    F_gpd = B.maximum(1 - B.exp(-x), 0)
+    shapep = shape[shape > 0]
+    xp = x[shape > 0]
+    shapem = shape[shape < 0]
+    xm = x[shape < 0]
+    F_gpd[shape > 0] = B.maximum(1 - (1 + shapep * xp)**(- 1 / shapep), 0)
+    F_gpd[shape < 0] = B.isnegative(xm - 1 / B.abs(shapem)) * (1 - (1 + shapem * xm)**(- 1 / shapem)) + \
+        (1 - B.isnegative(xm - 1 / B.abs(shapem)))
+    F_gpd[shape < 0] = B.maximum(F_gpd[shape < 0], 0)
+    return F_gpd
 
 def _binom_pdf(x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Probability mass function for the binomial distribution."""
