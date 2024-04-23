@@ -176,6 +176,50 @@ class TorchBackend(ArrayBackend):
                 [func1d(x_i) for x_i in torch.unbind(x, dim=axis)], dim=axis
             )
 
+    def floor(self, x: "Tensor") -> "Tensor":
+        return torch.floor(x)
+
+    def minimum(self, x: "Tensor", y: "TensorLike") -> "Tensor":
+        return torch.minimum(x, y)
+
+    def maximum(self, x: "Tensor", y: "TensorLike") -> "Tensor":
+        return torch.maximum(x, y)
+
+    def beta(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return torch.exp(torch.lgamma(x) + torch.lgamma(y) - torch.lgamma(x + y))
+
+    def betainc(self, x: "Tensor", y: "Tensor", z: "Tensor") -> "Tensor":
+        return None
+
+    def mbessel0(self, x: "Tensor") -> "Tensor":
+        return torch.special.i0(x)
+
+    def mbessel1(self, x: "Tensor") -> "Tensor":
+        return torch.special.i1(x)
+
+    def gamma(self, x: "Tensor") -> "Tensor":
+        return torch.exp(torch.lgamma(x))
+
+    def gammalinc(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return torch.special.gammainc(x, y) * torch.exp(torch.lgamma(x))
+
+    def gammauinc(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return torch.special.gammaincc(x, y) * torch.exp(torch.lgamma(x))
+
+    def factorial(self, n: "TensorLike") -> "TensorLike":
+        return torch.exp(torch.lgamma(n + 1))
+
+    def hypergeometric(
+        self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor"
+    ) -> "Tensor":
+        return None
+
+    def comb(self, n: "Tensor", k: "Tensor") -> "Tensor":
+        return self.factorial(n) / (self.factorial(k) * self.factorial(n - k))
+
+    def expi(self, x: "Tensor") -> "Tensor":
+        return None
+
 
 if __name__ == "__main__":
     B = TorchBackend()

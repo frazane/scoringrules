@@ -17,7 +17,7 @@ Dtype = tp.TypeVar("Dtype")
 
 
 class TensorflowBackend(ArrayBackend):
-    """Tensorflow backend"""
+    """Tensorflow backend."""
 
     name = "tensorflow"
 
@@ -200,6 +200,52 @@ class TensorflowBackend(ArrayBackend):
             return tf.stack(
                 [func1d(x_i) for x_i in tf.unstack(x, axis=axis)], axis=axis
             )
+
+    def floor(self, x: "Tensor") -> "Tensor":
+        return tf.math.floor(x)
+
+    def minimum(self, x: "Tensor", y: "TensorLike") -> "Tensor":
+        return tf.math.minimum(x, y)
+
+    def maximum(self, x: "Tensor", y: "TensorLike") -> "Tensor":
+        return tf.math.maximum(x, y)
+
+    def beta(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return tf.math.exp(
+            tf.math.lgamma(x) + tf.math.lgamma(y) - tf.math.lgamma(x + y)
+        )
+
+    def betainc(self, x: "Tensor", y: "Tensor", z: "Tensor") -> "Tensor":
+        return tf.math.betainc(x, y, z)
+
+    def mbessel0(self, x: "Tensor") -> "Tensor":
+        return tf.math.bessel_i0e(x)
+
+    def mbessel1(self, x: "Tensor") -> "Tensor":
+        return tf.math.bessel_i1e(x)
+
+    def gamma(self, x: "Tensor") -> "Tensor":
+        return tf.math.exp(tf.math.lgamma(x))
+
+    def gammalinc(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return tf.math.igamma(x, y) * tf.math.exp(tf.math.lgamma(x))
+
+    def gammauinc(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return tf.math.igammac(x, y) * tf.math.exp(tf.math.lgamma(x))
+
+    def factorial(self, n: "TensorLike") -> "TensorLike":
+        return tf.math.exp(tf.math.lgamma(n + 1))
+
+    def hypergeometric(
+        self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor"
+    ) -> "Tensor":
+        raise NotImplementedError
+
+    def comb(self, n: "Tensor", k: "Tensor") -> "Tensor":
+        return self.factorial(n) / (self.factorial(k) * self.factorial(n - k))
+
+    def expi(self, x: "Tensor") -> "Tensor":
+        return tf.math.special.expint(x)
 
 
 if __name__ == "__main__":

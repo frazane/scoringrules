@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from scoringrules._variogram import (
     owvariogram_score,
     twvariogram_score,

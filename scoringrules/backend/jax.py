@@ -163,6 +163,48 @@ class JaxBackend(ArrayBackend):
         except Exception:
             return jnp.apply_along_axis(func1d, axis, x)
 
+    def floor(self, x: "Array") -> "Array":
+        return jnp.floor(x)
+
+    def minimum(self, x: "Array", y: "ArrayLike") -> "Array":
+        return jnp.minimum(x, y)
+
+    def maximum(self, x: "Array", y: "ArrayLike") -> "Array":
+        return jnp.maximum(x, y)
+
+    def beta(self, x: "Array", y: "Array") -> "Array":
+        return jsp.special.beta(x, y)
+
+    def betainc(self, x: "Array", y: "Array", z: "Array") -> "Array":
+        return jsp.special.betainc(x, y, z)
+
+    def mbessel0(self, x: "Array") -> "Array":
+        return jsp.special.jv(0, x)
+
+    def mbessel1(self, x: "Array") -> "Array":
+        return jsp.special.jv(1, x)
+
+    def gamma(self, x: "Array") -> "Array":
+        return jsp.special.gamma(x)
+
+    def gammalinc(self, x: "Array", y: "Array") -> "Array":
+        return jsp.special.gammainc(x, y) * jsp.special.gamma(x)
+
+    def gammauinc(self, x: "Array", y: "Array") -> "Array":
+        return jsp.special.gammaincc(x, y) * jsp.special.gamma(x)
+
+    def factorial(self, n: "ArrayLike") -> "ArrayLike":
+        return jsp.special.factorial(n)
+
+    def hypergeometric(self, a: "Array", b: "Array", c: "Array", z: "Array"):
+        return jsp.special.hyp2f1(a, b, c, z)
+
+    def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
+        return jsp.special.comb(n, k)
+
+    def expi(self, x: "Array") -> "Array":
+        return jsp.special.expi(x)
+
 
 if __name__ == "__main__":
     B = JaxBackend()

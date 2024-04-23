@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from scoringrules._crps import (
     crps_ensemble,
     owcrps_ensemble,

@@ -174,3 +174,59 @@ class ArrayBackend(abc.ABC):
         self, func1d: tp.Callable[["Array"], "Array"], x: "Array", axis: int
     ) -> "Array":
         """Apply a function along a given axis of the input array."""
+
+    @abc.abstractmethod
+    def floor(self, x: "Array", /) -> "Array":
+        """Calculate the integer component of each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def minimum(self, x: "Array", y: "ArrayLike", /) -> "Array":
+        """Calculate the minimum of each element ``x_i`` of the input array ``x`` with the value ``y``."""
+
+    @abc.abstractmethod
+    def maximum(self, x: "Array", y: "ArrayLike", /) -> "Array":
+        """Calculate the maximum of each element ``x_i`` of the input array ``x`` with the value ``y``."""
+
+    @abc.abstractmethod
+    def beta(self, x: "Array", y: "Array", /) -> "Array":
+        """Calculate the beta function at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def betainc(self, x: "Array", y: "Array", z: "Array", /) -> "Array":
+        """Calculate the regularised incomplete beta function at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def mbessel0(self, x: "Array", /) -> "Array":
+        """Calculate the modified Bessel function of the first kind of order 0 at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def mbessel1(self, x: "Array", /) -> "Array":
+        """Calculate the modified Bessel function of the first kind of order 1 at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def gamma(self, x: "Array", /) -> "Array":
+        """Calculate the gamma function at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def gammalinc(self, x: "Array", y: "Array", /) -> "Array":
+        """Calculate the lower incomplete gamma function at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def gammauinc(self, x: "Array", y: "Array", /) -> "Array":
+        """Calculate the upper incomplete gamma function at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def factorial(self, n: "ArrayLike", /) -> "ArrayLike":
+        """Calculate the factorial of the integer ``n``."""
+
+    @abc.abstractmethod
+    def hypergeometric(self, a: "Array", b: "Array", c: "Array", z: "Array") -> "Array":
+        """Calculate the hypergeometric function at each element of the inputs ``a``, ``b``, ``c``, and ``z``."""
+
+    @abc.abstractmethod
+    def comb(self, n: "ArrayLike", k: "ArrayLike", /) -> "ArrayLike":
+        """Calculate ``n`` choose ``k``."""
+
+    @abc.abstractmethod
+    def expi(self, x: "Array", /) -> "Array":
+        """Calculate the exponential integral at each element ``x_i`` of the input array ``x``."""

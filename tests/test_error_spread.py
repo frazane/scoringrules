@@ -10,8 +10,10 @@ N = 5
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_error_spread_score(backend):
-    obs = np.random.randn(N,)
-    fcts = obs[:,None] + np.random.randn(N, ENSEMBLE_SIZE)
+    obs = np.random.randn(
+        N,
+    )
+    fcts = obs[:, None] + np.random.randn(N, ENSEMBLE_SIZE)
     res = error_spread_score(fcts, obs, backend=backend)
 
     # approx zero when perfect forecast
