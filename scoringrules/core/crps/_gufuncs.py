@@ -12,14 +12,12 @@ EPSILON = 1e-6
         "void(float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:])",
     ],
-    "(n),()->()",
+    "(),(n)->()",
 )
-def _crps_ensemble_int_gufunc(
-    forecasts: np.ndarray, observation: np.ndarray, out: np.ndarray
-):
+def _crps_ensemble_int_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimator based on the integral form."""
-    obs = observation[0]
-    M = forecasts.shape[0]
+    obs = obs[0]
+    M = fct.shape[0]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -30,7 +28,7 @@ def _crps_ensemble_int_gufunc(
     prev_forecast = 0.0
     integral = 0.0
 
-    for n, forecast in enumerate(forecasts):
+    for n, forecast in enumerate(fct):
         if np.isnan(forecast):
             if n == 0:
                 integral = np.nan
@@ -59,14 +57,12 @@ def _crps_ensemble_int_gufunc(
         "void(float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:])",
     ],
-    "(n),()->()",
+    "(),(n)->()",
 )
-def _crps_ensemble_qd_gufunc(
-    forecasts: np.ndarray, observation: np.ndarray, out: np.ndarray
-):
+def _crps_ensemble_qd_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimator based on the quantile decomposition form."""
-    obs = observation[0]
-    M = forecasts.shape[-1]
+    obs = obs[0]
+    M = fct.shape[-1]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -75,7 +71,7 @@ def _crps_ensemble_qd_gufunc(
     obs_cdf = 0.0
     integral = 0.0
 
-    for i, forecast in enumerate(forecasts):
+    for i, forecast in enumerate(fct):
         if obs < forecast:
             obs_cdf = 1.0
 
@@ -89,14 +85,12 @@ def _crps_ensemble_qd_gufunc(
         "void(float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:])",
     ],
-    "(n),()->()",
+    "(),(n)->()",
 )
-def _crps_ensemble_nrg_gufunc(
-    forecasts: np.ndarray, observation: np.ndarray, out: np.ndarray
-):
+def _crps_ensemble_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimator based on the energy form."""
-    obs = observation[0]
-    M = forecasts.shape[-1]
+    obs = obs[0]
+    M = fct.shape[-1]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -105,9 +99,9 @@ def _crps_ensemble_nrg_gufunc(
     e_1 = 0
     e_2 = 0
 
-    for x_i in forecasts:
+    for x_i in fct:
         e_1 += abs(x_i - obs)
-        for x_j in forecasts:
+        for x_j in fct:
             e_2 += abs(x_i - x_j)
 
     out[0] = e_1 / M - 0.5 * e_2 / (M**2)
@@ -118,14 +112,12 @@ def _crps_ensemble_nrg_gufunc(
         "void(float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:])",
     ],
-    "(n),()->()",
+    "(),(n)->()",
 )
-def _crps_ensemble_fair_gufunc(
-    forecasts: np.ndarray, observation: np.ndarray, out: np.ndarray
-):
+def _crps_ensemble_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Fair version of the CRPS estimator based on the energy form."""
-    obs = observation[0]
-    M = forecasts.shape[-1]
+    obs = obs[0]
+    M = fct.shape[-1]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -134,9 +126,9 @@ def _crps_ensemble_fair_gufunc(
     e_1 = 0
     e_2 = 0
 
-    for x_i in forecasts:
+    for x_i in fct:
         e_1 += abs(x_i - obs)
-        for x_j in forecasts:
+        for x_j in fct:
             e_2 += abs(x_i - x_j)
 
     out[0] = e_1 / M - 0.5 * e_2 / (M * (M - 1))
@@ -147,14 +139,12 @@ def _crps_ensemble_fair_gufunc(
         "void(float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:])",
     ],
-    "(n),()->()",
+    "(),(n)->()",
 )
-def _crps_ensemble_pwm_gufunc(
-    forecasts: np.ndarray, observation: np.ndarray, out: np.ndarray
-):
+def _crps_ensemble_pwm_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimator based on the probability weighted moment (PWM) form."""
-    obs = observation[0]
-    M = forecasts.shape[-1]
+    obs = obs[0]
+    M = fct.shape[-1]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -164,7 +154,7 @@ def _crps_ensemble_pwm_gufunc(
     β_0 = 0.0
     β_1 = 0.0
 
-    for i, forecast in enumerate(forecasts):
+    for i, forecast in enumerate(fct):
         expected_diff += np.abs(forecast - obs)
         β_0 += forecast
         β_1 += forecast * i
@@ -177,21 +167,19 @@ def _crps_ensemble_pwm_gufunc(
         "void(float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:])",
     ],
-    "(n),()->()",
+    "(),(n)->()",
 )
-def _crps_ensemble_akr_gufunc(
-    forecasts: np.ndarray, observation: np.ndarray, out: np.ndarray
-):
+def _crps_ensemble_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimaton based on the approximate kernel representation."""
-    M = forecasts.shape[-1]
-    obs = observation[0]
+    M = fct.shape[-1]
+    obs = obs[0]
     e_1 = 0
     e_2 = 0
-    for i, forecast in enumerate(forecasts):
+    for i, forecast in enumerate(fct):
         if i == 0:
             i = M - 1
         e_1 += abs(forecast - obs)
-        e_2 += abs(forecast - forecasts[i - 1])
+        e_2 += abs(forecast - fct[i - 1])
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
@@ -200,20 +188,20 @@ def _crps_ensemble_akr_gufunc(
         "void(float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:])",
     ],
-    "(n),()->()",
+    "(),(n)->()",
 )
 def _crps_ensemble_akr_circperm_gufunc(
-    forecasts: np.ndarray, observation: np.ndarray, out: np.ndarray
+    obs: np.ndarray, fct: np.ndarray, out: np.ndarray
 ):
     """CRPS estimaton based on the AKR with cyclic permutation."""
-    M = forecasts.shape[-1]
-    obs = observation[0]
+    M = fct.shape[-1]
+    obs = obs[0]
     e_1 = 0.0
     e_2 = 0.0
-    for i, forecast in enumerate(forecasts):
+    for i, forecast in enumerate(fct):
         sigma_i = int((i + 1 + ((M - 1) / 2)) % M)
         e_1 += abs(forecast - obs)
-        e_2 += abs(forecast - forecasts[sigma_i])
+        e_2 += abs(forecast - fct[sigma_i])
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
@@ -222,19 +210,19 @@ def _crps_ensemble_akr_circperm_gufunc(
         "void(float32[:], float32[:], float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(n),(),(n),()->()",
+    "(),(n),(),(n)->()",
 )
 def _owcrps_ensemble_nrg_gufunc(
-    forecasts: np.ndarray,
-    observation: np.ndarray,
-    fw: np.ndarray,
+    obs: np.ndarray,
+    fct: np.ndarray,
     ow: np.ndarray,
+    fw: np.ndarray,
     out: np.ndarray,
 ):
     """Outcome-weighted CRPS estimator based on the energy form."""
-    obs = observation[0]
+    obs = obs[0]
     ow = ow[0]
-    M = forecasts.shape[-1]
+    M = fct.shape[-1]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -243,9 +231,9 @@ def _owcrps_ensemble_nrg_gufunc(
     e_1 = 0.0
     e_2 = 0.0
 
-    for i, x_i in enumerate(forecasts):
+    for i, x_i in enumerate(fct):
         e_1 += abs(x_i - obs) * fw[i] * ow
-        for j, x_j in enumerate(forecasts):
+        for j, x_j in enumerate(fct):
             e_2 += abs(x_i - x_j) * fw[i] * fw[j] * ow
 
     wbar = np.mean(fw)
@@ -258,19 +246,19 @@ def _owcrps_ensemble_nrg_gufunc(
         "void(float32[:], float32[:], float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(n),(),(n),()->()",
+    "(),(n),(),(n)->()",
 )
 def _vrcrps_ensemble_nrg_gufunc(
-    forecasts: np.ndarray,
-    observation: np.ndarray,
-    fw: np.ndarray,
+    obs: np.ndarray,
+    fct: np.ndarray,
     ow: np.ndarray,
+    fw: np.ndarray,
     out: np.ndarray,
 ):
     """Vertically re-scaled CRPS estimator based on the energy form."""
-    obs = observation[0]
+    obs = obs[0]
     ow = ow[0]
-    M = forecasts.shape[-1]
+    M = fct.shape[-1]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -279,13 +267,13 @@ def _vrcrps_ensemble_nrg_gufunc(
     e_1 = 0.0
     e_2 = 0.0
 
-    for i, x_i in enumerate(forecasts):
+    for i, x_i in enumerate(fct):
         e_1 += abs(x_i - obs) * fw[i] * ow
-        for j, x_j in enumerate(forecasts):
+        for j, x_j in enumerate(fct):
             e_2 += abs(x_i - x_j) * fw[i] * fw[j]
 
     wbar = np.mean(fw)
-    wabs_x = np.mean(np.abs(forecasts) * fw)
+    wabs_x = np.mean(np.abs(fct) * fw)
     wabs_y = abs(obs) * ow
 
     out[0] = e_1 / M - 0.5 * e_2 / (M**2) + (wabs_x - wabs_y) * (wbar - ow)
@@ -313,25 +301,25 @@ def _logis_cdf(x: float) -> float:
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
-def _crps_normal_ufunc(mu: float, sigma: float, observation: float) -> float:
-    ω = (observation - mu) / sigma
+def _crps_normal_ufunc(obs: float, mu: float, sigma: float) -> float:
+    ω = (obs - mu) / sigma
     out: float = sigma * (ω * (2 * _norm_cdf(ω) - 1) + 2 * _norm_pdf(ω) - INV_SQRT_PI)
     return out
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
-def _crps_lognormal_ufunc(mulog: float, sigmalog: float, observation: float) -> float:
-    ω = (np.log(observation) - mulog) / sigmalog
+def _crps_lognormal_ufunc(obs: float, mulog: float, sigmalog: float) -> float:
+    ω = (np.log(obs) - mulog) / sigmalog
     ex = 2 * np.exp(mulog + sigmalog**2 / 2)
-    out: float = observation * (2 * _norm_cdf(ω) - 1) - ex * (
+    out: float = obs * (2 * _norm_cdf(ω) - 1) - ex * (
         _norm_cdf(ω - sigmalog) + _norm_cdf(sigmalog / np.sqrt(2)) - 1
     )
     return out
 
 
 @vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
-def _crps_logistic_ufunc(mu: float, sigma: float, observation: float) -> float:
-    ω = (observation - mu) / sigma
+def _crps_logistic_ufunc(obs: float, mu: float, sigma: float) -> float:
+    ω = (obs - mu) / sigma
     out: float = sigma * (ω - 2 * np.log(_logis_cdf(ω)) - 1)
     return out
 
