@@ -13,11 +13,11 @@ def test_error_spread_score(backend):
     obs = np.random.randn(
         N,
     )
-    fcts = obs[:, None] + np.random.randn(N, ENSEMBLE_SIZE)
-    res = error_spread_score(fcts, obs, backend=backend)
+    fct = obs[:, None] + np.random.randn(N, ENSEMBLE_SIZE)
+    res = error_spread_score(obs, fct, backend=backend)
 
     # approx zero when perfect forecast
-    perfect_fcts = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 1e-5
-    res = error_spread_score(perfect_fcts, obs, backend=backend)
+    perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 1e-5
+    res = error_spread_score(obs, perfect_fct, backend=backend)
     res = np.asarray(res)
     assert not np.any(res - 0.0 > 0.0001)

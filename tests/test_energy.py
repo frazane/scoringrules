@@ -13,9 +13,9 @@ N_VARS = 3
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_energy_score(backend):
     obs = np.random.randn(N, N_VARS)
-    fcts = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
+    fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = energy_score(fcts, obs, backend=backend)
+    res = energy_score(obs, fct, backend=backend)
 
     if backend in ["numpy", "numba"]:
         assert isinstance(res, np.ndarray)
