@@ -9,8 +9,8 @@ if tp.TYPE_CHECKING:
 
 
 def variogram_score(
-    forecasts: "Array",
     observations: "Array",
+    forecasts: "Array",
     /,
     m_axis: int = -2,
     v_axis: int = -1,
@@ -51,19 +51,19 @@ def variogram_score(
     variogram_score: Array
         The computed Variogram Score.
     """
-    forecasts, observations = multivariate_array_check(
-        forecasts, observations, m_axis, v_axis, backend=backend
+    observations, forecasts = multivariate_array_check(
+        observations, forecasts, m_axis, v_axis, backend=backend
     )
 
     if backend == "numba":
-        return variogram._variogram_score_gufunc(forecasts, observations, p)
+        return variogram._variogram_score_gufunc(observations, forecasts, p)
 
-    return variogram.vs(forecasts, observations, p, backend=backend)
+    return variogram.vs(observations, forecasts, p, backend=backend)
 
 
 def twvariogram_score(
-    forecasts: "Array",
     observations: "Array",
+    forecasts: "Array",
     v_func: tp.Callable,
     /,
     m_axis: int = -2,
@@ -108,15 +108,15 @@ def twvariogram_score(
     twvariogram_score: ArrayLike of shape (...)
         The computed Threshold-Weighted Variogram Score.
     """
-    forecasts, observations = map(v_func, (forecasts, observations))
+    observations, forecasts = map(v_func, (observations, forecasts))
     return variogram_score(
-        forecasts, observations, m_axis, v_axis, p=p, backend=backend
+        observations, forecasts, m_axis, v_axis, p=p, backend=backend
     )
 
 
 def owvariogram_score(
-    forecasts: "Array",
     observations: "Array",
+    forecasts: "Array",
     w_func: tp.Callable,
     /,
     m_axis: int = -2,
@@ -165,26 +165,26 @@ def owvariogram_score(
     """
     B = backends.active if backend is None else backends[backend]
 
-    forecasts, observations = multivariate_array_check(
-        forecasts, observations, m_axis, v_axis, backend=backend
+    observations, forecasts = multivariate_array_check(
+        observations, forecasts, m_axis, v_axis, backend=backend
     )
 
-    fcts_weights = B.apply_along_axis(w_func, forecasts, -1)
     obs_weights = B.apply_along_axis(w_func, observations, -1)
+    fct_weights = B.apply_along_axis(w_func, forecasts, -1)
 
     if backend == "numba":
         return variogram._owvariogram_score_gufunc(
-            forecasts, observations, p, fcts_weights, obs_weights
+            observations, forecasts, p, obs_weights, fct_weights
         )
 
     return variogram.owvs(
-        forecasts, observations, fcts_weights, obs_weights, p=p, backend=backend
+        observations, forecasts, obs_weights, fct_weights, p=p, backend=backend
     )
 
 
 def vrvariogram_score(
-    forecasts: "Array",
     observations: "Array",
+    forecasts: "Array",
     w_func: tp.Callable,
     /,
     m_axis: int = -2,
@@ -211,11 +211,11 @@ def vrvariogram_score(
 
     Parameters
     ----------
+    observations: Array
+        The observed values, where the variables dimension is by default the last axis.
     forecasts: Array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
-    observations: Array
-        The observed values, where the variables dimension is by default the last axis.
     p: float
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
     w_func: tp.Callable
@@ -234,18 +234,18 @@ def vrvariogram_score(
     """
     B = backends.active if backend is None else backends[backend]
 
-    forecasts, observations = multivariate_array_check(
-        forecasts, observations, m_axis, v_axis, backend=backend
+    observations, forecasts = multivariate_array_check(
+        observations, forecasts, m_axis, v_axis, backend=backend
     )
 
-    fcts_weights = B.apply_along_axis(w_func, forecasts, -1)
     obs_weights = B.apply_along_axis(w_func, observations, -1)
+    fct_weights = B.apply_along_axis(w_func, forecasts, -1)
 
     if backend == "numba":
         return variogram._vrvariogram_score_gufunc(
-            forecasts, observations, p, fcts_weights, obs_weights
+            observations, forecasts, p, obs_weights, fct_weights
         )
 
     return variogram.vrvs(
-        forecasts, observations, fcts_weights, obs_weights, p=p, backend=backend
+        observations, forecasts, obs_weights, fct_weights, p=p, backend=backend
     )

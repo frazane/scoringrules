@@ -8,8 +8,8 @@ if tp.TYPE_CHECKING:
 
 
 def error_spread_score(
-    forecasts: "Array",
     observations: "ArrayLike",
+    forecasts: "Array",
     /,
     axis: int = -1,
     *,
@@ -19,11 +19,11 @@ def error_spread_score(
 
     Parameters
     ----------
+    observations: ArrayLike
+        The observed values.
     forecasts: Array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    observations: ArrayLike
-        The observed values.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
     backend: str
@@ -35,16 +35,12 @@ def error_spread_score(
         An array of error spread scores for each ensemble forecast, which should be averaged to get meaningful values.
     """
     B = backends.active if backend is None else backends[backend]
-    forecasts, observations = map(B.asarray, (forecasts, observations))
+    observations, forecasts = map(B.asarray, (observations, forecasts))
 
     if axis != -1:
         forecasts = B.moveaxis(forecasts, axis, -1)
 
     if B.name == "numba":
-        return error_spread._ess_gufunc(forecasts, observations)
+        return error_spread._ess_gufunc(observations, forecasts)
 
-    return error_spread.ess(forecasts, observations, backend=backend)
-
-    # \[
-    #     ESS = \left(s^2 - e^2 - e \cdot s \cdot g\right)^2
-    # \]
+    return error_spread.ess(observations, forecasts, backend=backend)

@@ -30,11 +30,11 @@ def energy_score(
 
     Parameters
     ----------
+    observations: Array
+        The observed values, where the variables dimension is by default the last axis.
     forecasts: Array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
-    observations: Array
-        The observed values, where the variables dimension is by default the last axis.
     m_axis: int
         The axis corresponding to the ensemble dimension on the forecasts array. Defaults to -2.
     v_axis: int
@@ -85,11 +85,11 @@ def twenergy_score(
 
     Parameters
     ----------
+    observations: ArrayLike of shape (...,D)
+        The observed values, where the variables dimension is by default the last axis.
     forecasts: ArrayLike of shape (..., M, D)
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
-    observations: ArrayLike of shape (...,D)
-        The observed values, where the variables dimension is by default the last axis.
     v_func: tp.Callable
         Chaining function used to emphasise particular outcomes.
     m_axis: int
@@ -136,11 +136,11 @@ def owenergy_score(
 
     Parameters
     ----------
+    observations: ArrayLike of shape (...,D)
+        The observed values, where the variables dimension is by default the last axis.
     forecasts: ArrayLike of shape (..., M, D)
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
-    observations: ArrayLike of shape (...,D)
-        The observed values, where the variables dimension is by default the last axis.
     w_func: tp.Callable
         Weight function used to emphasise particular outcomes.
     m_axis: int
@@ -161,16 +161,16 @@ def owenergy_score(
         forecasts, observations, m_axis, v_axis, backend=backend
     )
 
-    fcts_weights = B.apply_along_axis(w_func, forecasts, -1)
+    fct_weights = B.apply_along_axis(w_func, forecasts, -1)
     obs_weights = B.apply_along_axis(w_func, observations, -1)
 
     if B.name == "numba":
         return energy._owenergy_score_gufunc(
-            forecasts, observations, fcts_weights, obs_weights
+            forecasts, observations, fct_weights, obs_weights
         )
 
     return energy.ownrg(
-        forecasts, observations, fcts_weights, obs_weights, backend=backend
+        forecasts, observations, fct_weights, obs_weights, backend=backend
     )
 
 
@@ -202,11 +202,11 @@ def vrenergy_score(
 
     Parameters
     ----------
+    observations: ArrayLike of shape (...,D)
+        The observed values, where the variables dimension is by default the last axis.
     forecasts: ArrayLike of shape (..., M, D)
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
-    observations: ArrayLike of shape (...,D)
-        The observed values, where the variables dimension is by default the last axis.
     w_func: tp.Callable
         Weight function used to emphasise particular outcomes.
     m_axis: int
@@ -227,14 +227,14 @@ def vrenergy_score(
         forecasts, observations, m_axis, v_axis, backend=backend
     )
 
-    fcts_weights = B.apply_along_axis(w_func, forecasts, -1)
+    fct_weights = B.apply_along_axis(w_func, forecasts, -1)
     obs_weights = B.apply_along_axis(w_func, observations, -1)
 
     if backend == "numba":
         return energy._vrenergy_score_gufunc(
-            forecasts, observations, fcts_weights, obs_weights
+            forecasts, observations, fct_weights, obs_weights
         )
 
     return energy.vrnrg(
-        forecasts, observations, fcts_weights, obs_weights, backend=backend
+        forecasts, observations, fct_weights, obs_weights, backend=backend
     )
