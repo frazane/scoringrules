@@ -36,8 +36,8 @@ import scoringrules as sr
 import numpy as np
 
 obs = np.random.randn(100)
-fcts = obs[:,None] + np.random.randn(100, 21) * 0.1
-sr.crps_ensemble(fcts, obs)
+fct = obs[:,None] + np.random.randn(100, 21) * 0.1
+sr.crps_ensemble(obs, fct)
 ```
 
 ## Metrics

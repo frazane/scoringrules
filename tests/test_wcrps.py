@@ -18,10 +18,10 @@ def test_twcrps_vs_crps(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N)) * 0.3
-    fcts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    res = crps_ensemble(fcts, obs, backend=backend, estimator="nrg")
-    resw = twcrps_ensemble(fcts, obs, lambda x: x, estimator="nrg", backend=backend)
+    res = crps_ensemble(obs, fct, backend=backend, estimator="nrg")
+    resw = twcrps_ensemble(obs, fct, lambda x: x, estimator="nrg", backend=backend)
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
 
@@ -30,10 +30,10 @@ def test_owcrps_vs_crps(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N)) * 0.5
-    fcts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    res = crps_ensemble(fcts, obs, backend=backend, estimator="nrg")
-    resw = owcrps_ensemble(fcts, obs, lambda x: x * 0.0 + 1.0, backend=backend)
+    res = crps_ensemble(obs, fct, backend=backend, estimator="nrg")
+    resw = owcrps_ensemble(obs, fct, lambda x: x * 0.0 + 1.0, backend=backend)
     np.testing.assert_allclose(res, resw, rtol=1e-5)
 
 
@@ -42,16 +42,16 @@ def test_vrcrps_vs_crps(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N)) * 0.3
-    fcts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    res = crps_ensemble(fcts, obs, backend=backend, estimator="nrg")
-    resw = vrcrps_ensemble(fcts, obs, lambda x: x * 0.0 + 1.0, backend=backend)
+    res = crps_ensemble(obs, fct, backend=backend, estimator="nrg")
+    resw = vrcrps_ensemble(obs, fct, lambda x: x * 0.0 + 1.0, backend=backend)
     np.testing.assert_allclose(res, resw, atol=1e-6)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_owcrps_score_correctness(backend):
-    fcts = np.array(
+    fct = np.array(
         [
             [-0.03574194, 0.06873582, 0.03098684, 0.07316138, 0.08498165],
             [-0.11957874, 0.26472238, -0.06324622, 0.43026451, -0.25640457],
@@ -84,19 +84,19 @@ def test_owcrps_score_correctness(backend):
     def w_func(x):
         return (x > -1).astype(float)
 
-    res = np.mean(np.float64(owcrps_ensemble(fcts, obs, w_func, backend=backend)))
+    res = np.mean(np.float64(owcrps_ensemble(obs, fct, w_func, backend=backend)))
     np.testing.assert_allclose(res, 0.09320807, rtol=1e-6)
 
     def w_func(x):
         return (x < 1.85).astype(float)
 
-    res = np.mean(np.float64(owcrps_ensemble(fcts, obs, w_func, backend=backend)))
+    res = np.mean(np.float64(owcrps_ensemble(obs, fct, w_func, backend=backend)))
     np.testing.assert_allclose(res, 0.09933139, rtol=1e-6)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_twcrps_score_correctness(backend):
-    fcts = np.array(
+    fct = np.array(
         [
             [-0.03574194, 0.06873582, 0.03098684, 0.07316138, 0.08498165],
             [-0.11957874, 0.26472238, -0.06324622, 0.43026451, -0.25640457],
@@ -130,7 +130,7 @@ def test_twcrps_score_correctness(backend):
         return np.maximum(x, -1.0)
 
     res = np.mean(
-        np.float64(twcrps_ensemble(fcts, obs, v_func, estimator="nrg", backend=backend))
+        np.float64(twcrps_ensemble(obs, fct, v_func, estimator="nrg", backend=backend))
     )
     np.testing.assert_allclose(res, 0.09489662, rtol=1e-6)
 
@@ -138,14 +138,14 @@ def test_twcrps_score_correctness(backend):
         return np.minimum(x, 1.85)
 
     res = np.mean(
-        np.float64(twcrps_ensemble(fcts, obs, v_func, estimator="nrg", backend=backend))
+        np.float64(twcrps_ensemble(obs, fct, v_func, estimator="nrg", backend=backend))
     )
     np.testing.assert_allclose(res, 0.0994809, rtol=1e-6)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_vrcrps_score_correctness(backend):
-    fcts = np.array(
+    fct = np.array(
         [
             [-0.03574194, 0.06873582, 0.03098684, 0.07316138, 0.08498165],
             [-0.11957874, 0.26472238, -0.06324622, 0.43026451, -0.25640457],
@@ -178,11 +178,11 @@ def test_vrcrps_score_correctness(backend):
     def w_func(x):
         return (x > -1).astype(float)
 
-    res = np.mean(np.float64(vrcrps_ensemble(fcts, obs, w_func, backend=backend)))
+    res = np.mean(np.float64(vrcrps_ensemble(obs, fct, w_func, backend=backend)))
     np.testing.assert_allclose(res, 0.1003983, rtol=1e-6)
 
     def w_func(x):
         return (x < 1.85).astype(float)
 
-    res = np.mean(np.float64(vrcrps_ensemble(fcts, obs, w_func, backend=backend)))
+    res = np.mean(np.float64(vrcrps_ensemble(obs, fct, w_func, backend=backend)))
     np.testing.assert_allclose(res, 0.1950857, rtol=1e-6)

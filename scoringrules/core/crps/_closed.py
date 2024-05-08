@@ -8,7 +8,7 @@ if tp.TYPE_CHECKING:
 
 
 def normal(
-    mu: "ArrayLike", sigma: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
     """Compute the CRPS for the normal distribution."""
     B = backends.active if backend is None else backends[backend]
@@ -22,9 +22,9 @@ def normal(
 
 
 def lognormal(
+    obs: "ArrayLike",
     mulog: "ArrayLike",
     sigmalog: "ArrayLike",
-    obs: "ArrayLike",
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the lognormal distribution."""
@@ -40,7 +40,7 @@ def lognormal(
 
 
 def logistic(
-    mu: "ArrayLike", sigma: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
     """Compute the CRPS for the normal distribution."""
     B = backends.active if backend is None else backends[backend]

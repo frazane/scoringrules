@@ -17,21 +17,21 @@ sr.crps_normal(0.1, 1.2, 0.3)
 
 # on arrays
 sr.brier_score(np.random.uniform(0, 1, 100), np.random.binomial(1, 0.5, 100))
-sr.crps_lognormal(np.random.randn(100), np.random.uniform(0.5, 1.5, 100), np.random.lognormal(0, 1, 100))
+sr.crps_lognormal(np.random.lognormal(0, 1, 100), np.random.randn(100), np.random.uniform(0.5, 1.5, 100))
 
 # ensemble metrics
 obs = np.random.randn(100)
-fcts = obs[:,None] + np.random.randn(100, 21) * 0.1
+fct = obs[:,None] + np.random.randn(100, 21) * 0.1
 
-sr.crps_ensemble(fcts, obs)
-sr.error_spread_score(fcts, obs)
+sr.crps_ensemble(obs, fct)
+sr.error_spread_score(obs, fct)
 
 # multivariate ensemble metrics
 obs = np.random.randn(100,3)
-fcts = obs[:,None] + np.random.randn(100, 21, 3) * 0.1
+fct = obs[:,None] + np.random.randn(100, 21, 3) * 0.1
 
-sr.energy_score(fcts, obs)
-sr.variogram_score(fcts, obs)
+sr.energy_score(obs, fct)
+sr.variogram_score(obs, fct)
 ```
 
 For the univariate ensemble metrics, the ensemble dimension is on the last axis unless you specify otherwise with the `axis` argument. For the multivariate ensemble metrics, the ensemble dimension and the variable dimension are on the second last and last axis respectively, unless specified otherwise with `m_axis` and `v_axis`.

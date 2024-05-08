@@ -16,23 +16,23 @@ def test_ensemble(estimator, backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N)) * 0.3
-    fcts = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
     # test exceptions
     if backend in ["numpy", "jax", "torch", "tensorflow"]:
         if estimator not in ["nrg", "fair", "pwm"]:
             with pytest.raises(ValueError):
-                _crps.crps_ensemble(fcts, obs, estimator=estimator, backend=backend)
+                _crps.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
             return
 
     # non-negative values
-    res = _crps.crps_ensemble(fcts, obs, estimator=estimator, backend=backend)
+    res = _crps.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
     res = np.asarray(res)
     assert not np.any(res < 0.0)
 
     # approx zero when perfect forecast
-    perfect_fcts = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
-    res = _crps.crps_ensemble(perfect_fcts, obs, estimator=estimator, backend=backend)
+    perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
+    res = _crps.crps_ensemble(obs, perfect_fct, estimator=estimator, backend=backend)
     res = np.asarray(res)
     assert not np.any(res - 0.0 > 0.0001)
 
@@ -44,7 +44,7 @@ def test_normal(backend):
     sigma = abs(np.random.randn(N)) * 0.3
 
     # non-negative values
-    res = _crps.crps_normal(mu, sigma, obs, backend=backend)
+    res = _crps.crps_normal(obs, mu, sigma, backend=backend)
     res = np.asarray(res)
     assert not np.any(np.isnan(res))
     assert not np.any(res < 0.0)
@@ -52,7 +52,7 @@ def test_normal(backend):
     # approx zero when perfect forecast
     mu = obs + np.random.randn(N) * 1e-6
     sigma = abs(np.random.randn(N)) * 1e-6
-    res = _crps.crps_normal(mu, sigma, obs, backend=backend)
+    res = _crps.crps_normal(obs, mu, sigma, backend=backend)
     res = np.asarray(res)
 
     assert not np.any(np.isnan(res))
@@ -66,7 +66,7 @@ def test_lognormal(backend):
     sigmalog = abs(np.random.randn(N)) * 0.3
 
     # non-negative values
-    res = _crps.crps_lognormal(mulog, sigmalog, obs, backend=backend)
+    res = _crps.crps_lognormal(obs, mulog, sigmalog, backend=backend)
     res = np.asarray(res)
     assert not np.any(np.isnan(res))
     assert not np.any(res < 0.0)
@@ -74,7 +74,7 @@ def test_lognormal(backend):
     # approx zero when perfect forecast
     mulog = np.log(obs) + np.random.randn(N) * 1e-6
     sigmalog = abs(np.random.randn(N)) * 1e-6
-    res = _crps.crps_lognormal(mulog, sigmalog, obs, backend=backend)
+    res = _crps.crps_lognormal(obs, mulog, sigmalog, backend=backend)
     res = np.asarray(res)
 
     assert not np.any(np.isnan(res))

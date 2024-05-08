@@ -8,8 +8,8 @@ if tp.TYPE_CHECKING:
 
 
 def crps_ensemble(
-    forecasts: "Array",
     observations: "ArrayLike",
+    forecasts: "Array",
     /,
     axis: int = -1,
     *,
@@ -21,11 +21,11 @@ def crps_ensemble(
 
     Parameters
     ----------
+    observations: ArrayLike
+        The observed values.
     forecasts: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    observations: ArrayLike
-        The observed values.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
     sorted_ensemble: bool
@@ -47,7 +47,7 @@ def crps_ensemble(
     >>> crps.ensemble(pred, obs)
     """
     B = backends.active if backend is None else backends[backend]
-    forecasts, observations = map(B.asarray, (forecasts, observations))
+    observations, forecasts = map(B.asarray, (observations, forecasts))
 
     if estimator not in crps.estimator_gufuncs:
         raise ValueError(
@@ -62,14 +62,14 @@ def crps_ensemble(
         forecasts = B.sort(forecasts, axis=-1)
 
     if backend == "numba":
-        return crps.estimator_gufuncs[estimator](forecasts, observations)
+        return crps.estimator_gufuncs[estimator](observations, forecasts)
 
-    return crps.ensemble(forecasts, observations, estimator, backend=backend)
+    return crps.ensemble(observations, forecasts, estimator, backend=backend)
 
 
 def twcrps_ensemble(
-    forecasts: "Array",
     observations: "ArrayLike",
+    forecasts: "Array",
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     axis: int = -1,
@@ -91,11 +91,11 @@ def twcrps_ensemble(
 
     Parameters
     ----------
+    observations: ArrayLike
+        The observed values.
     forecasts: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    observations: ArrayLike
-        The observed values.
     v_func: tp.Callable
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold $t$ by projecting forecasts and observations
@@ -115,10 +115,10 @@ def twcrps_ensemble(
     >>> from scoringrules import crps
     >>> twcrps.ensemble(pred, obs)
     """
-    forecasts, observations = map(v_func, (forecasts, observations))
+    observations, forecasts = map(v_func, (observations, forecasts))
     return crps_ensemble(
-        forecasts,
         observations,
+        forecasts,
         axis=axis,
         sorted_ensemble=sorted_ensemble,
         estimator=estimator,
@@ -127,8 +127,8 @@ def twcrps_ensemble(
 
 
 def owcrps_ensemble(
-    forecasts: "Array",
     observations: "ArrayLike",
+    forecasts: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     axis: int = -1,
@@ -149,11 +149,11 @@ def owcrps_ensemble(
 
     Parameters
     ----------
+    observations: ArrayLike
+        The observed values.
     forecasts: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    observations: ArrayLike
-        The observed values.
     w_func: tp.Callable
         Weight function used to emphasise particular outcomes.
     axis: int
@@ -181,24 +181,24 @@ def owcrps_ensemble(
     if axis != -1:
         forecasts = B.moveaxis(forecasts, axis, -1)
 
-    fcts_weights, obs_weights = map(w_func, (forecasts, observations))
+    obs_weights, fct_weights = map(w_func, (observations, forecasts))
 
     if backend == "numba":
         return crps.estimator_gufuncs["ow" + estimator](
-            forecasts, observations, fcts_weights, obs_weights
+            observations, forecasts, obs_weights, fct_weights
         )
 
-    forecasts, observations, fcts_weights, obs_weights = map(
-        B.asarray, (forecasts, observations, fcts_weights, obs_weights)
+    observations, forecasts, obs_weights, fct_weights = map(
+        B.asarray, (observations, forecasts, obs_weights, fct_weights)
     )
     return crps.ow_ensemble(
-        forecasts, observations, fcts_weights, obs_weights, backend=backend
+        observations, forecasts, obs_weights, fct_weights, backend=backend
     )
 
 
 def vrcrps_ensemble(
-    forecasts: "Array",
     observations: "ArrayLike",
+    forecasts: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     axis: int = -1,
@@ -224,11 +224,11 @@ def vrcrps_ensemble(
 
     Parameters
     ----------
+    observations: ArrayLike
+        The observed values.
     forecasts: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    observations: ArrayLike
-        The observed values.
     w_func: tp.Callable
         Weight function used to emphasise particular outcomes.
     axis: int
@@ -256,25 +256,25 @@ def vrcrps_ensemble(
     if axis != -1:
         forecasts = B.moveaxis(forecasts, axis, -1)
 
-    fcts_weights, obs_weights = map(w_func, (forecasts, observations))
+    obs_weights, fct_weights = map(w_func, (observations, forecasts))
 
     if backend == "numba":
         return crps.estimator_gufuncs["vr" + estimator](
-            forecasts, observations, fcts_weights, obs_weights
+            observations, forecasts, obs_weights, fct_weights
         )
 
-    forecasts, observations, fcts_weights, obs_weights = map(
-        B.asarray, (forecasts, observations, fcts_weights, obs_weights)
+    observations, forecasts, obs_weights, fct_weights = map(
+        B.asarray, (observations, forecasts, obs_weights, fct_weights)
     )
     return crps.vr_ensemble(
-        forecasts, observations, fcts_weights, obs_weights, backend=backend
+        observations, forecasts, obs_weights, fct_weights, backend=backend
     )
 
 
 def crps_normal(
+    observation: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -291,12 +291,12 @@ def crps_normal(
 
     Parameters
     ----------
+    observations: ArrayLike
+        The observed values.
     mu: ArrayLike
         Mean of the forecast normal distribution.
     sigma: ArrayLike
         Standard deviation of the forecast normal distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -308,13 +308,13 @@ def crps_normal(
     >>> from scoringrules import crps
     >>> crps.normal(0.1, 0.4, 0.0)
     """
-    return crps.normal(mu, sigma, observation, backend=backend)
+    return crps.normal(observation, mu, sigma, backend=backend)
 
 
 def crps_lognormal(
+    observation: "ArrayLike",
     mulog: "ArrayLike",
     sigmalog: "ArrayLike",
-    observation: "ArrayLike",
     backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the lognormal distribution.
@@ -334,6 +334,8 @@ def crps_lognormal(
 
     Parameters
     ----------
+    observations: ArrayLike
+        The observed values.
     mulog: ArrayLike
         Mean of the normal underlying distribution.
     sigmalog: ArrayLike
@@ -349,13 +351,13 @@ def crps_lognormal(
     >>> from scoringrules import crps
     >>> crps.lognormal(0.1, 0.4, 0.0)
     """
-    return crps.lognormal(mulog, sigmalog, observation, backend=backend)
+    return crps.lognormal(observation, mulog, sigmalog, backend=backend)
 
 
 def crps_logistic(
+    observation: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -372,12 +374,12 @@ def crps_logistic(
 
     Parameters
     ----------
+    observations: ArrayLike
+        Observed values.
     mu: ArrayLike
         Location parameter of the forecast logistic distribution.
     sigma: ArrayLike
         Scale parameter of the forecast logistic distribution.
-    observation: ArrayLike
-        Observed values.
 
     Returns
     -------
@@ -389,7 +391,7 @@ def crps_logistic(
     >>> from scoringrules import crps
     >>> crps.logistic(0.1, 0.4, 0.0)
     """
-    return crps.logistic(mu, sigma, observation, backend=backend)
+    return crps.logistic(observation, mu, sigma, backend=backend)
 
 
 __all__ = [
