@@ -9,8 +9,8 @@ if tp.TYPE_CHECKING:
 
 
 def energy_score(
-    forecasts: "Array",
     observations: "Array",
+    forecasts: "Array",
     /,
     m_axis: int = -2,
     v_axis: int = -1,
@@ -49,19 +49,19 @@ def energy_score(
         The computed Energy Score.
     """
     backend = backend if backend is not None else backends._active
-    forecasts, observations = multivariate_array_check(
-        forecasts, observations, m_axis, v_axis, backend=backend
+    observations, forecasts = multivariate_array_check(
+        observations, forecasts, m_axis, v_axis, backend=backend
     )
 
     if backend == "numba":
-        return energy._energy_score_gufunc(forecasts, observations)
+        return energy._energy_score_gufunc(observations, forecasts)
 
-    return energy.nrg(forecasts, observations, backend=backend)
+    return energy.nrg(observations, forecasts, backend=backend)
 
 
 def twenergy_score(
-    forecasts: "Array",
     observations: "Array",
+    forecasts: "Array",
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     m_axis: int = -2,
@@ -104,15 +104,15 @@ def twenergy_score(
     twenergy_score: ArrayLike of shape (...)
         The computed Threshold-Weighted Energy Score.
     """
-    forecasts, observations = map(v_func, (forecasts, observations))
+    observations, forecasts = map(v_func, (observations, forecasts))
     return energy_score(
-        forecasts, observations, m_axis=m_axis, v_axis=v_axis, backend=backend
+        observations, forecasts, m_axis=m_axis, v_axis=v_axis, backend=backend
     )
 
 
 def owenergy_score(
-    forecasts: "Array",
     observations: "Array",
+    forecasts: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     m_axis: int = -2,
@@ -157,8 +157,8 @@ def owenergy_score(
     """
     B = backends.active if backend is None else backends[backend]
 
-    forecasts, observations = multivariate_array_check(
-        forecasts, observations, m_axis, v_axis, backend=backend
+    observations, forecasts = multivariate_array_check(
+        observations, forecasts, m_axis, v_axis, backend=backend
     )
 
     fct_weights = B.apply_along_axis(w_func, forecasts, -1)
@@ -166,17 +166,17 @@ def owenergy_score(
 
     if B.name == "numba":
         return energy._owenergy_score_gufunc(
-            forecasts, observations, fct_weights, obs_weights
+            observations, forecasts, obs_weights, fct_weights
         )
 
     return energy.ownrg(
-        forecasts, observations, fct_weights, obs_weights, backend=backend
+        observations, forecasts, obs_weights, fct_weights, backend=backend
     )
 
 
 def vrenergy_score(
-    forecasts: "Array",
     observations: "Array",
+    forecasts: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     *,
@@ -223,8 +223,8 @@ def vrenergy_score(
     """
     B = backends.active if backend is None else backends[backend]
 
-    forecasts, observations = multivariate_array_check(
-        forecasts, observations, m_axis, v_axis, backend=backend
+    observations, forecasts = multivariate_array_check(
+        observations, forecasts, m_axis, v_axis, backend=backend
     )
 
     fct_weights = B.apply_along_axis(w_func, forecasts, -1)
@@ -232,9 +232,9 @@ def vrenergy_score(
 
     if backend == "numba":
         return energy._vrenergy_score_gufunc(
-            forecasts, observations, fct_weights, obs_weights
+            observations, forecasts, obs_weights, fct_weights
         )
 
     return energy.vrnrg(
-        forecasts, observations, fct_weights, obs_weights, backend=backend
+        observations, forecasts, obs_weights, fct_weights, backend=backend
     )
