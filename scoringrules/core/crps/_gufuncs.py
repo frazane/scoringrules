@@ -9,6 +9,25 @@ EPSILON = 1e-6
 
 @guvectorize(
     [
+        "void(float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:])",
+    ],
+    "(),(a),(a)->()",
+)
+def crps_quantile_pinball_gufunc(
+    obs: np.ndarray, fct: np.ndarray, alpha: np.ndarray, out: np.ndarray
+):
+    """The Pinball loss."""
+    obs = obs[0]
+    A = fct.shape[0]
+    pb = 0
+    for fc, level in zip(fct, alpha):
+        pb += (obs > fc) * level * (obs - fc) + (obs <= fc) * (1 - level) * (fc - obs)
+    out[0] = pb / A
+
+
+@guvectorize(
+    [
         "void(float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:])",
     ],
@@ -347,4 +366,5 @@ __all__ = [
     "_crps_normal_ufunc",
     "_crps_lognormal_ufunc",
     "_crps_logistic_ufunc",
+    "crps_quantile_pinball_gufunc",
 ]

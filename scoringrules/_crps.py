@@ -126,6 +126,48 @@ def twcrps_ensemble(
     )
 
 
+def crps_quantile(
+    observations: "ArrayLike",
+    forecasts: "Array",
+    alpha: "Array",
+    /,
+    axis: int = -1,
+    *,
+    backend: "Backend" = None,
+) -> "Array":
+    r"""Approximate the CRPS from quantile predictions via the Pinball Loss.
+
+    Parameters
+    ----------
+    observations: ArrayLike
+        The observed values.
+    forecasts: Array
+        The predicted forecast ensemble, where the ensemble dimension is by default
+        represented by the last axis.
+    alpha: Array
+        The percentile levels. We expect the quantile array to match the axis (see below) of the forecast array.
+    axis: int
+        The axis corresponding to the ensemble. Default is the last axis.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    - Array
+        An array of CRPS scores for each forecast, which should be averaged to get meaningful values.
+    """
+    B = backends.active if backend is None else backends[backend]
+    observations, forecasts, alpha = map(B.asarray, (observations, forecasts, alpha))
+
+    if axis != -1:
+        forecasts = B.moveaxis(forecasts, axis, -1)
+
+    if B.name == "numba":
+        return crps.crps_quantile_pinball_gufunc(observations, forecasts, alpha)
+
+    return crps.crps_quantile_pinball(observations, forecasts, alpha, backend=backend)
+
+
 def owcrps_ensemble(
     observations: "ArrayLike",
     forecasts: "Array",
