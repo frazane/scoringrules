@@ -138,16 +138,18 @@ def crps_quantile(
     r"""Approximate the CRPS from quantile predictions via the Pinball Loss.
 
     The CRPS can be approximated as the mean pinball loss for all
-    quantiles: $$CRPS = 1 / A \sum_a^A PB_a $$ where the pinball loss is
-    defined as:
+    quantile forecasts $F_q$ with level $q \in Q$:
 
-    $$ PB = \begin{cases}
-        q * (y - F_q) if y \geq F_q  \\
-        (1-q) * (F_q - y) else  \\
+    $$\text{quantileCRPS} = \frac{1}{|Q|} \sum_{q \in Q} PB_q$$
+
+    where the pinball loss is defined as:
+
+    $$\text{PB}_q = \begin{cases}
+        q(y - F_q) &\text{if} & y \geq F_q  \\
+        (1-q)(F_q - y) &\text{else.} &  \\
     \end{cases} $$
 
-    for a quantile level $q$ and the according forecast $F_q$. An introduction can
-    be found in (Nowotarski & Weron, 2018)[https://www.sciencedirect.com/science/article/pii/S1364032117308808].
+    An introduction can be found in [Nowotarski & Weron, 2018](https://www.sciencedirect.com/science/article/pii/S1364032117308808).
 
     Parameters
     ----------
@@ -165,8 +167,13 @@ def crps_quantile(
 
     Returns
     -------
-    - Array
+    qcrps: Array
         An array of CRPS scores for each forecast, which should be averaged to get meaningful values.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_quantile(obs, fct, alpha)
     """
     B = backends.active if backend is None else backends[backend]
     observations, forecasts, alpha = map(B.asarray, (observations, forecasts, alpha))

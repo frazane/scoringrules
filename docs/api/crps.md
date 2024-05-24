@@ -28,4 +28,9 @@ When the true forecast CDF is not fully known, but represented by a finite ensem
 
 ::: scoringrules.vrcrps_ensemble
 
+<h2>Quantile-based estimators</h2>
+
+::: scoringrules.crps_quantile
+
+
 <br/><br/>
