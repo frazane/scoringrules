@@ -19,11 +19,11 @@ def quantile_pinball_gufunc(
 ):
     """Pinball loss based estimator for the CRPS from quantiles."""
     obs = obs[0]
-    A = fct.shape[0]
+    Q = fct.shape[0]
     pb = 0
     for fc, level in zip(fct, alpha):  # noqa: B905
         pb += (obs > fc) * level * (obs - fc) + (obs <= fc) * (1 - level) * (fc - obs)
-    out[0] = pb / A
+    out[0] = 2 * (pb / Q)
 
 
 @guvectorize(

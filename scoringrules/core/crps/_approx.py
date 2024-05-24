@@ -72,7 +72,7 @@ def quantile_pinball(
     B = backends.active if backend is None else backends[backend]
     below = (fct <= obs[..., None]) * alpha * (obs[..., None] - fct)
     above = (fct > obs[..., None]) * (1 - alpha) * (fct - obs[..., None])
-    return B.mean(below + above, axis=-1)
+    return 2 * B.mean(below + above, axis=-1)
 
 
 def ow_ensemble(

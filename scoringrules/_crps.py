@@ -137,10 +137,12 @@ def crps_quantile(
 ) -> "Array":
     r"""Approximate the CRPS from quantile predictions via the Pinball Loss.
 
+    It is based on the notation in [Berrisch & Ziel, 2022](https://arxiv.org/pdf/2102.00968)
+
     The CRPS can be approximated as the mean pinball loss for all
     quantile forecasts $F_q$ with level $q \in Q$:
 
-    $$\text{quantileCRPS} = \frac{1}{|Q|} \sum_{q \in Q} PB_q$$
+    $$\text{quantileCRPS} = \frac{2}{|Q|} \sum_{q \in Q} PB_q$$
 
     where the pinball loss is defined as:
 
@@ -148,8 +150,6 @@ def crps_quantile(
         q(y - F_q) &\text{if} & y \geq F_q  \\
         (1-q)(F_q - y) &\text{else.} &  \\
     \end{cases} $$
-
-    An introduction can be found in [Nowotarski & Weron, 2018](https://www.sciencedirect.com/science/article/pii/S1364032117308808).
 
     Parameters
     ----------
