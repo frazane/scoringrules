@@ -137,6 +137,18 @@ def crps_quantile(
 ) -> "Array":
     r"""Approximate the CRPS from quantile predictions via the Pinball Loss.
 
+    The CRPS can be approximated as the mean pinball loss for all
+    quantiles: $$CRPS = 1 / A \sum_a^A PB_a $$ where the pinball loss is
+    defined as:
+
+    $$ PB = \begin{cases}
+        q * (y - F_q) if y \geq F_q  \\
+        (1-q) * (F_q - y) else  \\
+    \end{cases} $$
+
+    for a quantile level $q$ and the according forecast $F_q$. An introduction can
+    be found in (Nowotarski & Weron, 2018)[https://www.sciencedirect.com/science/article/pii/S1364032117308808].
+
     Parameters
     ----------
     observations: ArrayLike
@@ -162,10 +174,13 @@ def crps_quantile(
     if axis != -1:
         forecasts = B.moveaxis(forecasts, axis, -1)
 
-    if B.name == "numba":
-        return crps.crps_quantile_pinball_gufunc(observations, forecasts, alpha)
+    if not forecasts.shape[-1] == alpha.shape[-1]:
+        raise ValueError("Expected matching length of forecasts and alpha values.")
 
-    return crps.crps_quantile_pinball(observations, forecasts, alpha, backend=backend)
+    if B.name == "numba":
+        return crps.quantile_pinball_gufunc(observations, forecasts, alpha)
+
+    return crps.quantile_pinball(observations, forecasts, alpha, backend=backend)
 
 
 def owcrps_ensemble(

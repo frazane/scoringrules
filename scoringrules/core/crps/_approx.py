@@ -65,7 +65,7 @@ def _crps_ensemble_pwm(
     return expected_diff + β_0 - 2.0 * β_1
 
 
-def crps_quantile_pinball(
+def quantile_pinball(
     obs: "Array", fct: "Array", alpha: "Array", backend: "Backend" = None
 ) -> "Array":
     """CRPS approximation via Pinball Loss."""
