@@ -126,6 +126,70 @@ def twcrps_ensemble(
     )
 
 
+def crps_quantile(
+    observations: "ArrayLike",
+    forecasts: "Array",
+    alpha: "Array",
+    /,
+    axis: int = -1,
+    *,
+    backend: "Backend" = None,
+) -> "Array":
+    r"""Approximate the CRPS from quantile predictions via the Pinball Loss.
+
+    It is based on the notation in [Berrisch & Ziel, 2022](https://arxiv.org/pdf/2102.00968)
+
+    The CRPS can be approximated as the mean pinball loss for all
+    quantile forecasts $F_q$ with level $q \in Q$:
+
+    $$\text{quantileCRPS} = \frac{2}{|Q|} \sum_{q \in Q} PB_q$$
+
+    where the pinball loss is defined as:
+
+    $$\text{PB}_q = \begin{cases}
+        q(y - F_q) &\text{if} & y \geq F_q  \\
+        (1-q)(F_q - y) &\text{else.} &  \\
+    \end{cases} $$
+
+    Parameters
+    ----------
+    observations: ArrayLike
+        The observed values.
+    forecasts: Array
+        The predicted forecast ensemble, where the ensemble dimension is by default
+        represented by the last axis.
+    alpha: Array
+        The percentile levels. We expect the quantile array to match the axis (see below) of the forecast array.
+    axis: int
+        The axis corresponding to the ensemble. Default is the last axis.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    qcrps: Array
+        An array of CRPS scores for each forecast, which should be averaged to get meaningful values.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_quantile(obs, fct, alpha)
+    """
+    B = backends.active if backend is None else backends[backend]
+    observations, forecasts, alpha = map(B.asarray, (observations, forecasts, alpha))
+
+    if axis != -1:
+        forecasts = B.moveaxis(forecasts, axis, -1)
+
+    if not forecasts.shape[-1] == alpha.shape[-1]:
+        raise ValueError("Expected matching length of forecasts and alpha values.")
+
+    if B.name == "numba":
+        return crps.quantile_pinball_gufunc(observations, forecasts, alpha)
+
+    return crps.quantile_pinball(observations, forecasts, alpha, backend=backend)
+
+
 def owcrps_ensemble(
     observations: "ArrayLike",
     forecasts: "Array",

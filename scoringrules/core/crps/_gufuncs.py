@@ -9,6 +9,25 @@ EPSILON = 1e-6
 
 @guvectorize(
     [
+        "void(float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:])",
+    ],
+    "(),(a),(a)->()",
+)
+def quantile_pinball_gufunc(
+    obs: np.ndarray, fct: np.ndarray, alpha: np.ndarray, out: np.ndarray
+):
+    """Pinball loss based estimator for the CRPS from quantiles."""
+    obs = obs[0]
+    Q = fct.shape[0]
+    pb = 0
+    for fc, level in zip(fct, alpha):  # noqa: B905
+        pb += (obs > fc) * level * (obs - fc) + (obs <= fc) * (1 - level) * (fc - obs)
+    out[0] = 2 * (pb / Q)
+
+
+@guvectorize(
+    [
         "void(float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:])",
     ],
@@ -347,4 +366,5 @@ __all__ = [
     "_crps_normal_ufunc",
     "_crps_lognormal_ufunc",
     "_crps_logistic_ufunc",
+    "quantile_pinball_gufunc",
 ]
