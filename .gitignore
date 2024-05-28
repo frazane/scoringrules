@@ -149,3 +149,4 @@ scratch_nbs/
 .DS_store
 .ruff_cache/
 _devlog/
+tests/output
