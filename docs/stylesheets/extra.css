@@ -49,3 +49,8 @@ h6.heading {
 .md-grid {
   max-width: 85%; /* or 100%, if you want to stretch to full-width */
 }
+
+
+.highlight .gp, .highlight .go { /* Generic.Prompt, Generic.Output */
+  user-select: none;
+}
