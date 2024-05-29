@@ -1,10 +1,20 @@
 import typing as tp
 
 from scoringrules.backend import backends
-from scoringrules.core.stats import _logis_cdf, _norm_cdf, _norm_pdf
+from scoringrules.core.stats import _exp_cdf, _logis_cdf, _norm_cdf, _norm_pdf
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
+
+
+def exponential(
+    obs: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the exponential distribution."""
+    B = backends.active if backend is None else backends[backend]
+    rate, obs = map(B.asarray, (rate, obs))
+    s = B.abs(obs) - (2 * _exp_cdf(obs, rate, backend=backend) / rate) + 1 / (2 * rate)
+    return s
 
 
 def normal(

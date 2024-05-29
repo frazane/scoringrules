@@ -44,6 +44,11 @@ class TorchBackend(ArrayBackend):
     ) -> "Tensor":
         return torch.mean(x, axis=axis, keepdim=keepdims)
 
+    def max(
+        self, x: "Tensor", axis: int | tuple[int, ...] | None, keepdims: bool = False
+    ) -> "Tensor":
+        return torch.max(x, axis=axis, keepdim=keepdims)
+
     def moveaxis(
         self,
         x: "Tensor",

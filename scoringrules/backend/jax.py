@@ -44,6 +44,11 @@ class JaxBackend(ArrayBackend):
     ) -> "Array":
         return jnp.mean(x, axis=axis, keepdims=keepdims)
 
+    def max(
+        self, x: "Array", axis: int | tuple[int, ...] | None, keepdims: bool = False
+    ) -> "Array":
+        return jnp.max(x, axis=axis, keepdims=keepdims)
+
     def moveaxis(
         self,
         x: "Array",
