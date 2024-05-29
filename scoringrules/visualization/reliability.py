@@ -34,12 +34,12 @@ def reliability_diagram(
     Parameters
     ----------
     observations:
-        The observed values.
+        The observed outcomes, either 0 or 1.
     forecasts:
-        The predicted forecast ensemble, where the ensemble dimension is by default
-        represented by the last axis.
+        Forecasted probabilities between 0 and 1.
     uncertainty_band:
-        The type of uncertainty band to plot. If None, no uncertainty band is plotted.
+        The type of uncertainty band to plot, which can be either `'confidence'` or 
+        `'consistency'`band. If None, no uncertainty band is plotted.
     n_bootstrap:
         The number of bootstrap samples to use for the uncertainty band.
     alpha:
@@ -52,14 +52,11 @@ def reliability_diagram(
 
     Examples
     --------
-    ```pycon
     >>> import numpy as np
     >>> from scoringrules.visualization import reliability_diagram
     >>> x = np.random.uniform(0, 1, 1024)
     >>> y = np.random.binomial(1, np.sqrt(x), 1024)
     >>> ax = reliability_diagram(y, x)
-
-    ```
     """
     try:
         import matplotlib.pyplot as plt
