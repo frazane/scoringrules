@@ -335,6 +335,48 @@ def vrcrps_ensemble(
     )
 
 
+def crps_exponential(
+    observation: "ArrayLike",
+    rate: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the exponential distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$\mathrm{CRPS}(F_{\lambda}, y) = |y| - \frac{2F_{\lambda}(y)}{\lambda} + \frac{1}{2 \lambda},$$
+
+    where $F_{\lambda}$ is exponential distribution function with rate parameter $\lambda > 0$.
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    rate:
+        Rate parameter of the forecast exponential distribution.
+
+    Returns
+    -------
+    score:
+        The CRPS between Exp(rate) and obs.
+
+    Examples
+    --------
+    ```pycon
+    >>> import scoringrules as sr
+    >>> import numpy as np
+    >>> sr.crps_exponential(0.8, 3.0)
+    0.360478635526275
+    >>> sr.crps_exponential(np.array([0.8, 0.9]), np.array([3.0, 2.0]))
+    array([0.36047864, 0.24071795])
+    ```
+    """
+    return crps.exponential(observation, rate, backend=backend)
+
+
 def crps_normal(
     observation: "ArrayLike",
     mu: "ArrayLike",
@@ -398,11 +440,11 @@ def crps_lognormal(
 
     Parameters
     ----------
-    observations: ArrayLike
+    observation:
         The observed values.
-    mulog: ArrayLike
+    mulog:
         Mean of the normal underlying distribution.
-    sigmalog: ArrayLike
+    sigmalog:
         Standard deviation of the underlying normal distribution.
 
     Returns
