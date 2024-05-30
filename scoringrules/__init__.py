@@ -17,7 +17,7 @@ from scoringrules._energy import (
     vrenergy_score,
 )
 from scoringrules._error_spread import error_spread_score
-from scoringrules._interval import interval_score
+from scoringrules._interval import interval_score, weighted_interval_score
 from scoringrules._logs import logs_normal
 from scoringrules._variogram import (
     owvariogram_score,
@@ -52,4 +52,5 @@ __all__ = [
     "twvariogram_score",
     "vrvariogram_score",
     "interval_score",
+    "weighted_interval_score",
 ]
