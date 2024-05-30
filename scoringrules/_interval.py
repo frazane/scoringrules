@@ -137,4 +137,13 @@ def weighted_interval_score(
             observations, median, lower, upper, alpha, weight_median, weight_alpha
         )
 
-    return interval._interval_score(observations, lower, upper, alpha, backend=backend)
+    return interval._weighted_interval_score(
+        observations,
+        median,
+        lower,
+        upper,
+        alpha,
+        weight_median,
+        weight_alpha,
+        backend=backend,
+    )
