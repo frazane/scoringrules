@@ -15,13 +15,13 @@ def _interval_score(
 ) -> "Array":
     """Winkler or Interval Score for prediction interval PI[lower, upper] and observations."""
     # We don't need the backend here
-    # B = backends.active if backend is None else backends[backend]
+    B = backends.active if backend is None else backends[backend]
+    obs = B.expand_dims(obs, -1)
     width = upper - lower
-    above = obs[:, None] > upper
-    below = obs[:, None] < lower
+    above = obs > upper
+    below = obs < lower
     W = width + (
-        below * (2 / alpha) * (lower - obs[:, None])
-        + above * (2 / alpha) * (obs[:, None] - upper)
+        below * (2 / alpha) * (lower - obs) + above * (2 / alpha) * (obs - upper)
     )
     return W
 
@@ -40,6 +40,8 @@ def _weighted_interval_score(
     B = backends.active if backend is None else backends[backend]
     K = weight_alpha.shape[0]
     IS = _interval_score(obs, lower, upper, alpha)
-    WIS = B.sum(IS * [None, weight_alpha], axis=1) + weight_median * median
+    WIS = (
+        B.sum(IS * B.expand_dims(weight_alpha, axis=0), axis=1) + weight_median * median
+    )
     WIS /= K + 1 / 2
     return WIS
