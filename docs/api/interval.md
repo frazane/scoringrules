@@ -5,7 +5,7 @@
 For a prediction interval (PI), the interval or Winkler score is given by:
 
 $\text{IS} = \begin{cases}
-    (u - l) + 2\frac{2}{\alpha}(l - y)  & \text{for } y < l \\
+    (u - l) + \frac{2}{\alpha}(l - y)  & \text{for } y < l \\
     (u - l)                             & \text{for } l \leq y \leq u \\
     (u - l) + \frac{2}{\alpha}(y - u)   & \text{for } y > u. \\
 \end{cases}$

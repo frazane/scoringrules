@@ -23,7 +23,7 @@ def interval_score(
     The interval score is defined as
 
     $\text{IS} = \begin{cases}
-    (u - l) + 2\frac{2}{\alpha}(l - y)  & \text{for } y < l \\
+    (u - l) + \frac{2}{\alpha}(l - y)  & \text{for } y < l \\
     (u - l)                             & \text{for } l \leq y \leq u \\
     (u - l) + \frac{2}{\alpha}(y - u)   & \text{for } y > u. \\
     \end{cases}$
