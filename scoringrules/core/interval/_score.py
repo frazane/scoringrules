@@ -39,7 +39,8 @@ def _weighted_interval_score(
     K = weight_alpha.shape[0]
     IS = _interval_score(obs, lower, upper, alpha)
     WIS = (
-        B.sum(IS * B.expand_dims(weight_alpha, axis=0), axis=1) + weight_median * median
+        B.sum(IS * B.expand_dims(weight_alpha, axis=-2), axis=-1)
+        + weight_median * median
     )
     WIS /= K + 1 / 2
     return WIS
