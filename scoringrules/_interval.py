@@ -18,7 +18,7 @@ def interval_score(
     *,
     backend: "Backend" = None,
 ) -> "Array":
-    r"""Compute the Interval Score or Winkler Score [(Bracher J, Ray EL, Gneiting T, Reich NG, 2022)](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008618) for 1 - $\alpha$ prediction intervals PI = [lower, upper].
+    r"""Compute the Interval Score or Winkler Score [(Gneiting & Raftery, 2012)](https://www.tandfonline.com/doi/abs/10.1198/016214506000001437) for 1 - $\alpha$ prediction intervals PI = [lower, upper].
 
     The interval score is defined as
 
