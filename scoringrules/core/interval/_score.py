@@ -15,8 +15,6 @@ def _interval_score(
 ) -> "Array":
     """Winkler or Interval Score for prediction interval PI[lower, upper] and observations."""
     # We don't need the backend here
-    B = backends.active if backend is None else backends[backend]
-    obs = B.expand_dims(obs, -1)
     width = upper - lower
     above = obs > upper
     below = obs < lower

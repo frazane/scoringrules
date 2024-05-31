@@ -1,5 +1,5 @@
 import typing as tp
-from typing import Optional
+from typing import Optional, Union
 
 from scoringrules.backend import backends
 from scoringrules.core import interval
@@ -12,7 +12,7 @@ def interval_score(
     observations: "ArrayLike",
     lower: "Array",
     upper: "Array",
-    alpha: "Array",
+    alpha: Union[float, "Array"],
     /,
     axis: int = -1,
     *,
@@ -30,6 +30,12 @@ def interval_score(
 
     for an $1 - \alpha$ PI of $[l, u]$ and the true value $y$.
 
+    Note
+    ----
+    Note that alpha can be a float or an array of coverages.
+    In the case alpha is a float, the output will have the same shape as the observations and we assume that shape of observations,
+    upper and lower is the same. In case alpha is a vector, the function will broadcast observations accordingly.
+
     Parameters
     ----------
     observations: ArrayLike
@@ -38,7 +44,7 @@ def interval_score(
         The predicted lower bound of the prediction interval.
     upper: Array
         The predicted upper bound of the prediction interval.
-    alpha: Array
+    alpha: Union[float, Array]
         The 1 - alpha level for the prediction interval.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
@@ -51,18 +57,33 @@ def interval_score(
         An array of interval scores for each prediction interval, which should be averaged to get meaningful values.
     """
     B = backends.active if backend is None else backends[backend]
-    observations, lower, upper, alpha = map(
-        B.asarray, (observations, lower, upper, alpha)
-    )
+    single_alpha = isinstance(alpha, float)
+
+    observations, lower, upper = map(B.asarray, (observations, lower, upper))
 
     if axis != -1:
         lower = B.moveaxis(lower, axis, -1)
         upper = B.moveaxis(upper, axis, -1)
 
-    if B.name == "numba":
-        return interval._interval_score_gufunc(observations, lower, upper, alpha)
+    if single_alpha:
+        if B.name == "numba":
+            return interval._interval_score_gufunc(observations, lower, upper, alpha)
 
-    return interval._interval_score(observations, lower, upper, alpha, backend=backend)
+        return interval._interval_score(
+            observations, lower, upper, alpha, backend=backend
+        )
+
+    else:
+        alpha = B.asarray(alpha)
+
+        if B.name == "numba":
+            return interval._interval_score_gufunc(
+                observations[..., None], lower, upper, alpha
+            )
+
+        return interval._interval_score(
+            observations[..., None], lower, upper, alpha, backend=backend
+        )
 
 
 def weighted_interval_score(

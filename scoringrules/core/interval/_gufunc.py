@@ -1,29 +1,25 @@
 import numpy as np
-from numba import guvectorize
+from numba import guvectorize, vectorize
 
 
-@guvectorize(
+@vectorize(
     [
-        "void(float32[:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(a),(a),(a)->(a)",
+        "float64(float64, float64, float64, float64)",
+        "float32(float32, float32, float32, float32)",
+    ]
 )
 def _interval_score_gufunc(
     obs: np.ndarray,
     lower: np.ndarray,
     upper: np.ndarray,
     alpha: np.ndarray,
-    out: np.ndarray,
 ):
     """Interval score or Winkler score."""
-    obs = obs[0]
-    for i, (low, upp, a) in enumerate(zip(lower, upper, alpha)):  # noqa: B905
-        out[i] = (
-            (upp - low)
-            + (obs < low) * (2 / a) * (low - obs)
-            + (obs > upp) * (2 / a) * (obs - upp)
-        )
+    return (
+        (upper - lower)
+        + (obs < lower) * (2 / alpha) * (lower - obs)
+        + (obs > upper) * (2 / alpha) * (obs - upper)
+    )
 
 
 @guvectorize(
