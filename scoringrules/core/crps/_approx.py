@@ -65,6 +65,16 @@ def _crps_ensemble_pwm(
     return expected_diff + β_0 - 2.0 * β_1
 
 
+def quantile_pinball(
+    obs: "Array", fct: "Array", alpha: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS approximation via Pinball Loss."""
+    B = backends.active if backend is None else backends[backend]
+    below = (fct <= obs[..., None]) * alpha * (obs[..., None] - fct)
+    above = (fct > obs[..., None]) * (1 - alpha) * (fct - obs[..., None])
+    return 2 * B.mean(below + above, axis=-1)
+
+
 def ow_ensemble(
     obs: "Array",
     fct: "Array",
