@@ -10,7 +10,7 @@ $\text{IS} = \begin{cases}
     (u - l) + \frac{2}{\alpha}(y - u)   & \text{for } y > u. \\
 \end{cases}$
 
-for an $(1 - \alpha)$PI of $[l, u]$ and the true value $y$ [@gneiting_strictly_2007, @bracher2021evaluating].
+for an $(1 - \alpha)$PI of $[l, u]$ and the true value $y$ [@gneiting_strictly_2007, @bracher2021evaluating @winkler1972decision].
 
 ## Weighted Interval Score
 
