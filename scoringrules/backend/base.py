@@ -46,6 +46,14 @@ class ArrayBackend(abc.ABC):
         """Return the maximum value of an input array ``x``."""
 
     @abc.abstractmethod
+    def roll(self, x: "Array", shift: int, axis: int | None = None) -> "Array":
+        """Roll the values of array ``x`` by shift along axis."""
+
+    @abc.abstractmethod
+    def shuffle(self, x: "Array", axis: int | None = 0) -> "Array":
+        """Shuffle the values of array ``x`` by along axis."""
+
+    @abc.abstractmethod
     def moveaxis(
         self,
         x: "Array",
