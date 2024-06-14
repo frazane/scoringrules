@@ -43,6 +43,11 @@ class NumpyBackend(ArrayBackend):
     ) -> "NDArray":
         return np.mean(x, axis=axis, keepdims=keepdims)
 
+    def max(
+        self, x: "NDArray", axis: int | tuple[int, ...] | None, keepdims: bool = False
+    ) -> "NDArray":
+        return np.max(x, axis=axis, keepdims=keepdims)
+
     def moveaxis(
         self,
         x: "NDArray",

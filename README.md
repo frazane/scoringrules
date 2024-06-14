@@ -48,5 +48,18 @@ sr.crps_ensemble(obs, fct)
 - Energy Score
 - Variogram Score
 
+
+## Citation
+If you found this library useful for your own research, consider citing:
+
+```
+@software{zanetta_scoringrules_2024,
+  author = {Francesco Zanetta and Sam Allen},
+  title = {Scoringrules: a python library for probabilistic forecast evaluation},
+  year = {2024},
+  url = {https://github.com/frazane/scoringrules}
+}
+```
+
 ## Acknowledgements
 [scoringRules](https://cran.r-project.org/web/packages/scoringRules/index.html) served as a reference for this library. The authors did an outstanding work which greatly facilitated ours. The implementation of the ensemble-based metrics as jit-compiled numpy generalized `ufuncs` was first proposed in [properscoring](https://github.com/properscoring/properscoring), released under Apache License, Version 2.0.

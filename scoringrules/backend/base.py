@@ -40,6 +40,12 @@ class ArrayBackend(abc.ABC):
         """Calculate the arithmetic mean of the input array ``x``."""
 
     @abc.abstractmethod
+    def max(
+        self, x: "Array", axis: int | tuple[int, ...] | None, keepdims: bool = False
+    ) -> "Array":
+        """Return the maximum value of an input array ``x``."""
+
+    @abc.abstractmethod
     def moveaxis(
         self,
         x: "Array",

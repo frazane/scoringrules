@@ -13,10 +13,11 @@ When the true forecast CDF is not fully known, but represented by a finite ensem
 
 <h2>Analytical formulations</h2>
 
-::: scoringrules.crps_normal
+::: scoringrules.crps_exponential
 
 ::: scoringrules.crps_lognormal
 
+::: scoringrules.crps_normal
 
 <h2>Ensemble-based estimators</h2>
 
@@ -27,5 +28,10 @@ When the true forecast CDF is not fully known, but represented by a finite ensem
 ::: scoringrules.owcrps_ensemble
 
 ::: scoringrules.vrcrps_ensemble
+
+<h2>Quantile-based estimators</h2>
+
+::: scoringrules.crps_quantile
+
 
 <br/><br/>

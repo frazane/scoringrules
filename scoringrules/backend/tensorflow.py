@@ -49,6 +49,11 @@ class TensorflowBackend(ArrayBackend):
     ) -> "Tensor":
         return tf.math.reduce_mean(x, axis=axis, keepdims=keepdims)
 
+    def max(
+        self, x: "Tensor", axis: int | tuple[int, ...] | None, keepdims: bool = False
+    ) -> "Tensor":
+        return tf.math.reduce_max(x, axis=axis, keepdims=keepdims)
+
     def moveaxis(
         self,
         x: "Tensor",

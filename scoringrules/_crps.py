@@ -126,6 +126,70 @@ def twcrps_ensemble(
     )
 
 
+def crps_quantile(
+    observations: "ArrayLike",
+    forecasts: "Array",
+    alpha: "Array",
+    /,
+    axis: int = -1,
+    *,
+    backend: "Backend" = None,
+) -> "Array":
+    r"""Approximate the CRPS from quantile predictions via the Pinball Loss.
+
+    It is based on the notation in [Berrisch & Ziel, 2022](https://arxiv.org/pdf/2102.00968)
+
+    The CRPS can be approximated as the mean pinball loss for all
+    quantile forecasts $F_q$ with level $q \in Q$:
+
+    $$\text{quantileCRPS} = \frac{2}{|Q|} \sum_{q \in Q} PB_q$$
+
+    where the pinball loss is defined as:
+
+    $$\text{PB}_q = \begin{cases}
+        q(y - F_q) &\text{if} & y \geq F_q  \\
+        (1-q)(F_q - y) &\text{else.} &  \\
+    \end{cases} $$
+
+    Parameters
+    ----------
+    observations: ArrayLike
+        The observed values.
+    forecasts: Array
+        The predicted forecast ensemble, where the ensemble dimension is by default
+        represented by the last axis.
+    alpha: Array
+        The percentile levels. We expect the quantile array to match the axis (see below) of the forecast array.
+    axis: int
+        The axis corresponding to the ensemble. Default is the last axis.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    qcrps: Array
+        An array of CRPS scores for each forecast, which should be averaged to get meaningful values.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_quantile(obs, fct, alpha)
+    """
+    B = backends.active if backend is None else backends[backend]
+    observations, forecasts, alpha = map(B.asarray, (observations, forecasts, alpha))
+
+    if axis != -1:
+        forecasts = B.moveaxis(forecasts, axis, -1)
+
+    if not forecasts.shape[-1] == alpha.shape[-1]:
+        raise ValueError("Expected matching length of forecasts and alpha values.")
+
+    if B.name == "numba":
+        return crps.quantile_pinball_gufunc(observations, forecasts, alpha)
+
+    return crps.quantile_pinball(observations, forecasts, alpha, backend=backend)
+
+
 def owcrps_ensemble(
     observations: "ArrayLike",
     forecasts: "Array",
@@ -271,6 +335,48 @@ def vrcrps_ensemble(
     )
 
 
+def crps_exponential(
+    observation: "ArrayLike",
+    rate: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the exponential distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$\mathrm{CRPS}(F_{\lambda}, y) = |y| - \frac{2F_{\lambda}(y)}{\lambda} + \frac{1}{2 \lambda},$$
+
+    where $F_{\lambda}$ is exponential distribution function with rate parameter $\lambda > 0$.
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    rate:
+        Rate parameter of the forecast exponential distribution.
+
+    Returns
+    -------
+    score:
+        The CRPS between Exp(rate) and obs.
+
+    Examples
+    --------
+    ```pycon
+    >>> import scoringrules as sr
+    >>> import numpy as np
+    >>> sr.crps_exponential(0.8, 3.0)
+    0.360478635526275
+    >>> sr.crps_exponential(np.array([0.8, 0.9]), np.array([3.0, 2.0]))
+    array([0.36047864, 0.24071795])
+    ```
+    """
+    return crps.exponential(observation, rate, backend=backend)
+
+
 def crps_normal(
     observation: "ArrayLike",
     mu: "ArrayLike",
@@ -334,11 +440,11 @@ def crps_lognormal(
 
     Parameters
     ----------
-    observations: ArrayLike
+    observation:
         The observed values.
-    mulog: ArrayLike
+    mulog:
         Mean of the normal underlying distribution.
-    sigmalog: ArrayLike
+    sigmalog:
         Standard deviation of the underlying normal distribution.
 
     Returns
