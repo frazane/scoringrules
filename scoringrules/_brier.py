@@ -37,7 +37,7 @@ def brier_score(
         The computed Brier Score.
 
     """
-    return brier.brier_score(forecasts, observations, backend=backend)
+    return brier.brier_score(obs=observations, forecasts=forecasts, backend=backend)
 
 
 __all__ = ["brier_score"]
