@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scoringrules"
-version = "0.5.1"
+version = "0.5.2"
 description = "Scoring rules for probabilistic forecast evaluation."
 authors = [
   "Francesco Zanetta <zanetta.francesco@gmail.com>",
@@ -94,7 +94,6 @@ ignore = [
   "E402",
   "E731",
   "E501",
-  "PGH001",
   "RET504",
   "S101",
   "F722",
