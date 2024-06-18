@@ -50,8 +50,12 @@ class ArrayBackend(abc.ABC):
         """Roll the values of array ``x`` by shift along axis."""
 
     @abc.abstractmethod
-    def shuffle(self, x: "Array", axis: int | None = 0) -> "Array":
-        """Shuffle the values of array ``x`` by along axis."""
+    def shuffle(self, x: "Array", axis: int | None = 0, seed: int = 42) -> "Array":
+        """
+        Shuffle the values of array ``x`` by along axis.
+
+        Note that the seed is set on the function call. Hence, calling the function multiple times with the default seed will result in identical outputs.
+        """
 
     @abc.abstractmethod
     def moveaxis(

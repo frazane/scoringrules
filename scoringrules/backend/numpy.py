@@ -51,8 +51,8 @@ class NumpyBackend(ArrayBackend):
     def roll(self, x: "NDArray", shift: int, axis: int | None = None) -> "NDArray":
         return np.roll(x, shift=shift, axis=axis)
 
-    def shuffle(self, x: "NDArray", axis: int = 0) -> "NDArray":
-        generator = np.random.default_rng()
+    def shuffle(self, x: "NDArray", axis: int = 0, seed: int = 42) -> "NDArray":
+        generator = np.random.default_rng(seed)
         return generator.permutation(x, axis=axis)
 
     def moveaxis(

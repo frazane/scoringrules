@@ -30,7 +30,6 @@ class JaxBackend(ArrayBackend):
             jax = import_module("jax")
             jnp = import_module("jax.numpy")
             jsp = import_module("jax.scipy")
-        self.key = jax.random.key(1)
 
     def asarray(self, obj: "ArrayLike", /, *, dtype: Dtype | None = None) -> "Array":
         return jnp.asarray(obj, dtype=dtype)
@@ -53,9 +52,10 @@ class JaxBackend(ArrayBackend):
     def roll(self, x: "Array", shift: int, axis: int | None = None) -> "Array":
         return jnp.roll(x, shift=shift, axis=axis)
 
-    def shuffle(self, x: "Array", axis: int = 0) -> "Array":
-        self.key, subkey = jnp.split(self.key)
-        return jax.random.permutation(subkey, x, axis=axis, independent=False)
+    def shuffle(self, x: "Array", axis: int = 0, seed: int = 42) -> "Array":
+        return jax.random.permutation(
+            jax.random.key(42), x, axis=axis, independent=False
+        )
 
     def moveaxis(
         self,
