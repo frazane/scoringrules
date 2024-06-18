@@ -321,7 +321,7 @@ def energy_score_kband(
 
     The Energy Score is a multivariate scoring rule expressed as
 
-    $$\text{ES}^{k-text{band}}(F_{ens}, \mathbf{y})= \frac{1}{M} \sum_{m=1}^{M} \| \mathbf{x}_{m} -
+    $$\text{ES}^{k-\text{band}}(F_{ens}, \mathbf{y})= \frac{1}{M} \sum_{m=1}^{M} \| \mathbf{x}_{m} -
       \mathbf{y} \| - \frac{1}{MK} \sum_{m=1}^{M} \sum_{k=1}^{K}  \| \mathbf{x}_{m} - \mathbf{x}_{m+k} \| $$
 
     where $\mathbf{X}$ are independent samples from $F$, $K$ is a user-choosen integer
