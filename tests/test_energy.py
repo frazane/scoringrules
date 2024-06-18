@@ -1,7 +1,7 @@
 import jax
 import numpy as np
 import pytest
-from scoringrules._energy import energy_score
+from scoringrules._energy import energy_score, energy_score_iid, energy_score_kband
 
 from .conftest import BACKENDS
 
@@ -21,3 +21,32 @@ def test_energy_score(backend):
         assert isinstance(res, np.ndarray)
     elif backend == "jax":
         assert isinstance(res, jax.Array)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_energy_score_iid(backend):
+    M = 1000
+    D = 5
+    N = 100
+
+    generator = np.random.default_rng()
+    fct = generator.normal(0, 1, (N, M, D))
+    obs = np.zeros((N, D))
+    res_iid = energy_score_iid(obs, fct)
+    res_full = energy_score(obs, fct)
+    assert np.all(1 - res_iid / res_full < 0.10), "Error is to full really big"
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_energy_score_kband(backend):
+    M = 1000
+    D = 5
+    N = 100
+    K = 100
+
+    generator = np.random.default_rng()
+    fct = generator.normal(0, 1, (N, M, D))
+    obs = np.zeros((N, D))
+    res_iid = energy_score_kband(obs, fct, K)
+    res_full = energy_score(obs, fct)
+    assert np.all(1 - res_iid / res_full < 0.05), "Error is to full really big"

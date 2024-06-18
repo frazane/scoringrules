@@ -369,4 +369,4 @@ def energy_score_kband(
     if backend == "numba":
         return energy._energy_score_kband_gufunc(observations, forecasts, K)
 
-    return energy.kbnrg(observations, forecasts, backend=backend)
+    return energy.kbnrg(observations, forecasts, K, backend=backend)
