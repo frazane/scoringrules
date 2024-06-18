@@ -48,11 +48,12 @@ class TorchBackend(ArrayBackend):
         self, x: "Tensor", axis: int | tuple[int, ...] | None, keepdims: bool = False
     ) -> "Tensor":
         return torch.max(x, axis=axis, keepdim=keepdims)
-    
+
     def roll(self, x: "Tensor", shift: int, axis: int | None = None) -> "Tensor":
         torch.roll(x, shifts=shift, dims=axis)
 
-    def shuffle(self, x: "Tensor", axis: int = 0) -> "Tensor":
+    def shuffle(self, x: "Tensor", axis: int = 0, seed: int = 42) -> "Tensor":
+        torch.manual_seed(seed=seed)
         return torch.moveaxis(
             torch.moveaxis(x, source=axis, destination=0)[
                 torch.randperm(x.shape[axis])
