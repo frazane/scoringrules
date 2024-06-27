@@ -89,3 +89,55 @@ def _vrenergy_score_gufunc(
     wabs_y = np.linalg.norm(obs) * ow
 
     out[0] = e_1 / M - 0.5 * e_2 / (M**2) + (wabs_x - wabs_y) * (wbar - ow)
+
+
+@guvectorize(
+    [
+        "void(float32[:], float32[:,:], float32[:])",
+        "void(float64[:], float64[:,:], float64[:])",
+    ],
+    "(d), (m, d)->()",
+)
+def _energy_score_iid_gufunc(
+    obs: np.ndarray,
+    fct: np.ndarray,
+    out: np.ndarray,
+):
+    """IID estimator for the energy score."""
+    M = fct.shape[0]
+    K = int(M // 2)
+    e_1 = 0
+    e_2 = 0
+    for i in range(M):
+        e_1 += float(np.linalg.norm(fct[i] - obs))
+    for i in range(K):
+        e_2 += float(np.linalg.norm(fct[i] - fct[K + i]))
+    out[0] = e_1 / M - 0.5 / K * e_2
+
+
+@guvectorize(
+    [
+        "void(float32[:], float32[:,:], int32, float32[:])",
+        "void(float64[:], float64[:,:], int64, float64[:])",
+    ],
+    "(d), (m, d), ()->()",
+)
+def _energy_score_kband_gufunc(
+    obs: np.ndarray,
+    fct: np.ndarray,
+    K: int,
+    out: np.ndarray,
+):
+    """K-Band estimator for the energy score."""
+    M = fct.shape[0]
+
+    e_1 = 0
+    e_2 = 0
+
+    for i in range(M):
+        e_1 += float(np.linalg.norm(fct[i] - obs))
+    for k in range(1, K + 1):
+        idx_rolled = np.roll(np.arange(M), k)
+        for i in range(M):
+            e_2 += float(np.linalg.norm(fct[i] - fct[idx_rolled[i]]))
+    out[0] = e_1 / M - 0.5 / (M * K) * e_2

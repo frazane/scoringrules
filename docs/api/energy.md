@@ -20,10 +20,12 @@ In this case, the expectations in the definition of the energy score can be repl
 sample means over the ensemble members, yielding the following representation of the energy
 score when evaluating an ensemble forecast $F_{ens}$ with $M$ members.
 
+Next to the full version of the energy score, `scoringrules` provides [weighted versions](#weighted-versions) and [estimators with lower computational complexity](#estimators-for-the-energy-score) for the energy score.
+
 
 ::: scoringrules.energy_score
 
-<h2>Weighted versions</h2>
+## Weighted versions
 
 The energy score provides a measure of overall forecast performance. However, it is often
 the case that certain outcomes are of more interest than others, making it desirable to
@@ -85,3 +87,11 @@ energy scores can easily be computed for ensemble forecasts by
 replacing the expectations with sample means over the ensemble members.
 
 <br/><br/>
+
+## Estimators for the Energy Score
+
+The following two estimators can be used if computational power is scarce respectively the dimension of the forecasting setting is large (Ziel and Berk, 2019)[@ziel2019multivariate]. Note that, on the flip-side, lower computational complexity goes hand-in-hand with lower precision for the approximation of the ES.
+
+::: scoringrules.energy_score_iid
+
+::: scoringrules.energy_score_kband
