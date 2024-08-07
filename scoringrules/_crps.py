@@ -43,8 +43,8 @@ def crps_ensemble(
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.ensemble(pred, obs)
+    >>> import scoringrules as sr
+    >>> sr.crps_ensemble(obs, pred)
     """
     B = backends.active if backend is None else backends[backend]
     observations, forecasts = map(B.asarray, (observations, forecasts))
@@ -112,8 +112,13 @@ def twcrps_ensemble(
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> twcrps.ensemble(pred, obs)
+    >>> import numpy as np
+    >>> import scoringrules as sr
+    >>>
+    >>> def v_func(x):
+    >>>    return np.maximum(x, -1.0)
+    >>>
+    >>> sr.twcrps_ensemble(obs, pred, v_func)
     """
     observations, forecasts = map(v_func, (observations, forecasts))
     return crps_ensemble(
@@ -232,8 +237,13 @@ def owcrps_ensemble(
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> owcrps.ensemble(pred, obs)
+    >>> import numpy as np
+    >>> import scoringrules as sr
+    >>>
+    >>> def w_func(x):
+    >>>    return (x > -1).astype(float)
+    >>>
+    >>> sr.owcrps_ensemble(obs, pred, w_func)
     """
     B = backends.active if backend is None else backends[backend]
 
@@ -307,8 +317,13 @@ def vrcrps_ensemble(
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> vrcrps.ensemble(pred, obs)
+    >>> import numpy as np
+    >>> import scoringrules as sr
+    >>>
+    >>> def w_func(x):
+    >>>    return (x > -1).astype(float)
+    >>>
+    >>> sr.vrcrps_ensemble(obs, pred, w_func)
     """
     B = backends.active if backend is None else backends[backend]
 
