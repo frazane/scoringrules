@@ -13,6 +13,8 @@ When the true forecast CDF is not fully known, but represented by a finite ensem
 
 <h2>Analytical formulations</h2>
 
+::: scoringrules.crps_beta
+
 ::: scoringrules.crps_exponential
 
 ::: scoringrules.crps_lognormal

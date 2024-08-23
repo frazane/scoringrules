@@ -108,3 +108,32 @@ def test_lognormal(backend):
 
     assert not np.any(np.isnan(res))
     assert not np.any(res - 0.0 > 0.0001)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_beta(backend):
+    if backend == "torch":
+        pytest.skip("Not implemented in torch backend")
+
+    res = _crps.crps_beta(
+        np.random.uniform(0, 1, (3, 3)),
+        np.random.uniform(0, 3, (3, 3)),
+        1.1,
+        backend=backend,
+    )
+    assert res.shape == (3, 3)
+    assert not np.any(np.isnan(res))
+
+    # test exceptions
+    with pytest.raises(ValueError):
+        _crps.crps_beta(0.3, 0.7, 1.1, lower=1.0, upper=0.0, backend=backend)
+        return
+
+    # correctness tests
+    res = _crps.crps_beta(0.3, 0.7, 1.1, backend=backend)
+    expected = 0.0850102437
+    assert np.isclose(res, expected)
+
+    res = _crps.crps_beta(-3.0, 0.7, 1.1, lower=-5.0, upper=4.0, backend=backend)
+    expected = 0.883206751
+    assert np.isclose(res, expected)

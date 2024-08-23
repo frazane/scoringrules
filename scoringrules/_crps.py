@@ -350,6 +350,61 @@ def vrcrps_ensemble(
     )
 
 
+def crps_beta(
+    observation: "ArrayLike",
+    a: "ArrayLike",
+    b: "ArrayLike",
+    /,
+    lower: "ArrayLike" = 0.0,
+    upper: "ArrayLike" = 1.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the beta distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$
+    \mathrm{CRPS}(F_{\alpha, \beta}, y) = (u - l)\left\{ \frac{y - l}{u - l}
+    \left( 2F_{\alpha, \beta} \left( \frac{y - l}{u - l} \right) - 1 \right)
+    + \frac{\alpha}{\alpha + \beta} \left( 1 - 2F_{\alpha + 1, \beta}
+    \left( \frac{y - l}{u - l} \right)
+    - \frac{2B(2\alpha, 2\beta)}{\alpha B(\alpha, \beta)^{2}} \right) \right\}
+    $$
+
+    where $F_{\alpha, \beta}$ is the beta distribution function with shape parameters
+    $\alpha, \beta > 0$, and lower and upper bounds $l, u \in \R$, $l < u$.
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    a:
+        First shape parameter of the forecast beta distribution.
+    b:
+        Second shape parameter of the forecast beta distribution.
+    lower:
+        Lower bound of the forecast beta distribution.
+    upper:
+        Upper bound of the forecast beta distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The CRPS between Beta(a, b) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_beta(0.3, 0.7, 1.1)
+    0.0850102437
+    """
+    return crps.beta(observation, a, b, lower, upper, backend=backend)
+
+
 def crps_exponential(
     observation: "ArrayLike",
     rate: "ArrayLike",
