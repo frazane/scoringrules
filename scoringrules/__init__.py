@@ -2,6 +2,7 @@ from importlib.metadata import version
 
 from scoringrules._brier import brier_score
 from scoringrules._crps import (
+    crps_beta,
     crps_ensemble,
     crps_exponential,
     crps_logistic,
@@ -36,6 +37,7 @@ __all__ = [
     "register_backend",
     "backends",
     "crps_ensemble",
+    "crps_beta",
     "crps_normal",
     "crps_exponential",
     "crps_lognormal",

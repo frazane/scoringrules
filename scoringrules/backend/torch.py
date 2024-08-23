@@ -194,7 +194,9 @@ class TorchBackend(ArrayBackend):
         return torch.exp(torch.lgamma(x) + torch.lgamma(y) - torch.lgamma(x + y))
 
     def betainc(self, x: "Tensor", y: "Tensor", z: "Tensor") -> "Tensor":
-        return None
+        raise NotImplementedError(
+            "The `betainc` function is not implemented in the torch backend."
+        )
 
     def mbessel0(self, x: "Tensor") -> "Tensor":
         return torch.special.i0(x)
