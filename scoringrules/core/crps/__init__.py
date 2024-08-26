@@ -1,5 +1,5 @@
 from ._approx import ensemble, ow_ensemble, quantile_pinball, vr_ensemble
-from ._closed import beta, exponential, logistic, lognormal, normal
+from ._closed import beta, binomial, exponential, logistic, lognormal, normal
 from ._gufuncs import estimator_gufuncs, quantile_pinball_gufunc
 
 __all__ = [
@@ -7,6 +7,7 @@ __all__ = [
     "ow_ensemble",
     "vr_ensemble",
     "beta",
+    "binomial",
     "exponential",
     "logistic",
     "lognormal",

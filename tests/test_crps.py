@@ -137,3 +137,36 @@ def test_beta(backend):
     res = _crps.crps_beta(-3.0, 0.7, 1.1, lower=-5.0, upper=4.0, backend=backend)
     expected = 0.883206751
     assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_binomial(backend):
+    if backend == "torch":
+        pytest.skip("Not implemented in torch backend")
+
+    # test correctness
+    res = _crps.crps_binomial(8, 10, 0.9, backend=backend)
+    expected = 0.6685115
+    assert np.isclose(res, expected)
+
+    res = _crps.crps_binomial(-8, 10, 0.9, backend=backend)
+    expected = 16.49896
+    assert np.isclose(res, expected)
+
+    res = _crps.crps_binomial(18, 10, 0.9, backend=backend)
+    expected = 8.498957
+    assert np.isclose(res, expected)
+
+    # test broadcasting
+    ones = np.ones(2)
+    k, n, p = 8, 10, 0.9
+    s = _crps.crps_binomial(k * ones, n, p, backend=backend)
+    assert np.isclose(s, np.array([0.6685115, 0.6685115])).all()
+    s = _crps.crps_binomial(k * ones, n * ones, p, backend=backend)
+    assert np.isclose(s, np.array([0.6685115, 0.6685115])).all()
+    s = _crps.crps_binomial(k * ones, n * ones, p * ones, backend=backend)
+    assert np.isclose(s, np.array([0.6685115, 0.6685115])).all()
+    s = _crps.crps_binomial(k, n * ones, p * ones, backend=backend)
+    assert np.isclose(s, np.array([0.6685115, 0.6685115])).all()
+    s = _crps.crps_binomial(k * ones, n, p * ones, backend=backend)
+    assert np.isclose(s, np.array([0.6685115, 0.6685115])).all()

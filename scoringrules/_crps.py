@@ -405,6 +405,50 @@ def crps_beta(
     return crps.beta(observation, a, b, lower, upper, backend=backend)
 
 
+def crps_binomial(
+    observation: "ArrayLike",
+    n: "ArrayLike",
+    prob: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the binomial distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$
+    \mathrm{CRPS}(F_{n, p}, y) = 2 \sum_{x = 0}^{n} f_{n,p}(x) (1\{y < x\}
+    - F_{n,p}(x) + f_{n,p}(x)/2) (x - y),
+    $$
+
+    where $f_{n, p}$ and $F_{n, p}$ are the PDF and CDF of the binomial distribution
+    with size parameter $n = 0, 1, 2, ...$ and probability parameter $p \in [0, 1]$.
+
+    Parameters
+    ----------
+    observation:
+        The observed values as an integer or array of integers.
+    n:
+        Size parameter of the forecast binomial distribution as an integer or array of integers.
+    prob:
+        Probability parameter of the forecast binomial distribution as a float or array of floats.
+
+    Returns
+    -------
+    score:
+        The CRPS between Binomial(n, prob) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_binomial(4, 10, 0.5)
+    0.5955715179443359
+    """
+    return crps.binomial(observation, n, prob, backend=backend)
+
+
 def crps_exponential(
     observation: "ArrayLike",
     rate: "ArrayLike",

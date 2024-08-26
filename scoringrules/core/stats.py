@@ -90,20 +90,19 @@ def _gpd_cdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "
 
 
 def _binom_pdf(
-    x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None
+    k: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
     """Probability mass function for the binomial distribution."""
     B = backends.active if backend is None else backends[backend]
-    ind = B.isinteger(x) * (1 - B.isnegative(x)) * (1 - B.negative(n - x))
-    return ind * B.comb(n, x) * prob**x * (1 - prob) ** (n - x)
+    return B.comb(n, k) * prob**k * (1 - prob) ** (n - k)
 
 
 def _binom_cdf(
-    x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None
+    k: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
     """Cumulative distribution function for the binomial distribution."""
     B = backends.active if backend is None else backends[backend]
-    return (1 - B.isnegative(x)) * B.betainc(n - B.floor(x), B.floor(x) + 1, 1 - prob)
+    return B.betainc(n - B.minimum(k, n) + 1e-36, k + 1, 1 - prob)
 
 
 def _hypergeo_pdf(
