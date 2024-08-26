@@ -52,6 +52,31 @@ def exponential(
     return s
 
 
+def exponentialM(
+    obs: "ArrayLike",
+    mass: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the standard exponential distribution with a point mass at the boundary."""
+    B = backends.active if backend is None else backends[backend]
+    obs, location, scale, mass = map(B.asarray, (obs, location, scale, mass))
+
+    if not _is_scalar_value(location, 0.0):
+        obs -= location
+
+    a = 1 - mass
+    s = B.abs(obs)
+
+    if _is_scalar_value(scale, 1.0):
+        s -= a * (2 * _exp_cdf(obs, 1.0, backend=backend) - 0.5 * a)
+    else:
+        s -= scale * a * (2 * _exp_cdf(obs, 1 / scale, backend=backend) - 0.5 * a)
+
+    return s
+
+
 def normal(
     obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
 ) -> "Array":

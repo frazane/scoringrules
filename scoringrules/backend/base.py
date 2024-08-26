@@ -236,3 +236,7 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def expi(self, x: "Array", /) -> "Array":
         """Calculate the exponential integral at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
+    def where(self, condition: "Array", x1: "Array", x2: "Array", /) -> "Array":
+        """Return elements chosen from x1 or x2 depending on condition."""

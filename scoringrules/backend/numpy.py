@@ -211,6 +211,9 @@ class NumpyBackend(ArrayBackend):
     def expi(self, x: "NDArray") -> "NDArray":
         return expi(x)
 
+    def where(self, condition: "NDArray", x1: "NDArray", x2: "NDArray") -> "NDArray":
+        return np.where(condition, x1, x2)
+
 
 class NumbaBackend(NumpyBackend):
     """Numba backend."""
