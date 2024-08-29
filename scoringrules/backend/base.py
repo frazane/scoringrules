@@ -214,6 +214,10 @@ class ArrayBackend(abc.ABC):
         """Calculate the gamma function at each element ``x_i`` of the input array ``x``."""
 
     @abc.abstractmethod
+    def gammainc(self, x: "Array", y: "Array", /) -> "Array":
+        """Calculate the regularised lower incomplete gamma function at each element ``x_i`` of the input array ``x``."""
+
+    @abc.abstractmethod
     def gammalinc(self, x: "Array", y: "Array", /) -> "Array":
         """Calculate the lower incomplete gamma function at each element ``x_i`` of the input array ``x``."""
 

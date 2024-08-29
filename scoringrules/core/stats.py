@@ -35,7 +35,8 @@ def _gamma_cdf(
 ) -> "Array":
     """Cumulative distribution function for the gamma distribution."""
     B = backends.active if backend is None else backends[backend]
-    return B.max(B.li_gamma(shape, rate * x) / B.gamma(shape), 0)
+    zero = B.asarray(0.0)
+    return B.maximum(B.gammainc(shape, rate * B.maximum(x, zero)), zero)
 
 
 def _pois_cdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":

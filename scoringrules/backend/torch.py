@@ -207,6 +207,9 @@ class TorchBackend(ArrayBackend):
     def gamma(self, x: "Tensor") -> "Tensor":
         return torch.exp(torch.lgamma(x))
 
+    def gammainc(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return torch.special.gammainc(x, y)
+
     def gammalinc(self, x: "Tensor", y: "Tensor") -> "Tensor":
         return torch.special.gammainc(x, y) * torch.exp(torch.lgamma(x))
 
@@ -229,8 +232,3 @@ class TorchBackend(ArrayBackend):
 
     def where(self, condition: "Tensor", x: "Tensor", y: "Tensor") -> "Tensor":
         return torch.where(condition, x, y)
-
-
-if __name__ == "__main__":
-    B = TorchBackend()
-    out = B.mean(torch.ones(10))

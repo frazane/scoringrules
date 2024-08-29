@@ -232,6 +232,9 @@ class TensorflowBackend(ArrayBackend):
     def gamma(self, x: "Tensor") -> "Tensor":
         return tf.math.exp(tf.math.lgamma(x))
 
+    def gammainc(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return tf.math.igamma(x, y)
+
     def gammalinc(self, x: "Tensor", y: "Tensor") -> "Tensor":
         return tf.math.igamma(x, y) * tf.math.exp(tf.math.lgamma(x))
 

@@ -191,6 +191,9 @@ class NumpyBackend(ArrayBackend):
     def gamma(self, x: "NDArray") -> "NDArray":
         return gamma(x)
 
+    def gammainc(self, x: "NDArray", y: "NDArray") -> "NDArray":
+        return gammainc(x, y)
+
     def gammalinc(self, x: "NDArray", y: "NDArray") -> "NDArray":
         return gammainc(x, y) * gamma(x)
 

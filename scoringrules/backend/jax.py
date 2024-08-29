@@ -192,6 +192,9 @@ class JaxBackend(ArrayBackend):
     def gamma(self, x: "Array") -> "Array":
         return jsp.special.gamma(x)
 
+    def gammainc(self, x: "Array", y: "Array") -> "Array":
+        return jsp.special.gammainc(x, y)
+
     def gammalinc(self, x: "Array", y: "Array") -> "Array":
         return jsp.special.gammainc(x, y) * jsp.special.gamma(x)
 

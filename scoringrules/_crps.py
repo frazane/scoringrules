@@ -544,6 +544,66 @@ def crps_exponentialM(
     return crps.exponentialM(observation, mass, location, scale, backend=backend)
 
 
+def crps_gamma(
+    observation: "ArrayLike",
+    shape: "ArrayLike",
+    /,
+    rate: "ArrayLike | None" = None,
+    *,
+    scale: "ArrayLike | None" = None,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the gamma distribution.
+
+    It is based on the following formulation from
+    [Scheuerer and Möller (2015)](doi: doi:10.1214/15-AOAS843):
+
+    $$ \mathrm{CRPS}(F_{\alpha, \beta}, y) = y(2F_{\alpha, \beta}(y) - 1)
+    - \frac{\alpha}{\beta} (2 F_{\alpha + 1, \beta}(y) - 1)
+    - \frac{1}{\beta B(1/2, \alpha)}. $$
+
+    where $F_{\alpha, \beta}$ is gamma distribution function with shape
+    parameter $\alpha > 0$ and rate parameter $\beta > 0$ (equivalently,
+    with scale parameter $1/\beta$).
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    shape:
+        Shape parameter of the forecast gamma distribution.
+    rate:
+        Rate parameter of the forecast rate distribution.
+    scale:
+        Scale parameter of the forecast scale distribution, where `scale = 1 / rate`.
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and Gamma(shape, rate).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_gamma(0.2, 1.1, 0.1)
+    5.503536008961291
+
+    Raises
+    ------
+    ValueError
+        If both `rate` and `scale` are provided, or if neither is provided.
+    """
+    if (scale is None and rate is None) or (scale is not None and rate is not None):
+        raise ValueError(
+            "Either `rate` or `scale` must be provided, but not both or neither."
+        )
+
+    if rate is None:
+        rate = 1.0 / scale
+
+    return crps.gamma(observation, shape, rate, backend=backend)
+
+
 def crps_normal(
     observation: "ArrayLike",
     mu: "ArrayLike",
