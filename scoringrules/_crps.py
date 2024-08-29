@@ -449,8 +449,8 @@ def crps_exponential(
 
 def crps_exponentialM(
     observation: "ArrayLike",
-    mass: "ArrayLike",
     /,
+    mass: "ArrayLike" = 0.0,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     *,

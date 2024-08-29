@@ -66,7 +66,7 @@ def exponentialM(
     if not _is_scalar_value(location, 0.0):
         obs -= location
 
-    a = 1 - mass
+    a = 1.0 if _is_scalar_value(mass, 0.0) else 1 - mass
     s = B.abs(obs)
 
     if _is_scalar_value(scale, 1.0):
