@@ -212,6 +212,9 @@ class JaxBackend(ArrayBackend):
     def expi(self, x: "Array") -> "Array":
         return jsp.special.expi(x)
 
+    def where(self, condition: "Array", x1: "Array", x2: "Array") -> "Array":
+        return jnp.where(condition, x1, x2)
+
 
 if __name__ == "__main__":
     B = JaxBackend()

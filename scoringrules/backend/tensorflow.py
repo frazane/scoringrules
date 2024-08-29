@@ -252,6 +252,9 @@ class TensorflowBackend(ArrayBackend):
     def expi(self, x: "Tensor") -> "Tensor":
         return tf.math.special.expint(x)
 
+    def where(self, condition: "Tensor", x1: "Tensor", x2: "Tensor") -> "Tensor":
+        return tf.where(condition, x1, x2)
+
 
 if __name__ == "__main__":
     B = TensorflowBackend()

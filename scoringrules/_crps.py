@@ -491,6 +491,59 @@ def crps_exponential(
     return crps.exponential(observation, rate, backend=backend)
 
 
+def crps_exponentialM(
+    observation: "ArrayLike",
+    /,
+    mass: "ArrayLike" = 0.0,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the standard exponential distribution with a point mass at the boundary.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F_{M}, y) = |y| - 2 (1 - M) F(y) + \frac{(1 - M)**2}{2}, $$
+
+    $$ \mathrm{CRPS}(F_{M, \mu, \sigma}, y) =
+    \sigma \mathrm{CRPS} \left( F_{M}, \frac{y - \mu}{\sigma} \right), $$
+
+    where $F_{M, \mu, \sigma}$ is standard exponential distribution function
+    generalised using a location parameter $\mu$ and scale parameter $\sigma < 0$
+    and a point mass $M \in [0, 1]$ at $\mu$, $F_{M} = F_{M, 0, 1}$, and
+
+    $$ F(y) = 1 - \exp(-y) $$
+
+    for $y \geq 0$, and 0 otherwise.
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    mass:
+        Mass parameter of the forecast exponential distribution.
+    location:
+        Location parameter of the forecast exponential distribution.
+    scale:
+        Scale parameter of the forecast exponential distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and ExpM(mass, location, scale).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_exponentialM(0.4, 0.2, 0.0, 1.0)
+    """
+    return crps.exponentialM(observation, mass, location, scale, backend=backend)
+
+
 def crps_normal(
     observation: "ArrayLike",
     mu: "ArrayLike",

@@ -227,6 +227,9 @@ class TorchBackend(ArrayBackend):
     def expi(self, x: "Tensor") -> "Tensor":
         return None
 
+    def where(self, condition: "Tensor", x: "Tensor", y: "Tensor") -> "Tensor":
+        return torch.where(condition, x, y)
+
 
 if __name__ == "__main__":
     B = TorchBackend()

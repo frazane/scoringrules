@@ -170,3 +170,21 @@ def test_binomial(backend):
     assert np.isclose(s, np.array([0.6685115, 0.6685115])).all()
     s = _crps.crps_binomial(k * ones, n, p * ones, backend=backend)
     assert np.isclose(s, np.array([0.6685115, 0.6685115])).all()
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_exponentialM(backend):
+    obs, mass, location, scale = 0.3, 0.1, 0.0, 1.0
+    res = _crps.crps_exponentialM(obs, mass, location, scale, backend=backend)
+    expected = 0.2384728
+    assert np.isclose(res, expected)
+
+    obs, mass, location, scale = 0.3, 0.1, -2.0, 3.0
+    res = _crps.crps_exponentialM(obs, mass, location, scale, backend=backend)
+    expected = 0.6236187
+    assert np.isclose(res, expected)
+
+    obs, mass, location, scale = -1.2, 0.1, -2.0, 3.0
+    res = _crps.crps_exponentialM(obs, mass, location, scale, backend=backend)
+    expected = 0.751013
+    assert np.isclose(res, expected)

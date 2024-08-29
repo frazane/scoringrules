@@ -11,7 +11,7 @@ also be viewed as the Brier score integrated over all real-valued thresholds.
 When the true forecast CDF is not fully known, but represented by a finite ensemble, the CRPS can be estimated with some error. Several estimators exist and they are implemented in `scoringrules`. For a thorough review of CRPS estimators and their respective biases, refer to Zamo and Naveau (2018)[@zamo_estimation_2018] and Jordan (2016)[@jordan_facets_2016].
 
 
-<h2>Analytical formulations</h2>
+## Analytical formulations
 
 ::: scoringrules.crps_beta
 
@@ -19,11 +19,13 @@ When the true forecast CDF is not fully known, but represented by a finite ensem
 
 ::: scoringrules.crps_exponential
 
+::: scoringrules.crps_exponentialM
+
 ::: scoringrules.crps_lognormal
 
 ::: scoringrules.crps_normal
 
-<h2>Ensemble-based estimators</h2>
+## Ensemble-based estimators
 
 ::: scoringrules.crps_ensemble
 
@@ -33,7 +35,7 @@ When the true forecast CDF is not fully known, but represented by a finite ensem
 
 ::: scoringrules.vrcrps_ensemble
 
-<h2>Quantile-based estimators</h2>
+## Quantile-based estimators
 
 ::: scoringrules.crps_quantile
 
