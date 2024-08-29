@@ -102,7 +102,7 @@ def _binom_cdf(
 ) -> "Array":
     """Cumulative distribution function for the binomial distribution."""
     B = backends.active if backend is None else backends[backend]
-    return B.betainc(n - B.minimum(k, n) + 1e-36, k + 1, 1 - prob)
+    return B.where(k < 0, 0.0, B.betainc(n - B.minimum(k, n) + 1e-36, k + 1, 1 - prob))
 
 
 def _hypergeo_pdf(
