@@ -165,7 +165,7 @@ class JaxBackend(ArrayBackend):
         try:
             x_shape = list(x.shape)
             return jax.vmap(func1d)(x.reshape(-1, x_shape.pop(axis))).reshape(x_shape)
-        except Exception:
+        except (Exception, jax.errors.ConcretizationTypeError):
             return jnp.apply_along_axis(func1d, axis, x)
 
     def floor(self, x: "Array") -> "Array":
@@ -205,7 +205,9 @@ class JaxBackend(ArrayBackend):
         return jsp.special.hyp2f1(a, b, c, z)
 
     def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
-        return jsp.special.comb(n, k)
+        return jsp.special.factorial(n) // (
+            jsp.special.factorial(k) * jsp.special.factorial(n - k)
+        )
 
     def expi(self, x: "Array") -> "Array":
         return jsp.special.expi(x)

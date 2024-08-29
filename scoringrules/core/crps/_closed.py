@@ -1,7 +1,14 @@
 import typing as tp
 
 from scoringrules.backend import backends
-from scoringrules.core.stats import _exp_cdf, _logis_cdf, _norm_cdf, _norm_pdf
+from scoringrules.core.stats import (
+    _binom_cdf,
+    _binom_pdf,
+    _exp_cdf,
+    _logis_cdf,
+    _norm_cdf,
+    _norm_pdf,
+)
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
@@ -38,6 +45,67 @@ def beta(
 
     if special_limits:
         s = s * (upper - lower)
+
+    return s
+
+
+def binomial(
+    obs: "ArrayLike",
+    n: "ArrayLike",
+    prob: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the binomial distribution.
+
+    Note
+    ----
+    This is a bit of a hacky implementation, due to how the arrays
+    must be broadcasted, but it should work for now.
+    """
+    B = backends.active if backend is None else backends[backend]
+    obs, n, prob = map(B.asarray, (obs, n, prob))
+    ones_like_n = 0.0 * n + 1
+
+    def _inner(params):
+        obs, n, prob = params
+        x = B.arange(0, n + 1)
+        w = _binom_pdf(x, n, prob)
+        a = _binom_cdf(x, n, prob) - 0.5 * w
+        s = 2 * B.sum(w * ((obs < x) - a) * (x - obs))
+        return s
+
+    # if n is a scalar, then if needed we must broadcast k and p to the same shape as n
+    # TODO: implement B.broadcast() for backends
+    if n.size == 1:
+        x = B.arange(0, n + 1)
+        need_broadcast = not (obs.size == 1 and prob.size == 1)
+
+        if need_broadcast:
+            obs = obs[:, None] if obs.size > 1 else obs[None]
+            prob = prob[:, None] if prob.size > 1 else prob[None]
+            x = x[None]
+            x = x * ones_like_n
+            prob = prob * ones_like_n
+            obs = obs * ones_like_n
+
+        w = _binom_pdf(x, n, prob)
+        a = _binom_cdf(x, n, prob) - 0.5 * w
+        s = 2 * B.sum(
+            w * ((obs < x) - a) * (x - obs), axis=-1 if need_broadcast else None
+        )
+
+    # otherwise, since x would have variable sizes, we must apply the function along the axis
+    else:
+        obs = obs * ones_like_n if obs.size == 1 else obs
+        prob = prob * ones_like_n if prob.size == 1 else prob
+
+        # option 1: in a loop
+        s = B.stack(
+            [_inner(params) for params in zip(obs, n, prob, strict=True)], axis=-1
+        )
+
+        # option 2: apply_along_axis (does not work with JAX)
+        # s = B.apply_along_axis(_inner, B.stack((obs, n, prob), axis=-1), -1)
 
     return s
 

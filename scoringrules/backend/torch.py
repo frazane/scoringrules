@@ -222,7 +222,7 @@ class TorchBackend(ArrayBackend):
         return None
 
     def comb(self, n: "Tensor", k: "Tensor") -> "Tensor":
-        return self.factorial(n) / (self.factorial(k) * self.factorial(n - k))
+        return self.factorial(n) // (self.factorial(k) * self.factorial(n - k))
 
     def expi(self, x: "Tensor") -> "Tensor":
         return None
