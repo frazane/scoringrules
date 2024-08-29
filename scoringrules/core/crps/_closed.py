@@ -5,6 +5,7 @@ from scoringrules.core.stats import (
     _binom_cdf,
     _binom_pdf,
     _exp_cdf,
+    _gamma_cdf,
     _logis_cdf,
     _norm_cdf,
     _norm_pdf,
@@ -142,6 +143,25 @@ def exponentialM(
     else:
         s -= scale * a * (2 * _exp_cdf(obs, 1 / scale, backend=backend) - 0.5 * a)
 
+    return s
+
+
+def gamma(
+    obs: "ArrayLike",
+    shape: "ArrayLike",
+    rate: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the gamma distribution."""
+    B = backends.active if backend is None else backends[backend]
+    obs, shape, rate = map(B.asarray, (obs, shape, rate))
+    F_ab = _gamma_cdf(obs, shape, rate, backend=backend)
+    F_ab1 = _gamma_cdf(obs, shape + 1, rate, backend=backend)
+    s = (
+        obs * (2 * F_ab - 1)
+        - (shape / rate) * (2 * F_ab1 - 1)
+        - 1 / (rate * B.beta(B.asarray(0.5), shape))
+    )
     return s
 
 

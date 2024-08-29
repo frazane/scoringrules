@@ -188,3 +188,23 @@ def test_exponentialM(backend):
     res = _crps.crps_exponentialM(obs, mass, location, scale, backend=backend)
     expected = 0.751013
     assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_gamma(backend):
+    obs, shape, rate = 0.2, 1.1, 0.7
+    expected = 0.6343718
+
+    res = _crps.crps_gamma(obs, shape, rate, backend=backend)
+    assert np.isclose(res, expected)
+
+    res = _crps.crps_gamma(obs, shape, scale=1 / rate, backend=backend)
+    assert np.isclose(res, expected)
+
+    with pytest.raises(ValueError):
+        _crps.crps_gamma(obs, shape, rate, scale=1 / rate, backend=backend)
+        return
+
+    with pytest.raises(ValueError):
+        _crps.crps_gamma(obs, shape, backend=backend)
+        return
