@@ -27,7 +27,7 @@ def _logis_cdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
 def _exp_cdf(x: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the exponential distribution."""
     B = backends.active if backend is None else backends[backend]
-    return B.max(1 - B.exp(-rate * x), 0)
+    return B.maximum(1 - B.exp(-rate * x), B.asarray(0.0))
 
 
 def _gamma_cdf(
