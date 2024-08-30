@@ -38,7 +38,7 @@ def reliability_diagram(
     forecasts:
         Forecasted probabilities between 0 and 1.
     uncertainty_band:
-        The type of uncertainty band to plot, which can be either `'confidence'` or 
+        The type of uncertainty band to plot, which can be either `'confidence'` or
         `'consistency'`band. If None, no uncertainty band is plotted.
     n_bootstrap:
         The number of bootstrap samples to use for the uncertainty band.

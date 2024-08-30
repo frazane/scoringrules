@@ -285,12 +285,12 @@ def vrcrps_ensemble(
     Computation is performed using the ensemble representation of the vrCRPS in
     [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
 
-    \[
+    $$
     \begin{split}
         \mathrm{vrCRPS}(F_{ens}, y) = & \frac{1}{M} \sum_{m = 1}^{M} |x_{m} - y|w(x_{m})w(y) - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m} - x_{j}|w(x_{m})w(x_{j}) \\
             & + \left( \frac{1}{M} \sum_{m = 1}^{M} |x_{m}| w(x_{m}) - |y| w(y) \right) \left( \frac{1}{M} \sum_{m = 1}^{M} w(x_{m}) - w(y) \right),
     \end{split}
-    \]
+    $$
 
     where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical
     distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
@@ -602,6 +602,94 @@ def crps_gamma(
         rate = 1.0 / scale
 
     return crps.gamma(observation, shape, rate, backend=backend)
+
+
+def crps_gev(
+    observation: "ArrayLike",
+    shape: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the generalised extreme value (GEV) distribution.
+
+    It is based on the following formulation from
+    [Friederichs and Thorarinsdottir (2012)](doi/10.1002/env.2176):
+
+    $$
+    \text{CRPS}(F_{\xi, \mu, \sigma}, y) =
+    \sigma \cdot \text{CRPS}(F_{\xi}, \frac{y - \mu}{\sigma})
+    $$
+
+    Special cases are handled as follows:
+
+    - For $\xi = 0$:
+
+    $$
+    \text{CRPS}(F_{\xi}, y) = -y - 2\text{Ei}(\log F_{\xi}(y)) + C - \log 2
+    $$
+
+    - For $\xi \neq 0$:
+
+    $$
+    \text{CRPS}(F_{\xi}, y) = y(2F_{\xi}(y) - 1) - 2G_{\xi}(y)
+    - \frac{1 - (2 - 2^{\xi}) \Gamma(1 - \xi)}{\xi}
+    $$
+
+    where $C$ is the Euler-Mascheroni constant, $\text{Ei}$ is the exponential
+    integral, and $\Gamma$ is the gamma function. The GEV cumulative distribution
+    function $F_{\xi}$ and the auxiliary function $G_{\xi}$ are defined as:
+
+    - For $\xi = 0$:
+
+    $$
+    F_{\xi}(x) = \exp(-\exp(-x))
+    $$
+
+    - For $\xi \neq 0$:
+
+    $$
+    F_{\xi}(x) =
+    \begin{cases}
+    0, & x \leq \frac{1}{\xi} \\
+    \exp(-(1 + \xi x)^{-1/\xi}), & x > \frac{1}{\xi}
+    \end{cases}
+    $$
+
+    $$
+    G_{\xi}(x) =
+    \begin{cases}
+    0, & x \leq \frac{1}{\xi} \\
+    \frac{F_{\xi}(x)}{\xi} + \frac{\Gamma_u(1-\xi, -\log F_{\xi}(x))}{\xi}, & x > \frac{1}{\xi}
+    \end{cases}
+    $$
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    shape:
+        Shape parameter of the forecast GEV distribution.
+    location:
+        Location parameter of the forecast GEV distribution.
+    scale:
+        Scale parameter of the forecast GEV distribution.
+
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and GEV(shape, location, scale).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> crps.gev(0.3, 0.1)
+    0.2924712413052034
+    """
+    return crps.gev(observation, shape, location, scale, backend=backend)
 
 
 def crps_normal(

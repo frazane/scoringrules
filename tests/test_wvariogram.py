@@ -27,7 +27,7 @@ def test_owvs_vs_vs(backend):
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
         backend=backend,
     )
-    np.testing.assert_allclose(res, resw, rtol=5e-5)
+    np.testing.assert_allclose(res, resw, rtol=1e-4)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

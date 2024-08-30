@@ -228,7 +228,9 @@ class TorchBackend(ArrayBackend):
         return self.factorial(n) // (self.factorial(k) * self.factorial(n - k))
 
     def expi(self, x: "Tensor") -> "Tensor":
-        return None
+        raise NotImplementedError(
+            "The `expi` function is not implemented in the torch backend."
+        )
 
     def where(self, condition: "Tensor", x: "Tensor", y: "Tensor") -> "Tensor":
         return torch.where(condition, x, y)
