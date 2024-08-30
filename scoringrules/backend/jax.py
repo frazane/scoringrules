@@ -213,6 +213,9 @@ class JaxBackend(ArrayBackend):
         )
 
     def expi(self, x: "Array") -> "Array":
+        # error when passing scalars, even with scalar Array
+        if x.ndim == 0:
+            return jsp.special.expi(jnp.asarray([x]))[0]
         return jsp.special.expi(x)
 
     def where(self, condition: "Array", x1: "Array", x2: "Array") -> "Array":

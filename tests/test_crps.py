@@ -208,3 +208,48 @@ def test_gamma(backend):
     with pytest.raises(ValueError):
         _crps.crps_gamma(obs, shape, backend=backend)
         return
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_gev(backend):
+    if backend == "torch":
+        pytest.skip("`expi` not implemented in torch backend")
+
+    obs, xi, mu, sigma = 0.3, 0.0, 0.0, 1.0
+    assert np.isclose(_crps.crps_gev(obs, xi, backend=backend), 0.276440963)
+    mu = 0.1
+    assert np.isclose(
+        _crps.crps_gev(obs + mu, xi, location=mu, backend=backend), 0.276440963
+    )
+    sigma = 0.9
+    mu = 0.0
+    assert np.isclose(
+        _crps.crps_gev(obs * sigma, xi, scale=sigma, backend=backend),
+        0.276440963 * sigma,
+    )
+
+    obs, xi, mu, sigma = 0.3, 0.7, 0.0, 1.0
+    assert np.isclose(_crps.crps_gev(obs, xi, backend=backend), 0.458044365)
+    mu = 0.1
+    assert np.isclose(
+        _crps.crps_gev(obs + mu, xi, location=mu, backend=backend), 0.458044365
+    )
+    sigma = 0.9
+    mu = 0.0
+    assert np.isclose(
+        _crps.crps_gev(obs * sigma, xi, scale=sigma, backend=backend),
+        0.458044365 * sigma,
+    )
+
+    obs, xi, mu, sigma = 0.3, -0.7, 0.0, 1.0
+    assert np.isclose(_crps.crps_gev(obs, xi, backend=backend), 0.207621488)
+    mu = 0.1
+    assert np.isclose(
+        _crps.crps_gev(obs + mu, xi, location=mu, backend=backend), 0.207621488
+    )
+    sigma = 0.9
+    mu = 0.0
+    assert np.isclose(
+        _crps.crps_gev(obs * sigma, xi, scale=sigma, backend=backend),
+        0.207621488 * sigma,
+    )
