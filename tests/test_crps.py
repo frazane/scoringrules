@@ -221,3 +221,47 @@ def test_logis(backend):
     expected = 0.5529776
     res = _crps.crps_logistic(obs, mu, sigma, backend=backend)
     assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_gtclogis(backend):
+    obs, location, scale, lower, upper, lmass, umass = 1.8, -3.0, 3.3, -5.0, 4.7, 0.1, 0.15
+    expected = 1.599721
+    res = _crps.crps_gtclogistic(obs, location, scale, lower, upper, lmass, umass, backend=backend)
+    assert np.isclose(res, expected)
+    
+    # aligns with crps_logistic
+    res0 = _crps.crps_logistic(obs, location, scale, backend=backend)
+    res = _crps.crps_gtclogistic(obs, location, scale, backend=backend)
+    assert np.isclose(res, res0)
+
+    # aligns with crps_tlogistic
+    res0 = _crps.crps_tlogistic(obs, location, scale, lower, upper, backend=backend)
+    res = _crps.crps_gtclogistic(obs, location, scale, lower, upper, backend=backend)
+    assert np.isclose(res, res0)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_tlogis(backend):
+    obs, location, scale, lower, upper = 4.9, 3.5, 2.3, 0.0, 20.0
+    expected = 0.7658979
+    res = _crps.crps_tlogistic(obs, location, scale, lower, upper, backend=backend)
+    assert np.isclose(res, expected)
+
+    # aligns with crps_logistic
+    res0 = _crps.crps_logistic(obs, location, scale, backend=backend)
+    res = _crps.crps_tlogistic(obs, location, scale, backend=backend)
+    assert np.isclose(res, res0)
+
+    
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_clogis(backend):
+    obs, location, scale, lower, upper = -0.9, 0.4, 1.1, 0.0, 1.0
+    expected = 1.13237
+    res = _crps.crps_clogistic(obs, location, scale, lower, upper, backend=backend)
+    assert np.isclose(res, expected)
+
+    # aligns with crps_logistic
+    res0 = _crps.crps_logistic(obs, location, scale, backend=backend)
+    res = _crps.crps_clogistic(obs, location, scale, backend=backend)
+    assert np.isclose(res, res0)
