@@ -7,8 +7,8 @@ if tp.TYPE_CHECKING:
 
 
 def brier_score(
-    forecasts: "ArrayLike",
     observations: "ArrayLike",
+    forecasts: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -24,10 +24,10 @@ def brier_score(
 
     Parameters
     ----------
-    forecasts : NDArray
-        Forecasted probabilities between 0 and 1.
     observations: NDArray
         Observed outcome, either 0 or 1.
+    forecasts : NDArray
+        Forecasted probabilities between 0 and 1.
     backend: str
         The name of the backend used for computations. Defaults to 'numpy'.
 
@@ -37,7 +37,7 @@ def brier_score(
         The computed Brier Score.
 
     """
-    return brier.brier_score(forecasts, observations, backend=backend)
+    return brier.brier_score(obs=observations, forecasts=forecasts, backend=backend)
 
 
 __all__ = ["brier_score"]

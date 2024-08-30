@@ -44,6 +44,11 @@ class JaxBackend(ArrayBackend):
     ) -> "Array":
         return jnp.mean(x, axis=axis, keepdims=keepdims)
 
+    def max(
+        self, x: "Array", axis: int | tuple[int, ...] | None, keepdims: bool = False
+    ) -> "Array":
+        return jnp.max(x, axis=axis, keepdims=keepdims)
+
     def moveaxis(
         self,
         x: "Array",
@@ -160,7 +165,7 @@ class JaxBackend(ArrayBackend):
         try:
             x_shape = list(x.shape)
             return jax.vmap(func1d)(x.reshape(-1, x_shape.pop(axis))).reshape(x_shape)
-        except Exception:
+        except (Exception, jax.errors.ConcretizationTypeError):
             return jnp.apply_along_axis(func1d, axis, x)
 
     def floor(self, x: "Array") -> "Array":
@@ -187,6 +192,9 @@ class JaxBackend(ArrayBackend):
     def gamma(self, x: "Array") -> "Array":
         return jsp.special.gamma(x)
 
+    def gammainc(self, x: "Array", y: "Array") -> "Array":
+        return jsp.special.gammainc(x, y)
+
     def gammalinc(self, x: "Array", y: "Array") -> "Array":
         return jsp.special.gammainc(x, y) * jsp.special.gamma(x)
 
@@ -200,22 +208,16 @@ class JaxBackend(ArrayBackend):
         return jsp.special.hyp2f1(a, b, c, z)
 
     def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
-        return jsp.special.comb(n, k)
+        return jsp.special.factorial(n) // (
+            jsp.special.factorial(k) * jsp.special.factorial(n - k)
+        )
 
     def expi(self, x: "Array") -> "Array":
         return jsp.special.expi(x)
 
-    def isinteger(self, x: "Array") -> "Array":
-        return jnp.equal(jnp.mod(x, 1), 0)
+    def where(self, condition: "Array", x1: "Array", x2: "Array") -> "Array":
+        return jnp.where(condition, x1, x2)
 
-    def ispositive(self, x: "Array") -> "Array":
-        return x > 0
-
-    def isnegative(self, x: "Array") -> "Array":
-        return x < 0
-
-    def iszero(self, x: "Array") -> "Array":
-        return jnp.equal(x, 0)
 
 if __name__ == "__main__":
     B = JaxBackend()

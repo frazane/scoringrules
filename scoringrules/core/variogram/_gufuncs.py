@@ -1,55 +1,52 @@
 import numpy as np
 from numba import guvectorize
-from numpy.typing import NDArray
-
-Array = NDArray[np.float32 | np.float64]
 
 
 @guvectorize(
     [
-        "void(float32[:,:], float32[:], float32, float32[:])",
-        "void(float64[:,:], float64[:], float64, float64[:])",
+        "void(float32[:], float32[:,:], float32, float32[:])",
+        "void(float64[:], float64[:,:], float64, float64[:])",
     ],
-    "(m,d),(d),()->()",
+    "(d),(m,d),()->()",
 )
-def _variogram_score_gufunc(fcst: Array, obs: Array, p, out):
-    M = fcst.shape[-2]
-    D = fcst.shape[-1]
+def _variogram_score_gufunc(obs, fct, p, out):
+    M = fct.shape[-2]
+    D = fct.shape[-1]
     out[0] = 0.0
     for i in range(D):
         for j in range(D):
-            vfcts = 0.0
+            vfct = 0.0
             for m in range(M):
-                vfcts += abs(fcst[m, i] - fcst[m, j]) ** p
-            vfcts = vfcts / M
+                vfct += abs(fct[m, i] - fct[m, j]) ** p
+            vfct = vfct / M
             vobs = abs(obs[i] - obs[j]) ** p
-            out[0] += (vobs - vfcts) ** 2
+            out[0] += (vobs - vfct) ** 2
 
 
 @guvectorize(
     [
-        "void(float32[:,:], float32[:], float32, float32[:], float32, float32[:])",
-        "void(float64[:,:], float64[:], float64, float64[:], float64, float64[:])",
+        "void(float32[:], float32[:,:], float32, float32, float32[:], float32[:])",
+        "void(float64[:], float64[:,:], float64, float64, float64[:], float64[:])",
     ],
-    "(m,d),(d),(),(m),()->()",
+    "(d),(m,d),(),(),(m)->()",
 )
-def _owvariogram_score_gufunc(fcst: Array, obs: Array, p, fw, ow, out):
-    M = fcst.shape[-2]
-    D = fcst.shape[-1]
+def _owvariogram_score_gufunc(obs, fct, p, ow, fw, out):
+    M = fct.shape[-2]
+    D = fct.shape[-1]
 
     e_1 = 0.0
     e_2 = 0.0
     for k in range(M):
         for i in range(D):
             for j in range(D):
-                rho1 = abs(fcst[k, i] - fcst[k, j]) ** p
+                rho1 = abs(fct[k, i] - fct[k, j]) ** p
                 rho2 = abs(obs[i] - obs[j]) ** p
                 e_1 += (rho1 - rho2) ** 2 * fw[k] * ow
         for m in range(M):
             for i in range(D):
                 for j in range(D):
-                    rho1 = abs(fcst[k, i] - fcst[k, j]) ** p
-                    rho2 = abs(fcst[m, i] - fcst[m, j]) ** p
+                    rho1 = abs(fct[k, i] - fct[k, j]) ** p
+                    rho2 = abs(fct[m, i] - fct[m, j]) ** p
                     e_2 += (rho1 - rho2) ** 2 * fw[k] * fw[m] * ow
 
     wbar = np.mean(fw)
@@ -59,14 +56,14 @@ def _owvariogram_score_gufunc(fcst: Array, obs: Array, p, fw, ow, out):
 
 @guvectorize(
     [
-        "void(float32[:,:], float32[:], float32, float32[:], float32, float32[:])",
-        "void(float64[:,:], float64[:], float64, float64[:], float64, float64[:])",
+        "void(float32[:], float32[:,:], float32, float32, float32[:], float32[:])",
+        "void(float64[:], float64[:,:], float64, float64, float64[:], float64[:])",
     ],
-    "(m,d),(d),(),(m),()->()",
+    "(d),(m,d),(),(),(m)->()",
 )
-def _vrvariogram_score_gufunc(fcst: Array, obs: Array, p, fw, ow, out):
-    M = fcst.shape[-2]
-    D = fcst.shape[-1]
+def _vrvariogram_score_gufunc(obs, fct, p, ow, fw, out):
+    M = fct.shape[-2]
+    D = fct.shape[-1]
 
     e_1 = 0.0
     e_2 = 0.0
@@ -74,15 +71,15 @@ def _vrvariogram_score_gufunc(fcst: Array, obs: Array, p, fw, ow, out):
     for k in range(M):
         for i in range(D):
             for j in range(D):
-                rho1 = abs(fcst[k, i] - fcst[k, j]) ** p
+                rho1 = abs(fct[k, i] - fct[k, j]) ** p
                 rho2 = abs(obs[i] - obs[j]) ** p
                 e_1 += (rho1 - rho2) ** 2 * fw[k] * ow
                 e_3_x += (rho1) ** 2 * fw[k]
         for m in range(M):
             for i in range(D):
                 for j in range(D):
-                    rho1 = abs(fcst[k, i] - fcst[k, j]) ** p
-                    rho2 = abs(fcst[m, i] - fcst[m, j]) ** p
+                    rho1 = abs(fct[k, i] - fct[k, j]) ** p
+                    rho2 = abs(fct[m, i] - fct[m, j]) ** p
                     e_2 += (rho1 - rho2) ** 2 * fw[k] * fw[m]
 
     e_3_x *= 1 / M

@@ -8,8 +8,8 @@ if tp.TYPE_CHECKING:
 
 
 def crps_ensemble(
-    forecasts: "Array",
     observations: "ArrayLike",
+    forecasts: "Array",
     /,
     axis: int = -1,
     *,
@@ -21,11 +21,11 @@ def crps_ensemble(
 
     Parameters
     ----------
+    observations: ArrayLike
+        The observed values.
     forecasts: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    observations: ArrayLike
-        The observed values.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
     sorted_ensemble: bool
@@ -43,11 +43,11 @@ def crps_ensemble(
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.ensemble(pred, obs)
+    >>> import scoringrules as sr
+    >>> sr.crps_ensemble(obs, pred)
     """
     B = backends.active if backend is None else backends[backend]
-    forecasts, observations = map(B.asarray, (forecasts, observations))
+    observations, forecasts = map(B.asarray, (observations, forecasts))
 
     if estimator not in crps.estimator_gufuncs:
         raise ValueError(
@@ -62,232 +62,664 @@ def crps_ensemble(
         forecasts = B.sort(forecasts, axis=-1)
 
     if backend == "numba":
-        return crps.estimator_gufuncs[estimator](forecasts, observations)
+        return crps.estimator_gufuncs[estimator](observations, forecasts)
 
-    return crps.ensemble(forecasts, observations, estimator, backend=backend)
+    return crps.ensemble(observations, forecasts, estimator, backend=backend)
 
 
 def crps_beta(
-    shape1: "ArrayLike",
-    shape2: "ArrayLike",
-    lower: "ArrayLike",
-    upper: "ArrayLike",
     observation: "ArrayLike",
+    a: "ArrayLike",
+    b: "ArrayLike",
     /,
+    lower: "ArrayLike" = 0.0,
+    upper: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the beta distribution.
-    
+
     It is based on the following formulation from
     [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
 
-    $$ \mathrm{CRPS}(F_{\alpha, \beta}, y) = (u - l)\left\{ \frac{y - l}{u - l} left( 2F_{\alpha, \beta} \left( \frac{y - l}{u - l} \right) - 1 \right) + \frac{\alpha}{\alpha + \beta} \left( 1 - 2F_{\alpha + 1, \beta} \left( \frac{y - l}{u - l} \right) - \frac{2B(2\alpha, 2\beta)}{\alpha B(\alpha, \beta)^{2}} \right) \right\}.$$
+    $$
+    \mathrm{CRPS}(F_{\alpha, \beta}, y) = (u - l)\left\{ \frac{y - l}{u - l}
+    \left( 2F_{\alpha, \beta} \left( \frac{y - l}{u - l} \right) - 1 \right)
+    + \frac{\alpha}{\alpha + \beta} \left( 1 - 2F_{\alpha + 1, \beta}
+    \left( \frac{y - l}{u - l} \right)
+    - \frac{2B(2\alpha, 2\beta)}{\alpha B(\alpha, \beta)^{2}} \right) \right\}
+    $$
 
-    where $F_{\alpha, \beta}$ is the beta distribution function with shape parameters $\alpha, \beta > 0$,
-    and lower and upper bounds $l, u \in \R$, $l < u$.
+    where $F_{\alpha, \beta}$ is the beta distribution function with shape parameters
+    $\alpha, \beta > 0$, and lower and upper bounds $l, u \in \R$, $l < u$.
 
     Parameters
     ----------
-    shape1: ArrayLike
-        First shape parameter of the forecast beta distribution.
-    shape2: ArrayLike
-        Second shape parameter of the forecast beta distribution.
-    lower: ArrayLike
-        Lower bound of the forecast beta distribution.
-    upper: ArrayLike
-        Upper bound of the forecast beta distribution.
-    observation: ArrayLike
+    observation:
         The observed values.
+    a:
+        First shape parameter of the forecast beta distribution.
+    b:
+        Second shape parameter of the forecast beta distribution.
+    lower:
+        Lower bound of the forecast beta distribution.
+    upper:
+        Upper bound of the forecast beta distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    crps: array_like
-        The CRPS between Beta(shape1, shape2) and obs.
+    score:
+        The CRPS between Beta(a, b) and obs.
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.beta(1.0, 1.0, 0.0, 1.0, 0.4)
+    >>> import scoringrules as sr
+    >>> sr.crps_beta(0.3, 0.7, 1.1)
+    0.0850102437
     """
-    return crps.beta(shape1, shape2, lower, upper, observation, backend=backend)
+    return crps.beta(observation, a, b, lower, upper, backend=backend)
+
+
+def crps_quantile(
+    observations: "ArrayLike",
+    forecasts: "Array",
+    alpha: "Array",
+    /,
+    axis: int = -1,
+    *,
+    backend: "Backend" = None,
+) -> "Array":
+    r"""Approximate the CRPS from quantile predictions via the Pinball Loss.
+
+    It is based on the notation in [Berrisch & Ziel, 2022](https://arxiv.org/pdf/2102.00968)
+
+    The CRPS can be approximated as the mean pinball loss for all
+    quantile forecasts $F_q$ with level $q \in Q$:
+
+    $$\text{quantileCRPS} = \frac{2}{|Q|} \sum_{q \in Q} PB_q$$
+
+    where the pinball loss is defined as:
+
+    $$\text{PB}_q = \begin{cases}
+        q(y - F_q) &\text{if} & y \geq F_q  \\
+        (1-q)(F_q - y) &\text{else.} &  \\
+    \end{cases} $$
+
+    Parameters
+    ----------
+    observations: ArrayLike
+        The observed values.
+    forecasts: Array
+        The predicted forecast ensemble, where the ensemble dimension is by default
+        represented by the last axis.
+    alpha: Array
+        The percentile levels. We expect the quantile array to match the axis (see below) of the forecast array.
+    axis: int
+        The axis corresponding to the ensemble. Default is the last axis.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    qcrps: Array
+        An array of CRPS scores for each forecast, which should be averaged to get meaningful values.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_quantile(obs, fct, alpha)
+    """
+    B = backends.active if backend is None else backends[backend]
+    observations, forecasts, alpha = map(B.asarray, (observations, forecasts, alpha))
+
+    if axis != -1:
+        forecasts = B.moveaxis(forecasts, axis, -1)
+
+    if not forecasts.shape[-1] == alpha.shape[-1]:
+        raise ValueError("Expected matching length of forecasts and alpha values.")
+
+    if B.name == "numba":
+        return crps.quantile_pinball_gufunc(observations, forecasts, alpha)
+
+    return crps.quantile_pinball(observations, forecasts, alpha, backend=backend)
 
 
 def crps_binomial(
+    observation: "ArrayLike",
     n: "ArrayLike",
     prob: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the binomial distribution.
-    
+
     It is based on the following formulation from
     [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
 
-    $$ \mathrm{CRPS}(F_{n, p}, y) = 2 \sum_{x = 0}^{n} f_{n,p}(x) (1\{y < x\} - F_{n,p}(x) + f_{n,p}(x)/2) (x - y), $$
+    $$
+    \mathrm{CRPS}(F_{n, p}, y) = 2 \sum_{x = 0}^{n} f_{n,p}(x) (1\{y < x\}
+    - F_{n,p}(x) + f_{n,p}(x)/2) (x - y),
+    $$
 
-    where $f_{n, p}$ and $F_{n, p}$ are the PDF and CDF of the binomial distribution with 
-    size parameter $n = 0, 1, 2, ...$ and probability parameter $p \in [0, 1]$. 
+    where $f_{n, p}$ and $F_{n, p}$ are the PDF and CDF of the binomial distribution
+    with size parameter $n = 0, 1, 2, ...$ and probability parameter $p \in [0, 1]$.
 
     Parameters
     ----------
-    n: ArrayLike
-        Size parameter of the forecast binomial distribution.
-    prob: ArrayLike
-        Probability parameter of the forecast binomial distribution.
-    observation: ArrayLike
-        The observed values.
+    observation:
+        The observed values as an integer or array of integers.
+    n:
+        Size parameter of the forecast binomial distribution as an integer or array of integers.
+    prob:
+        Probability parameter of the forecast binomial distribution as a float or array of floats.
 
     Returns
     -------
-    crps: array_like
+    score:
         The CRPS between Binomial(n, prob) and obs.
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.binomial(5, 0.5, 2)
+    >>> import scoringrules as sr
+    >>> sr.crps_binomial(4, 10, 0.5)
+    0.5955715179443359
     """
-    return crps.binomial(n, prob, observation, backend=backend)
+    return crps.binomial(observation, n, prob, backend=backend)
 
 
 def crps_exponential(
-    rate: "ArrayLike",
     observation: "ArrayLike",
+    rate: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the exponential distribution.
-    
+
     It is based on the following formulation from
     [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
 
-    $$ \mathrm{CRPS}(F_{\lambda}, y) = |y| - \frac{2F_{\lambda}(y)}{\lambda} + \frac{1}{2 \lambda}.$$
+    $$\mathrm{CRPS}(F_{\lambda}, y) = |y| - \frac{2F_{\lambda}(y)}{\lambda} + \frac{1}{2 \lambda},$$
 
     where $F_{\lambda}$ is exponential distribution function with rate parameter $\lambda > 0$.
 
     Parameters
     ----------
-    rate: ArrayLike
-        Rate parameter of the forecast exponential distribution.
-    observation: ArrayLike
+    observation:
         The observed values.
+    rate:
+        Rate parameter of the forecast exponential distribution.
 
     Returns
     -------
-    crps: array_like
+    score:
         The CRPS between Exp(rate) and obs.
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.exponential(1.0, 0.4)
+    ```pycon
+    >>> import scoringrules as sr
+    >>> import numpy as np
+    >>> sr.crps_exponential(0.8, 3.0)
+    0.360478635526275
+    >>> sr.crps_exponential(np.array([0.8, 0.9]), np.array([3.0, 2.0]))
+    array([0.36047864, 0.24071795])
+    ```
     """
-    return crps.exponential(rate, observation, backend=backend)
+    return crps.exponential(observation, rate, backend=backend)
 
 
 def crps_exponentialM(
-    mass: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     observation: "ArrayLike",
     /,
+    mass: "ArrayLike" = 0.0,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the standard exponential distribution with a point mass at the boundary.
-    
+
     It is based on the following formulation from
     [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
 
     $$ \mathrm{CRPS}(F_{M}, y) = |y| - 2 (1 - M) F(y) + \frac{(1 - M)**2}{2}, $$
-    
-    $$ \mathrm{CRPS}(F_{M, \mu, \sigma}, y) = \sigma \mathrm{CRPS} \left( F_{M}, \frac{y - \mu}{\sigma} \right), $$
 
-    where $F_{M, \mu, \sigma}$ is standard exponential distribution function generalised
-    using a location parameter $\mu$ and scale parameter $\sigma < 0$ and a point mass $M \in [0, 1]$
-    at $\mu$, $F_{M} = F_{M, 0, 1}$, and
-    
+    $$ \mathrm{CRPS}(F_{M, \mu, \sigma}, y) =
+    \sigma \mathrm{CRPS} \left( F_{M}, \frac{y - \mu}{\sigma} \right), $$
+
+    where $F_{M, \mu, \sigma}$ is standard exponential distribution function
+    generalised using a location parameter $\mu$ and scale parameter $\sigma < 0$
+    and a point mass $M \in [0, 1]$ at $\mu$, $F_{M} = F_{M, 0, 1}$, and
+
     $$ F(y) = 1 - \exp(-y) $$
-    
-    for $y \geq 0$, and 0 otherwise.
 
+    for $y \geq 0$, and 0 otherwise.
 
     Parameters
     ----------
-    mass: ArrayLike
-        Mass parameter of the forecast exponential distribution.
-    location: ArrayLike
-        Location parameter of the forecast exponential distribution.
-    scale: ArrayLike
-        Scale parameter of the forecast exponential distribution.
-    observation: ArrayLike
+    observation:
         The observed values.
+    mass:
+        Mass parameter of the forecast exponential distribution.
+    location:
+        Location parameter of the forecast exponential distribution.
+    scale:
+        Scale parameter of the forecast exponential distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    crps: array_like
-        The CRPS between ExpM(mass, location, scale) and obs.
+    score:
+        The CRPS between obs and ExpM(mass, location, scale).
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.exponentialM(0.2, 0.0, 1.0, 0.4)
+    >>> import scoringrules as sr
+    >>> sr.crps_exponentialM(0.4, 0.2, 0.0, 1.0)
     """
-    return crps.exponentialM(mass, location, scale, observation, backend=backend)
+    return crps.exponentialM(observation, mass, location, scale, backend=backend)
 
 
 def crps_gamma(
-    shape: "ArrayLike",
-    rate: "ArrayLike",
-    scale: "ArrayLike",
     observation: "ArrayLike",
+    shape: "ArrayLike",
+    /,
+    rate: "ArrayLike | None" = None,
+    *,
+    scale: "ArrayLike | None" = None,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the gamma distribution.
+
+    It is based on the following formulation from
+    [Scheuerer and Möller (2015)](doi: doi:10.1214/15-AOAS843):
+
+    $$ \mathrm{CRPS}(F_{\alpha, \beta}, y) = y(2F_{\alpha, \beta}(y) - 1)
+    - \frac{\alpha}{\beta} (2 F_{\alpha + 1, \beta}(y) - 1)
+    - \frac{1}{\beta B(1/2, \alpha)}. $$
+
+    where $F_{\alpha, \beta}$ is gamma distribution function with shape
+    parameter $\alpha > 0$ and rate parameter $\beta > 0$ (equivalently,
+    with scale parameter $1/\beta$).
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    shape:
+        Shape parameter of the forecast gamma distribution.
+    rate:
+        Rate parameter of the forecast rate distribution.
+    scale:
+        Scale parameter of the forecast scale distribution, where `scale = 1 / rate`.
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and Gamma(shape, rate).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_gamma(0.2, 1.1, 0.1)
+    5.503536008961291
+
+    Raises
+    ------
+    ValueError
+        If both `rate` and `scale` are provided, or if neither is provided.
+    """
+    if (scale is None and rate is None) or (scale is not None and rate is not None):
+        raise ValueError(
+            "Either `rate` or `scale` must be provided, but not both or neither."
+        )
+
+    if rate is None:
+        rate = 1.0 / scale
+
+    return crps.gamma(observation, shape, rate, backend=backend)
+
+
+def crps_normal(
+    observation: "ArrayLike",
+    mu: "ArrayLike",
+    sigma: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the gamma distribution.
-    
+    r"""Compute the closed form of the CRPS for the normal distribution.
+
     It is based on the following formulation from
-    [Scheuerer and M{\"o}ller (2015)](doi: doi:10.1214/15-AOAS843):
+    [Geiting et al. (2005)](https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml):
 
-    $$ \mathrm{CRPS}(F_{\alpha, \beta}, y) = y(2F_{\alpha, \beta}(y) - 1) - \frac{\alpha}{\beta} (2 F_{\alpha + 1, \beta}(y) - 1) - \frac{1}{\beta B(1/2, \alpha)}.$$
+    $$ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},$$
 
-    where $F_{\alpha, \beta}$ is the gamma distribution function with shape parameter $\alpha > 0$
-    and rate parameter $\beta > 0$ (equivalently, with scale parameter $1/\beta$).
+    where $\Phi(ω)$ and $\phi(ω)$ are respectively the CDF and PDF of the standard normal
+    distribution at the normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
 
     Parameters
     ----------
-    shape: ArrayLike
-        Shape parameter of the forecast gamma distribution.
-    rate: ArrayLike
-        Rate parameter of the forecast gamma distribution.
-    scale: ArrayLike
-        Scale parameter of the forecast gamma distribution.
     observation: ArrayLike
         The observed values.
+    mu: ArrayLike
+        Mean of the forecast normal distribution.
+    sigma: ArrayLike
+        Standard deviation of the forecast normal distribution.
 
     Returns
     -------
     crps: array_like
-        The CRPS between Gamma(shape, rate) and obs.
+        The CRPS between Normal(mu, sigma) and obs.
 
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.gamma(1.0, 1.0, 1.0, 0.4)
+    >>> crps.normal(0.0, 0.4, 0.1)
     """
-    return crps.gamma(shape, rate, scale, observation, backend=backend)
+    return crps.normal(observation, mu, sigma, backend=backend)
+
+
+def crps_lognormal(
+    observation: "ArrayLike",
+    mulog: "ArrayLike",
+    sigmalog: "ArrayLike",
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the lognormal distribution.
+
+    It is based on the formulation introduced by
+    [Baran and Lerch (2015)](https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2521)
+
+    $$ \mathrm{CRPS}(\mathrm{log}\mathcal{N}(\mu, \sigma), y) =
+    y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
+    \left[ \Phi(\omega - \sigma) + \Phi(\frac{\sigma}{\sqrt{2}}) \right]$$
+
+    where $\Phi$ is the CDF of the standard normal distribution and
+    $\omega = \frac{\mathrm{log}y - \mu}{\sigma}$.
+
+    Note that mean and standard deviation are not the values for the distribution itself,
+    but of the underlying normal distribution it is derived from.
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    mulog:
+        Mean of the normal underlying distribution.
+    sigmalog:
+        Standard deviation of the underlying normal distribution.
+
+    Returns
+    -------
+    crps: ArrayLike
+        The CRPS between Lognormal(mu, sigma) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.lognormal(0.1, 0.4, 0.0)
+    """
+    return crps.lognormal(observation, mulog, sigmalog, backend=backend)
+
+
+def crps_negativebinomial(
+    observation: "ArrayLike",
+    n: "ArrayLike",
+    prob: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the negative binomial distribution.
+    
+    It is based on the following formulation from
+    [Wei and Held (2014)](https://link.springer.com/article/10.1007/s11749-014-0380-8):
+
+    $$ \mathrm{CRPS}(F_{n, p}, y) = y (2 F_{n, p}(y) - 1) - \frac{n(1 - p)}{p^{2}} \left( p (2 F_{n+1, p}(y - 1) - 1) + _{2} F_{1} \left( n + 1, \frac{1}{2}; 2; -\frac{4(1 - p)}{p^{2}} \right) \right), $$
+
+    where $F_{n, p}$ is the CDF of the negative binomial distribution with 
+    size parameter $n > 0$ and probability parameter $p \in (0, 1]$. 
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    n: ArrayLike
+        Size parameter of the forecast negative binomial distribution.
+    prob: ArrayLike
+        Probability parameter of the forecast negative binomial distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between NegBinomial(n, prob) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.negativebinomial(2, 0.5, 5)
+    """
+    return crps.negativebinomial(observation, n, prob, backend=backend)
+
+
+def crps_logistic(
+    observation: "ArrayLike",
+    mu: "ArrayLike",
+    sigma: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the logistic distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(\mathcal{L}(\mu, \sigma), y) = \sigma \left\{ \omega - 2 \log F(\omega) - 1 \right\}, $$
+
+    where $F(\omega)$ is the CDF of the standard logistic distribution at the
+    normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
+
+    Parameters
+    ----------
+    observations: ArrayLike
+        Observed values.
+    mu: ArrayLike
+        Location parameter of the forecast logistic distribution.
+    sigma: ArrayLike
+        Scale parameter of the forecast logistic distribution.
+     Returns
+    -------
+    crps: array_like
+        The CRPS for the Logistic(mu, sigma) forecasts given the observations.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.logistic(0.1, 0.4, 0.0)
+    """
+    return crps.logistic(observation, mu, sigma, backend=backend)
+
+
+def crps_laplace(
+    observation: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the laplace distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F, y) = |y - \mu| + \sigma \exp ( -| y - \mu| / \sigma) - \frac{3\sigma}{4},$$
+
+    where $\mu$ and $\sigma > 0$ are the location and scale parameters of the Laplace distribution.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        Observed values.
+    location: ArrayLike
+        Location parameter of the forecast laplace distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast laplace distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS for the Laplace(location, scale) forecasts given the observations.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.laplace(0.0, 0.4, 0.1)
+    """
+    return crps.laplace(observation, location, scale, backend=backend)
+
+
+def crps_poisson(
+    observation: "ArrayLike",
+    mean: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the Poisson distribution.
+    
+    It is based on the following formulation from
+    [Wei and Held (2014)](https://link.springer.com/article/10.1007/s11749-014-0380-8):
+
+    $$ \mathrm{CRPS}(F_{\lambda}, y) = (y - \lambda) (2F_{\lambda}(y) - 1) + 2 \lambda f_{\lambda}(\lfloor y \rfloor ) - \lambda \exp (-2 \lambda) (I_{0} (2 \lambda) + I_{1} (2 \lambda))..$$
+
+    where $F_{\lambda}$ is Poisson distribution function with mean parameter $\lambda > 0$,
+    and $I_{0}$ and $I_{1}$ are modified Bessel functions of the first kind.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    mean: ArrayLike
+        Mean parameter of the forecast exponential distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between Pois(mean) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.poisson(1, 2)
+    """
+    return crps.poisson(observation, mean, backend=backend)
+
+
+def crps_uniform(
+    observation: "ArrayLike",
+    min: "ArrayLike",
+    max: "ArrayLike",
+    lmass: "ArrayLike",
+    umass: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the uniform distribution.
+    
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(\mathcal{U}_{L}^{U}(l, u), y) = (u - l) \left\{ | \frac{y - l}{u - l} - F \left( \frac{y - l}{u - l} \right) | + F \left( \frac{y - l}{u - l} \right)^{2} (1 - L - U) - F \left( \frac{y - l}{u - l} \right) (1 - 2L) + \frac{(1 - L - U)^{2}}{3} + (1 - L)U \right\},$$
+
+    where $\mathcal{U}_{L}^{U}(l, u)$ is the uniform distribution with lower bound $l$, 
+    upper bound $u > l$, point mass $L$ on the lower bound, and point mass $U$ on the upper bound.
+    We must have that $L, U \ge 0, L + U < 1$. 
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    min: ArrayLike
+        Lower bound of the forecast uniform distribution.
+    max: ArrayLike
+        Upper bound of the forecast uniform distribution.
+    lmass: ArrayLike
+        Point mass on the lower bound of the forecast uniform distribution.
+    umass: ArrayLike
+        Point mass on the upper bound of the forecast uniform distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between U(min, max, lmass, umass) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.uniform(0.4, 0.0, 1.0, 0.0, 0.0)
+    """
+    return crps.uniform(observation, min, max, lmass, umass, backend=backend)
+
+
+def crps_t(
+    observation: "ArrayLike",
+    df: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the student's t distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F, y) = \sigma \left\{ \omega (2 F_{\nu} (\omega) - 1) + 2 f_{\nu} \left( \frac{\nu + \omega^{2}}{\nu - 1} \right) - \frac{2 \sqrt{\nu}}{\nu - 1} \frac{B(\frac{1}{2}, \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2}^{2})}  \right},$$
+
+    where $\omega = (y - \mu)/\sigma$, where $\nu > 1, \mu$, and $\sigma > 0$ are the 
+    degrees of freedom, location, and scale parameters respectively of the Student's t 
+    distribution, and $f_{\nu}$ and $F_{\nu}$ are the PDF and CDF of the standard Student's
+    t distribution with $\nu$ degrees of freedom.
+    
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    df: ArrayLike
+        Degrees of freedom parameter of the forecast t distribution.
+    location: ArrayLike
+        Location parameter of the forecast t distribution.
+    sigma: ArrayLike
+        Scale parameter of the forecast t distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between t(df, location, scale) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.t(0.0, 0.1, 0.4, 0.1)
+    """
+    return crps.t(observation, df, location, scale, backend=backend)
 
 
 def crps_gev(
+    observation: "ArrayLike",
     shape: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -315,14 +747,14 @@ def crps_gev(
 
     Parameters
     ----------
+    observation: ArrayLike
+        The observed values.
     shape: ArrayLike
         Shape parameter of the forecast GEV distribution.
     location: ArrayLike
         Location parameter of the forecast GEV distribution.
     scale: ArrayLike
         Scale parameter of the forecast GEV distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -332,17 +764,17 @@ def crps_gev(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.gev(1.0, 0.0, 1.0, 0.4)
+    >>> crps.gev(0.4, 1.0, 0.0, 1.0)
     """
-    return crps.gev(shape, location, scale, observation, backend=backend)
+    return crps.gev(observation, shape, location, scale, backend=backend)
 
 
 def crps_gpd(
+    observation: "ArrayLike",
     shape: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     mass: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -362,6 +794,8 @@ def crps_gpd(
    
     Parameters
     ----------
+    observation: ArrayLike
+        The observed values.
     shape: ArrayLike
         Shape parameter of the forecast GPD distribution.
     location: ArrayLike
@@ -370,8 +804,6 @@ def crps_gpd(
         Scale parameter of the forecast GPD distribution.
     mass: ArrayLike
         Mass parameter at the lower boundary of the forecast GPD distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -381,19 +813,19 @@ def crps_gpd(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.gpd(1.0, 0.0, 1.0, 0.0, 0.4)
+    >>> crps.gpd(0.4, 1.0, 0.0, 1.0, 0.0)
     """
-    return crps.gpd(shape, location, scale, mass, observation, backend=backend)
+    return crps.gpd(observation, shape, location, scale, mass, backend=backend)
 
 
 def crps_gtclogistic(
+    observation: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     lower: "ArrayLike",
     upper: "ArrayLike",
     lmass: "ArrayLike",
     umass: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -419,6 +851,8 @@ def crps_gtclogistic(
 
     Parameters
     ----------
+    observation: ArrayLike
+        The observed values.
     location: ArrayLike
         Location parameter of the forecast distribution.
     scale: ArrayLike
@@ -431,8 +865,6 @@ def crps_gtclogistic(
         Point mass assigned to the lower boundary of the forecast distribution.
     umass: ArrayLike
         Point mass assigned to the upper boundary of the forecast distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -442,17 +874,17 @@ def crps_gtclogistic(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.gtclogistic(0.1, 0.4, -1.0, 1.0, 0.1, 0.1, 0.0)
+    >>> crps.gtclogistic(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
-    return crps.gtclogistic(location, scale, lower, upper, lmass, umass, observation, backend=backend)
+    return crps.gtclogistic(observation, location, scale, lower, upper, lmass, umass, backend=backend)
 
 
 def crps_tlogistic(
+    observation: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     lower: "ArrayLike",
     upper: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -464,6 +896,8 @@ def crps_tlogistic(
     
     Parameters
     ----------
+    observation: ArrayLike
+        The observed values.
     location: ArrayLike
         Location parameter of the forecast distribution.
     scale: ArrayLike
@@ -472,8 +906,6 @@ def crps_tlogistic(
         Lower boundary of the truncated forecast distribution.
     upper: ArrayLike
         Upper boundary of the truncated forecast distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -483,17 +915,17 @@ def crps_tlogistic(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.tlogistic(0.1, 0.4, -1.0, 1.0, 0.0)
+    >>> crps.tlogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return crps.gtclogistic(location, scale, lower, upper, 0.0, 0.0, observation, backend=backend)
+    return crps.gtclogistic(observation, location, scale, lower, upper, 0.0, 0.0, backend=backend)
 
 
 def crps_clogistic(
+    observation: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     lower: "ArrayLike",
     upper: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -505,6 +937,8 @@ def crps_clogistic(
 
     Parameters
     ----------
+    observation: ArrayLike
+        The observed values.
     location: ArrayLike
         Location parameter of the forecast distribution.
     scale: ArrayLike
@@ -513,8 +947,6 @@ def crps_clogistic(
         Lower boundary of the truncated forecast distribution.
     upper: ArrayLike
         Upper boundary of the truncated forecast distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -524,21 +956,21 @@ def crps_clogistic(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.clogistic(0.1, 0.4, -1.0, 1.0, 0.0)
+    >>> crps.clogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     """
     lmass = stats._logis_cdf((lower - location) / scale)
     umass = 1 - stats._logis_cdf((upper - location) / scale)
-    return crps.gtclogistic(location, scale, lower, upper, lmass, umass, observation, backend=backend)
+    return crps.gtclogistic(observation, location, scale, lower, upper, lmass, umass, backend=backend)
 
 
 def crps_gtcnormal(
+    observation: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     lower: "ArrayLike",
     upper: "ArrayLike",
     lmass: "ArrayLike",
     umass: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -560,6 +992,8 @@ def crps_gtcnormal(
 
     Parameters
     ----------
+    observation: ArrayLike
+        The observed values.
     location: ArrayLike
         Location parameter of the forecast distribution.
     scale: ArrayLike
@@ -572,8 +1006,6 @@ def crps_gtcnormal(
         Point mass assigned to the lower boundary of the forecast distribution.
     umass: ArrayLike
         Point mass assigned to the upper boundary of the forecast distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -583,17 +1015,17 @@ def crps_gtcnormal(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.gtcnormal(0.1, 0.4, -1.0, 1.0, 0.1, 0.1, 0.0)
+    >>> crps.gtcnormal(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
-    return crps.gtcnormal(location, scale, lower, upper, lmass, umass, observation, backend=backend)
+    return crps.gtcnormal(observation, location, scale, lower, upper, lmass, umass, backend=backend)
 
 
 def crps_tnormal(
+    observation: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     lower: "ArrayLike",
     upper: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -605,6 +1037,8 @@ def crps_tnormal(
     
     Parameters
     ----------
+    observation: ArrayLike
+        The observed values.
     location: ArrayLike
         Location parameter of the forecast distribution.
     scale: ArrayLike
@@ -613,8 +1047,6 @@ def crps_tnormal(
         Lower boundary of the truncated forecast distribution.
     upper: ArrayLike
         Upper boundary of the truncated forecast distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -624,17 +1056,17 @@ def crps_tnormal(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.tnormal(0.1, 0.4, -1.0, 1.0, 0.0)
+    >>> crps.tnormal(0.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return crps.gtcnormal(location, scale, lower, upper, 0.0, 0.0, observation, backend=backend)
+    return crps.gtcnormal(observation, location, scale, lower, upper, 0.0, 0.0, backend=backend)
 
 
 def crps_cnormal(
+    observation: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     lower: "ArrayLike",
     upper: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -646,6 +1078,8 @@ def crps_cnormal(
 
     Parameters
     ----------
+    observation: ArrayLike
+        The observed values.
     location: ArrayLike
         Location parameter of the forecast distribution.
     scale: ArrayLike
@@ -654,8 +1088,6 @@ def crps_cnormal(
         Lower boundary of the truncated forecast distribution.
     upper: ArrayLike
         Upper boundary of the truncated forecast distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -665,14 +1097,15 @@ def crps_cnormal(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.cnormal(0.1, 0.4, -1.0, 1.0, 0.0)
+    >>> crps.cnormal(0.0, 0.1, 0.4, -1.0, 1.0)
     """
     lmass = stats._norm_cdf((lower - location) / scale)
     umass = 1 - stats._norm_cdf((upper - location) / scale)
-    return crps.gtcnormal(location, scale, lower, upper, lmass, umass, observation, backend=backend)
+    return crps.gtcnormal(observation, location, scale, lower, upper, lmass, umass, backend=backend)
 
 
 def crps_gtct(
+    observation: "ArrayLike",
     df : "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
@@ -680,7 +1113,6 @@ def crps_gtct(
     upper: "ArrayLike",
     lmass: "ArrayLike",
     umass: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -708,6 +1140,8 @@ def crps_gtct(
 
     Parameters
     ----------
+    observation: ArrayLike
+        The observed values.
     df: ArrayLike
         Degrees of freedom parameter of the forecast distribution.
     location: ArrayLike
@@ -722,8 +1156,6 @@ def crps_gtct(
         Point mass assigned to the lower boundary of the forecast distribution.
     umass: ArrayLike
         Point mass assigned to the upper boundary of the forecast distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -733,18 +1165,18 @@ def crps_gtct(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.gtct(2.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1, 0.0)
+    >>> crps.gtct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
-    return crps.gtct(df, location, scale, lower, upper, lmass, umass, observation, backend=backend)
+    return crps.gtct(observation, df, location, scale, lower, upper, lmass, umass, backend=backend)
 
 
 def crps_tt(
+    observation: "ArrayLike",
     df: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     lower: "ArrayLike",
     upper: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -756,6 +1188,8 @@ def crps_tt(
     
     Parameters
     ----------
+    observation: ArrayLike
+        The observed values.
     df: ArrayLike
         Degrees of freedom parameter of the forecast distribution.
     location: ArrayLike
@@ -766,8 +1200,6 @@ def crps_tt(
         Lower boundary of the truncated forecast distribution.
     upper: ArrayLike
         Upper boundary of the truncated forecast distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -777,18 +1209,18 @@ def crps_tt(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.tt(2.0, 0.1, 0.4, -1.0, 1.0, 0.0)
+    >>> crps.tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return crps.gtct(df, location, scale, lower, upper, 0.0, 0.0, observation, backend=backend)
+    return crps.gtct(observation, df, location, scale, lower, upper, 0.0, 0.0, backend=backend)
 
 
 def crps_ct(
+    observation: "ArrayLike",
     df: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     lower: "ArrayLike",
     upper: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -800,6 +1232,8 @@ def crps_ct(
 
     Parameters
     ----------
+    observation: ArrayLike
+        The observed values.
     df: ArrayLike
         Degrees of freedom parameter of the forecast distribution.
     location: ArrayLike
@@ -810,8 +1244,6 @@ def crps_ct(
         Lower boundary of the truncated forecast distribution.
     upper: ArrayLike
         Upper boundary of the truncated forecast distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -821,18 +1253,18 @@ def crps_ct(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.ct(2.0, 0.1, 0.4, -1.0, 1.0, 0.0)
+    >>> crps.ct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     """
     lmass = stats._t_cdf((lower - location) / scale, df)
     umass = 1 - stats._t_cdf((upper - location) / scale, df)
-    return crps.gtct(df, location, scale, lower, upper, lmass, umass, observation, backend=backend)
+    return crps.gtct(observation, df, location, scale, lower, upper, lmass, umass, backend=backend)
 
 
 def crps_hypergeometric(
+    observation: "ArrayLike",
     m: "ArrayLike",
     n: "ArrayLike",
     k: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -849,14 +1281,14 @@ def crps_hypergeometric(
 
     Parameters
     ----------
+    observation: ArrayLike
+        The observed values.
     m: ArrayLike
         First population parameter of the forecast hypergeometric distribution.
     n: ArrayLike
         Second population parameter of the forecast hypergeometric distribution.
     k: ArrayLike
         Size parameter of the forecast hypergeometric distribution.
-    observation: ArrayLike
-        The observed values.
 
     Returns
     -------
@@ -866,503 +1298,9 @@ def crps_hypergeometric(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.hypergeometric(5, 5, 4, 2)
+    >>> crps.hypergeometric(2, 5, 5, 4)
     """
-    return crps.hypergeometric(m, n, k, observation, backend=backend)
-
-
-def crps_laplace(
-    location: "ArrayLike",
-    scale: "ArrayLike",
-    observation: "ArrayLike",
-    /,
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the laplace distribution.
-
-    It is based on the following formulation from
-    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
-
-    $$ \mathrm{CRPS}(F, y) = |y - \mu| + \sigma \exp ( -| y - \mu| / \sigma) - \frac{3\sigma}{4},$$
-
-    where $\mu$ and $\sigma > 0$ are the location and scale parameters of the Laplace distribution.
-
-    Parameters
-    ----------
-    location: ArrayLike
-        Location parameter of the forecast laplace distribution.
-    scale: ArrayLike
-        Scale parameter of the forecast laplace distribution.
-    observation: ArrayLike
-        Observed values.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS for the Laplace(location, scale) forecasts given the observations.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.laplace(0.1, 0.4, 0.0)
-    """
-    return crps.laplace(location, scale, observation, backend=backend)
-
-
-def crps_logistic(
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
-    observation: "ArrayLike",
-    /,
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the logistic distribution.
-
-    It is based on the following formulation from
-    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
-
-    $$ \mathrm{CRPS}(\mathcal{L}(\mu, \sigma), y) = \sigma \left\{ \omega - 2 \log F(\omega) - 1 \right\}, $$
-
-    where $F(\omega)$ is the CDF of the standard logistic distribution at the
-    normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
-
-    Parameters
-    ----------
-    mu: ArrayLike
-        Location parameter of the forecast logistic distribution.
-    sigma: ArrayLike
-        Scale parameter of the forecast logistic distribution.
-    observation: ArrayLike
-        Observed values.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS for the Logistic(mu, sigma) forecasts given the observations.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.logistic(0.1, 0.4, 0.0)
-    """
-    return crps.logistic(mu, sigma, observation, backend=backend)
-
-
-def crps_loglaplace(
-    locationlog: "ArrayLike",
-    scalelog: "ArrayLike",
-    observation: "ArrayLike",
-    /,
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the log-laplace distribution.
-
-    It is based on the following formulation from
-    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
-
-    $$ \mathrm{CRPS}(F_{\mu, \sigma}, y) = y (2 F_{\mu, \sigma}(y) - 1) + \exp(\mu) \left( \frac{\sigma}{4 - \sigma^{2}} + A(y) \right), $$
-
-    where $F_{\mu, \sigma}$ is the CDF of the log-laplace distribution with location parameter $\mu$ 
-    and scale parameter $\sigma \in (0, 1)$, and
-    
-    $$ A(y) = \frac{1}{1 + \sigma} \left( 1 - (2 F_{\mu, \sigma}(y) - 1)^{1 + \sigma} \right), $$
-    if $y < \exp{\mu}$, and 
-    $$ A(y) = \frac{-1}{1 - \sigma} \left( 1 - (2 (1 - F_{\mu, \sigma}(y)))^{1 - \sigma} \right), $$
-    if $y \ge \exp{\mu}$. 
-    
-    Parameters
-    ----------
-    locationlog: ArrayLike
-        Location parameter of the forecast log-laplace distribution.
-    scalelog: ArrayLike
-        Scale parameter of the forecast log-laplace distribution.
-    observation: ArrayLike
-        Observed values.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS for the Loglaplace(locationlog, scalelog) forecasts given the observations.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.loglaplace(0.1, 0.4, 0.0)
-    """
-    return crps.loglaplace(locationlog, scalelog, observation, backend=backend)
-
-
-def crps_loglogistic(
-    mulog: "ArrayLike",
-    sigmalog: "ArrayLike",
-    observation: "ArrayLike",
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the log-logistic distribution.
-
-    It is based on the following formulation from
-    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
-
-    $$ \mathrm{CRPS}(\log \mathcal{L}(\mu, \sigma), y) =
-    y [2 \F_{\mu, \sigma}(y) - 1] - \exp(\mu) B(1 + \sigma, 1 - \sigma) (2 I (1 + \sigma, 1 - \sigma, F_{\mu, \sigma}(y)) + \sigma - 1).$$
-
-    where $\F_{\mu, \sigma}$ is the CDF of the log-logistic distribution with location parameter
-    $\mu$ and scale parameter $\sigma \in (0, 1)$, $B$ is the beta function, and $I$ is the
-    regularised incomplete beta function.
-
-    Parameters
-    ----------
-    mulog: ArrayLike
-        Location parameter of the log-logistic distribution.
-    sigmalog: ArrayLike
-        Scale parameter of the log-logistic distribution.
-
-    Returns
-    -------
-    crps: ArrayLike
-        The CRPS between Loglogis(mulog, sigmalog) and obs.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.loglogistic(0.1, 0.4, 0.0)
-    """
-    return crps.loglogistic(mulog, sigmalog, observation, backend=backend)
-
-
-def crps_lognormal(
-    mulog: "ArrayLike",
-    sigmalog: "ArrayLike",
-    observation: "ArrayLike",
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the lognormal distribution.
-
-    It is based on the formulation introduced by
-    [Baran and Lerch (2015)](https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2521)
-
-    $$ \mathrm{CRPS}(\mathrm{log}\mathcal{N}(\mu, \sigma), y) =
-    y [2 \Phi(y) - 1] - 2 \mathrm{exp}(\mu + \frac{\sigma^2}{2})
-    \left[ \Phi(\omega - \sigma) + \Phi(\frac{\sigma}{\sqrt{2}}) \right]$$
-
-    where $\Phi$ is the CDF of the standard normal distribution and
-    $\omega = \frac{\mathrm{log}y - \mu}{\sigma}$.
-
-    Note that mean and standard deviation are not the values for the distribution itself,
-    but of the underlying normal distribution it is derived from.
-
-    Parameters
-    ----------
-    mulog: ArrayLike
-        Mean of the normal underlying distribution.
-    sigmalog: ArrayLike
-        Standard deviation of the underlying normal distribution.
-
-    Returns
-    -------
-    crps: ArrayLike
-        The CRPS between Lognormal(mu, sigma) and obs.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.lognormal(0.1, 0.4, 0.0)
-    """
-    return crps.lognormal(mulog, sigmalog, observation, backend=backend)
-
-
-def crps_negativebinomial(
-    n: "ArrayLike",
-    prob: "ArrayLike",
-    observation: "ArrayLike",
-    /,
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the negative binomial distribution.
-    
-    It is based on the following formulation from
-    [Wei and Held (2014)](https://link.springer.com/article/10.1007/s11749-014-0380-8):
-
-    $$ \mathrm{CRPS}(F_{n, p}, y) = y (2 F_{n, p}(y) - 1) - \frac{n(1 - p)}{p^{2}} \left( p (2 F_{n+1, p}(y - 1) - 1) + _{2} F_{1} \left( n + 1, \frac{1}{2}; 2; -\frac{4(1 - p)}{p^{2}} \right) \right), $$
-
-    where $F_{n, p}$ is the CDF of the negative binomial distribution with 
-    size parameter $n > 0$ and probability parameter $p \in (0, 1]$. 
-
-    Parameters
-    ----------
-    n: ArrayLike
-        Size parameter of the forecast negative binomial distribution.
-    prob: ArrayLike
-        Probability parameter of the forecast negative binomial distribution.
-    observation: ArrayLike
-        The observed values.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS between NegBinomial(n, prob) and obs.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.negativebinomial(5, 0.5, 2)
-    """
-    return crps.negativebinomial(n, prob, observation, backend=backend)
-
-
-def crps_normal(
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
-    observation: "ArrayLike",
-    /,
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the normal distribution.
-
-    It is based on the following formulation from
-    [Gneiting et al. (2005)](https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml):
-
-    $$ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},$$
-
-    where $\Phi(ω)$ and $\phi(ω)$ are respectively the CDF and PDF of the standard normal
-    distribution at the normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
-
-    Parameters
-    ----------
-    mu: ArrayLike
-        Mean of the forecast normal distribution.
-    sigma: ArrayLike
-        Standard deviation of the forecast normal distribution.
-    observation: ArrayLike
-        The observed values.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS between Normal(mu, sigma) and obs.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.normal(0.1, 0.4, 0.0)
-    """
-    return crps.normal(mu, sigma, observation, backend=backend)
-
-
-def crps_poisson(
-    mean: "ArrayLike",
-    observation: "ArrayLike",
-    /,
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the Poisson distribution.
-    
-    It is based on the following formulation from
-    [Wei and Held (2014)](https://link.springer.com/article/10.1007/s11749-014-0380-8):
-
-    $$ \mathrm{CRPS}(F_{\lambda}, y) = (y - \lambda) (2F_{\lambda}(y) - 1) + 2 \lambda f_{\lambda}(\lfloor y \rfloor ) - \lambda \exp (-2 \lambda) (I_{0} (2 \lambda) + I_{1} (2 \lambda))..$$
-
-    where $F_{\lambda}$ is Poisson distribution function with mean parameter $\lambda > 0$,
-    and $I_{0}$ and $I_{1}$ are modified Bessel functions of the first kind.
-
-    Parameters
-    ----------
-    mean: ArrayLike
-        Mean parameter of the forecast exponential distribution.
-    observation: ArrayLike
-        The observed values.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS between Pois(mean) and obs.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.poisson(1, 2)
-    """
-    return crps.poisson(mean, observation, backend=backend)
-
-
-def crps_uniform(
-    min: "ArrayLike",
-    max: "ArrayLike",
-    lmass: "ArrayLike",
-    umass: "ArrayLike",
-    observation: "ArrayLike",
-    /,
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the uniform distribution.
-    
-    It is based on the following formulation from
-    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
-
-    $$ \mathrm{CRPS}(\mathcal{U}_{L}^{U}(l, u), y) = (u - l) \left\{ | \frac{y - l}{u - l} - F \left( \frac{y - l}{u - l} \right) | + F \left( \frac{y - l}{u - l} \right)^{2} (1 - L - U) - F \left( \frac{y - l}{u - l} \right) (1 - 2L) + \frac{(1 - L - U)^{2}}{3} + (1 - L)U \right\},$$
-
-    where $\mathcal{U}_{L}^{U}(l, u)$ is the uniform distribution with lower bound $l$, 
-    upper bound $u > l$, point mass $L$ on the lower bound, and point mass $U$ on the upper bound.
-    We must have that $L, U \ge 0, L + U < 1$. 
-
-    Parameters
-    ----------
-    min: ArrayLike
-        Lower bound of the forecast uniform distribution.
-    max: ArrayLike
-        Upper bound of the forecast uniform distribution.
-    lmass: ArrayLike
-        Point mass on the lower bound of the forecast uniform distribution.
-    umass: ArrayLike
-        Point mass on the upper bound of the forecast uniform distribution.
-    observation: ArrayLike
-        The observed values.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS between U(min, max, lmass, umass) and obs.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.uniform(0.0, 1.0, 0.0, 0.0, 0.4)
-    """
-    return crps.uniform(min, max, lmass, umass, observation, backend=backend)
-
-
-def crps_t(
-    df: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
-    observation: "ArrayLike",
-    /,
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the student's t distribution.
-
-    It is based on the following formulation from
-    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
-
-    $$ \mathrm{CRPS}(F, y) = \sigma \left\{ \omega (2 F_{\nu} (\omega) - 1) + 2 f_{\nu} \left( \frac{\nu + \omega^{2}}{\nu - 1} \right) - \frac{2 \sqrt{\nu}}{\nu - 1} \frac{B(\frac{1}{2}, \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2}^{2})}  \right},$$
-
-    where $\omega = (y - \mu)/\sigma$, where $\nu > 1, \mu$, and $\sigma > 0$ are the 
-    degrees of freedom, location, and scale parameters respectively of the Student's t 
-    distribution, and $f_{\nu}$ and $F_{\nu}$ are the PDF and CDF of the standard Student's
-    t distribution with $\nu$ degrees of freedom.
-    
-    Parameters
-    ----------
-    df: ArrayLike
-        Degrees of freedom parameter of the forecast t distribution.
-    location: ArrayLike
-        Location parameter of the forecast t distribution.
-    sigma: ArrayLike
-        Scale parameter of the forecast t distribution.
-    observation: ArrayLike
-        The observed values.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS between t(df, location, scale) and obs.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.t(1, 0.1, 0.4, 0.0)
-    """
-    return crps.t(df, location, scale, observation, backend=backend)
-
-
-def crps_tpexponential(
-    scale1: "ArrayLike",
-    scale2: "ArrayLike",
-    location: "ArrayLike",
-    observation: "ArrayLike",
-    /,
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the two-piece exponential distribution.
-
-    It is based on the following formulation from
-    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
-
-    $$ \mathrm{CRPS}(F_{\sigma_{1}, \sigma_{2},\mu}, y) = | y - \mu | + \frac{2 \sigma_{i}^{2}}{\sigma_{1} + \sigma_{2}} \left[ \exp \left( - \frac{| y - \mu |}{\sigma_{i}} \right) - 1 \right] + \frac{\sigma_{1}^{3} + \sigma_{2}^{3}}{2 ( \sigma_{1} + \sigma_{2}) ^{2}}, $$
-
-    where $F_{\sigma_{1}, \sigma_{2},\mu}$ is the CDF of the two-piece exponential distribution
-    with shape parameters $\sigma_{1}, \sigma_{2} > 0$ and location parameter $\mu$, with 
-    $\sigma_{i} = \sigma_{1}$ if $y < \mu$ and $\sigma_{i} = \sigma_{2}$ if $y \ge \mu$.
-    
-    Parameters
-    ----------
-    scale1: ArrayLike
-        First scale parameter of the forecast two-piece exponential distribution.
-    scale2: ArrayLike
-        Second scale parameter of the forecast two-piece exponential distribution.
-    location: ArrayLike
-        Location parameter of the forecast two-piece exponential distribution.
-    observation: ArrayLike
-        The observed values.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS between 2pExp(scale1, scale2, location) and obs.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.tpexponential(1.0, 1.0, 0.0, 0.4)
-    """
-    return crps.tpexponential(scale1, scale2, location, observation, backend=backend)
-
-
-def crps_tpnorm(
-    scale1: "ArrayLike",
-    scale2: "ArrayLike",
-    location: "ArrayLike",
-    observation: "ArrayLike",
-    /,
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the two-piece normal distribution.
-
-    It is based on the formulation from
-    [Gneiting and Thorarinsdottir (2010)](https://arxiv.org/abs/1010.2318).
-    
-    Parameters
-    ----------
-    scale1: ArrayLike
-        First scale parameter of the forecast two-piece exponential distribution.
-    scale2: ArrayLike
-        Second scale parameter of the forecast two-piece exponential distribution.
-    location: ArrayLike
-        Location parameter of the forecast two-piece exponential distribution.
-    observation: ArrayLike
-        The observed values.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS between 2pNorm(scale1, scale2, location) and obs.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.tpnorm(1.0, 1.0, 0.0, 0.4)
-    """
-    return crps.tpnorm(scale1, scale2, location, observation, backend=backend)
+    return crps.hypergeometric(observation, m, n, k, backend=backend)
 
 
 __all__ = [
@@ -1386,14 +1324,10 @@ __all__ = [
     "crps_hypergeometric",
     "crps_laplace",
     "crps_logistic",
-    "crps_loglaplace",
-    "crps_loglogistic",
     "crps_lognormal",
     "crps_negativebinomial",
     "crps_normal",
     "crps_poisson",
     "crps_uniform",
     "crps_t",
-    "crps_tpexponential",
-    "crps_tpnorm"
 ]

@@ -1,7 +1,19 @@
 import typing as tp
 
 import numpy as np
-from scipy.special import erf, beta, betainc, jv, gamma, gammainc, gammaincc, factorial, hyp2f1, comb, expi
+from scipy.special import (
+    beta,
+    betainc,
+    comb,
+    erf,
+    expi,
+    factorial,
+    gamma,
+    gammainc,
+    gammaincc,
+    hyp2f1,
+    jv,
+)
 
 if tp.TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -30,6 +42,11 @@ class NumpyBackend(ArrayBackend):
         keepdims: bool = False,
     ) -> "NDArray":
         return np.mean(x, axis=axis, keepdims=keepdims)
+
+    def max(
+        self, x: "NDArray", axis: int | tuple[int, ...] | None, keepdims: bool = False
+    ) -> "NDArray":
+        return np.max(x, axis=axis, keepdims=keepdims)
 
     def moveaxis(
         self,
@@ -174,6 +191,9 @@ class NumpyBackend(ArrayBackend):
     def gamma(self, x: "NDArray") -> "NDArray":
         return gamma(x)
 
+    def gammainc(self, x: "NDArray", y: "NDArray") -> "NDArray":
+        return gammainc(x, y)
+
     def gammalinc(self, x: "NDArray", y: "NDArray") -> "NDArray":
         return gammainc(x, y) * gamma(x)
 
@@ -183,7 +203,9 @@ class NumpyBackend(ArrayBackend):
     def factorial(self, n: "ArrayLike") -> "ArrayLike":
         return factorial(n)
 
-    def hypergeometric(self, a: "NDArray", b: "NDArray", c: "NDArray", z: "NDArray") -> "NDArray":
+    def hypergeometric(
+        self, a: "NDArray", b: "NDArray", c: "NDArray", z: "NDArray"
+    ) -> "NDArray":
         return hyp2f1(a, b, c, z)
 
     def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
@@ -192,17 +214,8 @@ class NumpyBackend(ArrayBackend):
     def expi(self, x: "NDArray") -> "NDArray":
         return expi(x)
 
-    def isinteger(self, x: "ArrayLike") -> "ArrayLike":
-        return np.equal(np.mod(x, 1), 0)
-
-    def ispositive(self, x: "ArrayLike") -> "ArrayLike":
-        return x > 0
-
-    def isnegative(self, x: "ArrayLike") -> "ArrayLike":
-        return x < 0
-
-    def iszero(self, x: "ArrayLike") -> "ArrayLike":
-        return np.equal(x, 0)
+    def where(self, condition: "NDArray", x1: "NDArray", x2: "NDArray") -> "NDArray":
+        return np.where(condition, x1, x2)
 
 
 class NumbaBackend(NumpyBackend):

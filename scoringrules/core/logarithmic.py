@@ -8,9 +8,9 @@ if tp.TYPE_CHECKING:
 
 
 def normal(
+    obs: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
-    obs: "ArrayLike",
     negative: bool = True,
     backend: "Backend" = None,
 ) -> "Array":

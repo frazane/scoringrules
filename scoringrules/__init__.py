@@ -22,18 +22,16 @@ from scoringrules._crps import (
     crps_hypergeometric,
     crps_laplace,
     crps_logistic,
-    crps_loglaplace,
-    crps_loglogistic,
     crps_lognormal,
     crps_negativebinomial,
     crps_normal,
     crps_poisson,
     crps_uniform,
     crps_t,
-    crps_tpexponential,
-    crps_tpnorm,
-    owcrps_ensemble,
+)
+from scoringrules._wcrps import (
     twcrps_ensemble,
+    owcrps_ensemble,
     vrcrps_ensemble,
 )
 from scoringrules._energy import (
@@ -43,6 +41,7 @@ from scoringrules._energy import (
     vrenergy_score,
 )
 from scoringrules._error_spread import error_spread_score
+from scoringrules._interval import interval_score, weighted_interval_score
 from scoringrules._logs import logs_normal
 from scoringrules._variogram import (
     owvariogram_score,
@@ -78,16 +77,12 @@ __all__ = [
     "crps_hypergeometric",
     "crps_laplace",
     "crps_logistic",
-    "crps_loglaplace",
-    "crps_loglogistic",
     "crps_lognormal",
     "crps_negativebinomial",
     "crps_normal",
     "crps_poisson",
     "crps_uniform",
     "crps_t",
-    "crps_tpexponential",
-    "crps_tpnorm",
     "owcrps_ensemble",
     "twcrps_ensemble",
     "vrcrps_ensemble",
@@ -102,4 +97,6 @@ __all__ = [
     "owvariogram_score",
     "twvariogram_score",
     "vrvariogram_score",
+    "interval_score",
+    "weighted_interval_score",
 ]

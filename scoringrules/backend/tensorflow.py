@@ -17,7 +17,7 @@ Dtype = tp.TypeVar("Dtype")
 
 
 class TensorflowBackend(ArrayBackend):
-    """Tensorflow backend"""
+    """Tensorflow backend."""
 
     name = "tensorflow"
 
@@ -48,6 +48,11 @@ class TensorflowBackend(ArrayBackend):
         keepdims: bool = False,
     ) -> "Tensor":
         return tf.math.reduce_mean(x, axis=axis, keepdims=keepdims)
+
+    def max(
+        self, x: "Tensor", axis: int | tuple[int, ...] | None, keepdims: bool = False
+    ) -> "Tensor":
+        return tf.math.reduce_max(x, axis=axis, keepdims=keepdims)
 
     def moveaxis(
         self,
@@ -211,7 +216,9 @@ class TensorflowBackend(ArrayBackend):
         return tf.math.maximum(x, y)
 
     def beta(self, x: "Tensor", y: "Tensor") -> "Tensor":
-        return tf.math.exp(tf.math.lgamma(x) + tf.math.lgamma(y) - tf.math.lgamma(x + y))
+        return tf.math.exp(
+            tf.math.lgamma(x) + tf.math.lgamma(y) - tf.math.lgamma(x + y)
+        )
 
     def betainc(self, x: "Tensor", y: "Tensor", z: "Tensor") -> "Tensor":
         return tf.math.betainc(x, y, z)
@@ -225,6 +232,9 @@ class TensorflowBackend(ArrayBackend):
     def gamma(self, x: "Tensor") -> "Tensor":
         return tf.math.exp(tf.math.lgamma(x))
 
+    def gammainc(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return tf.math.igamma(x, y)
+
     def gammalinc(self, x: "Tensor", y: "Tensor") -> "Tensor":
         return tf.math.igamma(x, y) * tf.math.exp(tf.math.lgamma(x))
 
@@ -232,29 +242,21 @@ class TensorflowBackend(ArrayBackend):
         return tf.math.igammac(x, y) * tf.math.exp(tf.math.lgamma(x))
 
     def factorial(self, n: "TensorLike") -> "TensorLike":
-        return tf.math.exp(tf.math.lgamma(n+1))
+        return tf.math.exp(tf.math.lgamma(n + 1))
 
-    def hypergeometric(self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor") -> "Tensor":
-        #return tfp.math.hypergeometric.hyp2f1_small_argument(a, b, c, z)
-        raise NotImplementedError(f"The hypergeometric function is currently not available for backend {self.name}")
+    def hypergeometric(
+        self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor"
+    ) -> "Tensor":
+        raise NotImplementedError
 
     def comb(self, n: "Tensor", k: "Tensor") -> "Tensor":
-        return self.factorial(n) / (self.factorial(k) * self.factorial(n - k))
+        return self.factorial(n) // (self.factorial(k) * self.factorial(n - k))
 
     def expi(self, x: "Tensor") -> "Tensor":
         return tf.math.special.expint(x)
 
-    def isinteger(self, x: "TensorLike") -> "TensorLike":
-        return tf.equal(x, tf.cast(x, tf.int32))
-
-    def ispositive(self, x: "TensorLike") -> "TensorLike":
-        return tf.greater(x, 0)
-
-    def isnegative(self, x: "TensorLike") -> "TensorLike":
-        return tf.less(x, 0)
-
-    def iszero(self, x: "TensorLike") -> "TensorLike":
-        return tf.equal(x, 0)
+    def where(self, condition: "Tensor", x1: "Tensor", x2: "Tensor") -> "Tensor":
+        return tf.where(condition, x1, x2)
 
 
 if __name__ == "__main__":

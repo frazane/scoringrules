@@ -44,6 +44,11 @@ class TorchBackend(ArrayBackend):
     ) -> "Tensor":
         return torch.mean(x, axis=axis, keepdim=keepdims)
 
+    def max(
+        self, x: "Tensor", axis: int | tuple[int, ...] | None, keepdims: bool = False
+    ) -> "Tensor":
+        return torch.max(x, axis=axis, keepdim=keepdims)
+
     def moveaxis(
         self,
         x: "Tensor",
@@ -189,7 +194,9 @@ class TorchBackend(ArrayBackend):
         return torch.exp(torch.lgamma(x) + torch.lgamma(y) - torch.lgamma(x + y))
 
     def betainc(self, x: "Tensor", y: "Tensor", z: "Tensor") -> "Tensor":
-        raise NotImplementedError(f"The incomplete beta function is currently not available for backend {self.name}")
+        raise NotImplementedError(
+            "The `betainc` function is not implemented in the torch backend."
+        )
 
     def mbessel0(self, x: "Tensor") -> "Tensor":
         return torch.special.i0(x)
@@ -200,6 +207,9 @@ class TorchBackend(ArrayBackend):
     def gamma(self, x: "Tensor") -> "Tensor":
         return torch.exp(torch.lgamma(x))
 
+    def gammainc(self, x: "Tensor", y: "Tensor") -> "Tensor":
+        return torch.special.gammainc(x, y)
+
     def gammalinc(self, x: "Tensor", y: "Tensor") -> "Tensor":
         return torch.special.gammainc(x, y) * torch.exp(torch.lgamma(x))
 
@@ -207,30 +217,18 @@ class TorchBackend(ArrayBackend):
         return torch.special.gammaincc(x, y) * torch.exp(torch.lgamma(x))
 
     def factorial(self, n: "TensorLike") -> "TensorLike":
-        return torch.exp(torch.lgamma(n+1))
+        return torch.exp(torch.lgamma(n + 1))
 
-    def hypergeometric(self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor") -> "Tensor":
-        raise NotImplementedError(f"The hypergeometric function is currently not available for backend {self.name}")
+    def hypergeometric(
+        self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor"
+    ) -> "Tensor":
+        return None
 
     def comb(self, n: "Tensor", k: "Tensor") -> "Tensor":
-        return self.factorial(n) / (self.factorial(k) * self.factorial(n - k))
+        return self.factorial(n) // (self.factorial(k) * self.factorial(n - k))
 
     def expi(self, x: "Tensor") -> "Tensor":
-        raise NotImplementedError(f"The exponential integral function is currently not available for backend {self.name}")
+        return None
 
-    def isinteger(self, x: "TensorLike") -> "TensorLike":
-        return x == x.to(torch.int)
-
-    def ispositive(self, x: "TensorLike") -> "TensorLike":
-        return x > 0
-
-    def isnegative(self, x: "TensorLike") -> "TensorLike":
-        return x < 0
-
-    def iszero(self, x: "TensorLike") -> "TensorLike":
-        return x == 0
-
-
-if __name__ == "__main__":
-    B = TorchBackend()
-    out = B.mean(torch.ones(10))
+    def where(self, condition: "Tensor", x: "Tensor", y: "Tensor") -> "Tensor":
+        return torch.where(condition, x, y)

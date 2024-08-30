@@ -7,9 +7,9 @@ if tp.TYPE_CHECKING:
 
 
 def logs_normal(
+    observation: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
-    observation: "ArrayLike",
     /,
     *,
     negative: bool = True,
@@ -21,12 +21,12 @@ def logs_normal(
 
     Parameters
     ----------
+    observations: ArrayLike
+        The observed values.
     mu: ArrayLike
         Mean of the forecast normal distribution.
     sigma: ArrayLike
         Standard deviation of the forecast normal distribution.
-    observation: ArrayLike
-        The observed values.
     backend: str, optional
         The backend used for computations.
 
@@ -42,5 +42,5 @@ def logs_normal(
     >>> 0.033898
     """
     return logarithmic.normal(
-        mu, sigma, observation, negative=negative, backend=backend
+        observation, mu, sigma, negative=negative, backend=backend
     )

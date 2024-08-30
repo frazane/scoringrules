@@ -36,8 +36,8 @@ import scoringrules as sr
 import numpy as np
 
 obs = np.random.randn(100)
-fcts = obs[:,None] + np.random.randn(100, 21) * 0.1
-sr.crps_ensemble(fcts, obs)
+fct = obs[:,None] + np.random.randn(100, 21) * 0.1
+sr.crps_ensemble(obs, fct)
 ```
 
 ## Metrics
@@ -47,6 +47,19 @@ sr.crps_ensemble(fcts, obs)
 - Error Spread Score
 - Energy Score
 - Variogram Score
+
+
+## Citation
+If you found this library useful for your own research, consider citing:
+
+```
+@software{zanetta_scoringrules_2024,
+  author = {Francesco Zanetta and Sam Allen},
+  title = {Scoringrules: a python library for probabilistic forecast evaluation},
+  year = {2024},
+  url = {https://github.com/frazane/scoringrules}
+}
+```
 
 ## Acknowledgements
 [scoringRules](https://cran.r-project.org/web/packages/scoringRules/index.html) served as a reference for this library. The authors did an outstanding work which greatly facilitated ours. The implementation of the ensemble-based metrics as jit-compiled numpy generalized `ufuncs` was first proposed in [properscoring](https://github.com/properscoring/properscoring), released under Apache License, Version 2.0.
