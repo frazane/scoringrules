@@ -686,7 +686,7 @@ def crps_gev(
     Examples
     --------
     >>> import scoringrules as sr
-    >>> crps.gev(0.3, 0.1)
+    >>> sr.crps_gev(0.3, 0.1)
     0.2924712413052034
     """
     return crps.gev(observation, shape, location, scale, backend=backend)
