@@ -639,7 +639,8 @@ def crps_logistic(
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.logistic(0.1, 0.4, 0.0)
+    >>> crps.logistic(0.0, 0.4, 0.1)
+    0.30363
     """
     return crps.logistic(observation, mu, sigma, backend=backend)
 

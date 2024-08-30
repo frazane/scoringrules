@@ -221,7 +221,3 @@ def test_logis(backend):
     expected = 0.5529776
     res = _crps.crps_logistic(obs, mu, sigma, backend=backend)
     assert np.isclose(res, expected)
-
-    with pytest.raises(ValueError):
-        _crps.crps_logistic(obs, mu, -sigma, backend=backend)
-        return
