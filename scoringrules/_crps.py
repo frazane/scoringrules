@@ -604,7 +604,7 @@ def crps_gamma(
     return crps.gamma(observation, shape, rate, backend=backend)
 
 
-def crps_normal(
+def crps_logistic(
     observation: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
@@ -612,36 +612,36 @@ def crps_normal(
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the normal distribution.
+    r"""Compute the closed form of the CRPS for the logistic distribution.
 
     It is based on the following formulation from
-    [Geiting et al. (2005)](https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml):
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
 
-    $$ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},$$
+    $$ \mathrm{CRPS}(\mathcal{L}(\mu, \sigma), y) = \sigma \left\{ \omega - 2 \log F(\omega) - 1 \right\}, $$
 
-    where $\Phi(ω)$ and $\phi(ω)$ are respectively the CDF and PDF of the standard normal
-    distribution at the normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
+    where $F(\omega)$ is the CDF of the standard logistic distribution at the
+    normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
 
     Parameters
     ----------
     observations: ArrayLike
-        The observed values.
+        Observed values.
     mu: ArrayLike
-        Mean of the forecast normal distribution.
+        Location parameter of the forecast logistic distribution.
     sigma: ArrayLike
-        Standard deviation of the forecast normal distribution.
+        Scale parameter of the forecast logistic distribution.
 
     Returns
     -------
     crps: array_like
-        The CRPS between Normal(mu, sigma) and obs.
+        The CRPS for the Logistic(mu, sigma) forecasts given the observations.
 
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.normal(0.1, 0.4, 0.0)
+    >>> crps.logistic(0.1, 0.4, 0.0)
     """
-    return crps.normal(observation, mu, sigma, backend=backend)
+    return crps.logistic(observation, mu, sigma, backend=backend)
 
 
 def crps_lognormal(
@@ -687,7 +687,7 @@ def crps_lognormal(
     return crps.lognormal(observation, mulog, sigmalog, backend=backend)
 
 
-def crps_logistic(
+def crps_normal(
     observation: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
@@ -695,36 +695,36 @@ def crps_logistic(
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the logistic distribution.
+    r"""Compute the closed form of the CRPS for the normal distribution.
 
     It is based on the following formulation from
-    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+    [Geiting et al. (2005)](https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml):
 
-    $$ \mathrm{CRPS}(\mathcal{L}(\mu, \sigma), y) = \sigma \left\{ \omega - 2 \log F(\omega) - 1 \right\}, $$
+    $$ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},$$
 
-    where $F(\omega)$ is the CDF of the standard logistic distribution at the
-    normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
+    where $\Phi(ω)$ and $\phi(ω)$ are respectively the CDF and PDF of the standard normal
+    distribution at the normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
 
     Parameters
     ----------
     observations: ArrayLike
-        Observed values.
+        The observed values.
     mu: ArrayLike
-        Location parameter of the forecast logistic distribution.
+        Mean of the forecast normal distribution.
     sigma: ArrayLike
-        Scale parameter of the forecast logistic distribution.
+        Standard deviation of the forecast normal distribution.
 
     Returns
     -------
     crps: array_like
-        The CRPS for the Logistic(mu, sigma) forecasts given the observations.
+        The CRPS between Normal(mu, sigma) and obs.
 
     Examples
     --------
     >>> from scoringrules import crps
-    >>> crps.logistic(0.1, 0.4, 0.0)
+    >>> crps.normal(0.1, 0.4, 0.0)
     """
-    return crps.logistic(observation, mu, sigma, backend=backend)
+    return crps.normal(observation, mu, sigma, backend=backend)
 
 
 __all__ = [
@@ -732,7 +732,12 @@ __all__ = [
     "twcrps_ensemble",
     "owcrps_ensemble",
     "vrcrps_ensemble",
-    "crps_normal",
-    "crps_lognormal",
+    "crps_beta",
+    "crps_binomial",
+    "crps_exponential",
+    "crps_exponentialM",
+    "crps_gamma",
     "crps_logistic",
+    "crps_lognormal",
+    "crps_normal",
 ]

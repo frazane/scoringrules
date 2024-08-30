@@ -200,7 +200,7 @@ def lognormal(
 def logistic(
     obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
-    """Compute the CRPS for the normal distribution."""
+    """Compute the CRPS for the logistic distribution."""
     B = backends.active if backend is None else backends[backend]
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma
