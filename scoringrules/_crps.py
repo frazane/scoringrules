@@ -676,6 +676,8 @@ def crps_gev(
         Location parameter of the forecast GEV distribution.
     scale:
         Scale parameter of the forecast GEV distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
 
     Returns
