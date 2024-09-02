@@ -253,3 +253,24 @@ def test_gev(backend):
         _crps.crps_gev(obs * sigma, xi, scale=sigma, backend=backend),
         0.207621488 * sigma,
     )
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_gpd(backend):
+    assert np.isclose(_crps.crps_gpd(0.3, 0.9, backend=backend), 0.6849332)
+    assert np.isclose(_crps.crps_gpd(-0.3, 0.9, backend=backend), 1.209091)
+    assert np.isclose(_crps.crps_gpd(0.3, -0.9, backend=backend), 0.1338672)
+    assert np.isclose(_crps.crps_gpd(-0.3, -0.9, backend=backend), 0.6448276)
+
+    assert np.isnan(_crps.crps_gpd(0.3, 1.0, backend=backend))
+    assert np.isnan(_crps.crps_gpd(0.3, 1.2, backend=backend))
+    assert np.isnan(_crps.crps_gpd(0.3, 0.9, mass=-0.1, backend=backend))
+    assert np.isnan(_crps.crps_gpd(0.3, 0.9, mass=1.1, backend=backend))
+
+    res = 0.281636441
+    assert np.isclose(
+        _crps.crps_gpd(0.3 + 0.1, 0.0, location=0.1, backend=backend), res
+    )
+    assert np.isclose(
+        _crps.crps_gpd(0.3 * 0.9, 0.0, scale=0.9, backend=backend), res * 0.9
+    )

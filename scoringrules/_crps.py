@@ -694,6 +694,65 @@ def crps_gev(
     return crps.gev(observation, shape, location, scale, backend=backend)
 
 
+def crps_gpd(
+    observation: "ArrayLike",
+    shape: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    mass: "ArrayLike" = 0.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the generalised pareto distribution (GPD).
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$
+    \mathrm{CRPS}(F_{M, \xi}, y) =
+    |y| - \frac{2 (1 - M)}{1 - \xi} \left( 1 - (1 - F_{\xi}(y))^{1 - \xi} \right)
+    + \frac{(1 - M)^{2}}{2 - \xi},
+    $$
+
+    $$
+    \mathrm{CRPS}(F_{M, \xi, \mu, \sigma}, y) =
+    \sigma \mathrm{CRPS} \left( F_{M, \xi}, \frac{y - \mu}{\sigma} \right),
+    $$
+
+    where $F_{M, \xi, \mu, \sigma}$ is the GPD distribution function with shape
+    parameter $\xi < 1$, location parameter $\mu$, scale parameter $\sigma > 0$,
+    and point mass $M \in [0, 1]$ at the lower boundary. $F_{M, \xi} = F_{M, \xi, 0, 1}$.
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    shape:
+        Shape parameter of the forecast GPD distribution.
+    location:
+        Location parameter of the forecast GPD distribution.
+    scale:
+        Scale parameter of the forecast GPD distribution.
+    mass:
+        Mass parameter at the lower boundary of the forecast GPD distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and GPD(shape, location, scale, mass).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_gpd(0.3, 0.9)
+    0.6849331901197213
+    """
+    return crps.gpd(observation, shape, location, scale, mass, backend=backend)
+
+
 def crps_normal(
     observation: "ArrayLike",
     mu: "ArrayLike",

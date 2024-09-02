@@ -7,6 +7,7 @@ from scoringrules.core.stats import (
     _exp_cdf,
     _gamma_cdf,
     _gev_cdf,
+    _gpd_cdf,
     _logis_cdf,
     _norm_cdf,
     _norm_pdf,
@@ -219,6 +220,31 @@ def gev(
     out = out * scale
 
     return float(out) if out.size == 1 else out
+
+
+def gpd(
+    obs: "ArrayLike",
+    shape: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    mass: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the GPD distribution."""
+    B = backends.active if backend is None else backends[backend]
+    shape, location, scale, mass, obs = map(
+        B.asarray, (shape, location, scale, mass, obs)
+    )
+    shape = B.where(shape < 1.0, shape, B.nan)
+    mass = B.where((mass >= 0.0) & (mass <= 1.0), mass, B.nan)
+    ω = (obs - location) / scale
+    F_xi = _gpd_cdf(ω, shape, backend=backend)
+    s = (
+        B.abs(ω)
+        - 2 * (1 - mass) * (1 - (1 - F_xi) ** (1 - shape)) / (1 - shape)
+        + ((1 - mass) ** 2) / (2 - shape)
+    )
+    return scale * s
 
 
 def normal(

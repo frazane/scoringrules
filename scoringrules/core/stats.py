@@ -86,14 +86,26 @@ def _gev_cdf(s: "ArrayLike", xi: "ArrayLike", backend: "Backend" = None) -> "Arr
 def _gpd_cdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the standard GPD distribution."""
     B = backends.active if backend is None else backends[backend]
-    F_0 = B.maximum(1 - B.exp(-x), 0)
-    F_p = B.maximum(1 - (1 + shape * x) ** (-1 / shape), 0)
-    F_m = B.isnegative(x - 1 / B.abs(shape)) * (1 - (1 + shape * x) ** (-1 / shape)) + (
-        1 - B.isnegative(x - 1 / B.abs(shape))
+
+    # masks to handle the different cases
+    shape_0 = shape == 0
+    shape = B.where(shape_0, B.nan, shape)
+    shape_p = shape > 0
+    shape_n = ~(shape_0 | shape_p)
+    x_pos = x >= 0
+    x_gt_invxi = x > -1 / shape
+    x = B.where(x_pos, x, B.nan)
+    shape = B.where(shape_n & x_gt_invxi, B.nan, shape)
+
+    cdf = 0.0
+    cdf = B.where(shape_0 & x_pos, 1 - B.exp(-x), cdf)
+    cdf = B.where(
+        (shape_n & x_pos) | (shape_p & x_pos),
+        1 - (1 + shape * x) ** (-1 / shape),
+        cdf,
     )
-    F_m = B.maximum(F_m, 0)
-    F_xi = B.iszero(shape) * F_0 + B.ispositive(shape) * F_p + B.isnegative(shape) * F_m
-    return F_xi
+    cdf = B.where(shape_n & x_gt_invxi, 1.0, cdf)
+    return cdf
 
 
 def _binom_pdf(
