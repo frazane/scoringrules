@@ -65,16 +65,22 @@ def _t_cdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array
     )
 
 
-def _gev_cdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "Array":
+def _gev_cdf(s: "ArrayLike", xi: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the standard GEV distribution."""
     B = backends.active if backend is None else backends[backend]
-    F_0 = B.exp(-B.exp(-x))
-    F_p = B.ispositive(x + 1 / shape) * B.exp(-((1 + shape * x) ** (-1 / shape)))
-    F_m = B.isnegative(x + 1 / shape) * B.exp(-((1 + shape * x) ** (-1 / shape))) + (
-        1 - B.isnegative(x + 1 / shape)
-    )
-    F_xi = B.iszero(shape) * F_0 + B.ispositive(shape) * F_p + B.isnegative(shape) * F_m
-    return F_xi
+    zero_shape = xi == 0
+    xi = B.where(zero_shape, B.nan, xi)
+    general_case = ~zero_shape & (xi * s > -1)
+    cdf = B.nan * s
+    cdf = B.where(zero_shape, B.exp(-B.exp(-s)), cdf)  # Gumbel CDF
+    cdf = B.where(
+        general_case,
+        B.exp(-((1 + xi * B.where(general_case, s, B.nan)) ** (-1 / xi))),
+        cdf,
+    )  # General CDF
+    cdf = B.where((xi > 0) & (s <= -1 / xi), 0, cdf)  # Lower bound CDF
+    cdf = B.where((xi < 0) & (s >= 1 / B.abs(xi)), 1, cdf)  # Upper bound CDF
+    return cdf
 
 
 def _gpd_cdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "Array":

@@ -6,6 +6,7 @@ from scoringrules.core.stats import (
     _binom_pdf,
     _exp_cdf,
     _gamma_cdf,
+    _gev_cdf,
     _gpd_cdf,
     _logis_cdf,
     _norm_cdf,
@@ -164,6 +165,61 @@ def gamma(
         - 1 / (rate * B.beta(B.asarray(0.5), shape))
     )
     return s
+
+
+EULERMASCHERONI = 0.57721566490153286060651209008240243
+
+
+def gev(
+    obs: "ArrayLike",
+    shape: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the GEV distribution."""
+    B = backends.active if backend is None else backends[backend]
+    obs, shape, location, scale = map(B.asarray, (obs, shape, location, scale))
+
+    obs = (obs - location) / scale
+    # if not _is_scalar_value(location, 0.0):
+    # obs -= location
+
+    # if not _is_scalar_value(scale, 1.0):
+    # obs /= scale
+
+    def _gev_adjust_fn(s, xi, f_xi):
+        res = B.nan * s
+        p_xi = xi > 0
+        n_xi = xi < 0
+        n_inv_xi = -1 / xi
+
+        gen_res = n_inv_xi * f_xi + B.gammauinc(1 - xi, -B.log(f_xi)) / xi
+
+        res = B.where(p_xi & (s <= n_inv_xi), 0, res)
+        res = B.where(p_xi & (s > n_inv_xi), gen_res, res)
+
+        res = B.where(n_xi & (s < n_inv_xi), gen_res, res)
+        res = B.where(n_xi & (s >= n_inv_xi), n_inv_xi + B.gamma(1 - xi) / xi, res)
+
+        return res
+
+    F_xi = _gev_cdf(obs, shape, backend=backend)
+    zero_shape = shape == 0.0
+    shape = B.where(~zero_shape, shape, B.nan)
+    G_xi = _gev_adjust_fn(obs, shape, F_xi)
+
+    out = B.where(
+        zero_shape,
+        -obs - 2 * B.expi(B.log(F_xi)) + EULERMASCHERONI - B.log(2),
+        obs * (2 * F_xi - 1)
+        - 2 * G_xi
+        - (1 - (2 - 2**shape) * B.gamma(1 - shape)) / shape,
+    )
+
+    out = out * scale
+
+    return float(out) if out.size == 1 else out
 
 
 def gpd(
