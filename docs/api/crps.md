@@ -23,6 +23,8 @@ When the true forecast CDF is not fully known, but represented by a finite ensem
 
 ::: scoringrules.crps_gamma
 
+::: scoringrules.crps_gpd
+
 ::: scoringrules.crps_lognormal
 
 ::: scoringrules.crps_normal
