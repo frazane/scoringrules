@@ -274,3 +274,14 @@ def test_gpd(backend):
     assert np.isclose(
         _crps.crps_gpd(0.3 * 0.9, 0.0, scale=0.9, backend=backend), res * 0.9
     )
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_hypergeometric(backend):
+    res = _crps.crps_hypergeometric(5 * np.ones((2, 2)), 7, 13, 12, backend=backend)
+    assert res.shape == (2, 2)
+
+    res = _crps.crps_hypergeometric(5, 7 * np.ones((2, 2)), 13, 12, backend=backend)
+    assert res.shape == (2, 2)
+
+    assert np.isclose(_crps.crps_hypergeometric(5, 7, 13, 12), 0.4469742)

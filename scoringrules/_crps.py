@@ -753,6 +753,54 @@ def crps_gpd(
     return crps.gpd(observation, shape, location, scale, mass, backend=backend)
 
 
+def crps_hypergeometric(
+    observation: "ArrayLike",
+    m: "ArrayLike",
+    n: "ArrayLike",
+    k: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the hypergeometric distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$
+    \mathrm{CRPS}(F_{m, n, k}, y) = 2 \sum_{x = 0}^{n} f_{m,n,k}(x) (1\{y < x\}
+    - F_{m,n,k}(x) + f_{m,n,k}(x)/2) (x - y),
+    $$
+
+    where $f_{m, n, k}$ and $F_{m, n, k}$ are the PDF and CDF of the hypergeometric
+    distribution with population parameters $m,n = 0, 1, 2, ...$ and size parameter
+    $k = 0, ..., m + n$.
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    m:
+        Number of success states in the population.
+    n:
+        Number of failure states in the population.
+    k:
+        Number of draws, without replacement. Must be in 0, 1, ..., m + n.
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and Hypergeometric(m, n, k).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_hypergeometric(5, 7, 13, 12)
+    0.44697415547610597
+    """
+    return crps.hypergeometric(observation, m, n, k, backend=backend)
+
+
 def crps_normal(
     observation: "ArrayLike",
     mu: "ArrayLike",
@@ -881,7 +929,16 @@ __all__ = [
     "twcrps_ensemble",
     "owcrps_ensemble",
     "vrcrps_ensemble",
-    "crps_normal",
-    "crps_lognormal",
+    "crps_quantile",
+    "crps_beta",
+    "crps_binomial",
+    "crps_exponential",
+    "crps_exponentialM",
+    "crps_gamma",
+    "crps_gev",
+    "crps_gpd",
+    "crps_hypergeometric",
     "crps_logistic",
+    "crps_lognormal",
+    "crps_normal",
 ]
