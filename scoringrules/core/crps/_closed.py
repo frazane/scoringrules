@@ -8,6 +8,8 @@ from scoringrules.core.stats import (
     _gamma_cdf,
     _gev_cdf,
     _gpd_cdf,
+    _hypergeo_cdf,
+    _hypergeo_pdf,
     _logis_cdf,
     _norm_cdf,
     _norm_pdf,
@@ -245,6 +247,73 @@ def gpd(
         + ((1 - mass) ** 2) / (2 - shape)
     )
     return scale * s
+
+
+def hypergeometric(
+    obs: "ArrayLike",
+    m: "ArrayLike",
+    n: "ArrayLike",
+    k: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the hypergeometric distribution.
+
+    We take as inputs the arguments as defined in R's scoringRules package:
+
+    obs: The observed values.
+    m: number of success states in the population.
+    n: number of failure states in the population.
+    k: number of draws, without replacemen, from the population.
+
+    But we follow scipy.stats.hypergeom.pmf for pdf and cdf:
+
+    k or obs: number of observed successes.
+    M: total population size.
+    n: number of success states in the population.
+    N: sample size (number of draws).
+    """
+    B = backends.active if backend is None else backends[backend]
+    obs, m, n, k = map(B.asarray, (obs, m, n, k))
+
+    # scipy uses different notation
+    M = m + n
+    N = k
+
+    # if n is a scalar, x always has the same shape, which simplifies the computation
+    if B.size(n) == 1:
+        x = B.arange(n + 1)
+        out_ndims = B.max(B.asarray([_input.ndim for _input in [obs, M, m, N]]), axis=0)
+        x = B.expand_dims(x, axis=tuple(range(-out_ndims, 0)))
+        x, M, m, N = B.broadcast_arrays(x, M, m, N)
+        f_np = _hypergeo_pdf(x, M, m, N, backend=backend)
+        F_np = _hypergeo_cdf(x, M, m, N, backend=backend)
+        s = 2 * B.sum(
+            f_np * (B.asarray((obs < x), dtype=float) - F_np + f_np / 2) * (x - obs),
+            axis=0,
+        )
+    # if n is an array, we need to loop over the elements
+    else:
+        obs, M, m, N = B.broadcast_arrays(obs, M, m, N)
+        s = []
+        for i, _n in enumerate(n.view(-1)):
+            x = B.arange(_n + 1)
+            f_np = _hypergeo_pdf(
+                x, M.view(-1)[i], m.view(-1)[i], N.view(-1)[i], backend=backend
+            )
+            F_np = _hypergeo_cdf(
+                x, M.view(-1)[i], m.view(-1)[i], N.view(-1)[i], backend=backend
+            )
+            s.append(
+                2
+                * B.sum(
+                    f_np
+                    * (B.asarray((obs.view(-1)[i] < x), dtype=float) - F_np + f_np / 2)
+                    * (x - obs.view(-1)[i]),
+                    axis=0,
+                )
+            )
+        s = B.asarray(s).reshape(obs.shape)
+    return s
 
 
 def normal(

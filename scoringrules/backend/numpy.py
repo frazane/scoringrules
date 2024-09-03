@@ -33,6 +33,9 @@ class NumpyBackend(ArrayBackend):
     def asarray(self, obj: "ArrayLike", /, *, dtype: Dtype | None = None) -> "NDArray":
         return np.asarray(obj, dtype=dtype)
 
+    def broadcast_arrays(self, *arrays: "NDArray") -> tuple["NDArray", ...]:
+        return np.broadcast_arrays(*arrays)
+
     def mean(
         self,
         x: "NDArray",
@@ -216,6 +219,9 @@ class NumpyBackend(ArrayBackend):
 
     def where(self, condition: "NDArray", x1: "NDArray", x2: "NDArray") -> "NDArray":
         return np.where(condition, x1, x2)
+
+    def size(self, x: "NDArray") -> int:
+        return x.size
 
 
 class NumbaBackend(NumpyBackend):

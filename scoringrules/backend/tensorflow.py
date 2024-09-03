@@ -39,6 +39,9 @@ class TensorflowBackend(ArrayBackend):
             dtype = DTYPE
         return tf.convert_to_tensor(obj, dtype=dtype)
 
+    def broadcast_arrays(self, *arrays: "Tensor") -> tuple["Tensor", ...]:
+        raise NotImplementedError
+
     def mean(
         self,
         x: "Tensor",
@@ -257,6 +260,9 @@ class TensorflowBackend(ArrayBackend):
 
     def where(self, condition: "Tensor", x1: "Tensor", x2: "Tensor") -> "Tensor":
         return tf.where(condition, x1, x2)
+
+    def size(self, x: "Tensor") -> int:
+        return x.shape.num_elements()
 
 
 if __name__ == "__main__":
