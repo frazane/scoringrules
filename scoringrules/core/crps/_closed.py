@@ -329,6 +329,41 @@ def laplace(
     return sigma * (B.abs(obs) + B.exp(-B.abs(obs)) - 3 / 4)
 
 
+def loglaplace(
+    obs: "ArrayLike",
+    locationlog: "ArrayLike",
+    scalelog: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the log-laplace distribution."""
+    B = backends.active if backend is None else backends[backend]
+    obs, mulog, sigmalog = map(B.asarray, (obs, locationlog, scalelog))
+    obs, mulog, sigmalog = B.broadcast_arrays(obs, mulog, sigmalog)
+
+    logx_norm = (B.log(obs) - mulog) / sigmalog
+
+    cond_0 = obs <= 0.0
+    cond_1 = obs < B.exp(mulog)
+
+    F_case_0 = B.asarray(cond_0, dtype=int)
+    F_case_1 = B.asarray(~cond_0 & cond_1, dtype=int)
+    F_case_2 = B.asarray(~cond_1, dtype=int)
+    F = (
+        F_case_0 * 0.0
+        + F_case_1 * (0.5 * B.exp(logx_norm))
+        + F_case_2 * (1 - 0.5 * B.exp(-logx_norm))
+    )
+
+    A_case_0 = B.asarray(cond_1, dtype=int)
+    A_case_1 = B.asarray(~cond_1, dtype=int)
+    A = A_case_0 * 1 / (1 + sigmalog) * (
+        1 - (2 * F) ** (1 + sigmalog)
+    ) + A_case_1 * -1 / (1 - sigmalog) * (1 - (2 * (1 - F)) ** (1 - sigmalog))
+
+    s = obs * (2 * F - 1) + B.exp(mulog) * (A + sigmalog / (4 - sigmalog**2))
+    return s
+
+
 def normal(
     obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
 ) -> "Array":

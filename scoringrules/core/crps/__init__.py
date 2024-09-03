@@ -10,6 +10,7 @@ from ._closed import (
     hypergeometric,
     laplace,
     logistic,
+    loglaplace,
     lognormal,
     normal,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "gpd",
     "hypergeometric",
     "laplace",
+    "loglaplace",
     "logistic",
     "lognormal",
     "normal",

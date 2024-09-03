@@ -296,3 +296,8 @@ def test_laplace(backend):
     assert np.isclose(
         _crps.crps_laplace(-3 * 0.9, scale=0.9, backend=backend), 0.9 * 2.29978707
     )
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_loglaplace(backend):
+    assert np.isclose(_crps.crps_loglaplace(3.0, 0.1, 0.9, backend=backend), 1.16202051)
