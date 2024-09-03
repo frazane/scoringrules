@@ -434,6 +434,8 @@ def crps_binomial(
         Size parameter of the forecast binomial distribution as an integer or array of integers.
     prob:
         Probability parameter of the forecast binomial distribution as a float or array of floats.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
@@ -471,6 +473,8 @@ def crps_exponential(
         The observed values.
     rate:
         Rate parameter of the forecast exponential distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
@@ -576,6 +580,8 @@ def crps_gamma(
         Rate parameter of the forecast rate distribution.
     scale:
         Scale parameter of the forecast scale distribution, where `scale = 1 / rate`.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
@@ -786,6 +792,8 @@ def crps_hypergeometric(
         Number of failure states in the population.
     k:
         Number of draws, without replacement. Must be in 0, 1, ..., m + n.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
@@ -822,7 +830,6 @@ def crps_laplace(
     where $\mu$ and $\sigma > 0$ are the location and scale parameters
     of the Laplace distribution.
 
-
     Parameters
     ----------
     observation:
@@ -846,6 +853,59 @@ def crps_laplace(
     0.12357588823428847
     """
     return crps.laplace(observation, location, scale, backend=backend)
+
+
+def crps_loglaplace(
+    observation: "ArrayLike",
+    locationlog: "ArrayLike",
+    scalelog: "ArrayLike",
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the log-Laplace distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$
+    \mathrm{CRPS}(F_{\mu, \sigma}, y) = y (2 F_{\mu, \sigma}(y) - 1)
+    + \exp(\mu) \left( \frac{\sigma}{4 - \sigma^{2}} + A(y) \right),
+    $$
+
+    where $F_{\mu, \sigma}$ is the CDF of the log-laplace distribution with location
+    parameter $\mu$ and scale parameter $\sigma \in (0, 1)$, and
+
+    $$ A(y) = \frac{1}{1 + \sigma} \left( 1 - (2 F_{\mu, \sigma}(y) - 1)^{1 + \sigma} \right), $$
+
+    if $y < \exp{\mu}$, and
+
+    $$ A(y) = \frac{-1}{1 - \sigma} \left( 1 - (2 (1 - F_{\mu, \sigma}(y)))^{1 - \sigma} \right), $$
+
+    if $y \ge \exp{\mu}$.
+
+    Parameters
+    ----------
+    observation:
+        Observed values.
+    locationlog:
+        Location parameter of the forecast log-laplace distribution.
+    scalelog:
+        Scale parameter of the forecast log-laplace distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and Loglaplace(locationlog, scalelog).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_loglaplace(3.0, 0.1, 0.9)
+    1.162020513653791
+    """
+    return crps.loglaplace(observation, locationlog, scalelog, backend=backend)
 
 
 def crps_normal(
