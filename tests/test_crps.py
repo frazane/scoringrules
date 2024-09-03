@@ -285,3 +285,14 @@ def test_hypergeometric(backend):
     assert res.shape == (2, 2)
 
     assert np.isclose(_crps.crps_hypergeometric(5, 7, 13, 12), 0.4469742)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_laplace(backend):
+    assert np.isclose(_crps.crps_laplace(-3, backend=backend), 2.29978707)
+    assert np.isclose(
+        _crps.crps_laplace(-3 + 0.1, location=0.1, backend=backend), 2.29978707
+    )
+    assert np.isclose(
+        _crps.crps_laplace(-3 * 0.9, scale=0.9, backend=backend), 0.9 * 2.29978707
+    )

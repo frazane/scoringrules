@@ -29,6 +29,8 @@ When the true forecast CDF is not fully known, but represented by a finite ensem
 
 ::: scoringrules.crps_hypergeometric
 
+::: scoringrules.crps_laplace
+
 ::: scoringrules.crps_lognormal
 
 ::: scoringrules.crps_normal
