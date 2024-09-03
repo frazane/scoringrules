@@ -316,6 +316,19 @@ def hypergeometric(
     return s
 
 
+def laplace(
+    obs: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the laplace distribution."""
+    B = backends.active if backend is None else backends[backend]
+    obs, mu, sigma = map(B.asarray, (obs, location, scale))
+    obs = (obs - mu) / sigma
+    return sigma * (B.abs(obs) + B.exp(-B.abs(obs)) - 3 / 4)
+
+
 def normal(
     obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
 ) -> "Array":

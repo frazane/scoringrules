@@ -801,6 +801,53 @@ def crps_hypergeometric(
     return crps.hypergeometric(observation, m, n, k, backend=backend)
 
 
+def crps_laplace(
+    observation: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the laplace distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$
+    \mathrm{CRPS}(F, y) = |y - \mu|
+    + \sigma \exp ( -| y - \mu| / \sigma) - \frac{3\sigma}{4},
+    $$
+
+    where $\mu$ and $\sigma > 0$ are the location and scale parameters
+    of the Laplace distribution.
+
+
+    Parameters
+    ----------
+    observation:
+        Observed values.
+    location:
+        Location parameter of the forecast laplace distribution.
+    scale:
+        Scale parameter of the forecast laplace distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and Laplace(location, scale).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_laplace(0.3, 0.1, 0.2)
+    0.12357588823428847
+    """
+    return crps.laplace(observation, location, scale, backend=backend)
+
+
 def crps_normal(
     observation: "ArrayLike",
     mu: "ArrayLike",
