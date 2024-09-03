@@ -33,6 +33,8 @@ When the true forecast CDF is not fully known, but represented by a finite ensem
 
 ::: scoringrules.crps_loglaplace
 
+::: scoringrules.crps_loglogistic
+
 ::: scoringrules.crps_lognormal
 
 ::: scoringrules.crps_normal
