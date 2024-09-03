@@ -34,6 +34,9 @@ class JaxBackend(ArrayBackend):
     def asarray(self, obj: "ArrayLike", /, *, dtype: Dtype | None = None) -> "Array":
         return jnp.asarray(obj, dtype=dtype)
 
+    def broadcast_arrays(self, *arrays: "Array") -> tuple["Array", ...]:
+        return jnp.broadcast_arrays(*arrays)
+
     def mean(
         self,
         x: "Array",
@@ -220,6 +223,9 @@ class JaxBackend(ArrayBackend):
 
     def where(self, condition: "Array", x1: "Array", x2: "Array") -> "Array":
         return jnp.where(condition, x1, x2)
+
+    def size(self, x: "Array") -> int:
+        return x.size
 
 
 if __name__ == "__main__":

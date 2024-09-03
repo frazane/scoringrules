@@ -29,6 +29,10 @@ class ArrayBackend(abc.ABC):
         """Convert the input to an array."""
 
     @abc.abstractmethod
+    def broadcast_arrays(*arrays: "Array") -> tuple["Array", ...]:
+        """Broadcast any number of arrays against each other."""
+
+    @abc.abstractmethod
     def mean(
         self,
         x: "Array",
@@ -244,3 +248,7 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def where(self, condition: "Array", x1: "Array", x2: "Array", /) -> "Array":
         """Return elements chosen from x1 or x2 depending on condition."""
+
+    @abc.abstractmethod
+    def size(self, x: "Array") -> int:
+        """Return the number of elements in the input array."""
