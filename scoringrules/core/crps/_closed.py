@@ -249,6 +249,42 @@ def gpd(
     return scale * s
 
 
+def gtcnormal(
+    obs: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the generalised truncated and censored normal distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mu, sigma, lower, upper, lmass, umass, obs = map(B.asarray, (location, scale, lower, upper, lmass, umass, obs))
+    ω = (obs - mu) / sigma
+    u = (upper - mu) / sigma
+    l = (lower - mu) / sigma
+    z = B.minimum(B.maximum(ω, l), u)
+    F_u = _norm_cdf(u, backend=backend)
+    F_l = _norm_cdf(l, backend=backend)
+    F_z = _norm_cdf(z, backend=backend)
+    F_u2 = _norm_cdf(u * B.sqrt(2), backend=backend)
+    F_l2 = _norm_cdf(l * B.sqrt(2), backend=backend)
+    f_u = _norm_pdf(u, backend=backend)
+    f_l = _norm_pdf(l, backend=backend)
+    f_z = _norm_pdf(z, backend=backend)
+
+    u_inf = u == float("inf")
+    l_inf = l == float("-inf")
+
+    u = B.where(u_inf, B.nan, u)
+    l = B.where(l_inf, B.nan, l)
+    s1_u = B.where(u_inf and umass == 0.0, 0.0, u * umass**2)
+    s1_l = B.where(l_inf and lmass == 0.0, 0.0, l * lmass**2)
+
+    c = (1 - lmass - umass) / (F_u - F_l)
+
+    s1 = B.abs(ω - z) + s1_u - s1_l
+    s2 = c * z * (2 * F_z - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass))
+    s3 = c * (2 * f_z - 2 * f_u * umass - 2 * f_l * lmass)
+    s4 = c**2 * (F_u2 - F_l2) / B.sqrt(B.pi)
+    return sigma * (s1 + s2 + s3 - s4)
+
+
 def hypergeometric(
     obs: "ArrayLike",
     m: "ArrayLike",

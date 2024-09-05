@@ -277,6 +277,50 @@ def test_gpd(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
+def test_gtcnormal(backend):
+    obs, location, scale, lower, upper, lmass, umass = 0.9, -2.3, 4.1, -7.3, 1.7, 0.0, 0.21
+    expected = 1.422805
+    res = _crps.crps_gtcnormal(obs, location, scale, lower, upper, lmass, umass, backend=backend)
+    assert np.isclose(res, expected)
+
+    # aligns with crps_normal
+    res0 = _crps.crps_normal(obs, location, scale, backend=backend)
+    res = _crps.crps_gtcnormal(obs, location, scale, backend=backend)
+    assert np.isclose(res, res0)
+
+    # aligns with crps_tnormal
+    res0 = _crps.crps_tnormal(obs, location, scale, lower, upper, backend=backend)
+    res = _crps.crps_gtcnormal(obs, location, scale, lower, upper, backend=backend)
+    assert np.isclose(res, res0)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_tnormal(backend):
+    obs, location, scale, lower, upper = -1.0, 2.9, 2.2, 1.5, 17.3
+    expected = 3.982434
+    res = _crps.crps_tnormal(obs, location, scale, lower, upper, backend=backend)
+    assert np.isclose(res, expected)
+
+    # aligns with crps_normal
+    res0 = _crps.crps_normal(obs, location, scale, backend=backend)
+    res = _crps.crps_tnormal(obs, location, scale, backend=backend)
+    assert np.isclose(res, res0)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_cnormal(backend):
+    obs, location, scale, lower, upper = 1.8, 0.4, 1.1, 0.0, 2.0
+    expected = 0.8296078
+    res = _crps.crps_cnormal(obs, location, scale, lower, upper, backend=backend)
+    assert np.isclose(res, expected)
+
+    # aligns with crps_normal
+    res0 = _crps.crps_normal(obs, location, scale, backend=backend)
+    res = _crps.crps_cnormal(obs, location, scale, backend=backend)
+    assert np.isclose(res, res0)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_hypergeometric(backend):
     res = _crps.crps_hypergeometric(5 * np.ones((2, 2)), 7, 13, 12, backend=backend)
     assert res.shape == (2, 2)
