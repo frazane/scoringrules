@@ -74,6 +74,7 @@ __all__ = [
     "crps_lognormal",
     "crps_normal",
     "crps_quantile",
+    "crps_t",
     "crps_uniform",
     "owcrps_ensemble",
     "twcrps_ensemble",

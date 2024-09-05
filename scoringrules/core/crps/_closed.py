@@ -13,6 +13,8 @@ from scoringrules.core.stats import (
     _logis_cdf,
     _norm_cdf,
     _norm_pdf,
+    _t_cdf,
+    _t_pdf,
 )
 
 if tp.TYPE_CHECKING:
@@ -497,6 +499,22 @@ def loglogistic(
     I_B = B.betainc(1 + sigmalog, 1 - sigmalog, F_ms)
     s = obs * (2 * F_ms - 1) - B.exp(mulog) * b * (2 * I_B + sigmalog - 1)
     return s
+
+
+def t(
+    obs: "ArrayLike", df: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the t distribution."""
+    B = backends.active if backend is None else backends[backend]
+    df, mu, sigma, obs = map(B.asarray, (df, location, scale, obs))
+    z = (obs - mu) / sigma
+    F_z = _t_cdf(z, df, backend=backend)
+    f_z = _t_pdf(z, df, backend=backend)
+    G_z = (df + z**2) / (df - 1)    
+    s1 = z * (2 * F_z - 1)
+    s2 = 2 * f_z * G_z
+    s3 = (2 * B.sqrt(df) / (df - 1)) * B.beta(1 / 2, df - 1 / 2) / (B.beta(1 / 2, df / 2)**2)
+    return sigma * (s1 + s2 - s3)
 
 
 def uniform(
