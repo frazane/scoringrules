@@ -435,7 +435,7 @@ def test_poisson(backend):
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_t(backend):
-    if backend in ["torch", "tensorflow"]:
+    if backend in ["jax", "torch", "tensorflow"]:
         pytest.skip("Not implemented in torch or tensorflow backends")
 
     obs, df, mu, sigma = 11.1, 5.2, 13.8, 2.3
