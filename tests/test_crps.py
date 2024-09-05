@@ -373,6 +373,27 @@ def test_loglogistic(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
+def test_lognormal(backend):
+    obs = np.exp(np.random.randn(N))
+    mulog = np.log(obs) + np.random.randn(N) * 0.1
+    sigmalog = abs(np.random.randn(N)) * 0.3
+
+    # non-negative values
+    res = _crps.crps_lognormal(obs, mulog, sigmalog, backend=backend)
+    res = np.asarray(res)
+    assert not np.any(np.isnan(res))
+    assert not np.any(res < 0.0)
+
+    # approx zero when perfect forecast
+    mulog = np.log(obs) + np.random.randn(N) * 1e-6
+    sigmalog = abs(np.random.randn(N)) * 1e-6
+    res = _crps.crps_lognormal(obs, mulog, sigmalog, backend=backend)
+    res = np.asarray(res)
+    assert not np.any(np.isnan(res))
+    assert not np.any(res - 0.0 > 0.0001)
+    
+
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_normal(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -394,23 +415,18 @@ def test_normal(backend):
     assert not np.any(res - 0.0 > 0.0001)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_lognormal(backend):
-    obs = np.exp(np.random.randn(N))
-    mulog = np.log(obs) + np.random.randn(N) * 0.1
-    sigmalog = abs(np.random.randn(N)) * 0.3
+def test_uniform(backend):
+    obs, min, max, lmass, umass = 0.3, -1.0, 2.1, 0.3, 0.1
+    res = _crps.crps_uniform(obs, min, max, lmass, umass, backend=backend)
+    expected = 0.3960968
+    assert np.isclose(res, expected)
 
-    # non-negative values
-    res = _crps.crps_lognormal(obs, mulog, sigmalog, backend=backend)
-    res = np.asarray(res)
-    assert not np.any(np.isnan(res))
-    assert not np.any(res < 0.0)
+    obs, min, max, lmass = -17.9, -15.2, -8.7, 0.2
+    res = _crps.crps_uniform(obs, min, max, lmass, backend=backend)
+    expected = 4.086667
+    assert np.isclose(res, expected)
 
-    # approx zero when perfect forecast
-    mulog = np.log(obs) + np.random.randn(N) * 1e-6
-    sigmalog = abs(np.random.randn(N)) * 1e-6
-    res = _crps.crps_lognormal(obs, mulog, sigmalog, backend=backend)
-    res = np.asarray(res)
-
-    assert not np.any(np.isnan(res))
-    assert not np.any(res - 0.0 > 0.0001)
+    obs, min, max = 2.2, 0.1, 3.1
+    res = _crps.crps_uniform(obs, min, max, backend=backend)
+    expected = 0.37
+    assert np.isclose(res, expected)
