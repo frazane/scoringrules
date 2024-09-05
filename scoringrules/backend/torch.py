@@ -225,7 +225,7 @@ class TorchBackend(ArrayBackend):
     def hypergeometric(
         self, a: "Tensor", b: "Tensor", c: "Tensor", z: "Tensor"
     ) -> "Tensor":
-        return None
+        return NotImplementedError
 
     def comb(self, n: "Tensor", k: "Tensor") -> "Tensor":
         return self.factorial(n) // (self.factorial(k) * self.factorial(n - k))

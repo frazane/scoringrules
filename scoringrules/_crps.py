@@ -1384,6 +1384,51 @@ def crps_poisson(
     return crps.poisson(observation, mean, backend=backend)
 
 
+def crps_t(
+    observation: "ArrayLike",
+    df: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the student's t distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F, y) = \sigma \left\{ \omega (2 F_{\nu} (\omega) - 1) + 2 f_{\nu} \left( \frac{\nu + \omega^{2}}{\nu - 1} \right) - \frac{2 \sqrt{\nu}}{\nu - 1} \frac{B(\frac{1}{2}, \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2}^{2})}  \right},$$
+
+    where $\omega = (y - \mu)/\sigma$, where $\nu > 1, \mu$, and $\sigma > 0$ are the 
+    degrees of freedom, location, and scale parameters respectively of the Student's t 
+    distribution, and $f_{\nu}$ and $F_{\nu}$ are the PDF and CDF of the standard Student's
+    t distribution with $\nu$ degrees of freedom.
+    
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    df: ArrayLike
+        Degrees of freedom parameter of the forecast t distribution.
+    location: ArrayLike
+        Location parameter of the forecast t distribution.
+    sigma: ArrayLike
+        Scale parameter of the forecast t distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between t(df, location, scale) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_t(0.0, 0.1, 0.4, 0.1)
+    """
+    return crps.t(observation, df, location, scale, backend=backend)
+
+
 def crps_uniform(
     observation: "ArrayLike",
     min: "ArrayLike",

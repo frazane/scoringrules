@@ -208,7 +208,8 @@ class JaxBackend(ArrayBackend):
         return jsp.special.factorial(n)
 
     def hypergeometric(self, a: "Array", b: "Array", c: "Array", z: "Array"):
-        return jsp.special.hyp2f1(a, b, c, z)
+        #return jsp.special.hyp2f1(a, b, c, z)
+        raise NotImplementedError 
 
     def comb(self, n: "ArrayLike", k: "ArrayLike") -> "ArrayLike":
         return jsp.special.factorial(n) // (

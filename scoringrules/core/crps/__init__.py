@@ -17,6 +17,7 @@ from ._closed import (
     lognormal,
     normal,
     poisson,
+    t,
     uniform,
 )
 from ._gufuncs import estimator_gufuncs, quantile_pinball_gufunc
@@ -42,6 +43,7 @@ __all__ = [
     "lognormal",
     "normal",
     "poisson",
+    "t",
     "uniform",
     "estimator_gufuncs",
     "quantile_pinball",

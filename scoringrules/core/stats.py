@@ -64,7 +64,7 @@ def _t_pdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array
 def _t_cdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the standard Student's t distribution."""
     B = backends.active if backend is None else backends[backend]
-    return 1 / 2 + x * B.hypergeo(1 / 2, (df + 1) / 2, 3 / 2, -(x**2) / df) / (
+    return 1 / 2 + x * B.hypergeometric(1 / 2, (df + 1) / 2, 3 / 2, -(x**2) / df) / (
         B.sqrt(df) * B.beta(1 / 2, df / 2)
     )
 

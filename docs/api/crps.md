@@ -55,7 +55,11 @@ When the true forecast CDF is not fully known, but represented by a finite ensem
 
 ::: scoringrules.crps_poisson
 
+::: scoringrules.crps_t
+
 ::: scoringrules.crps_uniform
+
+::: scoringrules.crps_normal
 
 ## Ensemble-based estimators
 
