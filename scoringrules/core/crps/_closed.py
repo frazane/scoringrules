@@ -249,6 +249,47 @@ def gpd(
     return scale * s
 
 
+def gtclogistic(
+    obs: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the generalised truncated and censored logistic distribution."""
+    B = backends.active if backend is None else backends[backend]
+    obs, mu, sigma, lower, upper, lmass, umass = map(B.asarray, (obs, location, scale, lower, upper, lmass, umass))
+    ω = (obs - mu) / sigma
+    u = (upper - mu) / sigma
+    l = (lower - mu) / sigma
+    z = B.minimum(B.maximum(ω, l), u)
+    F_u = _logis_cdf(u, backend=backend)
+    F_l = _logis_cdf(l, backend=backend)
+    F_mu = _logis_cdf(-u, backend=backend)
+    F_ml = _logis_cdf(-l, backend=backend)
+    F_mz = _logis_cdf(-z, backend=backend)
+
+    u_inf = u == float("inf")
+    l_inf = l == float("-inf")
+
+    F_mu = B.where(u_inf | l_inf, B.nan, F_mu)
+    F_ml = B.where(u_inf | l_inf, B.nan, F_ml)
+    u = B.where(u_inf, B.nan, u)
+    l = B.where(l_inf, B.nan, l)
+
+    G_u = B.where(u_inf, 0.0, u * F_u + B.log(F_mu))
+    G_l = B.where(l_inf, 0.0, l * F_l + B.log(F_ml))
+    H_u = B.where(u_inf, 1.0, F_u - u * F_u**2 + (1 - 2 * F_u) * B.log(F_mu))
+    H_l = B.where(l_inf, 0.0, F_l - l * F_l**2 + (1 - 2 * F_l) * B.log(F_ml))   
+
+    c = (1 - lmass - umass) / (F_u - F_l)
+
+    s1_u = B.where(u_inf and umass == 0.0, 0.0, u * umass**2)
+    s1_l = B.where(l_inf and lmass == 0.0, 0.0, l * lmass**2)
+
+    s1 = B.abs(ω - z) + s1_u - s1_l
+    s2 = c * z * ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass)
+    s3 = c * (2 * B.log(F_mz) - 2 * G_u * umass - 2 * G_l * lmass)
+    s4 = c**2 * (H_u - H_l)
+    return sigma * (s1 - s2 - s3 - s4)
+
+
 def gtcnormal(
     obs: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
@@ -435,7 +476,7 @@ def lognormal(
 def logistic(
     obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
-    """Compute the CRPS for the normal distribution."""
+    """Compute the CRPS for the logistic distribution."""
     B = backends.active if backend is None else backends[backend]
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma
