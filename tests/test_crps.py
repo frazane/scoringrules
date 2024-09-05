@@ -328,9 +328,9 @@ def test_gtct(backend):
     assert np.isclose(res, expected)
 
     # aligns with crps_t
-    #res0 = _crps.crps_t(obs, df, location, scale, backend=backend)
-    #res = _crps.crps_gtct(obs, df, location, scale, backend=backend)
-    #assert np.isclose(res, res0)
+    res0 = _crps.crps_t(obs, df, location, scale, backend=backend)
+    res = _crps.crps_gtct(obs, df, location, scale, backend=backend)
+    assert np.isclose(res, res0)
 
     # aligns with crps_tnormal
     res0 = _crps.crps_tt(obs, df, location, scale, lower, upper, backend=backend)
@@ -346,9 +346,9 @@ def test_tt(backend):
     assert np.isclose(res, expected)
 
     # aligns with crps_t
-    #res0 = _crps.crps_t(obs, location, scale, backend=backend)
-    #res = _crps.crps_tt(obs, location, scale, backend=backend)
-    #assert np.isclose(res, res0)
+    res0 = _crps.crps_t(obs, df ,location, scale, backend=backend)
+    res = _crps.crps_tt(obs, df, location, scale, backend=backend)
+    assert np.isclose(res, res0)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -359,9 +359,9 @@ def test_ct(backend):
     assert np.isclose(res, expected)
 
     # aligns with crps_t
-    #res0 = _crps.crps_t(obs, location, scale, backend=backend)
-    #res = _crps.crps_ct(obs, location, scale, backend=backend)
-    #assert np.isclose(res, res0)
+    res0 = _crps.crps_t(obs, df, location, scale, backend=backend)
+    res = _crps.crps_ct(obs, df, location, scale, backend=backend)
+    assert np.isclose(res, res0)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -474,6 +474,22 @@ def test_poisson(backend):
     obs, mean = -1.0, 1.5
     res = _crps.crps_poisson(obs, mean, backend=backend)
     expected = 1.840259
+    assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_t(backend):
+    if backend in ["jax", "torch", "tensorflow"]:
+        pytest.skip("Not implemented in torch or tensorflow backends")
+
+    obs, df, mu, sigma = 11.1, 5.2, 13.8, 2.3
+    expected = 1.658226
+    res = _crps.crps_t(obs, df, mu, sigma, backend=backend)
+    assert np.isclose(res, expected)
+
+    obs, df = 0.7, 4.0
+    expected = 0.4387929
+    res = _crps.crps_t(obs, df, backend=backend)
     assert np.isclose(res, expected)
 
 
