@@ -271,6 +271,8 @@ def gtcnormal(
     u_inf = u == float("inf")
     l_inf = l == float("-inf")
 
+    u = B.where(u_inf, B.nan, u)
+    l = B.where(l_inf, B.nan, l)
     s1_u = B.where(u_inf and umass == 0.0, 0.0, u * umass**2)
     s1_l = B.where(l_inf and lmass == 0.0, 0.0, l * lmass**2)
 
