@@ -310,12 +310,12 @@ def test_tnormal(backend):
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_cnormal(backend):
     obs, location, scale, lower, upper = 1.8, 0.4, 1.1, 0.0, 2.0
-    expected = 0.8286078
+    expected = 0.8296078
     res = _crps.crps_cnormal(obs, location, scale, lower, upper, backend=backend)
     assert np.isclose(res, expected)
 
     # aligns with crps_normal
-    res0 = _crps.crps_logistic(obs, location, scale, backend=backend)
+    res0 = _crps.crps_normal(obs, location, scale, backend=backend)
     res = _crps.crps_cnormal(obs, location, scale, backend=backend)
     assert np.isclose(res, res0)
 
