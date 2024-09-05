@@ -20,11 +20,8 @@ from scoringrules._crps import (
     crps_loglogistic,
     crps_lognormal,
     crps_normal,
-<<<<<<< HEAD
     crps_poisson,
-=======
     crps_uniform,
->>>>>>> main
     crps_quantile,
     owcrps_ensemble,
     twcrps_ensemble,

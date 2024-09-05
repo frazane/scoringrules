@@ -187,10 +187,10 @@ class JaxBackend(ArrayBackend):
         return jsp.special.betainc(x, y, z)
 
     def mbessel0(self, x: "Array") -> "Array":
-        return jsp.special.jv(0, x)
+        return jsp.special.i0(x)
 
     def mbessel1(self, x: "Array") -> "Array":
-        return jsp.special.jv(1, x)
+        return jsp.special.i1(x)
 
     def gamma(self, x: "Array") -> "Array":
         return jsp.special.gamma(x)

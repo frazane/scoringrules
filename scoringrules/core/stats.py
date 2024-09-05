@@ -42,13 +42,17 @@ def _gamma_cdf(
 def _pois_cdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the Poisson distribution."""
     B = backends.active if backend is None else backends[backend]
-    return B.max(B.gammauinc(B.floor(x + 1), mean) / B.gamma(B.floor(x + 1)), 0)
+    x_plus = B.abs(x)
+    p = B.gammauinc(B.floor(x_plus + 1), mean) / B.gamma(B.floor(x_plus + 1))
+    return B.where(x < 0.0, 0.0, p)
 
 
 def _pois_pdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Probability mass function for the Poisson distribution."""
     B = backends.active if backend is None else backends[backend]
-    return B.isinteger(x) * (mean**x * B.exp(-x) / B.factorial(x))
+    x_plus = B.abs(x)
+    d = B.where(B.floor(x_plus) < x_plus, 0.0, mean**(x_plus) * B.exp(-mean) / B.factorial(x_plus))
+    return B.where(mean < 0.0, B.nan, B.where(x < 0.0, 0.0, d))
 
 
 def _t_pdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array":
