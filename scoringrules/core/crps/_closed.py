@@ -458,8 +458,8 @@ def normal(
         + 2.0 * _norm_pdf(ω, backend=backend)
         - 1.0 / B.sqrt(B.pi)
     )
-    
-    
+
+
 def poisson(
     obs: "ArrayLike",
     mean: "ArrayLike",
@@ -474,6 +474,18 @@ def poisson(
     I1 = B.mbessel1(2 * mean)
     s = (obs - mean) * (2 * F_m - 1) + 2 * mean * f_m - mean * B.exp(-2 * mean) * (I0 + I1)
     return s
+
+
+def uniform(
+    obs: "ArrayLike", min: "ArrayLike", max: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the uniform distribution."""
+    B = backends.active if backend is None else backends[backend]
+    min, max, lmass, umass, obs = map(B.asarray, (min, max, lmass, umass, obs))
+    ω = (obs - min) / (max - min)
+    F_ω = B.minimum(B.maximum(ω, B.asarray(0.0)), B.asarray(1.0))
+    s = B.abs(ω - F_ω) + (F_ω**2) * (1 - lmass - umass)  - F_ω * (1 - 2 * lmass) + ((1 - lmass - umass)**2) / 3 + (1 - lmass) * umass
+    return (max - min) * s
 
 
 def _is_scalar_value(x, value):

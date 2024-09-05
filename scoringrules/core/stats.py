@@ -42,7 +42,7 @@ def _gamma_cdf(
 def _pois_cdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the Poisson distribution."""
     B = backends.active if backend is None else backends[backend]
-    return B.max(B.ui_gamma(B.floor(x + 1), mean) / B.gamma(B.floor(x + 1)), 0)
+    return B.max(B.gammauinc(B.floor(x + 1), mean) / B.gamma(B.floor(x + 1)), 0)
 
 
 def _pois_pdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":

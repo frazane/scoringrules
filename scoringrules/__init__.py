@@ -20,7 +20,11 @@ from scoringrules._crps import (
     crps_loglogistic,
     crps_lognormal,
     crps_normal,
+<<<<<<< HEAD
     crps_poisson,
+=======
+    crps_uniform,
+>>>>>>> main
     crps_quantile,
     owcrps_ensemble,
     twcrps_ensemble,
@@ -69,6 +73,7 @@ __all__ = [
     "crps_normal",
     "crps_poisson",
     "crps_quantile",
+    "crps_uniform",
     "owcrps_ensemble",
     "twcrps_ensemble",
     "vrcrps_ensemble",
