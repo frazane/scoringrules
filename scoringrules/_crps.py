@@ -786,8 +786,7 @@ def crps_gtclogistic(
     is the CDF of the logistic distribution truncated below at $l$ and above at $u$, 
     with point masses $L, U > 0$ at the lower and upper boundaries, respectively, and 
     location and scale parameters $\mu$ and $\sigma > 0$.
-    $F_{l, L}^{u, U} = F_{l, L, 0, 1}^{u, U}$.
-
+    
     Parameters
     ----------
     observation: ArrayLike
@@ -830,8 +829,8 @@ def crps_tlogistic(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the truncated logistic distribution.
 
-    It is based on the formulation for the generalised truncated and censored logistic distribution with 
-    lmass and umass set to zero.
+    It is based on the formulation for the generalised truncated and censored logistic 
+    distribution with lmass and umass set to zero.
     
     Parameters
     ----------
@@ -857,6 +856,169 @@ def crps_tlogistic(
     >>> sr.crps_tlogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     """
     return crps.gtclogistic(observation, location, scale, lower, upper, 0.0, 0.0, backend=backend)
+
+
+def crps_clogistic(
+    observation: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    /,
+    lower: "ArrayLike" = float("-inf"),
+    upper: "ArrayLike" = float("inf"),
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the censored logistic distribution.
+
+    It is based on the formulation for the generalised truncated and censored logistic distribution with 
+    lmass and umass set to the tail probabilities of the predictive distribution.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    location: ArrayLike
+        Location parameter of the forecast distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast distribution.
+    lower: ArrayLike
+        Lower boundary of the truncated forecast distribution.
+    upper: ArrayLike
+        Upper boundary of the truncated forecast distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between cLogistic(location, scale, lower, upper) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_clogistic(0.0, 0.1, 0.4, -1.0, 1.0)
+    """
+    lmass = stats._logis_cdf((lower - location) / scale)
+    umass = 1 - stats._logis_cdf((upper - location) / scale)
+    return crps.gtclogistic(observation, location, scale, lower, upper, lmass, umass, backend=backend)
+
+
+def crps_gtcnormal(
+    observation: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    /,
+    lower: "ArrayLike" = float("-inf"),
+    upper: "ArrayLike" = float("inf"),
+    lmass: "ArrayLike" = 0.0,
+    umass: "ArrayLike" = 0.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    
+    r"""Compute the closed form of the CRPS for the generalised truncated and censored normal distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F_{l, L}^{u, U}, y) = |y - z| + uU^{2} - lL^{2} + \left( \frac{1 - L - U}{\Phi(u) - \Phi(l)} \right) z \left( 2 \Phi(z) - \frac{(1 - 2L) \Phi(u) + (1 - 2U) \Phi(l)}{1 - L - U} \right) + \left( \frac{1 - L - U}{\Phi(u) - \Phi(l)} \right) \left( 2 \phi(z) - 2 \phi(u)U - 2 \phi(l)L \right) - \left( \frac{1 - L - U}{\Phi(u) - \Phi(l)} \right)^{2} \left( \frac{1}{\sqrt{\pi}} \right) \left( \Phi(u \sqrt{2}) - \Phi(l \sqrt{2}) \right), $$
+    
+    $$ \mathrm{CRPS}(F_{l, L, \mu, \sigma}^{u, U}, y) = \sigma \mathrm{CRPS}(F_{(l - \mu)/\sigma, L}^{(u - \mu)/\sigma, U}, \frac{y - \mu}{\sigma}), $$
+
+    where $\Phi$ and $\phi$ are respectively the CDF and PDF of the standard normal
+    distribution, $F_{l, L, \mu, \sigma}^{u, U}$ is the CDF of the normal distribution 
+    truncated below at $l$ and above at $u$, with point masses $L, U > 0$ at the lower and upper
+    boundaries, respectively, and location and scale parameters $\mu$ and $\sigma > 0$.
+    $F_{l, L}^{u, U} = F_{l, L, 0, 1}^{u, U}$.
+
+    Examples
+    --------
+    >>> import scoring rules as sr
+    >>> sr.crps_gtcnormal(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
+    """
+    return crps.gtcnormal(observation, location, scale, lower, upper, lmass, umass, backend=backend)
+
+
+def crps_tnormal(
+    observation: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    /,
+    lower: "ArrayLike" = float("-inf"),
+    upper: "ArrayLike" = float("inf"),
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the truncated normal distribution.
+
+    It is based on the formulation for the generalised truncated and censored normal distribution with 
+    distribution with lmass and umass set to zero.
+    
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    location: ArrayLike
+        Location parameter of the forecast distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast distribution.
+    lower: ArrayLike
+        Lower boundary of the truncated forecast distribution.
+    upper: ArrayLike
+        Upper boundary of the truncated forecast distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between tNormal(location, scale, lower, upper) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_tnormal(0.0, 0.1, 0.4, -1.0, 1.0)
+    """
+    return crps.gtcnormal(observation, location, scale, lower, upper, 0.0, 0.0, backend=backend)
+
+
+def crps_cnormal(
+    observation: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    /,
+    lower: "ArrayLike" = float("-inf"),
+    upper: "ArrayLike" = float("inf"),
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the censored normal distribution.
+
+    It is based on the formulation for the generalised truncated and censored normal distribution with 
+    lmass and umass set to the tail probabilities of the predictive distribution.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    location: ArrayLike
+        Location parameter of the forecast distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast distribution.
+    lower: ArrayLike
+        Lower boundary of the truncated forecast distribution.
+    upper: ArrayLike
+        Upper boundary of the truncated forecast distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between cNormal(location, scale, lower, upper) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_cnormal(0.0, 0.1, 0.4, -1.0, 1.0)
+    """
+    lmass = stats._norm_cdf((lower - location) / scale)
+    umass = 1 - stats._norm_cdf((upper - location) / scale)
+    return crps.gtcnormal(observation, location, scale, lower, upper, lmass, umass, backend=backend)
 
 
 def crps_hypergeometric(
@@ -907,49 +1069,6 @@ def crps_hypergeometric(
     0.44697415547610597
     """
     return crps.hypergeometric(observation, m, n, k, backend=backend)
-
-
-def crps_clogistic(
-    observation: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
-    /,
-    lower: "ArrayLike" = float("-inf"),
-    upper: "ArrayLike" = float("inf"),
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the censored logistic distribution.
-
-    It is based on the formulation for the generalised truncated and censored logistic distribution with 
-    lmass and umass set to the tail probabilities of the predictive distribution.
-
-    Parameters
-    ----------
-    observation: ArrayLike
-        The observed values.
-    location: ArrayLike
-        Location parameter of the forecast distribution.
-    scale: ArrayLike
-        Scale parameter of the forecast distribution.
-    lower: ArrayLike
-        Lower boundary of the truncated forecast distribution.
-    upper: ArrayLike
-        Upper boundary of the truncated forecast distribution.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS between cLogistic(location, scale, lower, upper) and obs.
-
-    Examples
-    --------
-    >>> import scoringrules as sr
-    >>> sr.crps_clogistic(0.0, 0.1, 0.4, -1.0, 1.0)
-    """
-    lmass = stats._logis_cdf((lower - location) / scale)
-    umass = 1 - stats._logis_cdf((upper - location) / scale)
-    return crps.gtclogistic(observation, location, scale, lower, upper, lmass, umass, backend=backend)
 
 
 def crps_laplace(
@@ -1241,9 +1360,15 @@ __all__ = [
     "crps_gamma",
     "crps_gev",
     "crps_gpd",
+<<<<<<< HEAD
     "crps_gtclogistic",
     "crps_tlogistic",
     "crps_clogistic",
+=======
+    "crps_gtcnormal",
+    "crps_tnormal",
+    "crps_cnormal",
+>>>>>>> main
     "crps_hypergeometric",
     "crps_laplace",
     "crps_logistic",
