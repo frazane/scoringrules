@@ -322,6 +322,8 @@ def test_cnormal(backend):
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_gtct(backend):
+    if backend in ["jax", "torch", "tensorflow"]:
+        pytest.skip("Not implemented in torch or tensorflow backends")
     obs, df, location, scale, lower, upper, lmass, umass = 0.9, 20.1, -2.3, 4.1, -7.3, 1.7, 0.0, 0.21
     expected = 1.423042
     res = _crps.crps_gtct(obs, df, location, scale, lower, upper, lmass, umass, backend=backend)
@@ -340,6 +342,9 @@ def test_gtct(backend):
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_tt(backend):
+    if backend in ["jax", "torch", "tensorflow"]:
+        pytest.skip("Not implemented in torch or tensorflow backends")
+        
     obs, df, location, scale, lower, upper = -1.0, 2.9, 3.1, 4.2, 1.5, 17.3
     expected = 5.084272
     res = _crps.crps_tt(obs, df, location, scale, lower, upper, backend=backend)
@@ -353,6 +358,9 @@ def test_tt(backend):
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_ct(backend):
+    if backend in ["jax", "torch", "tensorflow"]:
+        pytest.skip("Not implemented in torch or tensorflow backends")
+    
     obs, df, location, scale, lower, upper = 1.8, 5.4, 0.4, 1.1, 0.0, 2.0
     expected = 0.8028996
     res = _crps.crps_ct(obs, df, location, scale, lower, upper, backend=backend)
