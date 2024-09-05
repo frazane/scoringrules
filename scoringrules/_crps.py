@@ -560,7 +560,7 @@ def crps_gamma(
     r"""Compute the closed form of the CRPS for the gamma distribution.
 
     It is based on the following formulation from
-    [Scheuerer and Möller (2015)](doi: doi:10.1214/15-AOAS843):
+    [Scheuerer and Möller (2015)](https://doi.org/10.1214/15-AOAS843):
 
     $$ \mathrm{CRPS}(F_{\alpha, \beta}, y) = y(2F_{\alpha, \beta}(y) - 1)
     - \frac{\alpha}{\beta} (2 F_{\alpha + 1, \beta}(y) - 1)
@@ -622,7 +622,7 @@ def crps_gev(
     r"""Compute the closed form of the CRPS for the generalised extreme value (GEV) distribution.
 
     It is based on the following formulation from
-    [Friederichs and Thorarinsdottir (2012)](doi/10.1002/env.2176):
+    [Friederichs and Thorarinsdottir (2012)](https://doi.org/10.1002/env.2176):
 
     $$
     \text{CRPS}(F_{\xi, \mu, \sigma}, y) =
@@ -928,7 +928,7 @@ def crps_normal(
 
     Parameters
     ----------
-    observations: ArrayLike
+    observation: ArrayLike
         The observed values.
     mu: ArrayLike
         Mean of the forecast normal distribution.

@@ -1,29 +1,33 @@
+# install pre-commit hooks with
+# `pre-commit install`
+
+# auto-update pre-commit hooks
+# `pre-commit autoupdate`
+
+# run pre-commit hooks on all files
+# `pre-commit run --all-files`
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
 
-  - repo: https://github.com/psf/black
-    rev: 23.3.0
-    hooks:
-    - id: black
-
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.2
-    hooks:
-    -   id: codespell
-        types_or: [python, markdown]
-        additional_dependencies: [tomli]
-
-  - repo: local
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.3
     hooks:
       - id: ruff
-        name: ruff
-        entry: ruff
-        args: ["--exit-non-zero-on-fix"]
-        require_serial: true
-        language: system
-        types: [python]
-        exclude: examples/
+        args: [ --fix ]
+      - id: ruff-format
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+    - id: codespell
+
+  - repo: https://github.com/frazane/check-latex-math
+    rev: v0.2.2
+    hooks:
+      - id: latex-math-validation
+        args: ["scoringrules/", "docs/", "*.py", "*.md"]

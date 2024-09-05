@@ -21,7 +21,7 @@ def logs_normal(
 
     Parameters
     ----------
-    observations: ArrayLike
+    observation: ArrayLike
         The observed values.
     mu: ArrayLike
         Mean of the forecast normal distribution.
