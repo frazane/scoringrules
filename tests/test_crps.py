@@ -415,6 +415,7 @@ def test_normal(backend):
     assert not np.any(res - 0.0 > 0.0001)
 
 
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_uniform(backend):
     obs, min, max, lmass, umass = 0.3, -1.0, 2.1, 0.3, 0.1
     res = _crps.crps_uniform(obs, min, max, lmass, umass, backend=backend)
