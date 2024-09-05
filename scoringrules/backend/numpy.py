@@ -12,7 +12,8 @@ from scipy.special import (
     gammainc,
     gammaincc,
     hyp2f1,
-    jv,
+    i0,
+    i1,
 )
 
 if tp.TYPE_CHECKING:
@@ -186,10 +187,10 @@ class NumpyBackend(ArrayBackend):
         return betainc(x, y, z)
 
     def mbessel0(self, x: "NDArray") -> "NDArray":
-        return jv(0, x)
+        return i0(x)
 
     def mbessel1(self, x: "NDArray") -> "NDArray":
-        return jv(1, x)
+        return i1(x)
 
     def gamma(self, x: "NDArray") -> "NDArray":
         return gamma(x)
