@@ -1021,6 +1021,162 @@ def crps_cnormal(
     return crps.gtcnormal(observation, location, scale, lower, upper, lmass, umass, backend=backend)
 
 
+def crps_gtct(
+    observation: "ArrayLike",
+    df : "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    lower: "ArrayLike" = float("-inf"),
+    upper: "ArrayLike" = float("inf"),
+    lmass: "ArrayLike" = 0.0,
+    umass: "ArrayLike" = 0.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the generalised truncated and censored t distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F_{l, L, \nu}^{u, U}, y) = |y - z| + uU^{2} - lL^{2} + \left( \frac{1 - L - U}{F_{\nu}(u) - F_{\nu}(l)} \right) z \left( 2 F_{\nu}(z) - \frac{(1 - 2L) F_{\nu}(u) + (1 - 2U) F_{\nu}(l)}{1 - L - U} \right) - \left( \frac{1 - L - U}{F_{\nu}(u) - F_{\nu}(l)} \right) \left( 2 G_{\nu}(z) - 2 G_{\nu}(u)U - 2 G_{\nu}(l)L \right) - \left( \frac{1 - L - U}{F_{\nu}(u) - F_{\nu}(l)} \right)^{2} \bar{B}_{\nu} \left( H_{\nu}(u) - H_{\nu}(l) \right), $$
+    
+    $$ \mathrm{CRPS}(F_{l, L, \nu, \mu, \sigma}^{u, U}, y) = \sigma \mathrm{CRPS}(F_{(l - \mu)/\sigma, L, \nu}^{(u - \mu)/\sigma, U}, \frac{y - \mu}{\sigma}), $$
+
+    $$ G_{\nu}(x) = - \left( \frac{\nu + x^{2}}{\nu - 1} \right) f_{\nu}(x), $$
+    
+    $$ H_{\nu}(x) = \frac{1}{2} + \frac{1}{2} \mathrm{sgn}(x) I \left( \frac{1}{2}, \nu - \frac{1}{2}, \frac{x^{2}}{\nu + x^{2}} \right), $$
+    
+    $$ \bar{B}_{\nu} = \left( \frac{2 \sqrt{\nu}}{\nu - 1} \right) \frac{B(\frac{1}{2}, \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2})^{2}}, $$
+
+    where $F_{\nu}$ is the CDF of the standard t distribution with $\nu > 1$ degrees of freedom,
+    distribution, $F_{l, L, \nu, \mu, \sigma}^{u, U}$ is the CDF of the t distribution 
+    truncated below at $l$ and above at $u$, with point masses $L, U > 0$ at the lower and upper
+    boundaries, respectively, and degrees of freedom, location and scale parameters $\nu > 1$, $\mu$ and $\sigma > 0$.
+    $F_{l, L, \nu}^{u, U} = F_{l, L, \nu, 0, 1}^{u, U}$.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    df: ArrayLike
+        Degrees of freedom parameter of the forecast distribution.
+    location: ArrayLike
+        Location parameter of the forecast distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast distribution.
+    lower: ArrayLike
+        Lower boundary of the truncated forecast distribution.
+    upper: ArrayLike
+        Upper boundary of the truncated forecast distribution.
+    lmass: ArrayLike
+        Point mass assigned to the lower boundary of the forecast distribution.
+    umass: ArrayLike
+        Point mass assigned to the upper boundary of the forecast distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between gtct(df, location, scale, lower, upper, lmass, umass) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_gtct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
+    """
+    return crps.gtct(observation, df, location, scale, lower, upper, lmass, umass, backend=backend)
+
+
+def crps_tt(
+    observation: "ArrayLike",
+    df : "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    lower: "ArrayLike" = float("-inf"),
+    upper: "ArrayLike" = float("inf"),
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the truncated t distribution.
+
+    It is based on the formulation for the generalised truncated and censored t distribution with 
+    lmass and umass set to zero.
+    
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    df: ArrayLike
+        Degrees of freedom parameter of the forecast distribution.
+    location: ArrayLike
+        Location parameter of the forecast distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast distribution.
+    lower: ArrayLike
+        Lower boundary of the truncated forecast distribution.
+    upper: ArrayLike
+        Upper boundary of the truncated forecast distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between tt(df, location, scale, lower, upper) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
+    """
+    return crps.gtct(observation, df, location, scale, lower, upper, 0.0, 0.0, backend=backend)
+
+
+def crps_ct(
+    observation: "ArrayLike",
+    df : "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    lower: "ArrayLike" = float("-inf"),
+    upper: "ArrayLike" = float("inf"),
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the censored t distribution.
+
+    It is based on the formulation for the generalised truncated and censored t distribution with 
+    lmass and umass set to the tail probabilities of the predictive distribution.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    df: ArrayLike
+        Degrees of freedom parameter of the forecast distribution.
+    location: ArrayLike
+        Location parameter of the forecast distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast distribution.
+    lower: ArrayLike
+        Lower boundary of the truncated forecast distribution.
+    upper: ArrayLike
+        Upper boundary of the truncated forecast distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between ct(df, location, scale, lower, upper) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_ct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
+    """
+    lmass = stats._t_cdf((lower - location) / scale, df)
+    umass = 1 - stats._t_cdf((upper - location) / scale, df)
+    return crps.gtct(observation, df, location, scale, lower, upper, lmass, umass, backend=backend)
+
+
 def crps_hypergeometric(
     observation: "ArrayLike",
     m: "ArrayLike",
