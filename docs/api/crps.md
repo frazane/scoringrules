@@ -27,15 +27,25 @@ also be viewed as the Brier score integrated over all real-valued thresholds.
 
 ::: scoringrules.crps_gpd
 
+::: scoringrules.crps_gtcnormal
+
+::: scoringrules.crps_tnormal
+
+::: scoringrules.crps_cnormal
+
 ::: scoringrules.crps_hypergeometric
 
 ::: scoringrules.crps_laplace
 
 ::: scoringrules.crps_loglaplace
 
+::: scoringrules.crps_loglogistic
+
 ::: scoringrules.crps_lognormal
 
 ::: scoringrules.crps_normal
+
+::: scoringrules.crps_uniform
 
 ## Ensemble-based estimators
 
