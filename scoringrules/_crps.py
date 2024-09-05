@@ -285,12 +285,12 @@ def vrcrps_ensemble(
     Computation is performed using the ensemble representation of the vrCRPS in
     [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
 
-    \[
+    $$
     \begin{split}
         \mathrm{vrCRPS}(F_{ens}, y) = & \frac{1}{M} \sum_{m = 1}^{M} |x_{m} - y|w(x_{m})w(y) - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m} - x_{j}|w(x_{m})w(x_{j}) \\
             & + \left( \frac{1}{M} \sum_{m = 1}^{M} |x_{m}| w(x_{m}) - |y| w(y) \right) \left( \frac{1}{M} \sum_{m = 1}^{M} w(x_{m}) - w(y) \right),
     \end{split}
-    \]
+    $$
 
     where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical
     distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
@@ -434,6 +434,8 @@ def crps_binomial(
         Size parameter of the forecast binomial distribution as an integer or array of integers.
     prob:
         Probability parameter of the forecast binomial distribution as a float or array of floats.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
@@ -471,6 +473,8 @@ def crps_exponential(
         The observed values.
     rate:
         Rate parameter of the forecast exponential distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
@@ -576,6 +580,8 @@ def crps_gamma(
         Rate parameter of the forecast rate distribution.
     scale:
         Scale parameter of the forecast scale distribution, where `scale = 1 / rate`.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
@@ -604,6 +610,156 @@ def crps_gamma(
     return crps.gamma(observation, shape, rate, backend=backend)
 
 
+def crps_gev(
+    observation: "ArrayLike",
+    shape: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the generalised extreme value (GEV) distribution.
+
+    It is based on the following formulation from
+    [Friederichs and Thorarinsdottir (2012)](doi/10.1002/env.2176):
+
+    $$
+    \text{CRPS}(F_{\xi, \mu, \sigma}, y) =
+    \sigma \cdot \text{CRPS}(F_{\xi}, \frac{y - \mu}{\sigma})
+    $$
+
+    Special cases are handled as follows:
+
+    - For $\xi = 0$:
+
+    $$
+    \text{CRPS}(F_{\xi}, y) = -y - 2\text{Ei}(\log F_{\xi}(y)) + C - \log 2
+    $$
+
+    - For $\xi \neq 0$:
+
+    $$
+    \text{CRPS}(F_{\xi}, y) = y(2F_{\xi}(y) - 1) - 2G_{\xi}(y)
+    - \frac{1 - (2 - 2^{\xi}) \Gamma(1 - \xi)}{\xi}
+    $$
+
+    where $C$ is the Euler-Mascheroni constant, $\text{Ei}$ is the exponential
+    integral, and $\Gamma$ is the gamma function. The GEV cumulative distribution
+    function $F_{\xi}$ and the auxiliary function $G_{\xi}$ are defined as:
+
+    - For $\xi = 0$:
+
+    $$
+    F_{\xi}(x) = \exp(-\exp(-x))
+    $$
+
+    - For $\xi \neq 0$:
+
+    $$
+    F_{\xi}(x) =
+    \begin{cases}
+    0, & x \leq \frac{1}{\xi} \\
+    \exp(-(1 + \xi x)^{-1/\xi}), & x > \frac{1}{\xi}
+    \end{cases}
+    $$
+
+    $$
+    G_{\xi}(x) =
+    \begin{cases}
+    0, & x \leq \frac{1}{\xi} \\
+    \frac{F_{\xi}(x)}{\xi} + \frac{\Gamma_u(1-\xi, -\log F_{\xi}(x))}{\xi}, & x > \frac{1}{\xi}
+    \end{cases}
+    $$
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    shape:
+        Shape parameter of the forecast GEV distribution.
+    location:
+        Location parameter of the forecast GEV distribution.
+    scale:
+        Scale parameter of the forecast GEV distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and GEV(shape, location, scale).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_gev(0.3, 0.1)
+    0.2924712413052034
+    """
+    return crps.gev(observation, shape, location, scale, backend=backend)
+
+
+def crps_gpd(
+    observation: "ArrayLike",
+    shape: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    mass: "ArrayLike" = 0.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the generalised pareto distribution (GPD).
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+       
+    $$
+    \mathrm{CRPS}(F_{M, \xi}, y) =
+    |y| - \frac{2 (1 - M)}{1 - \xi} \left( 1 - (1 - F_{\xi}(y))^{1 - \xi} \right)
+    + \frac{(1 - M)^{2}}{2 - \xi},
+    $$
+
+    $$
+    \mathrm{CRPS}(F_{M, \xi, \mu, \sigma}, y) =
+    \sigma \mathrm{CRPS} \left( F_{M, \xi}, \frac{y - \mu}{\sigma} \right),
+    $$
+
+    where $F_{M, \xi, \mu, \sigma}$ is the GPD distribution function with shape
+    parameter $\xi < 1$, location parameter $\mu$, scale parameter $\sigma > 0$,
+    and point mass $M \in [0, 1]$ at the lower boundary. $F_{M, \xi} = F_{M, \xi, 0, 1}$.
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    shape:
+        Shape parameter of the forecast GPD distribution.
+    location:
+        Location parameter of the forecast GPD distribution.
+    scale:
+        Scale parameter of the forecast GPD distribution.
+    mass:
+        Mass parameter at the lower boundary of the forecast GPD distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and GPD(shape, location, scale, mass).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_gpd(0.3, 0.9)
+    0.6849331901197213
+    """
+    return crps.gpd(observation, shape, location, scale, mass, backend=backend)
+
+
 def crps_gtclogistic(
     observation: "ArrayLike",
     location: "ArrayLike",
@@ -617,9 +773,6 @@ def crps_gtclogistic(
     backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the generalised truncated and censored logistic distribution.
-
-    It is based on the following formulation from
-    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
 
     $$ \mathrm{CRPS}(F_{l, L}^{u, U}, y) = |y - z| + uU^{2} - lL^{2} - \left( \frac{1 - L - U}{F(u) - F(l)} \right) z \left( \frac{(1 - 2L) F(u) + (1 - 2U) F(l)}{1 - L - U} \right) - \left( \frac{1 - L - U}{F(u) - F(l)} \right) \left( 2 \logF(-z) - 2G(u)U - 2 G(l)L \right) - \left( \frac{1 - L - U}{F(u) - F(l)} \right)^{2} \left( H(u) - H(l) \right), $$
     
@@ -656,7 +809,7 @@ def crps_gtclogistic(
     -------
     crps: array_like
         The CRPS between gtcLogistic(location, scale, lower, upper, lmass, umass) and obs.
-
+        
     Examples
     --------
     >>> import scoringrules as sr
@@ -706,6 +859,56 @@ def crps_tlogistic(
     return crps.gtclogistic(observation, location, scale, lower, upper, 0.0, 0.0, backend=backend)
 
 
+def crps_hypergeometric(
+    observation: "ArrayLike",
+    m: "ArrayLike",
+    n: "ArrayLike",
+    k: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the hypergeometric distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$
+    \mathrm{CRPS}(F_{m, n, k}, y) = 2 \sum_{x = 0}^{n} f_{m,n,k}(x) (1\{y < x\}
+    - F_{m,n,k}(x) + f_{m,n,k}(x)/2) (x - y),
+    $$
+
+    where $f_{m, n, k}$ and $F_{m, n, k}$ are the PDF and CDF of the hypergeometric
+    distribution with population parameters $m,n = 0, 1, 2, ...$ and size parameter
+    $k = 0, ..., m + n$.
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    m:
+        Number of success states in the population.
+    n:
+        Number of failure states in the population.
+    k:
+        Number of draws, without replacement. Must be in 0, 1, ..., m + n.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and Hypergeometric(m, n, k).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_hypergeometric(5, 7, 13, 12)
+    0.44697415547610597
+    """
+    return crps.hypergeometric(observation, m, n, k, backend=backend)
+
+
 def crps_clogistic(
     observation: "ArrayLike",
     location: "ArrayLike",
@@ -749,6 +952,49 @@ def crps_clogistic(
     return crps.gtclogistic(observation, location, scale, lower, upper, lmass, umass, backend=backend)
 
 
+def crps_laplace(
+    observation: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the laplace distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$
+    \mathrm{CRPS}(F, y) = |y - \mu|
+    + \sigma \exp ( -| y - \mu| / \sigma) - \frac{3\sigma}{4},
+    $$
+
+    where $\mu$ and $\sigma > 0$ are the location and scale parameters
+    of the Laplace distribution.
+
+    Parameters
+    ----------
+    observation:
+        Observed values.
+    location:
+        Location parameter of the forecast laplace distribution.
+    scale:
+        Scale parameter of the forecast laplace distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and Laplace(location, scale).
+
+    >>> sr.crps_laplace(0.3, 0.1, 0.2)
+    0.12357588823428847
+    """
+    return crps.laplace(observation, location, scale, backend=backend)
+
+
 def crps_logistic(
     observation: "ArrayLike",
     mu: "ArrayLike",
@@ -788,6 +1034,115 @@ def crps_logistic(
     0.30363
     """
     return crps.logistic(observation, mu, sigma, backend=backend)
+
+
+def crps_loglaplace(
+    observation: "ArrayLike",
+    locationlog: "ArrayLike",
+    scalelog: "ArrayLike",
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the log-Laplace distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$
+    \mathrm{CRPS}(F_{\mu, \sigma}, y) = y (2 F_{\mu, \sigma}(y) - 1)
+    + \exp(\mu) \left( \frac{\sigma}{4 - \sigma^{2}} + A(y) \right),
+    $$
+
+    where $F_{\mu, \sigma}$ is the CDF of the log-laplace distribution with location
+    parameter $\mu$ and scale parameter $\sigma \in (0, 1)$, and
+
+    $$ A(y) = \frac{1}{1 + \sigma} \left( 1 - (2 F_{\mu, \sigma}(y) - 1)^{1 + \sigma} \right), $$
+
+    if $y < \exp{\mu}$, and
+
+    $$ A(y) = \frac{-1}{1 - \sigma} \left( 1 - (2 (1 - F_{\mu, \sigma}(y)))^{1 - \sigma} \right), $$
+
+    if $y \ge \exp{\mu}$.
+
+    Parameters
+    ----------
+    observation:
+        Observed values.
+    locationlog:
+        Location parameter of the forecast log-laplace distribution.
+    scalelog:
+        Scale parameter of the forecast log-laplace distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and Loglaplace(locationlog, scalelog).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_loglaplace(3.0, 0.1, 0.9)
+    1.162020513653791
+    """
+    return crps.loglaplace(observation, locationlog, scalelog, backend=backend)
+
+
+def crps_loglogistic(
+    observation: "ArrayLike",
+    mulog: "ArrayLike",
+    sigmalog: "ArrayLike",
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the log-logistic distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$
+    \text{CRPS}(y, F_{\mu,\sigma}) = y \left( 2F_{\mu,\sigma}(y) - 1 \right)
+    - 2 \exp(\mu) I\left(F_{\mu,\sigma}(y); 1 + \sigma, 1 - \sigma\right) \\
+    + \exp(\mu)(1 - \sigma) B(1 + \sigma, 1 - \sigma)
+    $$
+
+    where \( F_{\mu,\sigma}(x) \) is the cumulative distribution function (CDF) of
+    the log-logistic distribution, defined as:
+
+    $$
+    F_{\mu,\sigma}(x) =
+    \begin{cases}
+    0, & x \leq 0 \\
+    \left( 1 + \exp\left(-\frac{\log x - \mu}{\sigma}\right) \right)^{-1}, & x > 0
+    \end{cases}
+    $$
+
+    $B$ is the beta function, and $I$ is the regularised incomplete beta function.
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    mulog:
+        Location parameter of the log-logistic distribution.
+    sigmalog:
+        Scale parameter of the log-logistic distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and Loglogis(mulog, sigmalog).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_loglogistic(3.0, 0.1, 0.9)
+    1.1329527730161177
+    """
+    return crps.loglogistic(observation, mulog, sigmalog, backend=backend)
 
 
 def crps_lognormal(
@@ -878,15 +1233,22 @@ __all__ = [
     "twcrps_ensemble",
     "owcrps_ensemble",
     "vrcrps_ensemble",
+    "crps_quantile",
     "crps_beta",
     "crps_binomial",
     "crps_exponential",
     "crps_exponentialM",
     "crps_gamma",
+    "crps_gev",
+    "crps_gpd",
     "crps_gtclogistic",
     "crps_tlogistic",
     "crps_clogistic",
+    "crps_hypergeometric",
+    "crps_laplace",
     "crps_logistic",
+    "crps_loglaplace",
+    "crps_loglogistic",
     "crps_lognormal",
     "crps_normal",
 ]

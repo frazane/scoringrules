@@ -34,6 +34,9 @@ class TorchBackend(ArrayBackend):
     ) -> "Tensor":
         return torch.asarray(obj, dtype=dtype)
 
+    def broadcast_arrays(self, *arrays: "Tensor") -> tuple["Tensor", ...]:
+        return torch.broadcast_tensors(*arrays)
+
     def mean(
         self,
         x: "Tensor",
@@ -47,7 +50,7 @@ class TorchBackend(ArrayBackend):
     def max(
         self, x: "Tensor", axis: int | tuple[int, ...] | None, keepdims: bool = False
     ) -> "Tensor":
-        return torch.max(x, axis=axis, keepdim=keepdims)
+        return torch.max(x, axis=axis, keepdim=keepdims)[0]
 
     def moveaxis(
         self,
@@ -228,7 +231,12 @@ class TorchBackend(ArrayBackend):
         return self.factorial(n) // (self.factorial(k) * self.factorial(n - k))
 
     def expi(self, x: "Tensor") -> "Tensor":
-        return None
+        raise NotImplementedError(
+            "The `expi` function is not implemented in the torch backend."
+        )
 
     def where(self, condition: "Tensor", x: "Tensor", y: "Tensor") -> "Tensor":
         return torch.where(condition, x, y)
+
+    def size(self, x: "Tensor") -> int:
+        return x.numel()

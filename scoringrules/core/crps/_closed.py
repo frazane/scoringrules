@@ -6,6 +6,10 @@ from scoringrules.core.stats import (
     _binom_pdf,
     _exp_cdf,
     _gamma_cdf,
+    _gev_cdf,
+    _gpd_cdf,
+    _hypergeo_cdf,
+    _hypergeo_pdf,
     _logis_cdf,
     _norm_cdf,
     _norm_pdf,
@@ -206,6 +210,201 @@ def gtclogistic(
     return sigma * (s1 - s2 - s3 - s4)
 
 
+EULERMASCHERONI = 0.57721566490153286060651209008240243
+
+
+def gev(
+    obs: "ArrayLike",
+    shape: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the GEV distribution."""
+    B = backends.active if backend is None else backends[backend]
+    obs, shape, location, scale = map(B.asarray, (obs, shape, location, scale))
+
+    obs = (obs - location) / scale
+    # if not _is_scalar_value(location, 0.0):
+    # obs -= location
+
+    # if not _is_scalar_value(scale, 1.0):
+    # obs /= scale
+
+    def _gev_adjust_fn(s, xi, f_xi):
+        res = B.nan * s
+        p_xi = xi > 0
+        n_xi = xi < 0
+        n_inv_xi = -1 / xi
+
+        gen_res = n_inv_xi * f_xi + B.gammauinc(1 - xi, -B.log(f_xi)) / xi
+
+        res = B.where(p_xi & (s <= n_inv_xi), 0, res)
+        res = B.where(p_xi & (s > n_inv_xi), gen_res, res)
+
+        res = B.where(n_xi & (s < n_inv_xi), gen_res, res)
+        res = B.where(n_xi & (s >= n_inv_xi), n_inv_xi + B.gamma(1 - xi) / xi, res)
+
+        return res
+
+    F_xi = _gev_cdf(obs, shape, backend=backend)
+    zero_shape = shape == 0.0
+    shape = B.where(~zero_shape, shape, B.nan)
+    G_xi = _gev_adjust_fn(obs, shape, F_xi)
+
+    out = B.where(
+        zero_shape,
+        -obs - 2 * B.expi(B.log(F_xi)) + EULERMASCHERONI - B.log(2),
+        obs * (2 * F_xi - 1)
+        - 2 * G_xi
+        - (1 - (2 - 2**shape) * B.gamma(1 - shape)) / shape,
+    )
+
+    out = out * scale
+
+    return float(out) if out.size == 1 else out
+
+
+def gpd(
+    obs: "ArrayLike",
+    shape: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    mass: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the GPD distribution."""
+    B = backends.active if backend is None else backends[backend]
+    shape, location, scale, mass, obs = map(
+        B.asarray, (shape, location, scale, mass, obs)
+    )
+    shape = B.where(shape < 1.0, shape, B.nan)
+    mass = B.where((mass >= 0.0) & (mass <= 1.0), mass, B.nan)
+    ω = (obs - location) / scale
+    F_xi = _gpd_cdf(ω, shape, backend=backend)
+    s = (
+        B.abs(ω)
+        - 2 * (1 - mass) * (1 - (1 - F_xi) ** (1 - shape)) / (1 - shape)
+        + ((1 - mass) ** 2) / (2 - shape)
+    )
+    return scale * s
+
+
+def hypergeometric(
+    obs: "ArrayLike",
+    m: "ArrayLike",
+    n: "ArrayLike",
+    k: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the hypergeometric distribution.
+
+    We take as inputs the arguments as defined in R's scoringRules package:
+
+    obs: The observed values.
+    m: number of success states in the population.
+    n: number of failure states in the population.
+    k: number of draws, without replacemen, from the population.
+
+    But we follow scipy.stats.hypergeom.pmf for pdf and cdf:
+
+    k or obs: number of observed successes.
+    M: total population size.
+    n: number of success states in the population.
+    N: sample size (number of draws).
+    """
+    B = backends.active if backend is None else backends[backend]
+    obs, m, n, k = map(B.asarray, (obs, m, n, k))
+
+    # scipy uses different notation
+    M = m + n
+    N = k
+
+    # if n is a scalar, x always has the same shape, which simplifies the computation
+    if B.size(n) == 1:
+        x = B.arange(n + 1)
+        out_ndims = B.max(B.asarray([_input.ndim for _input in [obs, M, m, N]]), axis=0)
+        x = B.expand_dims(x, axis=tuple(range(-out_ndims, 0)))
+        x, M, m, N = B.broadcast_arrays(x, M, m, N)
+        f_np = _hypergeo_pdf(x, M, m, N, backend=backend)
+        F_np = _hypergeo_cdf(x, M, m, N, backend=backend)
+        s = 2 * B.sum(
+            f_np * (B.asarray((obs < x), dtype=float) - F_np + f_np / 2) * (x - obs),
+            axis=0,
+        )
+    # if n is an array, we need to loop over the elements
+    else:
+        obs, M, m, N = B.broadcast_arrays(obs, M, m, N)
+        s = []
+        for i, _n in enumerate(n.view(-1)):
+            x = B.arange(_n + 1)
+            f_np = _hypergeo_pdf(
+                x, M.view(-1)[i], m.view(-1)[i], N.view(-1)[i], backend=backend
+            )
+            F_np = _hypergeo_cdf(
+                x, M.view(-1)[i], m.view(-1)[i], N.view(-1)[i], backend=backend
+            )
+            s.append(
+                2
+                * B.sum(
+                    f_np
+                    * (B.asarray((obs.view(-1)[i] < x), dtype=float) - F_np + f_np / 2)
+                    * (x - obs.view(-1)[i]),
+                    axis=0,
+                )
+            )
+        s = B.asarray(s).reshape(obs.shape)
+    return s
+
+
+def laplace(
+    obs: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the laplace distribution."""
+    B = backends.active if backend is None else backends[backend]
+    obs, mu, sigma = map(B.asarray, (obs, location, scale))
+    obs = (obs - mu) / sigma
+    return sigma * (B.abs(obs) + B.exp(-B.abs(obs)) - 3 / 4)
+
+
+def loglaplace(
+    obs: "ArrayLike",
+    locationlog: "ArrayLike",
+    scalelog: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the log-laplace distribution."""
+    B = backends.active if backend is None else backends[backend]
+    obs, mulog, sigmalog = map(B.asarray, (obs, locationlog, scalelog))
+    obs, mulog, sigmalog = B.broadcast_arrays(obs, mulog, sigmalog)
+
+    logx_norm = (B.log(obs) - mulog) / sigmalog
+
+    cond_0 = obs <= 0.0
+    cond_1 = obs < B.exp(mulog)
+
+    F_case_0 = B.asarray(cond_0, dtype=int)
+    F_case_1 = B.asarray(~cond_0 & cond_1, dtype=int)
+    F_case_2 = B.asarray(~cond_1, dtype=int)
+    F = (
+        F_case_0 * 0.0
+        + F_case_1 * (0.5 * B.exp(logx_norm))
+        + F_case_2 * (1 - 0.5 * B.exp(-logx_norm))
+    )
+
+    A_case_0 = B.asarray(cond_1, dtype=int)
+    A_case_1 = B.asarray(~cond_1, dtype=int)
+    A = A_case_0 * 1 / (1 + sigmalog) * (
+        1 - (2 * F) ** (1 + sigmalog)
+    ) + A_case_1 * -1 / (1 - sigmalog) * (1 - (2 * (1 - F)) ** (1 - sigmalog))
+
+    s = obs * (2 * F - 1) + B.exp(mulog) * (A + sigmalog / (4 - sigmalog**2))
+    return s
+
+
 def normal(
     obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
@@ -246,6 +445,22 @@ def logistic(
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma
     return sigma * (ω - 2 * B.log(_logis_cdf(ω, backend=backend)) - 1)
+
+
+def loglogistic(
+    obs: "ArrayLike",
+    mulog: "ArrayLike",
+    sigmalog: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the log-logistic distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mulog, sigmalog, obs = map(B.asarray, (mulog, sigmalog, obs))
+    F_ms = 1 / (1 + B.exp(-(B.log(obs) - mulog) / sigmalog))
+    b = B.beta(1 + sigmalog, 1 - sigmalog)
+    I_B = B.betainc(1 + sigmalog, 1 - sigmalog, F_ms)
+    s = obs * (2 * F_ms - 1) - B.exp(mulog) * b * (2 * I_B + sigmalog - 1)
+    return s
 
 
 def _is_scalar_value(x, value):

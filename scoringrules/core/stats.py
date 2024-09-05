@@ -65,29 +65,47 @@ def _t_cdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array
     )
 
 
-def _gev_cdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "Array":
+def _gev_cdf(s: "ArrayLike", xi: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the standard GEV distribution."""
     B = backends.active if backend is None else backends[backend]
-    F_0 = B.exp(-B.exp(-x))
-    F_p = B.ispositive(x + 1 / shape) * B.exp(-((1 + shape * x) ** (-1 / shape)))
-    F_m = B.isnegative(x + 1 / shape) * B.exp(-((1 + shape * x) ** (-1 / shape))) + (
-        1 - B.isnegative(x + 1 / shape)
-    )
-    F_xi = B.iszero(shape) * F_0 + B.ispositive(shape) * F_p + B.isnegative(shape) * F_m
-    return F_xi
+    zero_shape = xi == 0
+    xi = B.where(zero_shape, B.nan, xi)
+    general_case = ~zero_shape & (xi * s > -1)
+    cdf = B.nan * s
+    cdf = B.where(zero_shape, B.exp(-B.exp(-s)), cdf)  # Gumbel CDF
+    cdf = B.where(
+        general_case,
+        B.exp(-((1 + xi * B.where(general_case, s, B.nan)) ** (-1 / xi))),
+        cdf,
+    )  # General CDF
+    cdf = B.where((xi > 0) & (s <= -1 / xi), 0, cdf)  # Lower bound CDF
+    cdf = B.where((xi < 0) & (s >= 1 / B.abs(xi)), 1, cdf)  # Upper bound CDF
+    return cdf
 
 
 def _gpd_cdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the standard GPD distribution."""
     B = backends.active if backend is None else backends[backend]
-    F_0 = B.maximum(1 - B.exp(-x), 0)
-    F_p = B.maximum(1 - (1 + shape * x) ** (-1 / shape), 0)
-    F_m = B.isnegative(x - 1 / B.abs(shape)) * (1 - (1 + shape * x) ** (-1 / shape)) + (
-        1 - B.isnegative(x - 1 / B.abs(shape))
+
+    # masks to handle the different cases
+    shape_0 = shape == 0
+    shape = B.where(shape_0, B.nan, shape)
+    shape_p = shape > 0
+    shape_n = ~(shape_0 | shape_p)
+    x_pos = x >= 0
+    x_gt_invxi = x > -1 / shape
+    x = B.where(x_pos, x, B.nan)
+    shape = B.where(shape_n & x_gt_invxi, B.nan, shape)
+
+    cdf = 0.0
+    cdf = B.where(shape_0 & x_pos, 1 - B.exp(-x), cdf)
+    cdf = B.where(
+        (shape_n & x_pos) | (shape_p & x_pos),
+        1 - (1 + shape * x) ** (-1 / shape),
+        cdf,
     )
-    F_m = B.maximum(F_m, 0)
-    F_xi = B.iszero(shape) * F_0 + B.ispositive(shape) * F_p + B.isnegative(shape) * F_m
-    return F_xi
+    cdf = B.where(shape_n & x_gt_invxi, 1.0, cdf)
+    return cdf
 
 
 def _binom_pdf(
@@ -106,23 +124,39 @@ def _binom_cdf(
     return B.where(k < 0, 0.0, B.betainc(n - B.minimum(k, n) + 1e-36, k + 1, 1 - prob))
 
 
-def _hypergeo_pdf(
-    x: "ArrayLike",
-    m: "ArrayLike",
-    n: "ArrayLike",
-    prob: "ArrayLike",
-    backend: "Backend" = None,
-) -> "Array":
-    """Probability mass function for the hypergeometric distribution."""
+def _hypergeo_pdf(k, M, n, N, backend=None):
+    """
+    Calculate the PMF of the hypergeometric distribution.
+
+    We follow scipy.stats.hypergeom.pmf.
+
+    k: number of observed successes.
+    M: total population size.
+    n: number of success states in the population.
+    N: sample size (number of draws).
+    """
     B = backends.active if backend is None else backends[backend]
-    k = prob
-    ind = (
-        B.isinteger(x)
-        * B.ispositive(x)
-        * (1 - B.isnegative(x - B.maximum(0, k - n)))
-        * (1 - B.isnegative(B.minimum(k, m) - x))
-    )
-    return ind * B.comb(m, x) * B.comb(n, k - x) / B.comb(m + n, k)
+    ind = (k >= B.maximum(B.asarray(0), N - M + n)) & (k <= B.minimum(n, N))
+    return ind * B.comb(n, k) * B.comb(M - n, N - k) / B.comb(M, N)
+
+
+def _hypergeo_cdf(k, M, n, N, backend=None):
+    """Cumulative distribution function for the hypergeometric distribution."""
+    B = backends.active if backend is None else backends[backend]
+
+    def _inner(m, M, n, N):
+        return B.sum(_hypergeo_pdf(m, M, n, N, backend=backend), axis=0)
+
+    if k.size == 1:
+        m = B.arange(k + 1)
+        M, n, N = B.broadcast_arrays(M, n, N)
+        return _inner(m[:, None], M[None], n[None], N[None])
+    else:
+        k, M, n, N = B.broadcast_arrays(k, M, n, N)
+        _iter = zip(k.ravel(), M.ravel(), n.ravel(), N.ravel(), strict=True)
+        return B.asarray(
+            [_inner(B.arange(_args[0] + 1), *_args[1:]) for _args in _iter]
+        ).reshape(k.shape)
 
 
 def _negbinom_cdf(

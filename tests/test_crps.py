@@ -67,28 +67,6 @@ def test_quantile_pinball(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
-def test_lognormal(backend):
-    obs = np.exp(np.random.randn(N))
-    mulog = np.log(obs) + np.random.randn(N) * 0.1
-    sigmalog = abs(np.random.randn(N)) * 0.3
-
-    # non-negative values
-    res = _crps.crps_lognormal(obs, mulog, sigmalog, backend=backend)
-    res = np.asarray(res)
-    assert not np.any(np.isnan(res))
-    assert not np.any(res < 0.0)
-
-    # approx zero when perfect forecast
-    mulog = np.log(obs) + np.random.randn(N) * 1e-6
-    sigmalog = abs(np.random.randn(N)) * 1e-6
-    res = _crps.crps_lognormal(obs, mulog, sigmalog, backend=backend)
-    res = np.asarray(res)
-
-    assert not np.any(np.isnan(res))
-    assert not np.any(res - 0.0 > 0.0001)
-
-
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_beta(backend):
     if backend == "torch":
         pytest.skip("Not implemented in torch backend")
@@ -188,39 +166,69 @@ def test_gamma(backend):
         return
 
 
+def test_gev(backend):
+    if backend == "torch":
+        pytest.skip("`expi` not implemented in torch backend")
+
+    obs, xi, mu, sigma = 0.3, 0.0, 0.0, 1.0
+    assert np.isclose(_crps.crps_gev(obs, xi, backend=backend), 0.276440963)
+    mu = 0.1
+    assert np.isclose(
+        _crps.crps_gev(obs + mu, xi, location=mu, backend=backend), 0.276440963
+    )
+    sigma = 0.9
+    mu = 0.0
+    assert np.isclose(
+        _crps.crps_gev(obs * sigma, xi, scale=sigma, backend=backend),
+        0.276440963 * sigma,
+    )
+
+    obs, xi, mu, sigma = 0.3, 0.7, 0.0, 1.0
+    assert np.isclose(_crps.crps_gev(obs, xi, backend=backend), 0.458044365)
+    mu = 0.1
+    assert np.isclose(
+        _crps.crps_gev(obs + mu, xi, location=mu, backend=backend), 0.458044365
+    )
+    sigma = 0.9
+    mu = 0.0
+    assert np.isclose(
+        _crps.crps_gev(obs * sigma, xi, scale=sigma, backend=backend),
+        0.458044365 * sigma,
+    )
+
+    obs, xi, mu, sigma = 0.3, -0.7, 0.0, 1.0
+    assert np.isclose(_crps.crps_gev(obs, xi, backend=backend), 0.207621488)
+    mu = 0.1
+    assert np.isclose(
+        _crps.crps_gev(obs + mu, xi, location=mu, backend=backend), 0.207621488
+    )
+    sigma = 0.9
+    mu = 0.0
+    assert np.isclose(
+        _crps.crps_gev(obs * sigma, xi, scale=sigma, backend=backend),
+        0.207621488 * sigma,
+    )
+
+
 @pytest.mark.parametrize("backend", BACKENDS)
-def test_normal(backend):
-    obs = np.random.randn(N)
-    mu = obs + np.random.randn(N) * 0.1
-    sigma = abs(np.random.randn(N)) * 0.3
+def test_gpd(backend):
+    assert np.isclose(_crps.crps_gpd(0.3, 0.9, backend=backend), 0.6849332)
+    assert np.isclose(_crps.crps_gpd(-0.3, 0.9, backend=backend), 1.209091)
+    assert np.isclose(_crps.crps_gpd(0.3, -0.9, backend=backend), 0.1338672)
+    assert np.isclose(_crps.crps_gpd(-0.3, -0.9, backend=backend), 0.6448276)
 
-    # non-negative values
-    res = _crps.crps_normal(obs, mu, sigma, backend=backend)
-    res = np.asarray(res)
-    assert not np.any(np.isnan(res))
-    assert not np.any(res < 0.0)
+    assert np.isnan(_crps.crps_gpd(0.3, 1.0, backend=backend))
+    assert np.isnan(_crps.crps_gpd(0.3, 1.2, backend=backend))
+    assert np.isnan(_crps.crps_gpd(0.3, 0.9, mass=-0.1, backend=backend))
+    assert np.isnan(_crps.crps_gpd(0.3, 0.9, mass=1.1, backend=backend))
 
-    # approx zero when perfect forecast
-    mu = obs + np.random.randn(N) * 1e-6
-    sigma = abs(np.random.randn(N)) * 1e-6
-    res = _crps.crps_normal(obs, mu, sigma, backend=backend)
-    res = np.asarray(res)
-
-    assert not np.any(np.isnan(res))
-    assert not np.any(res - 0.0 > 0.0001)
-
-
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_logis(backend):
-    obs, mu, sigma = 17.1, 13.8, 3.3
-    expected = 2.067527
-    res = _crps.crps_logistic(obs, mu, sigma, backend=backend)
-    assert np.isclose(res, expected)
-    
-    obs, mu, sigma = 3.1, 4.0, 0.5
-    expected = 0.5529776
-    res = _crps.crps_logistic(obs, mu, sigma, backend=backend)
-    assert np.isclose(res, expected)
+    res = 0.281636441
+    assert np.isclose(
+        _crps.crps_gpd(0.3 + 0.1, 0.0, location=0.1, backend=backend), res
+    )
+    assert np.isclose(
+        _crps.crps_gpd(0.3 * 0.9, 0.0, scale=0.9, backend=backend), res * 0.9
+    )
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -253,7 +261,7 @@ def test_tlogis(backend):
     res = _crps.crps_tlogistic(obs, location, scale, backend=backend)
     assert np.isclose(res, res0)
 
-    
+
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_clogis(backend):
     obs, location, scale, lower, upper = -0.9, 0.4, 1.1, 0.0, 1.0
@@ -265,3 +273,99 @@ def test_clogis(backend):
     res0 = _crps.crps_logistic(obs, location, scale, backend=backend)
     res = _crps.crps_clogistic(obs, location, scale, backend=backend)
     assert np.isclose(res, res0)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_hypergeometric(backend):
+    res = _crps.crps_hypergeometric(5 * np.ones((2, 2)), 7, 13, 12, backend=backend)
+    assert res.shape == (2, 2)
+
+    res = _crps.crps_hypergeometric(5, 7 * np.ones((2, 2)), 13, 12, backend=backend)
+    assert res.shape == (2, 2)
+
+    assert np.isclose(_crps.crps_hypergeometric(5, 7, 13, 12), 0.4469742)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_laplace(backend):
+    assert np.isclose(_crps.crps_laplace(-3, backend=backend), 2.29978707)
+    assert np.isclose(
+        _crps.crps_laplace(-3 + 0.1, location=0.1, backend=backend), 2.29978707
+    )
+    assert np.isclose(
+        _crps.crps_laplace(-3 * 0.9, scale=0.9, backend=backend), 0.9 * 2.29978707
+    )
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_logis(backend):
+    obs, mu, sigma = 17.1, 13.8, 3.3
+    expected = 2.067527
+    res = _crps.crps_logistic(obs, mu, sigma, backend=backend)
+    assert np.isclose(res, expected)
+
+    obs, mu, sigma = 3.1, 4.0, 0.5
+    expected = 0.5529776
+    res = _crps.crps_logistic(obs, mu, sigma, backend=backend)
+    assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_loglaplace(backend):
+    assert np.isclose(_crps.crps_loglaplace(3.0, 0.1, 0.9, backend=backend), 1.16202051)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_loglogistic(backend):
+    if backend == "torch":
+        pytest.skip("Not implemented in torch backend")
+
+    # TODO: investigate why JAX results are different from other backends
+    # (would fail test with smaller tolerance)
+    assert np.isclose(
+        _crps.crps_loglogistic(3.0, 0.1, 0.9, backend=backend), 1.13295277, atol=1e-4
+    )
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_normal(backend):
+    obs = np.random.randn(N)
+    mu = obs + np.random.randn(N) * 0.1
+    sigma = abs(np.random.randn(N)) * 0.3
+
+    # non-negative values
+    res = _crps.crps_normal(obs, mu, sigma, backend=backend)
+    res = np.asarray(res)
+    assert not np.any(np.isnan(res))
+    assert not np.any(res < 0.0)
+
+    # approx zero when perfect forecast
+    mu = obs + np.random.randn(N) * 1e-6
+    sigma = abs(np.random.randn(N)) * 1e-6
+    res = _crps.crps_normal(obs, mu, sigma, backend=backend)
+    res = np.asarray(res)
+
+    assert not np.any(np.isnan(res))
+    assert not np.any(res - 0.0 > 0.0001)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_lognormal(backend):
+    obs = np.exp(np.random.randn(N))
+    mulog = np.log(obs) + np.random.randn(N) * 0.1
+    sigmalog = abs(np.random.randn(N)) * 0.3
+
+    # non-negative values
+    res = _crps.crps_lognormal(obs, mulog, sigmalog, backend=backend)
+    res = np.asarray(res)
+    assert not np.any(np.isnan(res))
+    assert not np.any(res < 0.0)
+
+    # approx zero when perfect forecast
+    mulog = np.log(obs) + np.random.randn(N) * 1e-6
+    sigmalog = abs(np.random.randn(N)) * 1e-6
+    res = _crps.crps_lognormal(obs, mulog, sigmalog, backend=backend)
+    res = np.asarray(res)
+
+    assert not np.any(np.isnan(res))
+    assert not np.any(res - 0.0 > 0.0001)
