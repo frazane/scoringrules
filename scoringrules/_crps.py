@@ -659,8 +659,8 @@ def crps_gtclogistic(
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.gtclogistic(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
+    >>> import scoringrules as sr
+    >>> sr.crps_gtclogistic(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
     return crps.gtclogistic(observation, location, scale, lower, upper, lmass, umass, backend=backend)
 
@@ -700,8 +700,8 @@ def crps_tlogistic(
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.tlogistic(0.0, 0.1, 0.4, -1.0, 1.0)
+    >>> import scoringrules as sr
+    >>> sr.crps_tlogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     """
     return crps.gtclogistic(observation, location, scale, lower, upper, 0.0, 0.0, backend=backend)
 
@@ -741,8 +741,8 @@ def crps_clogistic(
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.clogistic(0.0, 0.1, 0.4, -1.0, 1.0)
+    >>> import scoringrules as sr
+    >>> sr.crps_clogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     """
     lmass = stats._logis_cdf((lower - location) / scale)
     umass = 1 - stats._logis_cdf((upper - location) / scale)
@@ -783,8 +783,8 @@ def crps_logistic(
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.logistic(0.0, 0.4, 0.1)
+    >>> import scoringrules as sr
+    >>> sr.crps_logistic(0.0, 0.4, 0.1)
     0.30363
     """
     return crps.logistic(observation, mu, sigma, backend=backend)
@@ -827,8 +827,8 @@ def crps_lognormal(
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.lognormal(0.1, 0.4, 0.0)
+    >>> import scoringrules as sr
+    >>> sr.crps_lognormal(0.1, 0.4, 0.0)
     """
     return crps.lognormal(observation, mulog, sigmalog, backend=backend)
 
@@ -867,8 +867,8 @@ def crps_normal(
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.normal(0.1, 0.4, 0.0)
+    >>> import scoringrules as sr
+    >>> sr.crps_normal(0.1, 0.4, 0.0)
     """
     return crps.normal(observation, mu, sigma, backend=backend)
 
