@@ -1031,6 +1031,62 @@ def crps_logistic(
     return crps.logistic(observation, mu, sigma, backend=backend)
 
 
+def crps_loglogistic(
+    observation: "ArrayLike",
+    mulog: "ArrayLike",
+    sigmalog: "ArrayLike",
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the log-logistic distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$
+    \text{CRPS}(y, F_{\mu,\sigma}) = y \left( 2F_{\mu,\sigma}(y) - 1 \right)
+    - 2 \exp(\mu) I\left(F_{\mu,\sigma}(y); 1 + \sigma, 1 - \sigma\right) \\
+    + \exp(\mu)(1 - \sigma) B(1 + \sigma, 1 - \sigma)
+    $$
+
+    where \( F_{\mu,\sigma}(x) \) is the cumulative distribution function (CDF) of
+    the log-logistic distribution, defined as:
+
+    $$
+    F_{\mu,\sigma}(x) =
+    \begin{cases}
+    0, & x \leq 0 \\
+    \left( 1 + \exp\left(-\frac{\log x - \mu}{\sigma}\right) \right)^{-1}, & x > 0
+    \end{cases}
+    $$
+
+    $B$ is the beta function, and $I$ is the regularised incomplete beta function.
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    mulog:
+        Location parameter of the log-logistic distribution.
+    sigmalog:
+        Scale parameter of the log-logistic distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+
+    Returns
+    -------
+    score:
+        The CRPS between obs and Loglogis(mulog, sigmalog).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_loglogistic(3.0, 0.1, 0.9)
+    1.1329527730161177
+    """
+    return crps.loglogistic(observation, mulog, sigmalog, backend=backend)
+
+
 __all__ = [
     "crps_ensemble",
     "twcrps_ensemble",

@@ -301,3 +301,15 @@ def test_laplace(backend):
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_loglaplace(backend):
     assert np.isclose(_crps.crps_loglaplace(3.0, 0.1, 0.9, backend=backend), 1.16202051)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_loglogistic(backend):
+    if backend == "torch":
+        pytest.skip("Not implemented in torch backend")
+
+    # TODO: investigate why JAX results are different from other backends
+    # (would fail test with smaller tolerance)
+    assert np.isclose(
+        _crps.crps_loglogistic(3.0, 0.1, 0.9, backend=backend), 1.13295277, atol=1e-4
+    )

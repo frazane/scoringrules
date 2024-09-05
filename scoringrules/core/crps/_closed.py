@@ -406,6 +406,22 @@ def logistic(
     return sigma * (ω - 2 * B.log(_logis_cdf(ω, backend=backend)) - 1)
 
 
+def loglogistic(
+    obs: "ArrayLike",
+    mulog: "ArrayLike",
+    sigmalog: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the log-logistic distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mulog, sigmalog, obs = map(B.asarray, (mulog, sigmalog, obs))
+    F_ms = 1 / (1 + B.exp(-(B.log(obs) - mulog) / sigmalog))
+    b = B.beta(1 + sigmalog, 1 - sigmalog)
+    I_B = B.betainc(1 + sigmalog, 1 - sigmalog, F_ms)
+    s = obs * (2 * F_ms - 1) - B.exp(mulog) * b * (2 * I_B + sigmalog - 1)
+    return s
+
+
 def _is_scalar_value(x, value):
     if x.size != 1:
         return False
