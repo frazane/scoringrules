@@ -1087,6 +1087,53 @@ def crps_loglogistic(
     return crps.loglogistic(observation, mulog, sigmalog, backend=backend)
 
 
+def crps_uniform(
+    observation: "ArrayLike",
+    min: "ArrayLike",
+    max: "ArrayLike",
+    /,
+    lmass: "ArrayLike" = 0.0,
+    umass: "ArrayLike" = 0.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the uniform distribution.
+    
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(\mathcal{U}_{L}^{U}(l, u), y) = (u - l) \left\{ | \frac{y - l}{u - l} - F \left( \frac{y - l}{u - l} \right) | + F \left( \frac{y - l}{u - l} \right)^{2} (1 - L - U) - F \left( \frac{y - l}{u - l} \right) (1 - 2L) + \frac{(1 - L - U)^{2}}{3} + (1 - L)U \right\},$$
+
+    where $\mathcal{U}_{L}^{U}(l, u)$ is the uniform distribution with lower bound $l$, 
+    upper bound $u > l$, point mass $L$ on the lower bound, and point mass $U$ on the upper bound.
+    We must have that $L, U \ge 0, L + U < 1$. 
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    min: ArrayLike
+        Lower bound of the forecast uniform distribution.
+    max: ArrayLike
+        Upper bound of the forecast uniform distribution.
+    lmass: ArrayLike
+        Point mass on the lower bound of the forecast uniform distribution.
+    umass: ArrayLike
+        Point mass on the upper bound of the forecast uniform distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between U(min, max, lmass, umass) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_uniform(0.4, 0.0, 1.0, 0.0, 0.0)
+    """
+    return crps.uniform(observation, min, max, lmass, umass, backend=backend)
+
+
 __all__ = [
     "crps_ensemble",
     "twcrps_ensemble",
@@ -1104,4 +1151,5 @@ __all__ = [
     "crps_logistic",
     "crps_lognormal",
     "crps_normal",
+    "crps_uniform",
 ]
