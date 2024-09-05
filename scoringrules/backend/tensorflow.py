@@ -227,10 +227,10 @@ class TensorflowBackend(ArrayBackend):
         return tf.math.betainc(x, y, z)
 
     def mbessel0(self, x: "Tensor") -> "Tensor":
-        return tf.math.bessel_i0e(x)
+        return tf.math.bessel_i0(x)
 
     def mbessel1(self, x: "Tensor") -> "Tensor":
-        return tf.math.bessel_i1e(x)
+        return tf.math.bessel_i1(x)
 
     def gamma(self, x: "Tensor") -> "Tensor":
         return tf.math.exp(tf.math.lgamma(x))

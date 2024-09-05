@@ -1333,18 +1333,55 @@ def crps_normal(
         Mean of the forecast normal distribution.
     sigma: ArrayLike
         Standard deviation of the forecast normal distribution.
-        
+
     Returns
     -------
     crps: array_like
         The CRPS between Normal(mu, sigma) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.normal(0.1, 0.4, 0.0)
+    """
+    return crps.normal(observation, mu, sigma, backend=backend)
+
+
+def crps_poisson(
+    observation: "ArrayLike",
+    mean: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the Poisson distribution.
+    
+    It is based on the following formulation from
+    [Wei and Held (2014)](https://link.springer.com/article/10.1007/s11749-014-0380-8):
+
+    $$ \mathrm{CRPS}(F_{\lambda}, y) = (y - \lambda) (2F_{\lambda}(y) - 1) + 2 \lambda f_{\lambda}(\lfloor y \rfloor ) - \lambda \exp (-2 \lambda) (I_{0} (2 \lambda) + I_{1} (2 \lambda))..$$
+
+    where $F_{\lambda}$ is Poisson distribution function with mean parameter $\lambda > 0$,
+    and $I_{0}$ and $I_{1}$ are modified Bessel functions of the first kind.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    mean: ArrayLike
+        Mean parameter of the forecast exponential distribution.
         
+    Returns
+    -------
+    crps: array_like
+        The CRPS between Pois(mean) and obs.
+    
     Examples
     --------
     >>> import scoringrules as sr
-    >>> sr.crps_normal(0.1, 0.4, 0.0)
+    >>> sr.crps_poisson(1, 2)
     """
-    return crps.normal(observation, mu, sigma, backend=backend)
+    return crps.poisson(observation, mean, backend=backend)
 
 
 def crps_t(
@@ -1465,5 +1502,6 @@ __all__ = [
     "crps_loglogistic",
     "crps_lognormal",
     "crps_normal",
+    "crps_poisson",
     "crps_uniform",
 ]

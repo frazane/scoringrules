@@ -16,6 +16,7 @@ from ._closed import (
     loglogistic,
     lognormal,
     normal,
+    poisson,
     t,
     uniform,
 )
@@ -41,6 +42,7 @@ __all__ = [
     "loglogistic",
     "lognormal",
     "normal",
+    "poisson",
     "t",
     "uniform",
     "estimator_gufuncs",
