@@ -166,6 +166,7 @@ def test_gamma(backend):
         return
 
 
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_gev(backend):
     if backend == "torch":
         pytest.skip("`expi` not implemented in torch backend")
