@@ -465,7 +465,7 @@ def uniform(
     B = backends.active if backend is None else backends[backend]
     min, max, lmass, umass, obs = map(B.asarray, (min, max, lmass, umass, obs))
     ω = (obs - min) / (max - min)
-    F_ω = B.minimum(B.maximum(ω, 0), 1)
+    F_ω = B.minimum(B.maximum(ω, B.asarray(0)), B.asarray(1))
     s = B.abs(ω - F_ω) + (F_ω**2) * (1 - lmass - umass)  - F_ω * (1 - 2 * lmass) + ((1 - lmass - umass)**2) / 3 + (1 - lmass) * umass
     return (max - min) * s
 
