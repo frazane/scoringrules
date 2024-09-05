@@ -27,6 +27,12 @@ also be viewed as the Brier score integrated over all real-valued thresholds.
 
 ::: scoringrules.crps_gpd
 
+::: scoringrules.crps_gtclogistic
+
+::: scoringrules.crps_tlogistic
+
+::: scoringrules.crps_clogistic
+
 ::: scoringrules.crps_gtcnormal
 
 ::: scoringrules.crps_tnormal
@@ -36,6 +42,8 @@ also be viewed as the Brier score integrated over all real-valued thresholds.
 ::: scoringrules.crps_hypergeometric
 
 ::: scoringrules.crps_laplace
+
+::: scoringrules.crps_logistic
 
 ::: scoringrules.crps_loglaplace
 
