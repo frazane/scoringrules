@@ -13,6 +13,8 @@ from scoringrules.core.stats import (
     _logis_cdf,
     _norm_cdf,
     _norm_pdf,
+    _pois_cdf,
+    _pois_pdf,
 )
 
 if tp.TYPE_CHECKING:
@@ -365,6 +367,16 @@ def laplace(
     return sigma * (B.abs(obs) + B.exp(-B.abs(obs)) - 3 / 4)
 
 
+def logistic(
+    obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the normal distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
+    ω = (obs - mu) / sigma
+    return sigma * (ω - 2 * B.log(_logis_cdf(ω, backend=backend)) - 1)
+
+
 def loglaplace(
     obs: "ArrayLike",
     locationlog: "ArrayLike",
@@ -400,18 +412,20 @@ def loglaplace(
     return s
 
 
-def normal(
-    obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
+def loglogistic(
+    obs: "ArrayLike",
+    mulog: "ArrayLike",
+    sigmalog: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
-    """Compute the CRPS for the normal distribution."""
+    """Compute the CRPS for the log-logistic distribution."""
     B = backends.active if backend is None else backends[backend]
-    mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
-    ω = (obs - mu) / sigma
-    return sigma * (
-        ω * (2.0 * _norm_cdf(ω, backend=backend) - 1.0)
-        + 2.0 * _norm_pdf(ω, backend=backend)
-        - 1.0 / B.sqrt(B.pi)
-    )
+    mulog, sigmalog, obs = map(B.asarray, (mulog, sigmalog, obs))
+    F_ms = 1 / (1 + B.exp(-(B.log(obs) - mulog) / sigmalog))
+    b = B.beta(1 + sigmalog, 1 - sigmalog)
+    I_B = B.betainc(1 + sigmalog, 1 - sigmalog, F_ms)
+    s = obs * (2 * F_ms - 1) - B.exp(mulog) * b * (2 * I_B + sigmalog - 1)
+    return s
 
 
 def lognormal(
@@ -432,29 +446,33 @@ def lognormal(
     )
 
 
-def logistic(
+def normal(
     obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
     """Compute the CRPS for the normal distribution."""
     B = backends.active if backend is None else backends[backend]
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma
-    return sigma * (ω - 2 * B.log(_logis_cdf(ω, backend=backend)) - 1)
-
-
-def loglogistic(
+    return sigma * (
+        ω * (2.0 * _norm_cdf(ω, backend=backend) - 1.0)
+        + 2.0 * _norm_pdf(ω, backend=backend)
+        - 1.0 / B.sqrt(B.pi)
+    )
+    
+    
+def poisson(
     obs: "ArrayLike",
-    mulog: "ArrayLike",
-    sigmalog: "ArrayLike",
+    mean: "ArrayLike",
     backend: "Backend" = None,
 ) -> "Array":
-    """Compute the CRPS for the log-logistic distribution."""
+    """Compute the CRPS for the poisson distribution."""
     B = backends.active if backend is None else backends[backend]
-    mulog, sigmalog, obs = map(B.asarray, (mulog, sigmalog, obs))
-    F_ms = 1 / (1 + B.exp(-(B.log(obs) - mulog) / sigmalog))
-    b = B.beta(1 + sigmalog, 1 - sigmalog)
-    I_B = B.betainc(1 + sigmalog, 1 - sigmalog, F_ms)
-    s = obs * (2 * F_ms - 1) - B.exp(mulog) * b * (2 * I_B + sigmalog - 1)
+    mean, obs = map(B.asarray, (mean, obs))
+    F_m = _pois_cdf(obs, mean, backend=backend)
+    f_m = _pois_pdf(B.floor(obs), mean, backend=backend)
+    I0 = B.mbessel0(2 * mean)
+    I1 = B.mbessel1(2 * mean)
+    s = (obs - mean) * (2 * F_m - 1) + 2 * mean * f_m - mean * B.exp(-2 * mean) * (I0 + I1)
     return s
 
 

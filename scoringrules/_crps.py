@@ -1049,46 +1049,6 @@ def crps_loglaplace(
     return crps.loglaplace(observation, locationlog, scalelog, backend=backend)
 
 
-def crps_normal(
-    observation: "ArrayLike",
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
-    /,
-    *,
-    backend: "Backend" = None,
-) -> "ArrayLike":
-    r"""Compute the closed form of the CRPS for the normal distribution.
-
-    It is based on the following formulation from
-    [Geiting et al. (2005)](https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml):
-
-    $$ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},$$
-
-    where $\Phi(ω)$ and $\phi(ω)$ are respectively the CDF and PDF of the standard normal
-    distribution at the normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
-
-    Parameters
-    ----------
-    observations: ArrayLike
-        The observed values.
-    mu: ArrayLike
-        Mean of the forecast normal distribution.
-    sigma: ArrayLike
-        Standard deviation of the forecast normal distribution.
-
-    Returns
-    -------
-    crps: array_like
-        The CRPS between Normal(mu, sigma) and obs.
-
-    Examples
-    --------
-    >>> from scoringrules import crps
-    >>> crps.normal(0.1, 0.4, 0.0)
-    """
-    return crps.normal(observation, mu, sigma, backend=backend)
-
-
 def crps_lognormal(
     observation: "ArrayLike",
     mulog: "ArrayLike",
@@ -1228,6 +1188,83 @@ def crps_loglogistic(
     return crps.loglogistic(observation, mulog, sigmalog, backend=backend)
 
 
+def crps_normal(
+    observation: "ArrayLike",
+    mu: "ArrayLike",
+    sigma: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the normal distribution.
+
+    It is based on the following formulation from
+    [Geiting et al. (2005)](https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml):
+
+    $$ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},$$
+
+    where $\Phi(ω)$ and $\phi(ω)$ are respectively the CDF and PDF of the standard normal
+    distribution at the normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
+
+    Parameters
+    ----------
+    observations: ArrayLike
+        The observed values.
+    mu: ArrayLike
+        Mean of the forecast normal distribution.
+    sigma: ArrayLike
+        Standard deviation of the forecast normal distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between Normal(mu, sigma) and obs.
+
+    Examples
+    --------
+    >>> from scoringrules import crps
+    >>> crps.normal(0.1, 0.4, 0.0)
+    """
+    return crps.normal(observation, mu, sigma, backend=backend)
+
+
+def crps_poisson(
+    observation: "ArrayLike",
+    mean: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the Poisson distribution.
+    
+    It is based on the following formulation from
+    [Wei and Held (2014)](https://link.springer.com/article/10.1007/s11749-014-0380-8):
+
+    $$ \mathrm{CRPS}(F_{\lambda}, y) = (y - \lambda) (2F_{\lambda}(y) - 1) + 2 \lambda f_{\lambda}(\lfloor y \rfloor ) - \lambda \exp (-2 \lambda) (I_{0} (2 \lambda) + I_{1} (2 \lambda))..$$
+
+    where $F_{\lambda}$ is Poisson distribution function with mean parameter $\lambda > 0$,
+    and $I_{0}$ and $I_{1}$ are modified Bessel functions of the first kind.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    mean: ArrayLike
+        Mean parameter of the forecast exponential distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between Pois(mean) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> crps.poisson(1, 2)
+    """
+    return crps.poisson(observation, mean, backend=backend)
+
+
 __all__ = [
     "crps_ensemble",
     "twcrps_ensemble",
@@ -1248,4 +1285,5 @@ __all__ = [
     "crps_logistic",
     "crps_lognormal",
     "crps_normal",
+    "crps_poisson",
 ]

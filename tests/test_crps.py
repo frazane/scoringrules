@@ -357,3 +357,21 @@ def test_loglogistic(backend):
     assert np.isclose(
         _crps.crps_loglogistic(3.0, 0.1, 0.9, backend=backend), 1.13295277, atol=1e-4
     )
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_poisson(backend):
+    obs, mean = 1.0, 3.0
+    res = _crps.crps_poisson(obs, mean, backend=backend)
+    expected = 1.143447
+    assert np.isclose(res, expected)
+
+    obs, mean = 1.5, 2.3
+    res = _crps.crps_poisson(obs, mean, backend=backend)
+    expected = 0.5001159
+    assert np.isclose(res, expected)
+
+    obs, mean = -1.0, 1.5
+    res = _crps.crps_poisson(obs, mean, backend=backend)
+    expected = 1.840259
+    assert np.isclose(res, expected)
