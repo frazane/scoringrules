@@ -250,7 +250,7 @@ def gpd(
 
 
 def gtcnormal(
-    location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", obs: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
     """Compute the CRPS for the generalised truncated and censored normal distribution."""
     B = backends.active if backend is None else backends[backend]
@@ -267,12 +267,16 @@ def gtcnormal(
     f_u = _norm_pdf(u, backend=backend)
     f_l = _norm_pdf(l, backend=backend)
     f_z = _norm_pdf(z, backend=backend)
+
+    u_inf = u == float("inf")
+    l_inf = l == float("-inf")
+
+    s1_u = B.where(u_inf and umass == 0.0, 0.0, u * umass**2)
+    s1_l = B.where(l_inf and lmass == 0.0, 0.0, l * lmass**2)
+
     c = (1 - lmass - umass) / (F_u - F_l)
-    s1 = B.abs(ω - z)
-    ind = (l != -float("inf"))
-    s1[ind] -= l[ind] * lmass[ind]**2
-    ind = (u != float("inf"))
-    s1[ind] += u[ind] * umass[ind]**2
+
+    s1 = B.abs(ω - z) + s1_u - s1_l
     s2 = c * z * (2 * F_z - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass))
     s3 = c * (2 * f_z - 2 * f_u * umass - 2 * f_l * lmass)
     s4 = c**2 * (F_u2 - F_l2) / B.sqrt(B.pi)
