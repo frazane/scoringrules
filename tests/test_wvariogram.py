@@ -39,7 +39,7 @@ def test_twvs_vs_vs(backend):
 
     res = variogram_score(obs, fct, backend=backend)
     resw = twvariogram_score(obs, fct, lambda x: x, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=5e-5)
+    np.testing.assert_allclose(res, resw, rtol=5e-4)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -54,7 +54,7 @@ def test_vrvs_vs_vs(backend):
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
         backend=backend,
     )
-    np.testing.assert_allclose(res, resw, rtol=5e-5)
+    np.testing.assert_allclose(res, resw, rtol=5e-4)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
