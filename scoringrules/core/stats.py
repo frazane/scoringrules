@@ -181,4 +181,4 @@ def _negbinom_cdf(
 ) -> "Array":
     """Cumulative distribution function for the negative binomial distribution."""
     B = backends.active if backend is None else backends[backend]
-    return (1 - B.isnegative(x)) * B.betainc(n, B.floor(x + 1), prob)
+    return B.where(x < 0.0, 0.0, B.betainc(n, B.floor(x + 1), prob))

@@ -477,6 +477,24 @@ def test_lognormal(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
+def test_negbinom(backend):
+    obs, n, prob = 2.0, 7.0, 0.8
+    res = _crps.crps_negbinom(obs, n, prob, backend=backend)
+    expected = 0.3834322
+    assert np.isclose(res, expected)
+
+    obs, n, prob = 1.5, 2.0, 0.5
+    res = _crps.crps_negbinom(obs, n, prob, backend=backend)
+    expected = 0.462963
+    assert np.isclose(res, expected)
+
+    obs, n, prob = -1.0, 17.0, 0.1
+    res = _crps.crps_negbinom(obs, n, prob, backend=backend)
+    expected = 132.0942
+    assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_normal(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
