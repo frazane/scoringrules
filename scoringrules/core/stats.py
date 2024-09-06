@@ -51,7 +51,11 @@ def _pois_pdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "
     """Probability mass function for the Poisson distribution."""
     B = backends.active if backend is None else backends[backend]
     x_plus = B.abs(x)
-    d = B.where(B.floor(x_plus) < x_plus, 0.0, mean**(x_plus) * B.exp(-mean) / B.factorial(x_plus))
+    d = B.where(
+        B.floor(x_plus) < x_plus,
+        0.0,
+        mean ** (x_plus) * B.exp(-mean) / B.factorial(x_plus),
+    )
     return B.where(mean < 0.0, B.nan, B.where(x < 0.0, 0.0, d))
 
 

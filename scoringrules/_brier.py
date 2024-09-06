@@ -18,7 +18,7 @@ def brier_score(
 
     The BS is formulated as
 
-    $$BS(f, y) = (f - y)^2,$$
+    $$ BS(f, y) = (f - y)^2, $$
 
     where $f \in [0, 1]$ is the predicted probability of an event and $y \in \{0, 1\}$ the actual outcome.
 

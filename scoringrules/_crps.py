@@ -560,7 +560,7 @@ def crps_gamma(
     r"""Compute the closed form of the CRPS for the gamma distribution.
 
     It is based on the following formulation from
-    [Scheuerer and Möller (2015)](doi: doi:10.1214/15-AOAS843):
+    [Scheuerer and Möller (2015)](https://doi.org/10.1214/15-AOAS843):
 
     $$ \mathrm{CRPS}(F_{\alpha, \beta}, y) = y(2F_{\alpha, \beta}(y) - 1)
     - \frac{\alpha}{\beta} (2 F_{\alpha + 1, \beta}(y) - 1)
@@ -622,7 +622,7 @@ def crps_gev(
     r"""Compute the closed form of the CRPS for the generalised extreme value (GEV) distribution.
 
     It is based on the following formulation from
-    [Friederichs and Thorarinsdottir (2012)](doi/10.1002/env.2176):
+    [Friederichs and Thorarinsdottir (2012)](https://doi.org/10.1002/env.2176):
 
     $$
     \text{CRPS}(F_{\xi, \mu, \sigma}, y) =
@@ -715,7 +715,7 @@ def crps_gpd(
     It is based on the following formulation from
     [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
 
-       
+
     $$
     \mathrm{CRPS}(F_{M, \xi}, y) =
     |y| - \frac{2 (1 - M)}{1 - \xi} \left( 1 - (1 - F_{\xi}(y))^{1 - \xi} \right)
@@ -774,19 +774,19 @@ def crps_gtclogistic(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the generalised truncated and censored logistic distribution.
 
-    $$ \mathrm{CRPS}(F_{l, L}^{u, U}, y) = |y - z| + uU^{2} - lL^{2} - \left( \frac{1 - L - U}{F(u) - F(l)} \right) z \left( \frac{(1 - 2L) F(u) + (1 - 2U) F(l)}{1 - L - U} \right) - \left( \frac{1 - L - U}{F(u) - F(l)} \right) \left( 2 \logF(-z) - 2G(u)U - 2 G(l)L \right) - \left( \frac{1 - L - U}{F(u) - F(l)} \right)^{2} \left( H(u) - H(l) \right), $$
-    
+    $$ \mathrm{CRPS}(F_{l, L}^{u, U}, y) = |y - z| + uU^{2} - lL^{2} - \left( \frac{1 - L - U}{F(u) - F(l)} \right) z \left( \frac{(1 - 2L) F(u) + (1 - 2U) F(l)}{1 - L - U} \right) - \left( \frac{1 - L - U}{F(u) - F(l)} \right) \left( 2 \log F(-z) - 2G(u)U - 2 G(l)L \right) - \left( \frac{1 - L - U}{F(u) - F(l)} \right)^{2} \left( H(u) - H(l) \right), $$
+
     $$ \mathrm{CRPS}(F_{l, L, \mu, \sigma}^{u, U}, y) = \sigma \mathrm{CRPS}(F_{(l - \mu)/\sigma, L}^{(u - \mu)/\sigma, U}, \frac{y - \mu}{\sigma}), $$
-    
+
     $$G(x) = xF(x) + \log F(-x),$$
-    
+
     $$H(x) = F(x) - xF(x)^{2} + (1 - 2F(x))\log F(-x),$$
 
-    where $F$ is the CDF of the standard logistic distribution, $F_{l, L, \mu, \sigma}^{u, U}$ 
-    is the CDF of the logistic distribution truncated below at $l$ and above at $u$, 
-    with point masses $L, U > 0$ at the lower and upper boundaries, respectively, and 
+    where $F$ is the CDF of the standard logistic distribution, $F_{l, L, \mu, \sigma}^{u, U}$
+    is the CDF of the logistic distribution truncated below at $l$ and above at $u$,
+    with point masses $L, U > 0$ at the lower and upper boundaries, respectively, and
     location and scale parameters $\mu$ and $\sigma > 0$.
-    
+
     Parameters
     ----------
     observation: ArrayLike
@@ -808,13 +808,15 @@ def crps_gtclogistic(
     -------
     crps: array_like
         The CRPS between gtcLogistic(location, scale, lower, upper, lmass, umass) and obs.
-        
+
     Examples
     --------
     >>> import scoringrules as sr
     >>> sr.crps_gtclogistic(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
-    return crps.gtclogistic(observation, location, scale, lower, upper, lmass, umass, backend=backend)
+    return crps.gtclogistic(
+        observation, location, scale, lower, upper, lmass, umass, backend=backend
+    )
 
 
 def crps_tlogistic(
@@ -829,9 +831,9 @@ def crps_tlogistic(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the truncated logistic distribution.
 
-    It is based on the formulation for the generalised truncated and censored logistic 
+    It is based on the formulation for the generalised truncated and censored logistic
     distribution with lmass and umass set to zero.
-    
+
     Parameters
     ----------
     observation: ArrayLike
@@ -855,7 +857,9 @@ def crps_tlogistic(
     >>> import scoringrules as sr
     >>> sr.crps_tlogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return crps.gtclogistic(observation, location, scale, lower, upper, 0.0, 0.0, backend=backend)
+    return crps.gtclogistic(
+        observation, location, scale, lower, upper, 0.0, 0.0, backend=backend
+    )
 
 
 def crps_clogistic(
@@ -870,7 +874,7 @@ def crps_clogistic(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the censored logistic distribution.
 
-    It is based on the formulation for the generalised truncated and censored logistic distribution with 
+    It is based on the formulation for the generalised truncated and censored logistic distribution with
     lmass and umass set to the tail probabilities of the predictive distribution.
 
     Parameters
@@ -898,7 +902,9 @@ def crps_clogistic(
     """
     lmass = stats._logis_cdf((lower - location) / scale)
     umass = 1 - stats._logis_cdf((upper - location) / scale)
-    return crps.gtclogistic(observation, location, scale, lower, upper, lmass, umass, backend=backend)
+    return crps.gtclogistic(
+        observation, location, scale, lower, upper, lmass, umass, backend=backend
+    )
 
 
 def crps_gtcnormal(
@@ -913,18 +919,17 @@ def crps_gtcnormal(
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
-    
     r"""Compute the closed form of the CRPS for the generalised truncated and censored normal distribution.
 
     It is based on the following formulation from
     [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
 
     $$ \mathrm{CRPS}(F_{l, L}^{u, U}, y) = |y - z| + uU^{2} - lL^{2} + \left( \frac{1 - L - U}{\Phi(u) - \Phi(l)} \right) z \left( 2 \Phi(z) - \frac{(1 - 2L) \Phi(u) + (1 - 2U) \Phi(l)}{1 - L - U} \right) + \left( \frac{1 - L - U}{\Phi(u) - \Phi(l)} \right) \left( 2 \phi(z) - 2 \phi(u)U - 2 \phi(l)L \right) - \left( \frac{1 - L - U}{\Phi(u) - \Phi(l)} \right)^{2} \left( \frac{1}{\sqrt{\pi}} \right) \left( \Phi(u \sqrt{2}) - \Phi(l \sqrt{2}) \right), $$
-    
+
     $$ \mathrm{CRPS}(F_{l, L, \mu, \sigma}^{u, U}, y) = \sigma \mathrm{CRPS}(F_{(l - \mu)/\sigma, L}^{(u - \mu)/\sigma, U}, \frac{y - \mu}{\sigma}), $$
 
     where $\Phi$ and $\phi$ are respectively the CDF and PDF of the standard normal
-    distribution, $F_{l, L, \mu, \sigma}^{u, U}$ is the CDF of the normal distribution 
+    distribution, $F_{l, L, \mu, \sigma}^{u, U}$ is the CDF of the normal distribution
     truncated below at $l$ and above at $u$, with point masses $L, U > 0$ at the lower and upper
     boundaries, respectively, and location and scale parameters $\mu$ and $\sigma > 0$.
     $F_{l, L}^{u, U} = F_{l, L, 0, 1}^{u, U}$.
@@ -934,7 +939,9 @@ def crps_gtcnormal(
     >>> import scoring rules as sr
     >>> sr.crps_gtcnormal(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
-    return crps.gtcnormal(observation, location, scale, lower, upper, lmass, umass, backend=backend)
+    return crps.gtcnormal(
+        observation, location, scale, lower, upper, lmass, umass, backend=backend
+    )
 
 
 def crps_tnormal(
@@ -949,9 +956,9 @@ def crps_tnormal(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the truncated normal distribution.
 
-    It is based on the formulation for the generalised truncated and censored normal distribution with 
+    It is based on the formulation for the generalised truncated and censored normal distribution with
     distribution with lmass and umass set to zero.
-    
+
     Parameters
     ----------
     observation: ArrayLike
@@ -975,7 +982,9 @@ def crps_tnormal(
     >>> import scoringrules as sr
     >>> sr.crps_tnormal(0.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return crps.gtcnormal(observation, location, scale, lower, upper, 0.0, 0.0, backend=backend)
+    return crps.gtcnormal(
+        observation, location, scale, lower, upper, 0.0, 0.0, backend=backend
+    )
 
 
 def crps_cnormal(
@@ -990,7 +999,7 @@ def crps_cnormal(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the censored normal distribution.
 
-    It is based on the formulation for the generalised truncated and censored normal distribution with 
+    It is based on the formulation for the generalised truncated and censored normal distribution with
     lmass and umass set to the tail probabilities of the predictive distribution.
 
     Parameters
@@ -1018,12 +1027,14 @@ def crps_cnormal(
     """
     lmass = stats._norm_cdf((lower - location) / scale)
     umass = 1 - stats._norm_cdf((upper - location) / scale)
-    return crps.gtcnormal(observation, location, scale, lower, upper, lmass, umass, backend=backend)
+    return crps.gtcnormal(
+        observation, location, scale, lower, upper, lmass, umass, backend=backend
+    )
 
 
 def crps_gtct(
     observation: "ArrayLike",
-    df : "ArrayLike",
+    df: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
@@ -1040,17 +1051,17 @@ def crps_gtct(
     [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
 
     $$ \mathrm{CRPS}(F_{l, L, \nu}^{u, U}, y) = |y - z| + uU^{2} - lL^{2} + \left( \frac{1 - L - U}{F_{\nu}(u) - F_{\nu}(l)} \right) z \left( 2 F_{\nu}(z) - \frac{(1 - 2L) F_{\nu}(u) + (1 - 2U) F_{\nu}(l)}{1 - L - U} \right) - \left( \frac{1 - L - U}{F_{\nu}(u) - F_{\nu}(l)} \right) \left( 2 G_{\nu}(z) - 2 G_{\nu}(u)U - 2 G_{\nu}(l)L \right) - \left( \frac{1 - L - U}{F_{\nu}(u) - F_{\nu}(l)} \right)^{2} \bar{B}_{\nu} \left( H_{\nu}(u) - H_{\nu}(l) \right), $$
-    
+
     $$ \mathrm{CRPS}(F_{l, L, \nu, \mu, \sigma}^{u, U}, y) = \sigma \mathrm{CRPS}(F_{(l - \mu)/\sigma, L, \nu}^{(u - \mu)/\sigma, U}, \frac{y - \mu}{\sigma}), $$
 
     $$ G_{\nu}(x) = - \left( \frac{\nu + x^{2}}{\nu - 1} \right) f_{\nu}(x), $$
-    
+
     $$ H_{\nu}(x) = \frac{1}{2} + \frac{1}{2} \mathrm{sgn}(x) I \left( \frac{1}{2}, \nu - \frac{1}{2}, \frac{x^{2}}{\nu + x^{2}} \right), $$
-    
+
     $$ \bar{B}_{\nu} = \left( \frac{2 \sqrt{\nu}}{\nu - 1} \right) \frac{B(\frac{1}{2}, \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2})^{2}}, $$
 
     where $F_{\nu}$ is the CDF of the standard t distribution with $\nu > 1$ degrees of freedom,
-    distribution, $F_{l, L, \nu, \mu, \sigma}^{u, U}$ is the CDF of the t distribution 
+    distribution, $F_{l, L, \nu, \mu, \sigma}^{u, U}$ is the CDF of the t distribution
     truncated below at $l$ and above at $u$, with point masses $L, U > 0$ at the lower and upper
     boundaries, respectively, and degrees of freedom, location and scale parameters $\nu > 1$, $\mu$ and $\sigma > 0$.
     $F_{l, L, \nu}^{u, U} = F_{l, L, \nu, 0, 1}^{u, U}$.
@@ -1084,12 +1095,14 @@ def crps_gtct(
     >>> import scoringrules as sr
     >>> sr.crps_gtct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
-    return crps.gtct(observation, df, location, scale, lower, upper, lmass, umass, backend=backend)
+    return crps.gtct(
+        observation, df, location, scale, lower, upper, lmass, umass, backend=backend
+    )
 
 
 def crps_tt(
     observation: "ArrayLike",
-    df : "ArrayLike",
+    df: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
@@ -1100,9 +1113,9 @@ def crps_tt(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the truncated t distribution.
 
-    It is based on the formulation for the generalised truncated and censored t distribution with 
+    It is based on the formulation for the generalised truncated and censored t distribution with
     lmass and umass set to zero.
-    
+
     Parameters
     ----------
     observation: ArrayLike
@@ -1128,12 +1141,14 @@ def crps_tt(
     >>> import scoringrules as sr
     >>> sr.crps_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return crps.gtct(observation, df, location, scale, lower, upper, 0.0, 0.0, backend=backend)
+    return crps.gtct(
+        observation, df, location, scale, lower, upper, 0.0, 0.0, backend=backend
+    )
 
 
 def crps_ct(
     observation: "ArrayLike",
-    df : "ArrayLike",
+    df: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
@@ -1144,7 +1159,7 @@ def crps_ct(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the censored t distribution.
 
-    It is based on the formulation for the generalised truncated and censored t distribution with 
+    It is based on the formulation for the generalised truncated and censored t distribution with
     lmass and umass set to the tail probabilities of the predictive distribution.
 
     Parameters
@@ -1174,7 +1189,9 @@ def crps_ct(
     """
     lmass = stats._t_cdf((lower - location) / scale, df)
     umass = 1 - stats._t_cdf((upper - location) / scale, df)
-    return crps.gtct(observation, df, location, scale, lower, upper, lmass, umass, backend=backend)
+    return crps.gtct(
+        observation, df, location, scale, lower, upper, lmass, umass, backend=backend
+    )
 
 
 def crps_hypergeometric(
@@ -1511,7 +1528,7 @@ def crps_poisson(
     backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the Poisson distribution.
-    
+
     It is based on the following formulation from
     [Wei and Held (2014)](https://link.springer.com/article/10.1007/s11749-014-0380-8):
 
@@ -1526,12 +1543,12 @@ def crps_poisson(
         The observed values.
     mean: ArrayLike
         Mean parameter of the forecast exponential distribution.
-        
+
     Returns
     -------
     crps: array_like
         The CRPS between Pois(mean) and obs.
-    
+
     Examples
     --------
     >>> import scoringrules as sr
@@ -1554,13 +1571,18 @@ def crps_t(
     It is based on the following formulation from
     [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
 
-    $$ \mathrm{CRPS}(F, y) = \sigma \left\{ \omega (2 F_{\nu} (\omega) - 1) + 2 f_{\nu} \left( \frac{\nu + \omega^{2}}{\nu - 1} \right) - \frac{2 \sqrt{\nu}}{\nu - 1} \frac{B(\frac{1}{2}, \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2}^{2})}  \right},$$
+    $$
+    \mathrm{CRPS}(F, y) = \sigma \left\{ \omega (2 F_{\nu} (\omega) - 1)
+    + 2 f_{\nu} \left( \frac{\nu + \omega^{2}}{\nu - 1} \right)
+    - \frac{2 \sqrt{\nu}}{\nu - 1} \frac{B(\frac{1}{2},
+    \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2}^{2})}  \right\},
+    $$
 
-    where $\omega = (y - \mu)/\sigma$, where $\nu > 1, \mu$, and $\sigma > 0$ are the 
-    degrees of freedom, location, and scale parameters respectively of the Student's t 
+    where $\omega = (y - \mu)/\sigma$, where $\nu > 1, \mu$, and $\sigma > 0$ are the
+    degrees of freedom, location, and scale parameters respectively of the Student's t
     distribution, and $f_{\nu}$ and $F_{\nu}$ are the PDF and CDF of the standard Student's
     t distribution with $\nu$ degrees of freedom.
-    
+
     Parameters
     ----------
     observation: ArrayLike
@@ -1596,15 +1618,15 @@ def crps_uniform(
     backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the uniform distribution.
-    
+
     It is based on the following formulation from
     [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
 
     $$ \mathrm{CRPS}(\mathcal{U}_{L}^{U}(l, u), y) = (u - l) \left\{ | \frac{y - l}{u - l} - F \left( \frac{y - l}{u - l} \right) | + F \left( \frac{y - l}{u - l} \right)^{2} (1 - L - U) - F \left( \frac{y - l}{u - l} \right) (1 - 2L) + \frac{(1 - L - U)^{2}}{3} + (1 - L)U \right\},$$
 
-    where $\mathcal{U}_{L}^{U}(l, u)$ is the uniform distribution with lower bound $l$, 
+    where $\mathcal{U}_{L}^{U}(l, u)$ is the uniform distribution with lower bound $l$,
     upper bound $u > l$, point mass $L$ on the lower bound, and point mass $U$ on the upper bound.
-    We must have that $L, U \ge 0, L + U < 1$. 
+    We must have that $L, U \ge 0, L + U < 1$.
 
     Parameters
     ----------

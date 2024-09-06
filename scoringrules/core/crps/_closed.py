@@ -254,11 +254,20 @@ def gpd(
 
 
 def gtclogistic(
-    obs: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    lower: "ArrayLike",
+    upper: "ArrayLike",
+    lmass: "ArrayLike",
+    umass: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the generalised truncated and censored logistic distribution."""
     B = backends.active if backend is None else backends[backend]
-    obs, mu, sigma, lower, upper, lmass, umass = map(B.asarray, (obs, location, scale, lower, upper, lmass, umass))
+    obs, mu, sigma, lower, upper, lmass, umass = map(
+        B.asarray, (obs, location, scale, lower, upper, lmass, umass)
+    )
     ω = (obs - mu) / sigma
     u = (upper - mu) / sigma
     l = (lower - mu) / sigma
@@ -280,7 +289,7 @@ def gtclogistic(
     G_u = B.where(u_inf, 0.0, u * F_u + B.log(F_mu))
     G_l = B.where(l_inf, 0.0, l * F_l + B.log(F_ml))
     H_u = B.where(u_inf, 1.0, F_u - u * F_u**2 + (1 - 2 * F_u) * B.log(F_mu))
-    H_l = B.where(l_inf, 0.0, F_l - l * F_l**2 + (1 - 2 * F_l) * B.log(F_ml))   
+    H_l = B.where(l_inf, 0.0, F_l - l * F_l**2 + (1 - 2 * F_l) * B.log(F_ml))
 
     c = (1 - lmass - umass) / (F_u - F_l)
 
@@ -295,11 +304,20 @@ def gtclogistic(
 
 
 def gtcnormal(
-    obs: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    lower: "ArrayLike",
+    upper: "ArrayLike",
+    lmass: "ArrayLike",
+    umass: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the generalised truncated and censored normal distribution."""
     B = backends.active if backend is None else backends[backend]
-    mu, sigma, lower, upper, lmass, umass, obs = map(B.asarray, (location, scale, lower, upper, lmass, umass, obs))
+    mu, sigma, lower, upper, lmass, umass, obs = map(
+        B.asarray, (location, scale, lower, upper, lmass, umass, obs)
+    )
     ω = (obs - mu) / sigma
     u = (upper - mu) / sigma
     l = (lower - mu) / sigma
@@ -324,18 +342,35 @@ def gtcnormal(
     c = (1 - lmass - umass) / (F_u - F_l)
 
     s1 = B.abs(ω - z) + s1_u - s1_l
-    s2 = c * z * (2 * F_z - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass))
+    s2 = (
+        c
+        * z
+        * (
+            2 * F_z
+            - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass)
+        )
+    )
     s3 = c * (2 * f_z - 2 * f_u * umass - 2 * f_l * lmass)
     s4 = c**2 * (F_u2 - F_l2) / B.sqrt(B.pi)
     return sigma * (s1 + s2 + s3 - s4)
 
 
 def gtct(
-    obs: "ArrayLike", df: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike",
+    df: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    lower: "ArrayLike",
+    upper: "ArrayLike",
+    lmass: "ArrayLike",
+    umass: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the generalised truncated and censored t distribution."""
     B = backends.active if backend is None else backends[backend]
-    df, mu, sigma, lower, upper, lmass, umass, obs = map(B.asarray, (df, location, scale, lower, upper, lmass, umass, obs))
+    df, mu, sigma, lower, upper, lmass, umass, obs = map(
+        B.asarray, (df, location, scale, lower, upper, lmass, umass, obs)
+    )
     ω = (obs - mu) / sigma
     u = (upper - mu) / sigma
     l = (lower - mu) / sigma
@@ -355,9 +390,9 @@ def gtct(
     s1_u = B.where(u_inf and umass == 0.0, 0.0, u * umass**2)
     s1_l = B.where(l_inf and lmass == 0.0, 0.0, l * lmass**2)
 
-    G_u = B.where(u_inf, 0.0, - f_u * (df + u**2) / (df - 1))
-    G_l = B.where(l_inf, 0.0, - f_l * (df + l**2) / (df - 1))
-    G_z = - f_z * (df + z**2) / (df - 1)
+    G_u = B.where(u_inf, 0.0, -f_u * (df + u**2) / (df - 1))
+    G_l = B.where(l_inf, 0.0, -f_l * (df + l**2) / (df - 1))
+    G_z = -f_z * (df + z**2) / (df - 1)
 
     I_u = B.where(u_inf, 1.0, B.betainc(1 / 2, df - 1 / 2, (u**2) / (df + u**2)))
     I_l = B.where(l_inf, 1.0, B.betainc(1 / 2, df - 1 / 2, (l**2) / (df + l**2)))
@@ -366,12 +401,23 @@ def gtct(
     H_u = (sgn_u * I_u + 1) / 2
     H_l = (sgn_l * I_l + 1) / 2
 
-    Bbar = (2 * B.sqrt(df) / (df - 1)) * B.beta(1 / 2, df - 1 / 2) / (B.beta(1 / 2, df / 2)**2)
+    Bbar = (
+        (2 * B.sqrt(df) / (df - 1))
+        * B.beta(1 / 2, df - 1 / 2)
+        / (B.beta(1 / 2, df / 2) ** 2)
+    )
 
     c = (1 - lmass - umass) / (F_u - F_l)
 
     s1 = B.abs(ω - z) + s1_u - s1_l
-    s2 = c * z * (2 * F_z - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass))
+    s2 = (
+        c
+        * z
+        * (
+            2 * F_z
+            - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass)
+        )
+    )
     s3 = 2 * c * (G_z - G_u * umass - G_l * lmass)
     s4 = c**2 * Bbar * (H_u - H_l)
     return sigma * (s1 + s2 - s3 - s4)
@@ -562,12 +608,20 @@ def poisson(
     f_m = _pois_pdf(B.floor(obs), mean, backend=backend)
     I0 = B.mbessel0(2 * mean)
     I1 = B.mbessel1(2 * mean)
-    s = (obs - mean) * (2 * F_m - 1) + 2 * mean * f_m - mean * B.exp(-2 * mean) * (I0 + I1)
+    s = (
+        (obs - mean) * (2 * F_m - 1)
+        + 2 * mean * f_m
+        - mean * B.exp(-2 * mean) * (I0 + I1)
+    )
     return s
 
 
 def t(
-    obs: "ArrayLike", df: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike",
+    df: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the t distribution."""
     B = backends.active if backend is None else backends[backend]
@@ -575,22 +629,37 @@ def t(
     z = (obs - mu) / sigma
     F_z = _t_cdf(z, df, backend=backend)
     f_z = _t_pdf(z, df, backend=backend)
-    G_z = (df + z**2) / (df - 1)    
+    G_z = (df + z**2) / (df - 1)
     s1 = z * (2 * F_z - 1)
     s2 = 2 * f_z * G_z
-    s3 = (2 * B.sqrt(df) / (df - 1)) * B.beta(1 / 2, df - 1 / 2) / (B.beta(1 / 2, df / 2)**2)
+    s3 = (
+        (2 * B.sqrt(df) / (df - 1))
+        * B.beta(1 / 2, df - 1 / 2)
+        / (B.beta(1 / 2, df / 2) ** 2)
+    )
     return sigma * (s1 + s2 - s3)
 
 
 def uniform(
-    obs: "ArrayLike", min: "ArrayLike", max: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike",
+    min: "ArrayLike",
+    max: "ArrayLike",
+    lmass: "ArrayLike",
+    umass: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the uniform distribution."""
     B = backends.active if backend is None else backends[backend]
     min, max, lmass, umass, obs = map(B.asarray, (min, max, lmass, umass, obs))
     ω = (obs - min) / (max - min)
-    F_ω = B.minimum(B.maximum(ω, B.asarray(0.0)), B.asarray(1.0))
-    s = B.abs(ω - F_ω) + (F_ω**2) * (1 - lmass - umass)  - F_ω * (1 - 2 * lmass) + ((1 - lmass - umass)**2) / 3 + (1 - lmass) * umass
+    F_ω = B.minimum(B.maximum(ω, B.asarray(0)), B.asarray(1))
+    s = (
+        B.abs(ω - F_ω)
+        + (F_ω**2) * (1 - lmass - umass)
+        - F_ω * (1 - 2 * lmass)
+        + ((1 - lmass - umass) ** 2) / 3
+        + (1 - lmass) * umass
+    )
     return (max - min) * s
 
 
