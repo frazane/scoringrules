@@ -56,9 +56,6 @@ jobs:
       - name: Install the project
         run: uv sync --all-extras --dev
 
-      - name: Install pytest-cov
-        run: uv run pip install pytest-cov
-
       - name: Run tests
         run: uv run pytest --cov=scoringrules tests/
 
