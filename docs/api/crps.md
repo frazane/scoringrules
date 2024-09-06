@@ -59,6 +59,8 @@ also be viewed as the Brier score integrated over all real-valued thresholds.
 
 ::: scoringrules.crps_normal
 
+::: scoringrules.crps_2pnormal
+
 ::: scoringrules.crps_poisson
 
 ::: scoringrules.crps_t

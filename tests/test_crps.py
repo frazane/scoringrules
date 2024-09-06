@@ -499,6 +499,24 @@ def test_normal(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
+def test_2pnormal(backend):
+    obs, scale1, scale2, location = 29.1, 4.6, 1.3, 27.9
+    expected = 2.189609
+    res = _crps.crps_2pnormal(obs, scale1, scale2, location, backend=backend)
+    assert np.isclose(res, expected)
+    
+    obs, scale1, scale2, location = -2.2, 1.6, 3.3, -1.9
+    expected = 0.8979951
+    res = _crps.crps_2pnormal(obs, scale1, scale2, location, backend=backend)
+    assert np.isclose(res, expected)
+
+    obs, scale, location = 1.5, 4.5, 5.4
+    res0 = _crps.crps_normal(obs, location, scale, backend=backend)
+    res = _crps.crps_2pnormal(obs, scale, scale, location, backend=backend)
+    assert np.isclose(res, res0)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_poisson(backend):
     obs, mean = 1.0, 3.0
     res = _crps.crps_poisson(obs, mean, backend=backend)
