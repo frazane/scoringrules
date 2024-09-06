@@ -1,4 +1,4 @@
-name: test
+name: CI
 
 on:
   push:
@@ -35,3 +35,19 @@ jobs:
 
       - name: Run tests
         run: uv run pytest tests
+
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+
+      - name: Run pre-commit hooks
+        run: uvx pre-commit run --all-files

@@ -5,7 +5,7 @@
 
 <br>
 
-[![Run tests](https://github.com/frazane/scoringrules/actions/workflows/run_tests.yml/badge.svg?branch=main)](https://github.com/frazane/scoringrules/actions/workflows/run_tests.yml)
+[![CI](https://github.com/frazane/scoringrules/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/frazane/scoringrules/actions/workflows/ci.yaml)
 [![pypi](https://img.shields.io/pypi/v/scoringrules.svg?colorB=<brightgreen>)](https://pypi.python.org/pypi/scoringrules/)
 
 Scoringrules is a python library for evaluating probabilistic forecasts by computing
