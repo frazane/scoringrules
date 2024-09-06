@@ -21,6 +21,8 @@ also be viewed as the Brier score integrated over all real-valued thresholds.
 
 ::: scoringrules.crps_exponentialM
 
+::: scoringrules.crps_2pexponential
+
 ::: scoringrules.crps_gamma
 
 ::: scoringrules.crps_gev
