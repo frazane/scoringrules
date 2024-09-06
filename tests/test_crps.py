@@ -234,11 +234,21 @@ def test_gpd(backend):
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_gtclogis(backend):
-    obs, location, scale, lower, upper, lmass, umass = 1.8, -3.0, 3.3, -5.0, 4.7, 0.1, 0.15
+    obs, location, scale, lower, upper, lmass, umass = (
+        1.8,
+        -3.0,
+        3.3,
+        -5.0,
+        4.7,
+        0.1,
+        0.15,
+    )
     expected = 1.599721
-    res = _crps.crps_gtclogistic(obs, location, scale, lower, upper, lmass, umass, backend=backend)
+    res = _crps.crps_gtclogistic(
+        obs, location, scale, lower, upper, lmass, umass, backend=backend
+    )
     assert np.isclose(res, expected)
-    
+
     # aligns with crps_logistic
     res0 = _crps.crps_logistic(obs, location, scale, backend=backend)
     res = _crps.crps_gtclogistic(obs, location, scale, backend=backend)
@@ -278,9 +288,19 @@ def test_clogis(backend):
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_gtcnormal(backend):
-    obs, location, scale, lower, upper, lmass, umass = 0.9, -2.3, 4.1, -7.3, 1.7, 0.0, 0.21
+    obs, location, scale, lower, upper, lmass, umass = (
+        0.9,
+        -2.3,
+        4.1,
+        -7.3,
+        1.7,
+        0.0,
+        0.21,
+    )
     expected = 1.422805
-    res = _crps.crps_gtcnormal(obs, location, scale, lower, upper, lmass, umass, backend=backend)
+    res = _crps.crps_gtcnormal(
+        obs, location, scale, lower, upper, lmass, umass, backend=backend
+    )
     assert np.isclose(res, expected)
 
     # aligns with crps_normal
@@ -391,7 +411,7 @@ def test_lognormal(backend):
     res = np.asarray(res)
     assert not np.any(np.isnan(res))
     assert not np.any(res - 0.0 > 0.0001)
-    
+
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_normal(backend):

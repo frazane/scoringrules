@@ -250,11 +250,20 @@ def gpd(
 
 
 def gtclogistic(
-    obs: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    lower: "ArrayLike",
+    upper: "ArrayLike",
+    lmass: "ArrayLike",
+    umass: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the generalised truncated and censored logistic distribution."""
     B = backends.active if backend is None else backends[backend]
-    obs, mu, sigma, lower, upper, lmass, umass = map(B.asarray, (obs, location, scale, lower, upper, lmass, umass))
+    obs, mu, sigma, lower, upper, lmass, umass = map(
+        B.asarray, (obs, location, scale, lower, upper, lmass, umass)
+    )
     ω = (obs - mu) / sigma
     u = (upper - mu) / sigma
     l = (lower - mu) / sigma
@@ -276,7 +285,7 @@ def gtclogistic(
     G_u = B.where(u_inf, 0.0, u * F_u + B.log(F_mu))
     G_l = B.where(l_inf, 0.0, l * F_l + B.log(F_ml))
     H_u = B.where(u_inf, 1.0, F_u - u * F_u**2 + (1 - 2 * F_u) * B.log(F_mu))
-    H_l = B.where(l_inf, 0.0, F_l - l * F_l**2 + (1 - 2 * F_l) * B.log(F_ml))   
+    H_l = B.where(l_inf, 0.0, F_l - l * F_l**2 + (1 - 2 * F_l) * B.log(F_ml))
 
     c = (1 - lmass - umass) / (F_u - F_l)
 
@@ -291,11 +300,20 @@ def gtclogistic(
 
 
 def gtcnormal(
-    obs: "ArrayLike", location: "ArrayLike", scale: "ArrayLike", lower: "ArrayLike", upper: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    lower: "ArrayLike",
+    upper: "ArrayLike",
+    lmass: "ArrayLike",
+    umass: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the generalised truncated and censored normal distribution."""
     B = backends.active if backend is None else backends[backend]
-    mu, sigma, lower, upper, lmass, umass, obs = map(B.asarray, (location, scale, lower, upper, lmass, umass, obs))
+    mu, sigma, lower, upper, lmass, umass, obs = map(
+        B.asarray, (location, scale, lower, upper, lmass, umass, obs)
+    )
     ω = (obs - mu) / sigma
     u = (upper - mu) / sigma
     l = (lower - mu) / sigma
@@ -320,7 +338,14 @@ def gtcnormal(
     c = (1 - lmass - umass) / (F_u - F_l)
 
     s1 = B.abs(ω - z) + s1_u - s1_l
-    s2 = c * z * (2 * F_z - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass))
+    s2 = (
+        c
+        * z
+        * (
+            2 * F_z
+            - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass)
+        )
+    )
     s3 = c * (2 * f_z - 2 * f_u * umass - 2 * f_l * lmass)
     s4 = c**2 * (F_u2 - F_l2) / B.sqrt(B.pi)
     return sigma * (s1 + s2 + s3 - s4)
@@ -500,14 +525,25 @@ def loglogistic(
 
 
 def uniform(
-    obs: "ArrayLike", min: "ArrayLike", max: "ArrayLike", lmass: "ArrayLike", umass: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike",
+    min: "ArrayLike",
+    max: "ArrayLike",
+    lmass: "ArrayLike",
+    umass: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the uniform distribution."""
     B = backends.active if backend is None else backends[backend]
     min, max, lmass, umass, obs = map(B.asarray, (min, max, lmass, umass, obs))
     ω = (obs - min) / (max - min)
     F_ω = B.minimum(B.maximum(ω, B.asarray(0)), B.asarray(1))
-    s = B.abs(ω - F_ω) + (F_ω**2) * (1 - lmass - umass)  - F_ω * (1 - 2 * lmass) + ((1 - lmass - umass)**2) / 3 + (1 - lmass) * umass
+    s = (
+        B.abs(ω - F_ω)
+        + (F_ω**2) * (1 - lmass - umass)
+        - F_ω * (1 - 2 * lmass)
+        + ((1 - lmass - umass) ** 2) / 3
+        + (1 - lmass) * umass
+    )
     return (max - min) * s
 
 

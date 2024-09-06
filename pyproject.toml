@@ -35,8 +35,26 @@ Homepage = "https://github.com/frazane/scoringrules"
 Documentation = "https://frazane.github.io/scoringrules"
 Issues = "https://github.com/frazane/scoringrules/issues"
 
+[project.optional-dependencies]
+numba = [
+    "numba>=0.60.0",
+]
+jax = [
+    "jax>=0.4.31",
+]
+torch = [
+    "torch>=2.4.1",
+]
+tensorflow = [
+    "tensorflow>=2.17.0",
+]
+
 [tool.uv]
 dev-dependencies = [
+    "matplotlib>=3.9.2",
     "pre-commit>=3.8.0",
     "pytest>=8.3.2",
 ]
+
+[tool.ruff]
+ignore = ["E741"]
