@@ -1496,9 +1496,9 @@ def crps_negbinom(
 
     $$ \mathrm{CRPS}(F_{n, p}, y) = y (2 F_{n, p}(y) - 1) - \frac{n(1 - p)}{p^{2}} \left( p (2 F_{n+1, p}(y - 1) - 1) + _{2} F_{1} \left( n + 1, \frac{1}{2}; 2; -\frac{4(1 - p)}{p^{2}} \right) \right), $$
 
-    where $F_{n, p}$ is the CDF of the negative binomial distribution with 
-    size parameter $n > 0$ and probability parameter $p \in (0, 1]$. The mean of the
-    negative binomial distribution is $\mu = n (1 - p)/p$.
+    where $F_{n, p}$ is the CDF of the negative binomial distribution with
+    size parameter $n > 0$ and probability parameter $p \in (0, 1]$. The mean
+    of the negative binomial distribution is $\mu = n (1 - p)/p$.
 
     Parameters
     ----------
