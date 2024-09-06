@@ -492,6 +492,11 @@ def test_negbinom(backend):
     res = _crps.crps_negbinom(obs, n, prob, backend=backend)
     expected = 132.0942
     assert np.isclose(res, expected)
+    
+    obs, n, mu = 2.3, 11.0, 7.3
+    res = _crps.crps_negbinom(obs, n, mu=mu, backend=backend)
+    expected = 3.149218
+    assert np.isclose(res, expected)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

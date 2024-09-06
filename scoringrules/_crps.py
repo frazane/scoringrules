@@ -1483,9 +1483,10 @@ def crps_lognormal(
 def crps_negbinom(
     observation: "ArrayLike",
     n: "ArrayLike",
-    prob: "ArrayLike",
     /,
+    prob: "ArrayLike | None" = None,
     *,
+    mu: "ArrayLike | None" = None,
     backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the negative binomial distribution.
@@ -1496,7 +1497,8 @@ def crps_negbinom(
     $$ \mathrm{CRPS}(F_{n, p}, y) = y (2 F_{n, p}(y) - 1) - \frac{n(1 - p)}{p^{2}} \left( p (2 F_{n+1, p}(y - 1) - 1) + _{2} F_{1} \left( n + 1, \frac{1}{2}; 2; -\frac{4(1 - p)}{p^{2}} \right) \right), $$
 
     where $F_{n, p}$ is the CDF of the negative binomial distribution with 
-    size parameter $n > 0$ and probability parameter $p \in (0, 1]$. 
+    size parameter $n > 0$ and probability parameter $p \in (0, 1]$. The mean of the
+    negative binomial distribution is $\mu = n (1 - p)/p$.
 
     Parameters
     ----------
@@ -1506,6 +1508,8 @@ def crps_negbinom(
         Size parameter of the forecast negative binomial distribution.
     prob: ArrayLike
         Probability parameter of the forecast negative binomial distribution.
+    mu: ArrayLike
+        Mean of the forecast negative binomial distribution.
 
     Returns
     -------
@@ -1515,8 +1519,21 @@ def crps_negbinom(
     Examples
     --------
     >>> import scoringrules as sr
-    >>> sr.crps_negbinom(2, 0.5, 5)
+    >>> sr.crps_negbinom(2, 5, 0.5)
+
+    Raises
+    ------
+    ValueError
+        If both `prob` and `mu` are provided, or if neither is provided.
     """
+    if (prob is None and mu is None) or (prob is not None and mu is not None):
+        raise ValueError(
+            "Either `prob` or `mu` must be provided, but not both or neither."
+        )
+
+    if prob is None:
+        prob = n / (n + mu)
+
     return crps.negbinom(observation, n, prob, backend=backend)
 
 
