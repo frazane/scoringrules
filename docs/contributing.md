@@ -31,12 +31,6 @@ From here you can work on your changes! Once you're satisfied with your changes,
 
 
 ### Contributing to the codebase
-Commit changes to the codebase within the project environment, so as to run pre-commit hooks:
-
-```
-uv run git commit -m "your commit message"
-```
-
 Don't forget to include new tests if necessary, then make sure that all tests are passing with
 
 ```

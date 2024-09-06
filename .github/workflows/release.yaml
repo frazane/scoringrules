@@ -1,11 +1,11 @@
 name: Release
+
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  release:
+    types: [created]
 
 jobs:
-  release:
+  pypi:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,6 +16,23 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v5
+
+      - name: Check version match
+        run: |
+          # Extract version from pyproject.toml
+          PYPROJECT_VERSION=$(grep -Po '(?<=^version = ")[^"]*' pyproject.toml)
+
+          # Extract the release tag version
+          RELEASE_TAG=${{ github.ref_name }}
+
+          echo "Pyproject version: $PYPROJECT_VERSION"
+          echo "Release tag: $RELEASE_TAG"
+
+          # Check if they match
+          if [ "$PYPROJECT_VERSION" != "$RELEASE_TAG" ]; then
+            echo "Version mismatch! Pyproject.toml version ($PYPROJECT_VERSION) does not match the release tag ($RELEASE_TAG)."
+            exit 1
+          fi
 
       - name: Build and publish
         env:
