@@ -1369,7 +1369,7 @@ dev = [
     { name = "matplotlib", specifier = ">=3.9.2" },
     { name = "pre-commit", specifier = ">=3.8.0" },
     { name = "pytest", specifier = ">=8.3.2" },
-    { name = "pytest-cov" },
+    { name = "pytest-cov", specifier = ">=5.0.0" },
 ]
 
 [[package]]
