@@ -9,6 +9,7 @@ from ._closed import (
     gpd,
     gtclogistic,
     gtcnormal,
+    gtct,
     hypergeometric,
     laplace,
     logistic,
@@ -16,6 +17,8 @@ from ._closed import (
     loglogistic,
     lognormal,
     normal,
+    poisson,
+    t,
     uniform,
 )
 from ._gufuncs import estimator_gufuncs, quantile_pinball_gufunc
@@ -33,6 +36,7 @@ __all__ = [
     "gpd",
     "gtclogistic",
     "gtcnormal",
+    "gtct",
     "hypergeometric",
     "laplace",
     "logistic",
@@ -40,6 +44,8 @@ __all__ = [
     "loglogistic",
     "lognormal",
     "normal",
+    "poisson",
+    "t",
     "uniform",
     "estimator_gufuncs",
     "quantile_pinball",

@@ -341,6 +341,69 @@ def test_cnormal(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
+def test_gtct(backend):
+    if backend in ["jax", "torch", "tensorflow"]:
+        pytest.skip("Not implemented in torch or tensorflow backends")
+    obs, df, location, scale, lower, upper, lmass, umass = (
+        0.9,
+        20.1,
+        -2.3,
+        4.1,
+        -7.3,
+        1.7,
+        0.0,
+        0.21,
+    )
+    expected = 1.423042
+    res = _crps.crps_gtct(
+        obs, df, location, scale, lower, upper, lmass, umass, backend=backend
+    )
+    assert np.isclose(res, expected)
+
+    # aligns with crps_t
+    res0 = _crps.crps_t(obs, df, location, scale, backend=backend)
+    res = _crps.crps_gtct(obs, df, location, scale, backend=backend)
+    assert np.isclose(res, res0)
+
+    # aligns with crps_tnormal
+    res0 = _crps.crps_tt(obs, df, location, scale, lower, upper, backend=backend)
+    res = _crps.crps_gtct(obs, df, location, scale, lower, upper, backend=backend)
+    assert np.isclose(res, res0)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_tt(backend):
+    if backend in ["jax", "torch", "tensorflow"]:
+        pytest.skip("Not implemented in torch or tensorflow backends")
+
+    obs, df, location, scale, lower, upper = -1.0, 2.9, 3.1, 4.2, 1.5, 17.3
+    expected = 5.084272
+    res = _crps.crps_tt(obs, df, location, scale, lower, upper, backend=backend)
+    assert np.isclose(res, expected)
+
+    # aligns with crps_t
+    res0 = _crps.crps_t(obs, df, location, scale, backend=backend)
+    res = _crps.crps_tt(obs, df, location, scale, backend=backend)
+    assert np.isclose(res, res0)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_ct(backend):
+    if backend in ["jax", "torch", "tensorflow"]:
+        pytest.skip("Not implemented in torch or tensorflow backends")
+
+    obs, df, location, scale, lower, upper = 1.8, 5.4, 0.4, 1.1, 0.0, 2.0
+    expected = 0.8028996
+    res = _crps.crps_ct(obs, df, location, scale, lower, upper, backend=backend)
+    assert np.isclose(res, expected)
+
+    # aligns with crps_t
+    res0 = _crps.crps_t(obs, df, location, scale, backend=backend)
+    res = _crps.crps_ct(obs, df, location, scale, backend=backend)
+    assert np.isclose(res, res0)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_hypergeometric(backend):
     res = _crps.crps_hypergeometric(5 * np.ones((2, 2)), 7, 13, 12, backend=backend)
     assert res.shape == (2, 2)
@@ -433,6 +496,40 @@ def test_normal(backend):
 
     assert not np.any(np.isnan(res))
     assert not np.any(res - 0.0 > 0.0001)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_poisson(backend):
+    obs, mean = 1.0, 3.0
+    res = _crps.crps_poisson(obs, mean, backend=backend)
+    expected = 1.143447
+    assert np.isclose(res, expected)
+
+    obs, mean = 1.5, 2.3
+    res = _crps.crps_poisson(obs, mean, backend=backend)
+    expected = 0.5001159
+    assert np.isclose(res, expected)
+
+    obs, mean = -1.0, 1.5
+    res = _crps.crps_poisson(obs, mean, backend=backend)
+    expected = 1.840259
+    assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_t(backend):
+    if backend in ["jax", "torch", "tensorflow"]:
+        pytest.skip("Not implemented in torch or tensorflow backends")
+
+    obs, df, mu, sigma = 11.1, 5.2, 13.8, 2.3
+    expected = 1.658226
+    res = _crps.crps_t(obs, df, mu, sigma, backend=backend)
+    assert np.isclose(res, expected)
+
+    obs, df = 0.7, 4.0
+    expected = 0.4387929
+    res = _crps.crps_t(obs, df, backend=backend)
+    assert np.isclose(res, expected)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

@@ -1032,6 +1032,168 @@ def crps_cnormal(
     )
 
 
+def crps_gtct(
+    observation: "ArrayLike",
+    df: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    lower: "ArrayLike" = float("-inf"),
+    upper: "ArrayLike" = float("inf"),
+    lmass: "ArrayLike" = 0.0,
+    umass: "ArrayLike" = 0.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the generalised truncated and censored t distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F_{l, L, \nu}^{u, U}, y) = |y - z| + uU^{2} - lL^{2} + \left( \frac{1 - L - U}{F_{\nu}(u) - F_{\nu}(l)} \right) z \left( 2 F_{\nu}(z) - \frac{(1 - 2L) F_{\nu}(u) + (1 - 2U) F_{\nu}(l)}{1 - L - U} \right) - \left( \frac{1 - L - U}{F_{\nu}(u) - F_{\nu}(l)} \right) \left( 2 G_{\nu}(z) - 2 G_{\nu}(u)U - 2 G_{\nu}(l)L \right) - \left( \frac{1 - L - U}{F_{\nu}(u) - F_{\nu}(l)} \right)^{2} \bar{B}_{\nu} \left( H_{\nu}(u) - H_{\nu}(l) \right), $$
+
+    $$ \mathrm{CRPS}(F_{l, L, \nu, \mu, \sigma}^{u, U}, y) = \sigma \mathrm{CRPS}(F_{(l - \mu)/\sigma, L, \nu}^{(u - \mu)/\sigma, U}, \frac{y - \mu}{\sigma}), $$
+
+    $$ G_{\nu}(x) = - \left( \frac{\nu + x^{2}}{\nu - 1} \right) f_{\nu}(x), $$
+
+    $$ H_{\nu}(x) = \frac{1}{2} + \frac{1}{2} \mathrm{sgn}(x) I \left( \frac{1}{2}, \nu - \frac{1}{2}, \frac{x^{2}}{\nu + x^{2}} \right), $$
+
+    $$ \bar{B}_{\nu} = \left( \frac{2 \sqrt{\nu}}{\nu - 1} \right) \frac{B(\frac{1}{2}, \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2})^{2}}, $$
+
+    where $F_{\nu}$ is the CDF of the standard t distribution with $\nu > 1$ degrees of freedom,
+    distribution, $F_{l, L, \nu, \mu, \sigma}^{u, U}$ is the CDF of the t distribution
+    truncated below at $l$ and above at $u$, with point masses $L, U > 0$ at the lower and upper
+    boundaries, respectively, and degrees of freedom, location and scale parameters $\nu > 1$, $\mu$ and $\sigma > 0$.
+    $F_{l, L, \nu}^{u, U} = F_{l, L, \nu, 0, 1}^{u, U}$.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    df: ArrayLike
+        Degrees of freedom parameter of the forecast distribution.
+    location: ArrayLike
+        Location parameter of the forecast distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast distribution.
+    lower: ArrayLike
+        Lower boundary of the truncated forecast distribution.
+    upper: ArrayLike
+        Upper boundary of the truncated forecast distribution.
+    lmass: ArrayLike
+        Point mass assigned to the lower boundary of the forecast distribution.
+    umass: ArrayLike
+        Point mass assigned to the upper boundary of the forecast distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between gtct(df, location, scale, lower, upper, lmass, umass) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_gtct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
+    """
+    return crps.gtct(
+        observation, df, location, scale, lower, upper, lmass, umass, backend=backend
+    )
+
+
+def crps_tt(
+    observation: "ArrayLike",
+    df: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    lower: "ArrayLike" = float("-inf"),
+    upper: "ArrayLike" = float("inf"),
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the truncated t distribution.
+
+    It is based on the formulation for the generalised truncated and censored t distribution with
+    lmass and umass set to zero.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    df: ArrayLike
+        Degrees of freedom parameter of the forecast distribution.
+    location: ArrayLike
+        Location parameter of the forecast distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast distribution.
+    lower: ArrayLike
+        Lower boundary of the truncated forecast distribution.
+    upper: ArrayLike
+        Upper boundary of the truncated forecast distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between tt(df, location, scale, lower, upper) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
+    """
+    return crps.gtct(
+        observation, df, location, scale, lower, upper, 0.0, 0.0, backend=backend
+    )
+
+
+def crps_ct(
+    observation: "ArrayLike",
+    df: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    lower: "ArrayLike" = float("-inf"),
+    upper: "ArrayLike" = float("inf"),
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the censored t distribution.
+
+    It is based on the formulation for the generalised truncated and censored t distribution with
+    lmass and umass set to the tail probabilities of the predictive distribution.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    df: ArrayLike
+        Degrees of freedom parameter of the forecast distribution.
+    location: ArrayLike
+        Location parameter of the forecast distribution.
+    scale: ArrayLike
+        Scale parameter of the forecast distribution.
+    lower: ArrayLike
+        Lower boundary of the truncated forecast distribution.
+    upper: ArrayLike
+        Upper boundary of the truncated forecast distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between ct(df, location, scale, lower, upper) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_ct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
+    """
+    lmass = stats._t_cdf((lower - location) / scale, df)
+    umass = 1 - stats._t_cdf((upper - location) / scale, df)
+    return crps.gtct(
+        observation, df, location, scale, lower, upper, lmass, umass, backend=backend
+    )
+
+
 def crps_hypergeometric(
     observation: "ArrayLike",
     m: "ArrayLike",
@@ -1352,10 +1514,97 @@ def crps_normal(
 
     Examples
     --------
-    >>> import scoringrules as sr
-    >>> sr.crps_normal(0.1, 0.4, 0.0)
+    >>> from scoringrules import crps
+    >>> crps.normal(0.1, 0.4, 0.0)
     """
     return crps.normal(observation, mu, sigma, backend=backend)
+
+
+def crps_poisson(
+    observation: "ArrayLike",
+    mean: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the Poisson distribution.
+
+    It is based on the following formulation from
+    [Wei and Held (2014)](https://link.springer.com/article/10.1007/s11749-014-0380-8):
+
+    $$ \mathrm{CRPS}(F_{\lambda}, y) = (y - \lambda) (2F_{\lambda}(y) - 1) + 2 \lambda f_{\lambda}(\lfloor y \rfloor ) - \lambda \exp (-2 \lambda) (I_{0} (2 \lambda) + I_{1} (2 \lambda))..$$
+
+    where $F_{\lambda}$ is Poisson distribution function with mean parameter $\lambda > 0$,
+    and $I_{0}$ and $I_{1}$ are modified Bessel functions of the first kind.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    mean: ArrayLike
+        Mean parameter of the forecast exponential distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between Pois(mean) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_poisson(1, 2)
+    """
+    return crps.poisson(observation, mean, backend=backend)
+
+
+def crps_t(
+    observation: "ArrayLike",
+    df: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the student's t distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$
+    \mathrm{CRPS}(F, y) = \sigma \left\{ \omega (2 F_{\nu} (\omega) - 1)
+    + 2 f_{\nu} \left( \frac{\nu + \omega^{2}}{\nu - 1} \right)
+    - \frac{2 \sqrt{\nu}}{\nu - 1} \frac{B(\frac{1}{2},
+    \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2}^{2})}  \right\},
+    $$
+
+    where $\omega = (y - \mu)/\sigma$, where $\nu > 1, \mu$, and $\sigma > 0$ are the
+    degrees of freedom, location, and scale parameters respectively of the Student's t
+    distribution, and $f_{\nu}$ and $F_{\nu}$ are the PDF and CDF of the standard Student's
+    t distribution with $\nu$ degrees of freedom.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    df: ArrayLike
+        Degrees of freedom parameter of the forecast t distribution.
+    location: ArrayLike
+        Location parameter of the forecast t distribution.
+    sigma: ArrayLike
+        Scale parameter of the forecast t distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between t(df, location, scale) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_t(0.0, 0.1, 0.4, 0.1)
+    """
+    return crps.t(observation, df, location, scale, backend=backend)
 
 
 def crps_uniform(
@@ -1424,6 +1673,9 @@ __all__ = [
     "crps_gtcnormal",
     "crps_tnormal",
     "crps_cnormal",
+    "crps_gtct",
+    "crps_tt",
+    "crps_ct",
     "crps_hypergeometric",
     "crps_laplace",
     "crps_logistic",
@@ -1431,5 +1683,7 @@ __all__ = [
     "crps_loglogistic",
     "crps_lognormal",
     "crps_normal",
+    "crps_poisson",
+    "crps_t",
     "crps_uniform",
 ]

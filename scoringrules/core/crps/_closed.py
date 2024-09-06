@@ -13,6 +13,10 @@ from scoringrules.core.stats import (
     _logis_cdf,
     _norm_cdf,
     _norm_pdf,
+    _pois_cdf,
+    _pois_pdf,
+    _t_cdf,
+    _t_pdf,
 )
 
 if tp.TYPE_CHECKING:
@@ -351,6 +355,74 @@ def gtcnormal(
     return sigma * (s1 + s2 + s3 - s4)
 
 
+def gtct(
+    obs: "ArrayLike",
+    df: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    lower: "ArrayLike",
+    upper: "ArrayLike",
+    lmass: "ArrayLike",
+    umass: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the generalised truncated and censored t distribution."""
+    B = backends.active if backend is None else backends[backend]
+    df, mu, sigma, lower, upper, lmass, umass, obs = map(
+        B.asarray, (df, location, scale, lower, upper, lmass, umass, obs)
+    )
+    ω = (obs - mu) / sigma
+    u = (upper - mu) / sigma
+    l = (lower - mu) / sigma
+    z = B.minimum(B.maximum(ω, l), u)
+    F_u = _t_cdf(u, df, backend=backend)
+    F_l = _t_cdf(l, df, backend=backend)
+    F_z = _t_cdf(z, df, backend=backend)
+    f_u = _t_pdf(u, df, backend=backend)
+    f_l = _t_pdf(l, df, backend=backend)
+    f_z = _t_pdf(z, df, backend=backend)
+
+    u_inf = u == float("inf")
+    l_inf = l == float("-inf")
+    u = B.where(u_inf, B.nan, u)
+    l = B.where(l_inf, B.nan, l)
+
+    s1_u = B.where(u_inf and umass == 0.0, 0.0, u * umass**2)
+    s1_l = B.where(l_inf and lmass == 0.0, 0.0, l * lmass**2)
+
+    G_u = B.where(u_inf, 0.0, -f_u * (df + u**2) / (df - 1))
+    G_l = B.where(l_inf, 0.0, -f_l * (df + l**2) / (df - 1))
+    G_z = -f_z * (df + z**2) / (df - 1)
+
+    I_u = B.where(u_inf, 1.0, B.betainc(1 / 2, df - 1 / 2, (u**2) / (df + u**2)))
+    I_l = B.where(l_inf, 1.0, B.betainc(1 / 2, df - 1 / 2, (l**2) / (df + l**2)))
+    sgn_u = B.where(u_inf, 1.0, (u / B.abs(u)))
+    sgn_l = B.where(l_inf, -1.0, (l / B.abs(l)))
+    H_u = (sgn_u * I_u + 1) / 2
+    H_l = (sgn_l * I_l + 1) / 2
+
+    Bbar = (
+        (2 * B.sqrt(df) / (df - 1))
+        * B.beta(1 / 2, df - 1 / 2)
+        / (B.beta(1 / 2, df / 2) ** 2)
+    )
+
+    c = (1 - lmass - umass) / (F_u - F_l)
+
+    s1 = B.abs(ω - z) + s1_u - s1_l
+    s2 = (
+        c
+        * z
+        * (
+            2 * F_z
+            - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass)
+        )
+    )
+    s3 = 2 * c * (G_z - G_u * umass - G_l * lmass)
+    s4 = c**2 * Bbar * (H_u - H_l)
+    return sigma * (s1 + s2 - s3 - s4)
+
+
 def hypergeometric(
     obs: "ArrayLike",
     m: "ArrayLike",
@@ -431,6 +503,16 @@ def laplace(
     return sigma * (B.abs(obs) + B.exp(-B.abs(obs)) - 3 / 4)
 
 
+def logistic(
+    obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Compute the CRPS for the normal distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
+    ω = (obs - mu) / sigma
+    return sigma * (ω - 2 * B.log(_logis_cdf(ω, backend=backend)) - 1)
+
+
 def loglaplace(
     obs: "ArrayLike",
     locationlog: "ArrayLike",
@@ -466,18 +548,20 @@ def loglaplace(
     return s
 
 
-def normal(
-    obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
+def loglogistic(
+    obs: "ArrayLike",
+    mulog: "ArrayLike",
+    sigmalog: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
-    """Compute the CRPS for the normal distribution."""
+    """Compute the CRPS for the log-logistic distribution."""
     B = backends.active if backend is None else backends[backend]
-    mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
-    ω = (obs - mu) / sigma
-    return sigma * (
-        ω * (2.0 * _norm_cdf(ω, backend=backend) - 1.0)
-        + 2.0 * _norm_pdf(ω, backend=backend)
-        - 1.0 / B.sqrt(B.pi)
-    )
+    mulog, sigmalog, obs = map(B.asarray, (mulog, sigmalog, obs))
+    F_ms = 1 / (1 + B.exp(-(B.log(obs) - mulog) / sigmalog))
+    b = B.beta(1 + sigmalog, 1 - sigmalog)
+    I_B = B.betainc(1 + sigmalog, 1 - sigmalog, F_ms)
+    s = obs * (2 * F_ms - 1) - B.exp(mulog) * b * (2 * I_B + sigmalog - 1)
+    return s
 
 
 def lognormal(
@@ -498,30 +582,62 @@ def lognormal(
     )
 
 
-def logistic(
+def normal(
     obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
     """Compute the CRPS for the logistic distribution."""
     B = backends.active if backend is None else backends[backend]
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma
-    return sigma * (ω - 2 * B.log(_logis_cdf(ω, backend=backend)) - 1)
+    return sigma * (
+        ω * (2.0 * _norm_cdf(ω, backend=backend) - 1.0)
+        + 2.0 * _norm_pdf(ω, backend=backend)
+        - 1.0 / B.sqrt(B.pi)
+    )
 
 
-def loglogistic(
+def poisson(
     obs: "ArrayLike",
-    mulog: "ArrayLike",
-    sigmalog: "ArrayLike",
+    mean: "ArrayLike",
     backend: "Backend" = None,
 ) -> "Array":
-    """Compute the CRPS for the log-logistic distribution."""
+    """Compute the CRPS for the poisson distribution."""
     B = backends.active if backend is None else backends[backend]
-    mulog, sigmalog, obs = map(B.asarray, (mulog, sigmalog, obs))
-    F_ms = 1 / (1 + B.exp(-(B.log(obs) - mulog) / sigmalog))
-    b = B.beta(1 + sigmalog, 1 - sigmalog)
-    I_B = B.betainc(1 + sigmalog, 1 - sigmalog, F_ms)
-    s = obs * (2 * F_ms - 1) - B.exp(mulog) * b * (2 * I_B + sigmalog - 1)
+    mean, obs = map(B.asarray, (mean, obs))
+    F_m = _pois_cdf(obs, mean, backend=backend)
+    f_m = _pois_pdf(B.floor(obs), mean, backend=backend)
+    I0 = B.mbessel0(2 * mean)
+    I1 = B.mbessel1(2 * mean)
+    s = (
+        (obs - mean) * (2 * F_m - 1)
+        + 2 * mean * f_m
+        - mean * B.exp(-2 * mean) * (I0 + I1)
+    )
     return s
+
+
+def t(
+    obs: "ArrayLike",
+    df: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the t distribution."""
+    B = backends.active if backend is None else backends[backend]
+    df, mu, sigma, obs = map(B.asarray, (df, location, scale, obs))
+    z = (obs - mu) / sigma
+    F_z = _t_cdf(z, df, backend=backend)
+    f_z = _t_pdf(z, df, backend=backend)
+    G_z = (df + z**2) / (df - 1)
+    s1 = z * (2 * F_z - 1)
+    s2 = 2 * f_z * G_z
+    s3 = (
+        (2 * B.sqrt(df) / (df - 1))
+        * B.beta(1 / 2, df - 1 / 2)
+        / (B.beta(1 / 2, df / 2) ** 2)
+    )
+    return sigma * (s1 + s2 - s3)
 
 
 def uniform(

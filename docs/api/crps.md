@@ -39,6 +39,12 @@ also be viewed as the Brier score integrated over all real-valued thresholds.
 
 ::: scoringrules.crps_cnormal
 
+::: scoringrules.crps_gtct
+
+::: scoringrules.crps_tt
+
+::: scoringrules.crps_ct
+
 ::: scoringrules.crps_hypergeometric
 
 ::: scoringrules.crps_laplace
@@ -53,7 +59,13 @@ also be viewed as the Brier score integrated over all real-valued thresholds.
 
 ::: scoringrules.crps_normal
 
+::: scoringrules.crps_poisson
+
+::: scoringrules.crps_t
+
 ::: scoringrules.crps_uniform
+
+::: scoringrules.crps_normal
 
 ## Ensemble-based estimators
 
