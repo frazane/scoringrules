@@ -56,14 +56,20 @@ jobs:
       - name: Install the project
         run: uv sync --all-extras --dev
 
-      - name: Run tests
-        run: uv run pytest --cov=scoringrules tests/
+      - name: Run tests with coverage
+        run: |
+          uv run pytest --cov=scoringrules tests/
+          uv run coverage xml
 
-      - name: Upload results to Codecov
+      - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v4
         with:
+          file: ./coverage.xml
+          flags: unittests
+          env_vars: OS,PYTHON
+          name: codecov-umbrella
+          fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
-
 
   lint:
     runs-on: ubuntu-latest
