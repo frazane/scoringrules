@@ -615,8 +615,10 @@ def negbinom(
     n, prob, obs = map(B.asarray, (n, prob, obs))
     F_np = _negbinom_cdf(obs, n, prob, backend=backend)
     F_n1p = _negbinom_cdf(obs - 1, n + 1, prob, backend=backend)
-    F2 = B.hypergeometric(n + 1, 1 / 2, 2, - 4 * (1 - prob) / (prob**2))
-    s = obs * (2 * F_np - 1) - n * (1 - prob) * (prob * (2 * F_n1p - 1) + F2) / (prob**2)
+    F2 = B.hypergeometric(n + 1, 1 / 2, 2, -4 * (1 - prob) / (prob**2))
+    s = obs * (2 * F_np - 1) - n * (1 - prob) * (prob * (2 * F_n1p - 1) + F2) / (
+        prob**2
+    )
     return s
 
 

@@ -1540,7 +1540,7 @@ def crps_negbinom(
     backend: "Backend" = None,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the negative binomial distribution.
-    
+
     It is based on the following formulation from
     [Wei and Held (2014)](https://link.springer.com/article/10.1007/s11749-014-0380-8):
 

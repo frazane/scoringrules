@@ -498,7 +498,7 @@ def test_lognormal(backend):
 def test_negbinom(backend):
     if backend in ["jax", "torch", "tensorflow"]:
         pytest.skip("Not implemented in jax, torch or tensorflow backends")
-    
+
     obs, n, prob = 2.0, 7.0, 0.8
     res = _crps.crps_negbinom(obs, n, prob, backend=backend)
     expected = 0.3834322
@@ -513,7 +513,7 @@ def test_negbinom(backend):
     res = _crps.crps_negbinom(obs, n, prob, backend=backend)
     expected = 132.0942
     assert np.isclose(res, expected)
-    
+
     obs, n, mu = 2.3, 11.0, 7.3
     res = _crps.crps_negbinom(obs, n, mu=mu, backend=backend)
     expected = 3.149218
