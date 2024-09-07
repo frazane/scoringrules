@@ -11,6 +11,7 @@ from scoringrules.core.stats import (
     _hypergeo_cdf,
     _hypergeo_pdf,
     _logis_cdf,
+    _negbinom_cdf,
     _norm_cdf,
     _norm_pdf,
     _pois_cdf,
@@ -601,6 +602,24 @@ def lognormal(
         + _norm_cdf(sigmalog / B.sqrt(B.asarray(2.0)), backend=backend)
         - 1
     )
+
+
+def negbinom(
+    obs: "ArrayLike",
+    n: "ArrayLike",
+    prob: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the negative binomial distribution."""
+    B = backends.active if backend is None else backends[backend]
+    n, prob, obs = map(B.asarray, (n, prob, obs))
+    F_np = _negbinom_cdf(obs, n, prob, backend=backend)
+    F_n1p = _negbinom_cdf(obs - 1, n + 1, prob, backend=backend)
+    F2 = B.hypergeometric(n + 1, 1 / 2, 2, -4 * (1 - prob) / (prob**2))
+    s = obs * (2 * F_np - 1) - n * (1 - prob) * (prob * (2 * F_n1p - 1) + F2) / (
+        prob**2
+    )
+    return s
 
 
 def normal(

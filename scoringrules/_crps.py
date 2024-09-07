@@ -1530,6 +1530,63 @@ def crps_lognormal(
     return crps.lognormal(observation, mulog, sigmalog, backend=backend)
 
 
+def crps_negbinom(
+    observation: "ArrayLike",
+    n: "ArrayLike",
+    /,
+    prob: "ArrayLike | None" = None,
+    *,
+    mu: "ArrayLike | None" = None,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the negative binomial distribution.
+
+    It is based on the following formulation from
+    [Wei and Held (2014)](https://link.springer.com/article/10.1007/s11749-014-0380-8):
+
+    $$ \mathrm{CRPS}(F_{n, p}, y) = y (2 F_{n, p}(y) - 1) - \frac{n(1 - p)}{p^{2}} \left( p (2 F_{n+1, p}(y - 1) - 1) + _{2} F_{1} \left( n + 1, \frac{1}{2}; 2; -\frac{4(1 - p)}{p^{2}} \right) \right), $$
+
+    where $F_{n, p}$ is the CDF of the negative binomial distribution with
+    size parameter $n > 0$ and probability parameter $p \in (0, 1]$. The mean
+    of the negative binomial distribution is $\mu = n (1 - p)/p$.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    n: ArrayLike
+        Size parameter of the forecast negative binomial distribution.
+    prob: ArrayLike
+        Probability parameter of the forecast negative binomial distribution.
+    mu: ArrayLike
+        Mean of the forecast negative binomial distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between NegBinomial(n, prob) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_negbinom(2, 5, 0.5)
+
+    Raises
+    ------
+    ValueError
+        If both `prob` and `mu` are provided, or if neither is provided.
+    """
+    if (prob is None and mu is None) or (prob is not None and mu is not None):
+        raise ValueError(
+            "Either `prob` or `mu` must be provided, but not both or neither."
+        )
+
+    if prob is None:
+        prob = n / (n + mu)
+
+    return crps.negbinom(observation, n, prob, backend=backend)
+
+
 def crps_normal(
     observation: "ArrayLike",
     mu: "ArrayLike",
@@ -1732,6 +1789,7 @@ __all__ = [
     "crps_loglaplace",
     "crps_loglogistic",
     "crps_lognormal",
+    "crps_negbinom",
     "crps_normal",
     "crps_poisson",
     "crps_t",
