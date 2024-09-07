@@ -61,3 +61,6 @@ dev-dependencies = [
 
 [tool.ruff.lint]
 ignore = ["E741"]
+
+[tool.coverage.run]
+omit = ["**/_gufuncs.py", "**/_gufunc.py"]
