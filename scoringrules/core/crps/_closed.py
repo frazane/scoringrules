@@ -155,6 +155,27 @@ def exponentialM(
     return s
 
 
+def twopexponential(
+    obs: "ArrayLike",
+    scale1: "ArrayLike",
+    scale2: "ArrayLike",
+    location: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the two-piece exponential distribution."""
+    B = backends.active if backend is None else backends[backend]
+    scale1, scale2, location, obs = map(B.asarray, (scale1, scale2, location, obs))
+    obs = obs - location
+    z = B.abs(obs)
+    c1 = 2 * (scale1**2) / (scale1 + scale2)
+    c2 = 2 * (scale2**2) / (scale1 + scale2)
+    c3 = (scale1**3 + scale2**3) / (2 * (scale1 + scale2) ** 2)
+    s_1 = z + c1 * B.exp(-z / scale1) - c1 + c3
+    s_2 = z + c2 * B.exp(-z / scale2) - c2 + c3
+    s = B.where(obs < 0.0, s_1, s_2)
+    return s
+
+
 def gamma(
     obs: "ArrayLike",
     shape: "ArrayLike",

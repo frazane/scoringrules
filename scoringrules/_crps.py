@@ -548,6 +548,56 @@ def crps_exponentialM(
     return crps.exponentialM(observation, mass, location, scale, backend=backend)
 
 
+def crps_2pexponential(
+    observation: "ArrayLike",
+    scale1: "ArrayLike",
+    scale2: "ArrayLike",
+    location: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the two-piece exponential distribution.
+
+    It is based on the following formulation from
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$\mathrm{CRPS}(F_{\sigma_{1}, \sigma_{2}, \mu}, y) = |y - \mu| +
+    \frac{2\sigma_{\pm}^{2}}{\sigma_{1} + \sigma_{2}} \exp \left( - \frac{|y - \mu|}{\sigma_{\pm}} \right) -
+    \frac{2\sigma_{\pm}^{2}}{\sigma_{1} + \sigma_{2}} + \frac{\sigma_{1}^{3} + \sigma_{2}^{3}}{2(\sigma_{1} + \sigma_{2})^2} $$
+
+    where $F_{\sigma_{1}, \sigma_{2}, \mu}$ is the two-piece exponential distribution function
+    with scale parameters $\sigma_{1}, \sigma_{2} > 0$ and location parameter $\mu$. The
+    parameter $\sigma_{\pm}$ is equal to $\sigma_{1}$ if $y < 0$ and $\sigma_{2}$ if $y \geq 0$.
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    scale1:
+        First scale parameter of the forecast two-piece exponential distribution.
+    scale2:
+        Second scale parameter of the forecast two-piece exponential distribution.
+    location:
+        Location parameter of the forecast two-piece exponential distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The CRPS between 2pExp(sigma1, sigma2, location) and obs.
+
+    Examples
+    --------
+    ```pycon
+    >>> import scoringrules as sr
+    >>> sr.crps_2pexponential(0.8, 3.0, 1.4, 0.0)
+    ```
+    """
+    return crps.twopexponential(observation, scale1, scale2, location, backend=backend)
+
+
 def crps_gamma(
     observation: "ArrayLike",
     shape: "ArrayLike",
