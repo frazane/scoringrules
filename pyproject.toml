@@ -54,9 +54,13 @@ dev-dependencies = [
     "matplotlib>=3.9.2",
     "pre-commit>=3.8.0",
     "pytest>=8.3.2",
+    "pytest-cov>=5.0.0",
 ]
 
 [tool.ruff]
 
 [tool.ruff.lint]
 ignore = ["E741"]
+
+[tool.coverage.run]
+omit = ["**/_gufuncs.py", "**/_gufunc.py"]

@@ -361,7 +361,7 @@ def test_cnormal(backend):
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_gtct(backend):
     if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in torch or tensorflow backends")
+        pytest.skip("Not implemented in jax, torch or tensorflow backends")
     obs, df, location, scale, lower, upper, lmass, umass = (
         0.9,
         20.1,
@@ -392,7 +392,7 @@ def test_gtct(backend):
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_tt(backend):
     if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in torch or tensorflow backends")
+        pytest.skip("Not implemented in jax, torch or tensorflow backends")
 
     obs, df, location, scale, lower, upper = -1.0, 2.9, 3.1, 4.2, 1.5, 17.3
     expected = 5.084272
@@ -408,7 +408,7 @@ def test_tt(backend):
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_ct(backend):
     if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in torch or tensorflow backends")
+        pytest.skip("Not implemented in jax, torch or tensorflow backends")
 
     obs, df, location, scale, lower, upper = 1.8, 5.4, 0.4, 1.1, 0.0, 2.0
     expected = 0.8028996
@@ -495,6 +495,32 @@ def test_lognormal(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
+def test_negbinom(backend):
+    if backend in ["jax", "torch", "tensorflow"]:
+        pytest.skip("Not implemented in jax, torch or tensorflow backends")
+
+    obs, n, prob = 2.0, 7.0, 0.8
+    res = _crps.crps_negbinom(obs, n, prob, backend=backend)
+    expected = 0.3834322
+    assert np.isclose(res, expected)
+
+    obs, n, prob = 1.5, 2.0, 0.5
+    res = _crps.crps_negbinom(obs, n, prob, backend=backend)
+    expected = 0.462963
+    assert np.isclose(res, expected)
+
+    obs, n, prob = -1.0, 17.0, 0.1
+    res = _crps.crps_negbinom(obs, n, prob, backend=backend)
+    expected = 132.0942
+    assert np.isclose(res, expected)
+
+    obs, n, mu = 2.3, 11.0, 7.3
+    res = _crps.crps_negbinom(obs, n, mu=mu, backend=backend)
+    expected = 3.149218
+    assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_normal(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -555,7 +581,7 @@ def test_poisson(backend):
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_t(backend):
     if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in torch or tensorflow backends")
+        pytest.skip("Not implemented in jax, torch or tensorflow backends")
 
     obs, df, mu, sigma = 11.1, 5.2, 13.8, 2.3
     expected = 1.658226
