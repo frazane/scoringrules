@@ -6,6 +6,56 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
 
 
+def logs_negbinom(
+    observation: "ArrayLike",
+    n: "ArrayLike",
+    /,
+    prob: "ArrayLike | None" = None,
+    *,
+    mu: "ArrayLike | None" = None,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the logarithmic score (LS) for the negative binomial distribution.
+
+    This score is equivalent to the negative log likelihood of the negative binomial distribution.
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    n: ArrayLike
+        Size parameter of the forecast negative binomial distribution.
+    prob: ArrayLike
+        Probability parameter of the forecast negative binomial distribution.
+    mu: ArrayLike
+        Mean of the forecast negative binomial distribution.
+
+    Returns
+    -------
+    score:
+        The LS between NegBinomial(n, prob) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.logs_negbinom(2, 5, 0.5)
+
+    Raises
+    ------
+    ValueError
+        If both `prob` and `mu` are provided, or if neither is provided.
+    """
+    if (prob is None and mu is None) or (prob is not None and mu is not None):
+        raise ValueError(
+            "Either `prob` or `mu` must be provided, but not both or neither."
+        )
+
+    if prob is None:
+        prob = n / (n + mu)
+
+    return logarithmic.negbinom(observation, n, prob, backend=backend)
+
+
 def logs_normal(
     observation: "ArrayLike",
     mu: "ArrayLike",

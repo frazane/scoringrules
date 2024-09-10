@@ -176,6 +176,20 @@ def _hypergeo_cdf(k, M, n, N, backend=None):
         ).reshape(k.shape)
 
 
+def _negbinom_pdf(
+    x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Probability mass function for the negative binomial distribution."""
+    B = backends.active if backend is None else backends[backend]
+    x_plus = B.abs(x)
+    d = B.where(
+        B.floor(x_plus) < x_plus,
+        0.0,
+        B.comb(n + x - 1, x) * prob**n * (1 - prob) ** x,
+    )
+    return B.where(x < 0.0, 0.0, d)
+
+
 def _negbinom_cdf(
     x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None
 ) -> "Array":
