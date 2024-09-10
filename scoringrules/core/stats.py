@@ -24,6 +24,12 @@ def _logis_cdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     return 1 / (1 + B.exp(-x))
 
 
+def _exp_pdf(x: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the exponential distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return B.where(x < 0.0, 0.0, rate * B.exp(-rate * x))
+
+
 def _exp_cdf(x: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the exponential distribution."""
     B = backends.active if backend is None else backends[backend]
