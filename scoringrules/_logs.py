@@ -6,6 +6,70 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
 
 
+def logs_laplace(
+    observation: "ArrayLike",
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the logarithmic score (LS) for the Laplace distribution.
+
+    This score is equivalent to the negative log likelihood of the Laplace distribution
+
+    Parameters
+    ----------
+    observation:
+        Observed values.
+    location:
+        Location parameter of the forecast laplace distribution.
+    scale:
+        Scale parameter of the forecast laplace distribution.
+
+    Returns
+    -------
+    score:
+        The LS between obs and Laplace(location, scale).
+
+    >>> sr.logs_laplace(0.3, 0.1, 0.2)
+    """
+    return logarithmic.laplace(observation, location, scale, backend=backend)
+
+
+def logs_loglaplace(
+    observation: "ArrayLike",
+    locationlog: "ArrayLike",
+    scalelog: "ArrayLike",
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the logarithmic score (LS) for the log-Laplace distribution.
+
+    This score is equivalent to the negative log likelihood of the log-Laplace distribution
+
+    Parameters
+    ----------
+    observation:
+        Observed values.
+    locationlog:
+        Location parameter of the forecast log-laplace distribution.
+    scalelog:
+        Scale parameter of the forecast log-laplace distribution.
+
+    Returns
+    -------
+    score:
+        The LS between obs and Loglaplace(locationlog, scalelog).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.logs_loglaplace(3.0, 0.1, 0.9)
+    """
+    return logarithmic.loglaplace(observation, locationlog, scalelog, backend=backend)
+
+
 def logs_normal(
     observation: "ArrayLike",
     mu: "ArrayLike",
