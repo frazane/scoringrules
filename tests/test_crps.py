@@ -522,7 +522,7 @@ def test_2pnormal(backend):
     expected = 2.189609
     res = _crps.crps_2pnormal(obs, scale1, scale2, location, backend=backend)
     assert np.isclose(res, expected)
-    
+
     obs, scale1, scale2, location = -2.2, 1.6, 3.3, -1.9
     expected = 0.8979951
     res = _crps.crps_2pnormal(obs, scale1, scale2, location, backend=backend)

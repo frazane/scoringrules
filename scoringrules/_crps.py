@@ -1581,11 +1581,11 @@ def crps_2pnormal(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the two-piece normal distribution.
 
-    It is based on the following relationship given in 
+    It is based on the following relationship given in
     [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
 
-    $$ \mathrm{CRPS}(F_{\sigma_{1}, \sigma_{2}, \mu}, y) = 
-    \sigma_{1} \mathrm{CRPS} \left( F_{-\infty,0}^{0, \sigma_{2}/(\sigma_{1} + \sigma_{2})}, \frac{\min(0, y - \mu)}{\sigma_{1}} \right) + 
+    $$ \mathrm{CRPS}(F_{\sigma_{1}, \sigma_{2}, \mu}, y) =
+    \sigma_{1} \mathrm{CRPS} \left( F_{-\infty,0}^{0, \sigma_{2}/(\sigma_{1} + \sigma_{2})}, \frac{\min(0, y - \mu)}{\sigma_{1}} \right) +
     \sigma_{2} \mathrm{CRPS} \left( F_{0, \sigma_{1}/(\sigma_{1} + \sigma_{2})}^{\infty, 0}, \frac{\min(0, y - \mu)}{\sigma_{2}} \right), $$
 
     where $F_{\sigma_{1}, \sigma_{2}, \mu}$ is the two-piece normal distribution with
@@ -1619,13 +1619,17 @@ def crps_2pnormal(
     lmass = 0.0
     umass = scale2 / (scale1 + scale2)
     z = B.minimum(0.0, observation - location) / scale1
-    s1 = scale1 * crps.gtcnormal(z, 0.0, 1.0, lower, upper, lmass, umass, backend=backend)
+    s1 = scale1 * crps.gtcnormal(
+        z, 0.0, 1.0, lower, upper, lmass, umass, backend=backend
+    )
     lower = 0.0
     upper = float("inf")
     lmass = scale1 / (scale1 + scale2)
     umass = 0.0
     z = B.maximum(0.0, observation - location) / scale2
-    s2 = scale2 * crps.gtcnormal(z, 0.0, 1.0, lower, upper, lmass, umass, backend=backend)
+    s2 = scale2 * crps.gtcnormal(
+        z, 0.0, 1.0, lower, upper, lmass, umass, backend=backend
+    )
     return s1 + s2
 
 
