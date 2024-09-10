@@ -24,6 +24,12 @@ def _logis_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     return B.exp(-x) / (1 + B.exp(-x)) ** 2
 
 
+def _logis_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard logistic distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return B.exp(-x) / (1 + B.exp(-x)) ** 2
+
+
 def _logis_cdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the standard logistic distribution."""
     B = backends.active if backend is None else backends[backend]

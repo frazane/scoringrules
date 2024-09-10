@@ -20,4 +20,10 @@
 
 ::: scoringrules.logs_t
 
+::: scoringrules.logs_tlogistic
+
+::: scoringrules.logs_tnormal
+
+::: scoringrules.logs_tt
+
 ::: scoringrules.logs_uniform
