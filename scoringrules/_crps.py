@@ -1618,7 +1618,7 @@ def crps_2pnormal(
     upper = 0.0
     lmass = 0.0
     umass = scale2 / (scale1 + scale2)
-    z = B.minimum(0.0, observation - location) / scale1
+    z = B.minimum(B.asarray(0.0), observation - location) / scale1
     s1 = scale1 * crps.gtcnormal(
         z, 0.0, 1.0, lower, upper, lmass, umass, backend=backend
     )
@@ -1626,7 +1626,7 @@ def crps_2pnormal(
     upper = float("inf")
     lmass = scale1 / (scale1 + scale2)
     umass = 0.0
-    z = B.maximum(0.0, observation - location) / scale2
+    z = B.maximum(B.asarray(0.0), observation - location) / scale2
     s2 = scale2 * crps.gtcnormal(
         z, 0.0, 1.0, lower, upper, lmass, umass, backend=backend
     )
