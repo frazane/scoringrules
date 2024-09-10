@@ -1712,7 +1712,7 @@ def crps_poisson(
     observation: ArrayLike
         The observed values.
     mean: ArrayLike
-        Mean parameter of the forecast exponential distribution.
+        Mean parameter of the forecast poisson distribution.
 
     Returns
     -------
