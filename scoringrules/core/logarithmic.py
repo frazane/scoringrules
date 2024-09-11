@@ -5,6 +5,8 @@ from scoringrules.core.stats import (
     _binom_pdf,
     _exp_pdf,
     _gamma_pdf,
+    _gev_pdf,
+    _gpd_pdf,
     _hypergeo_pdf,
     _logis_pdf,
     _logis_cdf,
@@ -56,6 +58,42 @@ def gamma(
     obs, shape, rate = map(B.asarray, (obs, shape, rate))
     prob = _gamma_pdf(obs, shape, rate, backend=backend)
     return -B.log(prob)
+
+
+def gev(
+    obs: "ArrayLike",
+    shape: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the logarithmic score for the GEV distribution."""
+    B = backends.active if backend is None else backends[backend]
+    shape, location, scale, obs = map(B.asarray, (shape, location, scale, obs))
+    ω = (obs - location) / scale
+    prob = _gev_pdf(ω, shape, backend=backend)
+    prob0 = prob == 0.0
+    prob = B.where(prob0, B.nan, prob / scale)
+    s = B.where(prob0, float("inf"), -B.log(prob))
+    return s
+
+
+def gpd(
+    obs: "ArrayLike",
+    shape: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the logarithmic score for the GPD distribution."""
+    B = backends.active if backend is None else backends[backend]
+    shape, location, scale, obs = map(B.asarray, (shape, location, scale, obs))
+    ω = (obs - location) / scale
+    prob = _gpd_pdf(ω, shape, backend=backend)
+    prob0 = prob == 0.0
+    prob = B.where(prob0, B.nan, prob / scale)
+    s = B.where(prob0, float("inf"), -B.log(prob))
+    return s
 
 
 def hypergeometric(

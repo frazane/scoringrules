@@ -60,6 +60,68 @@ def test_gamma(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
+def test_gev(backend):
+    obs, xi, mu, sigma = 0.3, 0.7, 0.0, 1.0
+    res0 = _logs.logs_gev(obs, xi, backend=backend)
+    expected = 1.22455
+    assert np.isclose(res0, expected)
+
+    res = _logs.logs_gev(obs, xi, mu, sigma, backend=backend)
+    assert np.isclose(res, res0)
+
+    obs, xi, mu, sigma = 0.3, -0.7, 0.0, 1.0
+    res = _logs.logs_gev(obs, xi, mu, sigma, backend=backend)
+    expected = 0.8151139
+    assert np.isclose(res, expected)
+
+    obs, xi, mu, sigma = 0.3, 0.0, 0.0, 1.0
+    res = _logs.logs_gev(obs, xi, mu, sigma, backend=backend)
+    expected = 1.040818
+    assert np.isclose(res, expected)
+
+    obs, xi, mu, sigma = -3.6, 0.7, 0.0, 1.0
+    res = _logs.logs_gev(obs, xi, mu, sigma, backend=backend)
+    expected = float("inf")
+    assert np.isclose(res, expected)
+
+    obs, xi, mu, sigma = -3.6, 1.7, -4.0, 2.7
+    res = _logs.logs_gev(obs, xi, mu, sigma, backend=backend)
+    expected = 2.226233
+    assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_gpd(backend):
+    obs, shape, location, scale = 0.8, 0.9, 0.0, 1.0
+    res0 = _logs.logs_gpd(obs, shape, backend=backend)
+    expected = 1.144907
+    assert np.isclose(res0, expected)
+
+    res = _logs.logs_gpd(obs, shape, location, scale, backend=backend)
+    assert np.isclose(res0, res)
+
+    obs = -0.8
+    res = _logs.logs_gpd(obs, shape, location, scale, backend=backend)
+    expected = float("inf")
+    assert np.isclose(res, expected)
+
+    obs, shape = 0.8, -0.9
+    res = _logs.logs_gpd(obs, shape, location, scale, backend=backend)
+    expected = 0.1414406
+    assert np.isclose(res, expected)
+
+    shape, scale = 0.0, 2.1
+    res = _logs.logs_gpd(obs, shape, location, scale, backend=backend)
+    expected = 1.12289
+    assert np.isclose(res, expected)
+
+    obs, shape, location, scale = -17.4, 2.3, -21.0, 4.3
+    res = _logs.logs_gpd(obs, shape, location, scale, backend=backend)
+    expected = 2.998844
+    assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_hypergeometric(backend):
     res = _logs.logs_hypergeometric(5, 7, 13, 12)
     expected = 1.251525
@@ -122,58 +184,6 @@ def test_lognormal(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
-def test_tlogis(backend):
-    obs, location, scale, lower, upper = 4.9, 3.5, 2.3, 0.0, 20.0
-    res = _logs.logs_tlogistic(obs, location, scale, lower, upper, backend=backend)
-    expected = 2.11202
-    assert np.isclose(res, expected)
-
-    # aligns with logs_logistic
-    # res0 = _logs.logs_logistic(obs, location, scale, backend=backend)
-    # res = _logs.logs_tlogistic(obs, location, scale, backend=backend)
-    # assert np.isclose(res, res0)
-
-
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_tnormal(backend):
-    obs, location, scale, lower, upper = 4.2, 2.9, 2.2, 1.5, 17.3
-    res = _logs.logs_tnormal(obs, location, scale, lower, upper, backend=backend)
-    expected = 1.577806
-    assert np.isclose(res, expected)
-
-    obs, location, scale, lower, upper = -1.0, 2.9, 2.2, 1.5, 17.3
-    res = _logs.logs_tnormal(obs, location, scale, lower, upper, backend=backend)
-    expected = float("inf")
-    assert np.isclose(res, expected)
-
-    # aligns with logs_normal
-    res0 = _logs.logs_normal(obs, location, scale, backend=backend)
-    res = _logs.logs_tnormal(obs, location, scale, backend=backend)
-    assert np.isclose(res, res0)
-
-
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_tt(backend):
-    if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in jax, torch or tensorflow backends")
-
-    obs, df, location, scale, lower, upper = 1.9, 2.9, 3.1, 4.2, 1.5, 17.3
-    res = _logs.logs_tt(obs, df, location, scale, lower, upper, backend=backend)
-    expected = 2.002856
-    assert np.isclose(res, expected)
-
-    obs, df, location, scale, lower, upper = -1.0, 2.9, 3.1, 4.2, 1.5, 17.3
-    res = _logs.logs_tt(obs, df, location, scale, lower, upper, backend=backend)
-    expected = float("inf")
-    assert np.isclose(res, expected)
-
-    # aligns with logs_t
-    # res0 = _logs.logs_t(obs, df, location, scale, backend=backend)
-    # res = _logs.logs_tt(obs, df, location, scale, backend=backend)
-    # assert np.isclose(res, res0)
-
-
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_normal(backend):
     obs, mu, sigma = 17.1, 13.8, 3.3
     res = _logs.logs_normal(obs, mu, sigma, backend=backend)
@@ -218,6 +228,58 @@ def test_t(backend):
     res = _logs.logs_t(obs, df, backend=backend)
     expected = 1.269725
     assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_tlogis(backend):
+    obs, location, scale, lower, upper = 4.9, 3.5, 2.3, 0.0, 20.0
+    res = _logs.logs_tlogistic(obs, location, scale, lower, upper, backend=backend)
+    expected = 2.11202
+    assert np.isclose(res, expected)
+
+    # aligns with logs_logistic
+    res0 = _logs.logs_logistic(obs, location, scale, backend=backend)
+    res = _logs.logs_tlogistic(obs, location, scale, backend=backend)
+    assert np.isclose(res, res0)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_tnormal(backend):
+    obs, location, scale, lower, upper = 4.2, 2.9, 2.2, 1.5, 17.3
+    res = _logs.logs_tnormal(obs, location, scale, lower, upper, backend=backend)
+    expected = 1.577806
+    assert np.isclose(res, expected)
+
+    obs, location, scale, lower, upper = -1.0, 2.9, 2.2, 1.5, 17.3
+    res = _logs.logs_tnormal(obs, location, scale, lower, upper, backend=backend)
+    expected = float("inf")
+    assert np.isclose(res, expected)
+
+    # aligns with logs_normal
+    res0 = _logs.logs_normal(obs, location, scale, backend=backend)
+    res = _logs.logs_tnormal(obs, location, scale, backend=backend)
+    assert np.isclose(res, res0)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_tt(backend):
+    if backend in ["jax", "torch", "tensorflow"]:
+        pytest.skip("Not implemented in jax, torch or tensorflow backends")
+
+    obs, df, location, scale, lower, upper = 1.9, 2.9, 3.1, 4.2, 1.5, 17.3
+    res = _logs.logs_tt(obs, df, location, scale, lower, upper, backend=backend)
+    expected = 2.002856
+    assert np.isclose(res, expected)
+
+    obs, df, location, scale, lower, upper = -1.0, 2.9, 3.1, 4.2, 1.5, 17.3
+    res = _logs.logs_tt(obs, df, location, scale, lower, upper, backend=backend)
+    expected = float("inf")
+    assert np.isclose(res, expected)
+
+    # aligns with logs_t
+    res0 = _logs.logs_t(obs, df, location, scale, backend=backend)
+    res = _logs.logs_tt(obs, df, location, scale, backend=backend)
+    assert np.isclose(res, res0)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
