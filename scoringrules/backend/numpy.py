@@ -52,6 +52,13 @@ class NumpyBackend(ArrayBackend):
     ) -> "NDArray":
         return np.max(x, axis=axis, keepdims=keepdims)
 
+    def roll(self, x: "NDArray", shift: int, axis: int | None = None) -> "NDArray":
+        return np.roll(x, shift=shift, axis=axis)
+
+    def shuffle(self, x: "NDArray", axis: int = 0, seed: int = 42) -> "NDArray":
+        generator = np.random.default_rng(seed)
+        return generator.permutation(x, axis=axis)
+
     def moveaxis(
         self,
         x: "NDArray",

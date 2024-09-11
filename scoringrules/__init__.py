@@ -39,6 +39,8 @@ from scoringrules._crps import (
 )
 from scoringrules._energy import (
     energy_score,
+    energy_score_iid,
+    energy_score_kband,
     owenergy_score,
     twenergy_score,
     vrenergy_score,
@@ -98,6 +100,8 @@ __all__ = [
     "brier_score",
     "error_spread_score",
     "energy_score",
+    "energy_score_iid",
+    "energy_score_kband",
     "owenergy_score",
     "twenergy_score",
     "vrenergy_score",

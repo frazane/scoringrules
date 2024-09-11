@@ -57,6 +57,26 @@ class TensorflowBackend(ArrayBackend):
     ) -> "Tensor":
         return tf.math.reduce_max(x, axis=axis, keepdims=keepdims)
 
+    def roll(
+        self,
+        x: "Tensor",
+        shift: int,
+        axis: int | None = None,
+    ) -> "Tensor":
+        return tf.roll(x, shift=shift, axis=axis)
+
+    def shuffle(self, x: "Tensor", axis: int = 0, seed: int = 42) -> "Tensor":
+        # tensorflow does not allow to shuffle along a certain axis
+        # Hence we move the axis to shuffle in the 0st spot, shuffle, move back
+        tf.random.set_seed(seed)
+        return tf.experimental.numpy.moveaxis(
+            tf.random.shuffle(
+                tf.experimental.numpy.moveaxis(x, source=axis, destination=0)
+            ),
+            source=0,
+            destination=axis,
+        )
+
     def moveaxis(
         self,
         x: "Tensor",

@@ -52,6 +52,14 @@ class JaxBackend(ArrayBackend):
     ) -> "Array":
         return jnp.max(x, axis=axis, keepdims=keepdims)
 
+    def roll(self, x: "Array", shift: int, axis: int | None = None) -> "Array":
+        return jnp.roll(x, shift=shift, axis=axis)
+
+    def shuffle(self, x: "Array", axis: int = 0, seed: int = 42) -> "Array":
+        return jax.random.permutation(
+            jax.random.key(42), x, axis=axis, independent=False
+        )
+
     def moveaxis(
         self,
         x: "Array",
