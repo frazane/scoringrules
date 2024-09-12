@@ -23,7 +23,12 @@ from ._closed import (
     t,
     uniform,
 )
-from ._gufuncs import estimator_gufuncs, quantile_pinball_gufunc
+
+try:
+    from ._gufuncs import estimator_gufuncs, quantile_pinball_gufunc
+except ImportError:
+    estimator_gufuncs = None
+    quantile_pinball_gufunc = None
 
 __all__ = [
     "ensemble",
