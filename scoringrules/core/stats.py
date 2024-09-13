@@ -18,6 +18,12 @@ def _norm_cdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     return (1.0 + B.erf(x / B.sqrt(2.0))) / 2.0
 
 
+def _laplace_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard laplace distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return B.exp(-B.abs(x)) / 2.0
+
+
 def _logis_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Probability density function for the standard logistic distribution."""
     B = backends.active if backend is None else backends[backend]
@@ -239,6 +245,20 @@ def _hypergeo_cdf(k, M, n, N, backend=None):
         return B.asarray(
             [_inner(B.arange(_args[0] + 1), *_args[1:]) for _args in _iter]
         ).reshape(k.shape)
+
+
+def _negbinom_pdf(
+    x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Probability mass function for the negative binomial distribution."""
+    B = backends.active if backend is None else backends[backend]
+    x_plus = B.abs(x)
+    d = B.where(
+        B.floor(x_plus) < x_plus,
+        0.0,
+        B.comb(n + x - 1, x) * prob**n * (1 - prob) ** x,
+    )
+    return B.where(x < 0.0, 0.0, d)
 
 
 def _negbinom_cdf(

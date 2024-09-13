@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scoringrules"
-version = "0.5.3"
+version = "0.6.1"
 description = "Scoring rules for probabilistic forecast evaluation."
 readme = "README.md"
 requires-python = ">=3.10"
