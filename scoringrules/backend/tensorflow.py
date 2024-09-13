@@ -76,6 +76,14 @@ class TensorflowBackend(ArrayBackend):
     ) -> "Tensor":
         return tf.math.reduce_sum(x, axis=axis, keepdims=keepdims)
 
+    def cumsum(
+        self,
+        x: "Tensor",
+        /,
+        axis: int | tuple[int, ...] | None = None,
+    ) -> "Tensor":
+        return tf.math.cumsum(x, axis=axis)
+
     def unique_values(self, x: "Tensor", /) -> "Tensor":
         return tf.unique(x)
 

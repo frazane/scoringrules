@@ -71,6 +71,14 @@ class TorchBackend(ArrayBackend):
     ) -> "Tensor":
         return torch.sum(x, axis=axis, keepdim=keepdims)
 
+    def cumsum(
+        self,
+        x: "Tensor",
+        /,
+        axis: int | tuple[int, ...] | None = None,
+    ) -> "Tensor":
+        return torch.cumsum(x, dim=axis)
+
     def unique_values(self, x: "Tensor", /) -> "Tensor":
         return torch.unique(x)
 

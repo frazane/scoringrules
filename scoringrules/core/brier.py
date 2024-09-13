@@ -22,3 +22,24 @@ def brier_score(
         raise ValueError("Observations must be 0, 1, or NaN.")
 
     return B.asarray((fct - obs) ** 2)
+
+
+def rps_score(
+    obs: "ArrayLike",
+    fct: "ArrayLike",
+    axis: "ArrayLike" = None,
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the Ranked Probability Score for ordinal categorical forecasts."""
+    B = backends.active if backend is None else backends[backend]
+    obs, fct = map(B.asarray, (obs, fct))
+
+    if B.any(fct < 0.0) or B.any(fct > 1.0 + EPSILON):
+        raise ValueError("Forecast probabilities must be between 0 and 1.")
+
+    if not set(B.unique_values(obs)) <= {0, 1}:
+        raise ValueError("Observations must be either 0 or 1.")
+
+    return B.asarray(
+        B.sum((B.cumsum(fct, axis=axis) - B.cumsum(obs, axis=axis)) ** 2, axis=axis)
+    )

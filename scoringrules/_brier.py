@@ -40,4 +40,50 @@ def brier_score(
     return brier.brier_score(obs=observations, forecasts=forecasts, backend=backend)
 
 
-__all__ = ["brier_score"]
+def rps_score(
+    observations: "ArrayLike",
+    forecasts: "ArrayLike",
+    /,
+    axis: int = -1,
+    *,
+    backend: "Backend" = None,
+) -> "Array":
+    r"""
+    Compute the (Discrete) Ranked Probability Score (RPS).
+
+    Suppose the outcome corresponds to one of $K$ ordered categories. The RPS is defined as
+
+    $$ RPS(f, y) = \sum_{k=1}^{K}(\tilde{f}_{k} - \tilde{y}_{k})^2, $$
+
+    where $f \in [0, 1]^{K}$ is a vector of length $K$ containing forecast probabilities
+    that each of the $K$ categories will occur, and $y \in \{0, 1\}^{K}$ is a vector of
+    length $K$, with the $k$-th element equal to one if the $k$-th category occurs. We
+    have $\sum_{k=1}^{K} y_{k} = \sum_{k=1}^{K} f_{k} = 1$, and, for $k = 1, \dots, K$,
+    $\tilde{y}_{k} = \sum_{i=1}^{k} y_{i}$ and $\tilde{f}_{k} = \sum_{i=1}^{k} f_{i}$.
+
+    Parameters
+    ----------
+    observations:
+        Array of 0's and 1's corresponding to unobserved and observed categories
+    forecasts :
+        Array of forecast probabilities for each category.
+    axis: int
+        The axis corresponding to the categories. Default is the last axis.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numpy'.
+
+    Returns
+    -------
+    score:
+        The computed Ranked Probability Score.
+
+    """
+    return brier.rps_score(
+        obs=observations, forecasts=forecasts, axis=axis, backend=backend
+    )
+
+
+__all__ = [
+    "brier_score",
+    "rps_score",
+]

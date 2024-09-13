@@ -72,6 +72,17 @@ class ArrayBackend(abc.ABC):
         """Calculate the sum of the input array ``x``."""
 
     @abc.abstractmethod
+    def cumsum(
+        self,
+        x: "Array",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        dtype: Dtype | None = None,
+    ) -> "Array":
+        """Calculate the cumulative sum of the input array ``x``."""
+
+    @abc.abstractmethod
     def unique_values(self, x: "Array", /) -> "Array":
         """Return the unique elements of an input array ``x``."""
 

@@ -1,6 +1,9 @@
 from importlib.metadata import version
 
-from scoringrules._brier import brier_score
+from scoringrules._brier import (
+    brier_score,
+    rps_score,
+)
 from scoringrules._crps import (
     crps_beta,
     crps_binomial,
@@ -124,6 +127,7 @@ __all__ = [
     "logs_tt",
     "logs_uniform",
     "brier_score",
+    "rps_score",
     "error_spread_score",
     "energy_score",
     "owenergy_score",
