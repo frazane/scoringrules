@@ -693,3 +693,25 @@ def logs_uniform(
     >>> sr.logs_uniform(0.4, 0.0, 1.0)
     """
     return logarithmic.uniform(observation, min, max, backend=backend)
+
+
+__all__ = [
+    "logs_beta",
+    "logs_binomial",
+    "logs_exponential",
+    "logs_exponential2",
+    "logs_2pexponential",
+    "logs_gamma",
+    "logs_tlogistic",
+    "logs_tnormal",
+    "logs_tt",
+    "logs_hypergeometric",
+    "logs_logistic",
+    "logs_loglogistic",
+    "logs_lognormal",
+    "logs_normal",
+    "logs_2pnormal",
+    "logs_poisson",
+    "logs_t",
+    "logs_uniform",
+]
