@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../../contributing/">
+        <link rel="prev" href="../variogram/">
       
       
-        <link rel="next" href="../crps/">
+        <link rel="next" href="../visualization/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Brier Score - Scoringrules</title>
+        <title>Interval Score - Scoringrules</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#brier-score" class="md-skip">
+        <a href="#interval-score" class="md-skip">
           Skip to content
         </a>
       
@@ -115,7 +115,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Brier Score
+              Interval Score
             
           </span>
         </div>
@@ -356,30 +356,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Brier Score
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../brier/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -388,35 +368,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#scoringrules.brier_score" class="md-nav__link">
-    <span class="md-ellipsis">
-      brier_score
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -531,10 +482,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../interval/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Interval Score
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -543,6 +514,68 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#interval-or-winkler-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interval or Winkler Score
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#weighted-interval-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      Weighted Interval Score
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Weighted Interval Score">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scoringrules.interval_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      interval_score
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scoringrules.weighted_interval_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      weighted_interval_score
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -603,11 +636,44 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#scoringrules.brier_score" class="md-nav__link">
+  <a href="#interval-or-winkler-score" class="md-nav__link">
     <span class="md-ellipsis">
-      brier_score
+      Interval or Winkler Score
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#weighted-interval-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      Weighted Interval Score
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Weighted Interval Score">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scoringrules.interval_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      interval_score
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scoringrules.weighted_interval_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      weighted_interval_score
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -629,33 +695,60 @@
   
 
 
-<h1 id="brier-score">Brier Score</h1>
+<h1 id="interval-score">Interval Score</h1>
+<h2 id="interval-or-winkler-score">Interval or Winkler Score</h2>
+<p>For a prediction interval (PI), the interval or Winkler score is given by:</p>
+<p><span class="arithmatex">\(\text{IS} = \begin{cases}
+    (u - l) + \frac{2}{\alpha}(l - y)  &amp; \text{for } y &lt; l \\
+    (u - l)                             &amp; \text{for } l \leq y \leq u \\
+    (u - l) + \frac{2}{\alpha}(y - u)   &amp; \text{for } y &gt; u. \\
+\end{cases}\)</span></p>
+<p>for an <span class="arithmatex">\((1 - \alpha)\)</span>PI of <span class="arithmatex">\([l, u]\)</span> and the true value <span class="arithmatex">\(y\)</span> <sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup><sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup><sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup>.</p>
+<h2 id="weighted-interval-score">Weighted Interval Score</h2>
+<p>The weighted interval score (WIS) is defined as</p>
+<p><span class="arithmatex">\(\text{WIS}_{\alpha_{0:K}}(F, y) = \frac{1}{K+0.5}(w_0 \times |y - m| + \sum_{k=1}^K (w_k \times IS_{\alpha_k}(F, y)))\)</span></p>
+<p>where <span class="arithmatex">\(m\)</span> denotes the median prediction, <span class="arithmatex">\(w_0\)</span> denotes the weight of the median prediction, <span class="arithmatex">\(IS_{\alpha_k}(F, y)\)</span> denotes the interval score for the <span class="arithmatex">\(1 - \alpha\)</span> prediction interval and <span class="arithmatex">\(w_k\)</span> is the according weight. The WIS is calculated for a set of (central) PIs and the predictive median <sup id="fnref2:2"><a class="footnote-ref" href="#fn:2">2</a></sup>. The weights are an optional parameter and default weight is the canonical weight <span class="arithmatex">\(w_k = \frac{2}{\alpha_k}\)</span> and <span class="arithmatex">\(w_0 = 0.5\)</span>. For these weights, it holds that:</p>
+<p><span class="arithmatex">\(\text{WIS}_{\alpha_{0:K}}(F, y) \approx \text{CRPS}(F, y).\)</span></p>
 
 
 <div class="doc doc-object doc-function">
 
 
-<h3 id="scoringrules.brier_score" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">scoringrules.brier_score</span>
+<h3 id="scoringrules.interval_score" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">scoringrules.interval_score</span>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">brier_score</span><span class="p">(</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">interval_score</span><span class="p">(</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">forecasts</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="o">/</span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="o">*</span><span class="p">,</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">backend</span><span class="p">:</span> <span class="n">Backend</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">lower</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">upper</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">alpha</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Array</span><span class="p">],</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="o">/</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="o">*</span><span class="p">,</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">backend</span><span class="p">:</span> <span class="n">Backend</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents first">
 
-        <p>Compute the Brier Score (BS).</p>
-<p>The BS is formulated as</p>
-<div class="arithmatex">\[ BS(f, y) = (f - y)^2, \]</div>
-<p>where <span class="arithmatex">\(f \in [0, 1]\)</span> is the predicted probability of an event and <span class="arithmatex">\(y \in \{0, 1\}\)</span> the actual outcome.</p>
+        <p>Compute the Interval Score or Winkler Score <a href="https://www.tandfonline.com/doi/abs/10.1198/016214506000001437">(Gneiting &amp; Raftery, 2012)</a> for 1 - <span class="arithmatex">\(\alpha\)</span> prediction intervals PI = [lower, upper].</p>
+<p>The interval score is defined as</p>
+<p><span class="arithmatex">\(\text{IS} = \begin{cases}
+(u - l) + \frac{2}{\alpha}(l - y)  &amp; \text{for } y &lt; l \\
+(u - l)                             &amp; \text{for } l \leq y \leq u \\
+(u - l) + \frac{2}{\alpha}(y - u)   &amp; \text{for } y &gt; u. \\
+\end{cases}\)</span></p>
+<p>for an <span class="arithmatex">\(1 - \alpha\)</span> PI of <span class="arithmatex">\([l, u]\)</span> and the true value <span class="arithmatex">\(y\)</span>.</p>
 
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>Note that alpha can be a float or an array of coverages.
+In the case alpha is a float, the output will have the same shape as the observations and we assume that shape of observations,
+upper and lower is the same. In case alpha is a vector, the function will broadcast observations accordingly.</p>
+</details>
 
 <p><span class="doc-section-title">Parameters:</span></p>
     <table>
@@ -675,7 +768,7 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Observed outcome, either 0 or 1.</p>
+                <p>The observed values.</p>
               </div>
             </td>
             <td>
@@ -683,17 +776,59 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>forecasts</code></td>
+            <td><code>lower</code></td>
             <td>
-                  <code>NDArray</code>
+                  <code><span title="scoringrules.core.typing.Array">Array</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Forecasted probabilities between 0 and 1.</p>
+                <p>The predicted lower bound of the prediction interval.</p>
               </div>
             </td>
             <td>
                 <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>upper</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The predicted upper bound of the prediction interval.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>alpha</code></td>
+            <td>
+                  <code><span title="typing.Union">Union</span>[float, <span title="scoringrules.core.typing.Array">Array</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The 1 - alpha level for the prediction interval.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>axis</code></td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The axis corresponding to the ensemble. Default is the last axis.</p>
+              </div>
+            </td>
+            <td>
+                  <code>-1</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -703,7 +838,7 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The name of the backend used for computations. Defaults to 'numpy'.</p>
+                <p>The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.</p>
               </div>
             </td>
             <td>
@@ -724,12 +859,12 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-<td><code>brier_score</code></td>            <td>
-                  <code>NDArray</code>
+<td><code>score</code></td>            <td>
+                  <code><span title="scoringrules.core.typing.Array">Array</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The computed Brier Score.</p>
+                <p>An array of interval scores for each prediction interval, which should be averaged to get meaningful values.</p>
               </div>
             </td>
           </tr>
@@ -738,6 +873,222 @@
 
     </div>
 
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="scoringrules.weighted_interval_score" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">scoringrules.weighted_interval_score</span>
+
+
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">weighted_interval_score</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">median</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">lower</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">upper</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">alpha</span><span class="p">:</span> <span class="n">Array</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="o">/</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">weight_median</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">weight_alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Array</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="o">*</span><span class="p">,</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">backend</span><span class="p">:</span> <span class="n">Backend</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Compute the Interval Score or Winkler Score <a href="https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008618">(Bracher J, Ray EL, Gneiting T, Reich NG, 2022)</a> for 1 - <span class="arithmatex">\(\alpha\)</span> prediction intervals PI = [lower, upper].</p>
+<p>The weighted interval score (WIS) is defined as</p>
+<p><span class="arithmatex">\(\text{WIS}_{\alpha_{0:K}}(F, y) = \frac{1}{K+0.5}(w_0 \times |y - m| + \sum_{k=1}^K (w_k \times IS_{\alpha_k}(F, y)))\)</span></p>
+<p>where <span class="arithmatex">\(m\)</span> denotes the median prediction, <span class="arithmatex">\(w_0\)</span> denotes the weight of the median prediction,
+<span class="arithmatex">\(IS_{\alpha_k}(F, y)\)</span> denotes the interval score for the <span class="arithmatex">\(1 - \alpha\)</span> prediction interval and
+<span class="arithmatex">\(w_k\)</span> is the according weight. The WIS is calculated for a set of (central) PIs and the predictive
+median. The weights are an optional parameter and default weight
+is the canonical weight <span class="arithmatex">\(w_k = \frac{2}{\alpha_k}\)</span> and <span class="arithmatex">\(w_0 = 0.5\)</span>. Using the canonical weights, the WIS
+can be used to approximate the CRPS.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>observations</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The observed values.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>median</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The median prediction</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>lower</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The predicted lower bound of the prediction interval.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>upper</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The predicted upper bound of the prediction interval.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>alpha</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The 1 - alpha level for the prediction interval.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>weight_median</code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[float]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The weight for the median prediction.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>weight_alpha</code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="scoringrules.core.typing.Array">Array</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The weights for the PI.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>axis</code></td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The axis corresponding to the ensemble. Default is the last axis.</p>
+              </div>
+            </td>
+            <td>
+                  <code>-1</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>backend</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.Backend">Backend</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>score</code></td>            <td>
+                  <code><span title="scoringrules.core.typing.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>An array of interval scores for each observation, which should be averaged to get meaningful values.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div><div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Tilmann Gneiting and Adrian E Raftery. Strictly Proper Scoring Rules, Prediction, and Estimation. <em>Journal of the American Statistical Association</em>, 2007. URL: <a href="https://doi.org/10.1198/016214506000001437">https://doi.org/10.1198/016214506000001437</a>, <a href="https://doi.org/10.1198/016214506000001437">doi:10.1198/016214506000001437</a>.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>Johannes Bracher, Evan L Ray, Tilmann Gneiting, and Nicholas G Reich. Evaluating epidemic forecasts in an interval format. <em>PLoS computational biology</em>, 17(2):e1008618, 2021.&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>Robert L Winkler. A decision-theoretic approach to interval estimation. <em>Journal of the American Statistical Association</em>, 67(337):187–191, 1972.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+</ol>
 </div>
 
 

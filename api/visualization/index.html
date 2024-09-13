@@ -11,10 +11,8 @@
       
       
       
-        <link rel="prev" href="../../contributing/">
+        <link rel="prev" href="../interval/">
       
-      
-        <link rel="next" href="../crps/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +20,7 @@
     
     
       
-        <title>Brier Score - Scoringrules</title>
+        <title>Visualization - Scoringrules</title>
       
     
     
@@ -80,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#brier-score" class="md-skip">
+        <a href="#scoringrules.visualization.reliability_diagram" class="md-skip">
           Skip to content
         </a>
       
@@ -115,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Brier Score
+              Visualization
             
           </span>
         </div>
@@ -356,30 +354,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Brier Score
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../brier/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -388,35 +366,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#scoringrules.brier_score" class="md-nav__link">
-    <span class="md-ellipsis">
-      brier_score
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -552,10 +501,28 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../visualization/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Visualization
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -564,6 +531,33 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.visualization.reliability_diagram" class="md-nav__link">
+    <span class="md-ellipsis">
+      reliability_diagram
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -593,8 +587,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -603,9 +595,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#scoringrules.brier_score" class="md-nav__link">
+  <a href="#scoringrules.visualization.reliability_diagram" class="md-nav__link">
     <span class="md-ellipsis">
-      brier_score
+      reliability_diagram
     </span>
   </a>
   
@@ -629,32 +621,38 @@
   
 
 
-<h1 id="brier-score">Brier Score</h1>
+  <h1>Visualization</h1>
+
+<p>Scoring rules alone are not enough for a thorough evaluation of probabilistic forecasts. Visualizations can be used as a complement.</p>
 
 
 <div class="doc doc-object doc-function">
 
 
-<h3 id="scoringrules.brier_score" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">scoringrules.brier_score</span>
+<h3 id="scoringrules.visualization.reliability_diagram" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">scoringrules.visualization.reliability_diagram</span>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">brier_score</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">forecasts</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">reliability_diagram</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">observations</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">forecasts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="o">/</span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="o">*</span><span class="p">,</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">backend</span><span class="p">:</span> <span class="n">Backend</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">uncertainty_band</span><span class="p">:</span> <span class="p">(</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="n">tp</span><span class="o">.</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">,</span> <span class="s2">&quot;consistency&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="p">)</span> <span class="o">=</span> <span class="s2">&quot;consistency&quot;</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">n_bootstrap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents first">
 
-        <p>Compute the Brier Score (BS).</p>
-<p>The BS is formulated as</p>
-<div class="arithmatex">\[ BS(f, y) = (f - y)^2, \]</div>
-<p>where <span class="arithmatex">\(f \in [0, 1]\)</span> is the predicted probability of an event and <span class="arithmatex">\(y \in \{0, 1\}\)</span> the actual outcome.</p>
+        <p>Plot the reliability diagram of a set of predictions.</p>
+<p>CORP: Consistent, Optimally binned, Reproducible, PAV-algorithm based
+reliability diagram from
+<a href="https://www.pnas.org/doi/full/10.1073/pnas.2016191118">Dimitriadis et al. (2021)</a>.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -671,11 +669,11 @@
           <tr class="doc-section-item">
             <td><code>observations</code></td>
             <td>
-                  <code><span title="scoringrules.core.typing.ArrayLike">ArrayLike</span></code>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Observed outcome, either 0 or 1.</p>
+                <p>The observed outcomes, either 0 or 1.</p>
               </div>
             </td>
             <td>
@@ -685,7 +683,7 @@
           <tr class="doc-section-item">
             <td><code>forecasts</code></td>
             <td>
-                  <code>NDArray</code>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -697,17 +695,46 @@
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>backend</code></td>
+            <td><code>uncertainty_band</code></td>
             <td>
-                  <code><span title="scoringrules.core.typing.Backend">Backend</span></code>
+                  <code><span title="typing.Literal">Literal</span>[&#39;confidence&#39;, &#39;consistency&#39;] | None</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The name of the backend used for computations. Defaults to 'numpy'.</p>
+                <p>The type of uncertainty band to plot, which can be either <code>'confidence'</code> or
+<code>'consistency'</code>band. If None, no uncertainty band is plotted.</p>
               </div>
             </td>
             <td>
-                  <code>None</code>
+                  <code>&#39;consistency&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>n_bootstrap</code></td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The number of bootstrap samples to use for the uncertainty band.</p>
+              </div>
+            </td>
+            <td>
+                  <code>100</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>alpha</code></td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The confidence level for the uncertainty band.</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.05</code>
             </td>
           </tr>
       </tbody>
@@ -724,17 +751,26 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-<td><code>brier_score</code></td>            <td>
-                  <code>NDArray</code>
+<td><code>ax</code></td>            <td>
+                  <code><span title="matplotlib.pyplot.Axes">Axes</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The computed Brier Score.</p>
+                <p>The CORP reliability diagram plot.</p>
               </div>
             </td>
           </tr>
       </tbody>
     </table>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="language-pycon highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">scoringrules.visualization</span> <span class="kn">import</span> <span class="n">reliability_diagram</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1024</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="mi">1024</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">ax</span> <span class="o">=</span> <span class="n">reliability_diagram</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+</span></code></pre></div>
 
     </div>
 
