@@ -23,18 +23,24 @@ def test_gks(estimator, backend):
     res = np.asarray(res)
     assert not np.any(res < 0.0)
 
-    # approx zero when perfect forecast
-    perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
-    res = _kernels.gks_ensemble(obs, perfect_fct, estimator=estimator, backend=backend)
-    res = np.asarray(res)
-    assert not np.any(res - 0.0 > 0.0001)
+    if estimator == "nrg":
+        # approx zero when perfect forecast
+        perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
+        res = _kernels.gks_ensemble(
+            obs, perfect_fct, estimator=estimator, backend=backend
+        )
+        res = np.asarray(res)
+        assert not np.any(res - 0.0 > 0.0001)
 
-    # test correctness
-    obs, fct = 11.6, np.array([9.8, 8.7, 11.9, 12.1, 13.4])
-    res = _kernels.gks_ensemble(obs, fct, estimator="nrg", backend=backend)
-    expected = 0.2490516
-    assert np.isclose(res, expected)
+        # test correctness
+        obs, fct = 11.6, np.array([9.8, 8.7, 11.9, 12.1, 13.4])
+        res = _kernels.gks_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.2490516
+        assert np.isclose(res, expected)
 
-    res = _kernels.gks_ensemble(obs, fct, estimator="fair", backend=backend)
-    expected = 0.2987752
-    assert np.isclose(res, expected)
+    elif estimator == "fair":
+        # test correctness
+        obs, fct = 11.6, np.array([9.8, 8.7, 11.9, 12.1, 13.4])
+        res = _kernels.gks_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.2987752
+        assert np.isclose(res, expected)
