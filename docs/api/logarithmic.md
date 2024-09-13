@@ -24,6 +24,8 @@
 
 ::: scoringrules.logs_lognormal
 
+::: scoringrules.logs_negbinom
+
 ::: scoringrules.logs_normal
 
 ::: scoringrules.logs_2pnormal

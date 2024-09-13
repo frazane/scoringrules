@@ -9,6 +9,7 @@ from scoringrules.core.stats import (
     _laplace_pdf,
     _logis_pdf,
     _logis_cdf,
+    _negbinom_pdf,
     _norm_pdf,
     _norm_cdf,
     _pois_pdf,
@@ -209,6 +210,22 @@ def lognormal(
     ω = (B.log(obs) - mulog) / sigmalog
     prob = _norm_pdf(ω, backend=backend) / sigmalog
     s = B.where(zind, float("inf"), -B.log(prob / obs))
+    return s
+
+
+def negbinom(
+    obs: "ArrayLike",
+    n: "ArrayLike",
+    prob: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the logarithmic score for the negative binomial distribution."""
+    B = backends.active if backend is None else backends[backend]
+    n, prob, obs = map(B.asarray, (n, prob, obs))
+    zind = (obs < 0.0) | (B.floor(obs) != obs)
+    obs = B.where(zind, B.nan, obs)
+    prob = _negbinom_pdf(obs, n, prob, backend=backend)
+    s = B.where(zind, float("inf"), -B.log(prob))
     return s
 
 
