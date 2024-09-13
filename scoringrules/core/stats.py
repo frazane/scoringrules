@@ -18,6 +18,12 @@ def _norm_cdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     return (1.0 + B.erf(x / B.sqrt(2.0))) / 2.0
 
 
+def _laplace_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard laplace distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return B.exp(-B.abs(x)) / 2.0
+
+
 def _logis_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Probability density function for the standard logistic distribution."""
     B = backends.active if backend is None else backends[backend]
