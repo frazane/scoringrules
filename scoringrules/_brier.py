@@ -37,7 +37,7 @@ def brier_score(
         The computed Brier Score.
 
     """
-    return brier.brier_score(obs=observations, forecasts=forecasts, backend=backend)
+    return brier.brier_score(obs=observations, fct=forecasts, backend=backend)
 
 
 def rps_score(
@@ -78,9 +78,7 @@ def rps_score(
         The computed Ranked Probability Score.
 
     """
-    return brier.rps_score(
-        obs=observations, forecasts=forecasts, axis=axis, backend=backend
-    )
+    return brier.rps_score(obs=observations, fct=forecasts, axis=axis, backend=backend)
 
 
 __all__ = [
