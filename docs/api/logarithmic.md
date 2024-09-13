@@ -12,6 +12,10 @@
 
 ::: scoringrules.logs_gamma
 
+::: scoringrules.logs_gev
+
+::: scoringrules.logs_gpd
+
 ::: scoringrules.logs_hypergeometric
 
 ::: scoringrules.logs_laplace

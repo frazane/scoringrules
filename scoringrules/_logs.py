@@ -244,6 +244,85 @@ def logs_gamma(
     return logarithmic.gamma(observation, shape, rate, backend=backend)
 
 
+def logs_gev(
+    observation: "ArrayLike",
+    shape: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the logarithmic score (LS) for the generalised extreme value (GEV) distribution.
+
+    This score is equivalent to the negative log likelihood of the GEV distribution
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    shape:
+        Shape parameter of the forecast GEV distribution.
+    location:
+        Location parameter of the forecast GEV distribution.
+    scale:
+        Scale parameter of the forecast GEV distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The LS between obs and GEV(shape, location, scale).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.logs_gev(0.3, 0.1)
+    """
+    return logarithmic.gev(observation, shape, location, scale, backend=backend)
+
+
+def logs_gpd(
+    observation: "ArrayLike",
+    shape: "ArrayLike",
+    /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the logarithmic score (LS) for the generalised Pareto distribution (GPD).
+
+    This score is equivalent to the negative log likelihood of the GPD
+
+
+    Parameters
+    ----------
+    observation:
+        The observed values.
+    shape:
+        Shape parameter of the forecast GPD distribution.
+    location:
+        Location parameter of the forecast GPD distribution.
+    scale:
+        Scale parameter of the forecast GPD distribution.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The LS between obs and GPD(shape, location, scale).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.logs_gpd(0.3, 0.9)
+    """
+    return logarithmic.gpd(observation, shape, location, scale, backend=backend)
+
+
 def logs_hypergeometric(
     observation: "ArrayLike",
     m: "ArrayLike",

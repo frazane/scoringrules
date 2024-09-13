@@ -115,6 +115,25 @@ def _t_cdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array
     return s
 
 
+def _gev_pdf(s: "ArrayLike", xi: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard GEV distribution."""
+    B = backends.active if backend is None else backends[backend]
+
+    xi_0 = xi == 0.0
+    supp = (xi != 0.0) & (s * xi > -1)
+    supp = supp | xi_0
+    xi = B.where(xi_0, B.nan, xi)
+    s = B.where(supp, s, B.nan)
+    power = -(xi + 1) / xi
+
+    pdf0 = B.exp(-s) * B.exp(-B.exp(-s))
+    pdf = (1 + s * xi) ** power * B.exp(-((1 + s * xi) ** (-1 / xi)))
+    pdf = B.where(xi_0, pdf0, pdf)
+    pdf = B.where(supp, pdf, 0.0)
+
+    return pdf
+
+
 def _gev_cdf(s: "ArrayLike", xi: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the standard GEV distribution."""
     B = backends.active if backend is None else backends[backend]
@@ -131,6 +150,25 @@ def _gev_cdf(s: "ArrayLike", xi: "ArrayLike", backend: "Backend" = None) -> "Arr
     cdf = B.where((xi > 0) & (s <= -1 / xi), 0, cdf)  # Lower bound CDF
     cdf = B.where((xi < 0) & (s >= 1 / B.abs(xi)), 1, cdf)  # Upper bound CDF
     return cdf
+
+
+def _gpd_pdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard GPD distribution."""
+    B = backends.active if backend is None else backends[backend]
+
+    pos_supp = (shape >= 0.0) & (x >= 0.0)
+    shape_0 = shape == 0
+    shape = B.where(shape_0, B.nan, shape)
+    neg_supp = (shape < 0.0) & (x >= 0.0) & (x <= -1 / shape)
+    supp = pos_supp | neg_supp
+    x = B.where(supp, x, B.nan)
+    power = -(shape + 1) / shape
+
+    pdf = B.exp(-x)
+    pdf = B.where(shape_0, pdf, (1 + shape * x) ** power)
+    pdf = B.where(supp, pdf, 0.0)
+
+    return pdf
 
 
 def _gpd_cdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "Array":

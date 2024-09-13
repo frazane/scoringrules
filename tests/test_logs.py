@@ -92,6 +92,68 @@ def test_gamma(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
+def test_gev(backend):
+    obs, xi, mu, sigma = 0.3, 0.7, 0.0, 1.0
+    res0 = _logs.logs_gev(obs, xi, backend=backend)
+    expected = 1.22455
+    assert np.isclose(res0, expected)
+
+    res = _logs.logs_gev(obs, xi, mu, sigma, backend=backend)
+    assert np.isclose(res, res0)
+
+    obs, xi, mu, sigma = 0.3, -0.7, 0.0, 1.0
+    res = _logs.logs_gev(obs, xi, mu, sigma, backend=backend)
+    expected = 0.8151139
+    assert np.isclose(res, expected)
+
+    obs, xi, mu, sigma = 0.3, 0.0, 0.0, 1.0
+    res = _logs.logs_gev(obs, xi, mu, sigma, backend=backend)
+    expected = 1.040818
+    assert np.isclose(res, expected)
+
+    obs, xi, mu, sigma = -3.6, 0.7, 0.0, 1.0
+    res = _logs.logs_gev(obs, xi, mu, sigma, backend=backend)
+    expected = float("inf")
+    assert np.isclose(res, expected)
+
+    obs, xi, mu, sigma = -3.6, 1.7, -4.0, 2.7
+    res = _logs.logs_gev(obs, xi, mu, sigma, backend=backend)
+    expected = 2.226233
+    assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_gpd(backend):
+    obs, shape, location, scale = 0.8, 0.9, 0.0, 1.0
+    res0 = _logs.logs_gpd(obs, shape, backend=backend)
+    expected = 1.144907
+    assert np.isclose(res0, expected)
+
+    res = _logs.logs_gpd(obs, shape, location, scale, backend=backend)
+    assert np.isclose(res0, res)
+
+    obs = -0.8
+    res = _logs.logs_gpd(obs, shape, location, scale, backend=backend)
+    expected = float("inf")
+    assert np.isclose(res, expected)
+
+    obs, shape = 0.8, -0.9
+    res = _logs.logs_gpd(obs, shape, location, scale, backend=backend)
+    expected = 0.1414406
+    assert np.isclose(res, expected)
+
+    shape, scale = 0.0, 2.1
+    res = _logs.logs_gpd(obs, shape, location, scale, backend=backend)
+    expected = 1.12289
+    assert np.isclose(res, expected)
+
+    obs, shape, location, scale = -17.4, 2.3, -21.0, 4.3
+    res = _logs.logs_gpd(obs, shape, location, scale, backend=backend)
+    expected = 2.998844
+    assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_hypergeometric(backend):
     res = _logs.logs_hypergeometric(5, 7, 13, 12)
     expected = 1.251525
