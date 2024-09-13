@@ -2,10 +2,14 @@ import typing as tp
 
 from scoringrules.backend import backends
 
-from ._kernels import gauss_kern
-
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
+
+
+def gauss_kern(x1: "ArrayLike", x2: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Compute the gaussian kernel evaluated at x1 and x2."""
+    B = backends.active if backend is None else backends[backend]
+    return B.exp(-0.5 * (x1 - x2) ** 2)
 
 
 def ensemble(
@@ -21,12 +25,14 @@ def ensemble(
     e_2 = B.sum(
         gauss_kern(fct[..., None], fct[..., None, :], backend=backend), axis=(-1, -2)
     ) / (M**2)
+    e_3 = gauss_kern(obs, obs)
 
     if estimator == "nrg":
-        out = e_1 - 0.5 * e_2
+        out = e_1 - 0.5 * e_2 - 0.5 * e_3
     elif estimator == "fair":
-        out = e_1 - 0.5 * e_2 * (M / (M - 1))
+        out = e_1 - 0.5 * e_2 * (M / (M - 1)) - 0.5 * e_3
     else:
         raise ValueError(f"{estimator} must be one of 'nrg' and 'fair'")
 
+    out = -out
     return out

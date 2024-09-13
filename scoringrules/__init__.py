@@ -67,6 +67,7 @@ from scoringrules._variogram import (
     variogram_score,
     vrvariogram_score,
 )
+from scoringrules._kernels import gks_ensemble
 from scoringrules.backend import backends, register_backend
 
 __version__ = version("scoringrules")
@@ -124,6 +125,7 @@ __all__ = [
     "logs_tt",
     "logs_uniform",
     "brier_score",
+    "gks_ensemble",
     "error_spread_score",
     "energy_score",
     "owenergy_score",
