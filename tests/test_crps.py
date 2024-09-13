@@ -158,11 +158,6 @@ def test_2pexponential(backend):
     expected = 6.018359
     assert np.isclose(res, expected)
 
-    obs, scale1, scale2, location = 10.5, 4.1, 0.8, 5.0
-    res0 = _crps.crps_2pexponential(obs, scale1, scale2, location, backend=backend)
-    res = _crps.crps_2pexponential(obs, scale1, scale2, location, backend=backend)
-    assert np.isclose(res, res0)
-
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_gamma(backend):

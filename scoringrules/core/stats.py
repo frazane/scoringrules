@@ -6,16 +6,34 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
 
 
+def _norm_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard normal distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return (1.0 / B.sqrt(2.0 * B.pi)) * B.exp(-(x**2) / 2)
+
+
 def _norm_cdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the standard normal distribution."""
     B = backends.active if backend is None else backends[backend]
     return (1.0 + B.erf(x / B.sqrt(2.0))) / 2.0
 
 
-def _norm_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
-    """Probability density function for the standard normal distribution."""
+def _laplace_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard laplace distribution."""
     B = backends.active if backend is None else backends[backend]
-    return (1.0 / B.sqrt(2.0 * B.pi)) * B.exp(-(x**2) / 2)
+    return B.exp(-B.abs(x)) / 2.0
+
+
+def _logis_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard logistic distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return B.exp(-x) / (1 + B.exp(-x)) ** 2
+
+
+def _logis_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard logistic distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return B.exp(-x) / (1 + B.exp(-x)) ** 2
 
 
 def _logis_cdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
@@ -24,10 +42,25 @@ def _logis_cdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     return 1 / (1 + B.exp(-x))
 
 
+def _exp_pdf(x: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the exponential distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return B.where(x < 0.0, 0.0, rate * B.exp(-rate * x))
+
+
 def _exp_cdf(x: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the exponential distribution."""
     B = backends.active if backend is None else backends[backend]
     return B.maximum(1 - B.exp(-rate * x), B.asarray(0.0))
+
+
+def _gamma_pdf(
+    x: "ArrayLike", shape: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Probability density function for the gamma distribution."""
+    B = backends.active if backend is None else backends[backend]
+    prob = (rate**shape) * (x ** (shape - 1)) * (B.exp(-rate * x)) / B.gamma(shape)
+    return B.where(x <= 0.0, 0.0, prob)
 
 
 def _gamma_cdf(
@@ -37,14 +70,6 @@ def _gamma_cdf(
     B = backends.active if backend is None else backends[backend]
     zero = B.asarray(0.0)
     return B.maximum(B.gammainc(shape, rate * B.maximum(x, zero)), zero)
-
-
-def _pois_cdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":
-    """Cumulative distribution function for the Poisson distribution."""
-    B = backends.active if backend is None else backends[backend]
-    x_plus = B.abs(x)
-    p = B.gammauinc(B.floor(x_plus + 1), mean) / B.gamma(B.floor(x_plus + 1))
-    return B.where(x < 0.0, 0.0, p)
 
 
 def _pois_pdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":
@@ -57,6 +82,14 @@ def _pois_pdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "
         mean ** (x_plus) * B.exp(-mean) / B.factorial(x_plus),
     )
     return B.where(mean < 0.0, B.nan, B.where(x < 0.0, 0.0, d))
+
+
+def _pois_cdf(x: "ArrayLike", mean: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Cumulative distribution function for the Poisson distribution."""
+    B = backends.active if backend is None else backends[backend]
+    x_plus = B.abs(x)
+    p = B.gammauinc(B.floor(x_plus + 1), mean) / B.gamma(B.floor(x_plus + 1))
+    return B.where(x < 0.0, 0.0, p)
 
 
 def _t_pdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array":

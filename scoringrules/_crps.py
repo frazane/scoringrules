@@ -1621,10 +1621,73 @@ def crps_normal(
 
     Examples
     --------
-    >>> from scoringrules import crps
-    >>> crps.normal(0.1, 0.4, 0.0)
+    >>> import scoringrules as sr
+    >>> sr.crps_normal(0.0, 0.1, 0.4)
     """
     return crps.normal(observation, mu, sigma, backend=backend)
+
+
+def crps_2pnormal(
+    observation: "ArrayLike",
+    scale1: "ArrayLike",
+    scale2: "ArrayLike",
+    location: "ArrayLike",
+    /,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the two-piece normal distribution.
+
+    It is based on the following relationship given in
+    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+
+    $$ \mathrm{CRPS}(F_{\sigma_{1}, \sigma_{2}, \mu}, y) =
+    \sigma_{1} \mathrm{CRPS} \left( F_{-\infty,0}^{0, \sigma_{2}/(\sigma_{1} + \sigma_{2})}, \frac{\min(0, y - \mu)}{\sigma_{1}} \right) +
+    \sigma_{2} \mathrm{CRPS} \left( F_{0, \sigma_{1}/(\sigma_{1} + \sigma_{2})}^{\infty, 0}, \frac{\min(0, y - \mu)}{\sigma_{2}} \right), $$
+
+    where $F_{\sigma_{1}, \sigma_{2}, \mu}$ is the two-piece normal distribution with
+    scale1 and scale2 parameters $\sigma_{1}, \sigma_{2} > 0$ and location parameter $\mu$,
+    and $F_{l, L}^{u, U}$ is the CDF of the generalised truncated and censored normal distribution.
+
+    Parameters
+    ----------
+    observations: ArrayLike
+        The observed values.
+    scale1: ArrayLike
+        Scale parameter of the lower half of the forecast two-piece normal distribution.
+    scale2: ArrayLike
+        Scale parameter of the upper half of the forecast two-piece normal distribution.
+    mu: ArrayLike
+        Location parameter of the forecast two-piece normal distribution.
+
+    Returns
+    -------
+    crps: array_like
+        The CRPS between 2pNormal(scale1, scale2, mu) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_2pnormal(0.0, 0.4, 2.0, 0.1)
+    """
+    B = backends.active if backend is None else backends[backend]
+    lower = float("-inf")
+    upper = 0.0
+    lmass = 0.0
+    umass = scale2 / (scale1 + scale2)
+    z = B.minimum(B.asarray(0.0), B.asarray(observation - location)) / scale1
+    s1 = scale1 * crps.gtcnormal(
+        z, 0.0, 1.0, lower, upper, lmass, umass, backend=backend
+    )
+    lower = 0.0
+    upper = float("inf")
+    lmass = scale1 / (scale1 + scale2)
+    umass = 0.0
+    z = B.maximum(B.asarray(0.0), B.asarray(observation - location)) / scale2
+    s2 = scale2 * crps.gtcnormal(
+        z, 0.0, 1.0, lower, upper, lmass, umass, backend=backend
+    )
+    return s1 + s2
 
 
 def crps_poisson(
@@ -1649,7 +1712,7 @@ def crps_poisson(
     observation: ArrayLike
         The observed values.
     mean: ArrayLike
-        Mean parameter of the forecast exponential distribution.
+        Mean parameter of the forecast poisson distribution.
 
     Returns
     -------
@@ -1771,6 +1834,7 @@ __all__ = [
     "crps_binomial",
     "crps_exponential",
     "crps_exponentialM",
+    "crps_2pexponential",
     "crps_gamma",
     "crps_gev",
     "crps_gpd",
@@ -1791,6 +1855,7 @@ __all__ = [
     "crps_lognormal",
     "crps_negbinom",
     "crps_normal",
+    "crps_2pnormal",
     "crps_poisson",
     "crps_t",
     "crps_uniform",
