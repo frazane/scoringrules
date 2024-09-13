@@ -14,6 +14,10 @@
 
 ::: scoringrules.logs_hypergeometric
 
+::: scoringrules.logs_laplace
+
+::: scoringrules.logs_loglaplace
+
 ::: scoringrules.logs_logistic
 
 ::: scoringrules.logs_loglogistic

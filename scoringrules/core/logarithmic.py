@@ -6,6 +6,7 @@ from scoringrules.core.stats import (
     _exp_pdf,
     _gamma_pdf,
     _hypergeo_pdf,
+    _laplace_pdf,
     _logis_pdf,
     _logis_cdf,
     _norm_pdf,
@@ -130,6 +131,37 @@ def hypergeometric(
     N = k
     prob = _hypergeo_pdf(obs, M, m, N, backend=backend)
     return -B.log(prob)
+
+
+def laplace(
+    obs: "ArrayLike",
+    location: "ArrayLike",
+    scale: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the logarithmic score for the laplace distribution."""
+    B = backends.active if backend is None else backends[backend]
+    obs, mu, sigma = map(B.asarray, (obs, location, scale))
+    ω = (obs - mu) / sigma
+    prob = _laplace_pdf(ω, backend=backend) / sigma
+    return -B.log(prob)
+
+
+def loglaplace(
+    obs: "ArrayLike",
+    locationlog: "ArrayLike",
+    scalelog: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the logarithmic score for the log-laplace distribution."""
+    B = backends.active if backend is None else backends[backend]
+    mulog, sigmalog, obs = map(B.asarray, (locationlog, scalelog, obs))
+    zind = obs <= 0.0
+    obs = B.where(zind, B.nan, obs)
+    ω = (B.log(obs) - mulog) / sigmalog
+    prob = _laplace_pdf(ω, backend=backend) / sigmalog
+    s = B.where(zind, float("inf"), -B.log(prob / obs))
+    return s
 
 
 def logistic(
