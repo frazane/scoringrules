@@ -18,6 +18,12 @@ def _norm_cdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     return (1.0 + B.erf(x / B.sqrt(2.0))) / 2.0
 
 
+def _laplace_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard laplace distribution."""
+    B = backends.active if backend is None else backends[backend]
+    return B.exp(-B.abs(x)) / 2.0
+
+
 def _logis_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Probability density function for the standard logistic distribution."""
     B = backends.active if backend is None else backends[backend]
@@ -109,6 +115,25 @@ def _t_cdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array
     return s
 
 
+def _gev_pdf(s: "ArrayLike", xi: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard GEV distribution."""
+    B = backends.active if backend is None else backends[backend]
+
+    xi_0 = xi == 0.0
+    supp = (xi != 0.0) & (s * xi > -1)
+    supp = supp | xi_0
+    xi = B.where(xi_0, B.nan, xi)
+    s = B.where(supp, s, B.nan)
+    power = -(xi + 1) / xi
+
+    pdf0 = B.exp(-s) * B.exp(-B.exp(-s))
+    pdf = (1 + s * xi) ** power * B.exp(-((1 + s * xi) ** (-1 / xi)))
+    pdf = B.where(xi_0, pdf0, pdf)
+    pdf = B.where(supp, pdf, 0.0)
+
+    return pdf
+
+
 def _gev_cdf(s: "ArrayLike", xi: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the standard GEV distribution."""
     B = backends.active if backend is None else backends[backend]
@@ -125,6 +150,25 @@ def _gev_cdf(s: "ArrayLike", xi: "ArrayLike", backend: "Backend" = None) -> "Arr
     cdf = B.where((xi > 0) & (s <= -1 / xi), 0, cdf)  # Lower bound CDF
     cdf = B.where((xi < 0) & (s >= 1 / B.abs(xi)), 1, cdf)  # Upper bound CDF
     return cdf
+
+
+def _gpd_pdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "Array":
+    """Probability density function for the standard GPD distribution."""
+    B = backends.active if backend is None else backends[backend]
+
+    pos_supp = (shape >= 0.0) & (x >= 0.0)
+    shape_0 = shape == 0
+    shape = B.where(shape_0, B.nan, shape)
+    neg_supp = (shape < 0.0) & (x >= 0.0) & (x <= -1 / shape)
+    supp = pos_supp | neg_supp
+    x = B.where(supp, x, B.nan)
+    power = -(shape + 1) / shape
+
+    pdf = B.exp(-x)
+    pdf = B.where(shape_0, pdf, (1 + shape * x) ** power)
+    pdf = B.where(supp, pdf, 0.0)
+
+    return pdf
 
 
 def _gpd_cdf(x: "ArrayLike", shape: "ArrayLike", backend: "Backend" = None) -> "Array":
@@ -201,6 +245,20 @@ def _hypergeo_cdf(k, M, n, N, backend=None):
         return B.asarray(
             [_inner(B.arange(_args[0] + 1), *_args[1:]) for _args in _iter]
         ).reshape(k.shape)
+
+
+def _negbinom_pdf(
+    x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", backend: "Backend" = None
+) -> "Array":
+    """Probability mass function for the negative binomial distribution."""
+    B = backends.active if backend is None else backends[backend]
+    x_plus = B.abs(x)
+    d = B.where(
+        B.floor(x_plus) < x_plus,
+        0.0,
+        B.comb(n + x - 1, x) * prob**n * (1 - prob) ** x,
+    )
+    return B.where(x < 0.0, 0.0, d)
 
 
 def _negbinom_cdf(
