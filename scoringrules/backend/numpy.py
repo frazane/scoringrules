@@ -234,7 +234,7 @@ class NumpyBackend(ArrayBackend):
     def size(self, x: "NDArray") -> int:
         return x.size
 
-    def indices(self, dimensions: "NDArray") -> "NDArray":
+    def indices(self, dimensions: tuple) -> "NDArray":
         return np.indices(dimensions)
 
 
