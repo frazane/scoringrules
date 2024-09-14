@@ -249,8 +249,11 @@ class TorchBackend(ArrayBackend):
     def size(self, x: "Tensor") -> int:
         return x.numel()
 
-    def indices(self, dimensions: tuple) -> int:
+    def indices(self, dimensions: tuple) -> "Tensor":
         ranges = [self.arange(s) for s in dimensions]
-        index_grids = torch.meshgrid(*ranges, indexing="ij")
-        indices = torch.stack(index_grids)
+        if ranges == []:
+            indices = self.asarray(ranges)
+        else:
+            index_grids = torch.meshgrid(*ranges, indexing="ij")
+            indices = torch.stack(index_grids)
         return indices
