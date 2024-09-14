@@ -17,10 +17,25 @@ def test_brier(backend):
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_rps(backend):
     # test correctness
-    obs, fct = np.array([0, 0, 1, 0]), np.array([0.01, 0.32, 0.44, 0.23])
+    obs, fct = 3, [0.01, 0.32, 0.44, 0.23]
     res = _brier.rps_score(obs, fct, backend=backend)
     expected = 0.1619
     assert np.isclose(res, expected)
+
+    # test correctness
+    obs = [1, 3, 4, 2]
+    fct = [
+        [0.01, 0.32, 0.44, 0.23],
+        [0.12, 0.05, 0.48, 0.35],
+        [0.09, 0.21, 0.05, 0.65],
+        [0.57, 0.31, 0.08, 0.04],
+    ]
+    res1 = _brier.rps_score(obs, fct, backend=backend)
+
+    fct = np.transpose(fct)
+    res2 = _brier.rps_score(obs, fct, axis=0, backend=backend)
+
+    assert np.allclose(res1, res2)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -35,7 +50,22 @@ def test_logs(backend):
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_rls(backend):
     # test correctness
-    obs, fct = np.array([0, 1, 0, 0]), np.array([0.21, 0.31, 0.32, 0.16])
+    obs, fct = 2, [0.21, 0.31, 0.32, 0.16]
     res = _brier.rls_score(obs, fct, backend=backend)
     expected = 1.064002
     assert np.isclose(res, expected)
+
+    # test correctness
+    obs = [1, 3, 4, 2]
+    fct = [
+        [0.01, 0.32, 0.44, 0.23],
+        [0.12, 0.05, 0.48, 0.35],
+        [0.09, 0.21, 0.05, 0.65],
+        [0.57, 0.31, 0.08, 0.04],
+    ]
+    res1 = _brier.rls_score(obs, fct, backend=backend)
+
+    fct = np.transpose(fct)
+    res2 = _brier.rls_score(obs, fct, axis=0, backend=backend)
+
+    assert np.allclose(res1, res2)

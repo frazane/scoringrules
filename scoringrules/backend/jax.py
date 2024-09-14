@@ -238,6 +238,9 @@ class JaxBackend(ArrayBackend):
     def size(self, x: "Array") -> int:
         return x.size
 
+    def indices(self, dimensions: tuple) -> "Array":
+        return jnp.indices(dimensions)
+
 
 if __name__ == "__main__":
     B = JaxBackend()
