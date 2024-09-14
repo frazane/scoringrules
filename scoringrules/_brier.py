@@ -1,5 +1,6 @@
 import typing as tp
 
+from scoringrules.backend import backends
 from scoringrules.core import brier
 
 if tp.TYPE_CHECKING:
@@ -78,7 +79,13 @@ def rps_score(
         The computed Ranked Probability Score.
 
     """
-    return brier.rps_score(obs=observations, fct=forecasts, axis=axis, backend=backend)
+    B = backends.active if backend is None else backends[backend]
+    forecasts = B.asarray(forecasts)
+
+    if axis != -1:
+        forecasts = B.moveaxis(forecasts, axis, -1)
+
+    return brier.rps_score(obs=observations, fct=forecasts, backend=backend)
 
 
 __all__ = [

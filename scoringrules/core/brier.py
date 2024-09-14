@@ -27,7 +27,6 @@ def brier_score(
 def rps_score(
     obs: "ArrayLike",
     fct: "ArrayLike",
-    axis: "ArrayLike" = None,
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the Ranked Probability Score for ordinal categorical forecasts."""
@@ -37,9 +36,10 @@ def rps_score(
     if B.any(fct < 0.0) or B.any(fct > 1.0 + EPSILON):
         raise ValueError("Forecast probabilities must be between 0 and 1.")
 
-    if not set(B.unique_values(obs)) <= {0, 1}:
-        raise ValueError("Observations must be either 0 or 1.")
+    obs_mat = B.zeros(fct.shape, dtype=int)
+    index = B.indices(obs.shape)
+    obs_mat[(*index, obs - 1)] = 1
 
     return B.asarray(
-        B.sum((B.cumsum(fct, axis=axis) - B.cumsum(obs, axis=axis)) ** 2, axis=axis)
+        B.sum((B.cumsum(fct, axis=-1) - B.cumsum(obs_mat, axis=-1)) ** 2, axis=-1)
     )

@@ -272,6 +272,12 @@ class TensorflowBackend(ArrayBackend):
     def size(self, x: "Tensor") -> int:
         return x.shape.num_elements()
 
+    def indices(self, dimensions: tuple) -> int:
+        ranges = [self.arange(s) for s in dimensions]
+        index_grids = tf.meshgrid(*ranges, indexing="ij")
+        indices = tf.stack(index_grids)
+        return indices
+
 
 if __name__ == "__main__":
     B = TensorflowBackend()

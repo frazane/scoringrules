@@ -234,6 +234,9 @@ class NumpyBackend(ArrayBackend):
     def size(self, x: "NDArray") -> int:
         return x.size
 
+    def indices(self, dimensions: "NDArray") -> "NDArray":
+        return np.indices(dimensions)
+
 
 class NumbaBackend(NumpyBackend):
     """Numba backend."""
