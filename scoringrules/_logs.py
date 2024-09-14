@@ -61,7 +61,8 @@ def logs_ensemble(
     # Silverman's rule of thumb for estimating the bandwidth parameter
     if bw is None:
         sigmahat = B.std(forecasts, axis=-1)
-        q75, q25 = B.quantile(forecasts, [0.75, 0.25], axis=-1)
+        q75 = B.quantile(forecasts, 0.75, axis=-1)
+        q25 = B.quantile(forecasts, 0.25, axis=-1)
         iqr = q75 - q25
         bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
     bw = B.stack([bw] * M, axis=-1)
