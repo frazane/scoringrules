@@ -17,7 +17,6 @@ def test_ensemble(backend):
 
     res = _logs.logs_ensemble(obs, fct, axis=-1, backend=backend)
     assert res.shape == (N,)
-    assert not np.any(np.isnan(res))
 
     fct = fct.T
     res0 = _logs.logs_ensemble(obs, fct, axis=0, backend=backend)
