@@ -7,6 +7,70 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
 
 
+def logs_ensemble(
+    observations: "ArrayLike",
+    forecasts: "Array",
+    /,
+    axis: int = -1,
+    *,
+    bw: "ArrayLike" = None,
+    backend: "Backend" = None,
+) -> "Array":
+    r"""Estimate the Logarithmic score for a finite ensemble via kernel density estimation.
+
+    Gaussian kernel density estimation is used to convert the finite ensemble to a
+    mixture of normal distributions, with the component distributions centred at each
+    ensemble member, with scale equal to the bandwidth parameter 'bw'.
+
+    The log score for the ensemble forecast is then the log score for the mixture of
+    normal distributions.
+
+    Parameters
+    ----------
+    observations: ArrayLike
+        The observed values.
+    forecasts: ArrayLike
+        The predicted forecast ensemble, where the ensemble dimension is by default
+        represented by the last axis.
+    axis: int
+        The axis corresponding to the ensemble. Default is the last axis.
+    bw : ArrayLike
+        The bandwidth parameter for each forecast ensemble. If not given, estimated using
+        Silverman's rule of thumb.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The LS between the forecast ensemble and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.logs_ensemble(obs, pred)
+    """
+    B = backends.active if backend is None else backends[backend]
+    observations, forecasts = map(B.asarray, (observations, forecasts))
+
+    if axis != -1:
+        forecasts = B.moveaxis(forecasts, axis, -1)
+
+    M = forecasts.shape[-1]
+
+    # Silverman's rule of thumb for estimating the bandwidth parameter
+    if bw is None:
+        sigmahat = B.std(forecasts, axis=-1)
+        q75, q25 = B.quantile(forecasts, [0.75, 0.25], axis=-1)
+        iqr = q75 - q25
+        bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
+    bw = B.stack([bw] * M, axis=-1)
+
+    w = B.zeros(forecasts.shape) + 1 / M
+
+    return logarithmic.mixnorm(observations, forecasts, bw, w, backend=backend)
+
+
 def logs_beta(
     observation: "ArrayLike",
     a: "ArrayLike",
