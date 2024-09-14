@@ -604,6 +604,31 @@ def lognormal(
     )
 
 
+def mixnorm(
+    obs: "ArrayLike",
+    m: "ArrayLike",
+    s: "ArrayLike",
+    w: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for a mixture of normal distributions."""
+    B = backends.active if backend is None else backends[backend]
+    m, s, w, obs = map(B.asarray, (m, s, w, obs))
+
+    m_y = obs[..., None] - m
+    m_X = m[..., None] - m[..., None, :]
+    s_X = B.sqrt(s[..., None] ** 2 + s[..., None, :] ** 2)
+    w_X = w[..., None] * w[..., None, :]
+
+    A_y = m_y * (2 * _norm_cdf(m_y / s) - 1) + 2 * s * _norm_pdf(m_y / s)
+    A_X = m_X * (2 * _norm_cdf(m_X / s_X) - 1) + 2 * s_X * _norm_pdf(m_X / s_X)
+
+    sc_1 = B.sum(w * A_y, axis=-1)
+    sc_2 = B.sum(w_X * A_X, axis=(-1, -2))
+
+    return sc_1 - 0.5 * sc_2
+
+
 def negbinom(
     obs: "ArrayLike",
     n: "ArrayLike",
