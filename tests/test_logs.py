@@ -285,6 +285,32 @@ def test_loglaplace(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
+def test_mixnorm(backend):
+    obs, m, s, w = 0.3, [0.0, -2.9, 0.9], [0.5, 1.4, 0.7], [1 / 3, 1 / 3, 1 / 3]
+    res = _logs.logs_mixnorm(obs, m, s, w, backend=backend)
+    expected = 1.019742
+    assert np.isclose(res, expected)
+
+    res0 = _logs.logs_mixnorm(obs, m, s, backend=backend)
+    assert np.isclose(res, res0)
+
+    w = [0.3, 0.1, 0.6]
+    res = _logs.logs_mixnorm(obs, m, s, w, backend=backend)
+    expected = 0.8235977
+    assert np.isclose(res, expected)
+
+    obs = [-1.6, 0.3]
+    m = [[0.0, -2.9], [0.6, 0.0], [-1.1, -2.3]]
+    s = [[0.5, 1.7], [1.1, 0.7], [1.4, 1.5]]
+    res1 = _logs.logs_mixnorm(obs, m, s, axis=0, backend=backend)
+
+    m = [[0.0, 0.6, -1.1], [-2.9, 0.0, -2.3]]
+    s = [[0.5, 1.1, 1.4], [1.7, 0.7, 1.5]]
+    res2 = _logs.logs_mixnorm(obs, m, s, backend=backend)
+    assert np.allclose(res1, res2)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_negbinom(backend):
     if backend in ["jax", "torch"]:
         pytest.skip("Not implemented in jax or torch backends")

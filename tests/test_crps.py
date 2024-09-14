@@ -499,7 +499,7 @@ def test_mixnorm(backend):
     res0 = _crps.crps_mixnorm(obs, m, s, backend=backend)
     assert np.isclose(res, res0)
 
-    obs, m, s, w = 0.3, [0.0, -2.9, 0.9], [0.5, 1.4, 0.7], [0.3, 0.1, 0.6]
+    w = [0.3, 0.1, 0.6]
     res = _crps.crps_mixnorm(obs, m, s, w, backend=backend)
     expected = 0.2354619
     assert np.isclose(res, expected)
@@ -512,7 +512,7 @@ def test_mixnorm(backend):
     m = [[0.0, 0.6, -1.1], [-2.9, 0.0, -2.3]]
     s = [[0.5, 1.1, 1.4], [1.7, 0.7, 1.5]]
     res2 = _crps.crps_mixnorm(obs, m, s, backend=backend)
-    assert np.isclose(res1, res2)
+    assert np.allclose(res1, res2)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

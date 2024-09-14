@@ -1,5 +1,6 @@
 import typing as tp
 
+from scoringrules.backend import backends
 from scoringrules.core import logarithmic
 
 if tp.TYPE_CHECKING:
@@ -523,6 +524,62 @@ def logs_lognormal(
     return logarithmic.lognormal(observation, mulog, sigmalog, backend=backend)
 
 
+def logs_mixnorm(
+    observation: "ArrayLike",
+    m: "ArrayLike",
+    s: "ArrayLike",
+    /,
+    w: "ArrayLike" = None,
+    axis: "ArrayLike" = -1,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the logarithmic score for a mixture of normal distributions.
+
+    This score is equivalent to the negative log likelihood of the normal mixture distribution
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    m: ArrayLike
+        Means of the component normal distributions.
+    s: ArrayLike
+        Standard deviations of the component normal distributions.
+    w: ArrayLike
+        Non-negative weights assigned to each component.
+    axis: int
+        The axis corresponding to the mixture components. Default is the last axis.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The LS between MixNormal(m, s) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.logs_mixnormal(0.0, [0.1, -0.3, 1.0], [0.4, 2.1, 0.7], [0.1, 0.2, 0.7])
+    """
+    B = backends.active if backend is None else backends[backend]
+    observation, m, s = map(B.asarray, (observation, m, s))
+
+    if w is None:
+        M: int = m.shape[axis]
+        w = B.zeros(m.shape) + 1 / M
+    else:
+        w = B.asarray(w)
+
+    if axis != -1:
+        m = B.moveaxis(m, axis, -1)
+        s = B.moveaxis(s, axis, -1)
+        w = B.moveaxis(w, axis, -1)
+
+    return logarithmic.mixnorm(observation, m, s, w, backend=backend)
+
+
 def logs_negbinom(
     observation: "ArrayLike",
     n: "ArrayLike",
@@ -899,6 +956,8 @@ __all__ = [
     "logs_logistic",
     "logs_loglogistic",
     "logs_lognormal",
+    "logs_mixnorm",
+    "logs_negbinom",
     "logs_normal",
     "logs_2pnormal",
     "logs_poisson",
