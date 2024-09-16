@@ -23,6 +23,44 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
 
 
+def clogs_ensemble(
+    obs: "ArrayLike",
+    fct: "Array",
+    a: "ArrayLike",
+    b: "ArrayLike",
+    bw: "ArrayLike",
+    cens: bool = True,
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the conditional or censored likelihood score for an ensemble forecast."""
+    B = backends.active if backend is None else backends[backend]
+    a, b, bw, fct, obs = map(B.asarray, (a, b, bw, fct, obs))
+
+    z = (obs[..., None] - fct) / bw
+    a_z = (a - fct) / bw
+    b_z = (b - fct) / bw
+
+    dens = _norm_pdf(z, backend=backend) / bw
+    dens = B.mean(dens, axis=-1)
+    s1 = -B.log(dens)
+
+    F_a = _norm_cdf(a_z, backend=backend)
+    F_a = B.mean(F_a, axis=-1)
+    F_b = _norm_cdf(b_z, backend=backend)
+    F_b = B.mean(F_b, axis=-1)
+    cons = F_b - F_a
+
+    w_ind = (obs > a) & (obs < b)
+    if cens:
+        s2 = -B.log(1 - cons)
+        s = B.where(w_ind, s1, s2)
+    else:
+        s2 = B.log(cons)
+        s = B.where(w_ind, s1 + s2, 0.0)
+
+    return s
+
+
 def beta(
     obs: "ArrayLike",
     a: "ArrayLike",

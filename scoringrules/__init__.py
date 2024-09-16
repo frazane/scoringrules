@@ -70,6 +70,7 @@ from scoringrules._logs import (
     logs_tnormal,
     logs_tt,
     logs_uniform,
+    clogs_ensemble,
 )
 from scoringrules._variogram import (
     owvariogram_score,
@@ -143,6 +144,7 @@ __all__ = [
     "logs_tnormal",
     "logs_tt",
     "logs_uniform",
+    "clogs_ensemble",
     "brier_score",
     "error_spread_score",
     "energy_score",
