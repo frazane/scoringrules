@@ -224,6 +224,20 @@ class NumpyBackend(ArrayBackend):
     def size(self, x: "NDArray") -> int:
         return x.size
 
+    def inv(self, x: "NDArray") -> "NDArray":
+        return np.linalg.inv(x)
+
+    def cov(self, x: "NDArray") -> "NDArray":
+        # TODO: This deserves some axis parameter probably?
+        if len(x.shape) == 2:
+            return np.cov(x)
+        else:
+            centered = x - x.mean(axis=-2, keepdims=True)
+            return (centered.transpose(0, 2, 1) @ centered) / (x.shape[-2] - 1)
+
+    def det(self, x: "NDArray") -> "NDArray":
+        return np.linalg.det(x)
+
 
 class NumbaBackend(NumpyBackend):
     """Numba backend."""
