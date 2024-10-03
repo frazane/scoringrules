@@ -49,6 +49,7 @@ from scoringrules._interval import interval_score, weighted_interval_score
 from scoringrules._logs import (
     logs_beta,
     logs_binomial,
+    logs_ensemble,
     logs_exponential,
     logs_exponential2,
     logs_2pexponential,
@@ -121,6 +122,7 @@ __all__ = [
     "vrcrps_ensemble",
     "logs_beta",
     "logs_binomial",
+    "logs_ensemble",
     "logs_exponential",
     "logs_exponential2",
     "logs_2pexponential",

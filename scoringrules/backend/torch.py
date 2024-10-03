@@ -47,6 +47,27 @@ class TorchBackend(ArrayBackend):
     ) -> "Tensor":
         return torch.mean(x, axis=axis, keepdim=keepdims)
 
+    def std(
+        self,
+        x: "Tensor",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "Tensor":
+        return torch.std(x, correction=1, axis=axis, keepdim=keepdims)
+
+    def quantile(
+        self,
+        x: "Tensor",
+        q: "TensorLike",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "Tensor":
+        return torch.quantile(x, q, dim=axis, keepdim=keepdims)
+
     def max(
         self, x: "Tensor", axis: int | tuple[int, ...] | None, keepdims: bool = False
     ) -> "Tensor":

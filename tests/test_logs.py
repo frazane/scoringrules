@@ -4,6 +4,34 @@ from scoringrules import _logs
 
 from .conftest import BACKENDS
 
+ENSEMBLE_SIZE = 51
+N = 100
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_ensemble(backend):
+    obs = np.random.randn(N)
+    mu = obs + np.random.randn(N) * 0.1
+    sigma = abs(np.random.randn(N))
+    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+
+    res = _logs.logs_ensemble(obs, fct, axis=-1, backend=backend)
+    assert res.shape == (N,)
+
+    fct = fct.T
+    res0 = _logs.logs_ensemble(obs, fct, axis=0, backend=backend)
+    assert np.allclose(res, res0)
+
+    obs, fct = 6.2, [4.2, 5.1, 6.1, 7.6, 8.3, 9.5]
+    res = _logs.logs_ensemble(obs, fct, backend=backend)
+    expected = 1.926475
+    assert np.isclose(res, expected)
+
+    fct = [-142.7, -160.3, -179.4, -184.5]
+    res = _logs.logs_ensemble(obs, fct, backend=backend)
+    expected = 55.25547
+    assert np.isclose(res, expected)
+
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_beta(backend):
