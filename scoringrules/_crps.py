@@ -1530,6 +1530,68 @@ def crps_lognormal(
     return crps.lognormal(observation, mulog, sigmalog, backend=backend)
 
 
+def crps_mixnorm(
+    observation: "ArrayLike",
+    m: "ArrayLike",
+    s: "ArrayLike",
+    /,
+    w: "ArrayLike" = None,
+    axis: "ArrayLike" = -1,
+    *,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for a mixture of normal distributions.
+
+    It is based on the following formulation from
+    [Grimit et al. (2006)](https://doi.org/10.1256/qj.05.235):
+
+    $$ \mathrm{CRPS}(F, y) = \sum_{i=1}^{M} w_{i} A(y - \mu_{i}, \sigma_{i}^{2}) - \frac{1}{2} \sum_{i=1}^{M} \sum_{j=1}^{M} w_{i} w_{j} A(\mu_{i} - \mu_{j}, \sigma_{i}^{2} + \sigma_{j}^{2}), $$
+
+    where $F(x) = \sum_{i=1}^{M} w_{i} \Phi \left( \frac{x - \mu_{i}}{\sigma_{i}} \right)$,
+    and $A(\mu, \sigma^{2}) = \mu (2 \Phi(\frac{\mu}{\sigma}) - 1) + 2\sigma \phi(\frac{\mu}{\sigma}).$
+
+    Parameters
+    ----------
+    observation: ArrayLike
+        The observed values.
+    m: ArrayLike
+        Means of the component normal distributions.
+    s: ArrayLike
+        Standard deviations of the component normal distributions.
+    w: ArrayLike
+        Non-negative weights assigned to each component.
+    axis: int
+        The axis corresponding to the mixture components. Default is the last axis.
+    backend:
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The CRPS between MixNormal(m, s) and obs.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_mixnormal(0.0, [0.1, -0.3, 1.0], [0.4, 2.1, 0.7], [0.1, 0.2, 0.7])
+    """
+    B = backends.active if backend is None else backends[backend]
+    observation, m, s = map(B.asarray, (observation, m, s))
+
+    if w is None:
+        M: int = m.shape[axis]
+        w = B.zeros(m.shape) + 1 / M
+    else:
+        w = B.asarray(w)
+
+    if axis != -1:
+        m = B.moveaxis(m, axis, -1)
+        s = B.moveaxis(s, axis, -1)
+        w = B.moveaxis(w, axis, -1)
+
+    return crps.mixnorm(observation, m, s, w, backend=backend)
+
+
 def crps_negbinom(
     observation: "ArrayLike",
     n: "ArrayLike",
@@ -1853,6 +1915,7 @@ __all__ = [
     "crps_loglaplace",
     "crps_loglogistic",
     "crps_lognormal",
+    "crps_mixnorm",
     "crps_negbinom",
     "crps_normal",
     "crps_2pnormal",

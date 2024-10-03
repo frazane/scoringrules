@@ -28,6 +28,8 @@
 
 ::: scoringrules.logs_lognormal
 
+::: scoringrules.logs_mixnorm
+
 ::: scoringrules.logs_negbinom
 
 ::: scoringrules.logs_normal
