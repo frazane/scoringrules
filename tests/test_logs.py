@@ -4,6 +4,34 @@ from scoringrules import _logs
 
 from .conftest import BACKENDS
 
+ENSEMBLE_SIZE = 51
+N = 100
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_ensemble(backend):
+    obs = np.random.randn(N)
+    mu = obs + np.random.randn(N) * 0.1
+    sigma = abs(np.random.randn(N))
+    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+
+    res = _logs.logs_ensemble(obs, fct, axis=-1, backend=backend)
+    assert res.shape == (N,)
+
+    fct = fct.T
+    res0 = _logs.logs_ensemble(obs, fct, axis=0, backend=backend)
+    assert np.allclose(res, res0)
+
+    obs, fct = 6.2, [4.2, 5.1, 6.1, 7.6, 8.3, 9.5]
+    res = _logs.logs_ensemble(obs, fct, backend=backend)
+    expected = 1.926475
+    assert np.isclose(res, expected)
+
+    fct = [-142.7, -160.3, -179.4, -184.5]
+    res = _logs.logs_ensemble(obs, fct, backend=backend)
+    expected = 55.25547
+    assert np.isclose(res, expected)
+
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_beta(backend):
@@ -282,6 +310,32 @@ def test_loglaplace(backend):
     res = _logs.logs_loglaplace(obs, locationlog, scalelog, backend=backend)
     expected = 6.729553
     assert np.isclose(res, expected)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_mixnorm(backend):
+    obs, m, s, w = 0.3, [0.0, -2.9, 0.9], [0.5, 1.4, 0.7], [1 / 3, 1 / 3, 1 / 3]
+    res = _logs.logs_mixnorm(obs, m, s, w, backend=backend)
+    expected = 1.019742
+    assert np.isclose(res, expected)
+
+    res0 = _logs.logs_mixnorm(obs, m, s, backend=backend)
+    assert np.isclose(res, res0)
+
+    w = [0.3, 0.1, 0.6]
+    res = _logs.logs_mixnorm(obs, m, s, w, backend=backend)
+    expected = 0.8235977
+    assert np.isclose(res, expected)
+
+    obs = [-1.6, 0.3]
+    m = [[0.0, -2.9], [0.6, 0.0], [-1.1, -2.3]]
+    s = [[0.5, 1.7], [1.1, 0.7], [1.4, 1.5]]
+    res1 = _logs.logs_mixnorm(obs, m, s, axis=0, backend=backend)
+
+    m = [[0.0, 0.6, -1.1], [-2.9, 0.0, -2.3]]
+    s = [[0.5, 1.1, 1.4], [1.7, 0.7, 1.5]]
+    res2 = _logs.logs_mixnorm(obs, m, s, backend=backend)
+    assert np.allclose(res1, res2)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

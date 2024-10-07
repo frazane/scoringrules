@@ -52,6 +52,29 @@ class TensorflowBackend(ArrayBackend):
     ) -> "Tensor":
         return tf.math.reduce_mean(x, axis=axis, keepdims=keepdims)
 
+    def std(
+        self,
+        x: "Tensor",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "Tensor":
+        n = x.shape.num_elements() if axis is None else x.shape[axis]
+        resc = self.sqrt(n / (n - 1))
+        return tf.math.reduce_std(x, axis=axis, keepdims=keepdims) * resc
+
+    def quantile(
+        self,
+        x: "Tensor",
+        q: "TensorLike",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "Tensor":
+        raise NotImplementedError
+
     def max(
         self, x: "Tensor", axis: int | tuple[int, ...] | None, keepdims: bool = False
     ) -> "Tensor":
@@ -272,7 +295,7 @@ class TensorflowBackend(ArrayBackend):
     def size(self, x: "Tensor") -> int:
         return x.shape.num_elements()
 
-    def indices(self, dimensions: tuple) -> int:
+    def indices(self, dimensions: tuple) -> "Tensor":
         ranges = [self.arange(s) for s in dimensions]
         index_grids = tf.meshgrid(*ranges, indexing="ij")
         indices = tf.stack(index_grids)

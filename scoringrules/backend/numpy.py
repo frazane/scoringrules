@@ -47,6 +47,27 @@ class NumpyBackend(ArrayBackend):
     ) -> "NDArray":
         return np.mean(x, axis=axis, keepdims=keepdims)
 
+    def std(
+        self,
+        x: "NDArray",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "NDArray":
+        return np.std(x, ddof=1, axis=axis, keepdims=keepdims)
+
+    def quantile(
+        self,
+        x: "NDArray",
+        q: "ArrayLike",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "NDArray":
+        return np.quantile(x, q, axis=axis, keepdims=keepdims)
+
     def max(
         self, x: "NDArray", axis: int | tuple[int, ...] | None, keepdims: bool = False
     ) -> "NDArray":

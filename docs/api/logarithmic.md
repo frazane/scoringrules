@@ -4,6 +4,8 @@
 
 ::: scoringrules.logs_binomial
 
+::: scoringrules.logs_ensemble
+
 ::: scoringrules.logs_exponential
 
 ::: scoringrules.logs_exponential2
@@ -27,6 +29,8 @@
 ::: scoringrules.logs_loglogistic
 
 ::: scoringrules.logs_lognormal
+
+::: scoringrules.logs_mixnorm
 
 ::: scoringrules.logs_negbinom
 
