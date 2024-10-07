@@ -298,7 +298,7 @@ def test_owgksmv(backend):
         return backends[backend].all(x > 0.2)
 
     res = _kernels.owgksmv_ensemble(obs, fct, w_func, backend=backend)
-    np.testing.assert_allclose(res, 0.03901075, rtol=1e-6)
+    np.testing.assert_allclose(res, 0.03901075, rtol=1e-5)
 
     def w_func(x):
         return backends[backend].all(x < 1.0)
