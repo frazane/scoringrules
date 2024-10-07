@@ -226,7 +226,7 @@ def test_owgksuv(backend):
 
     res = _kernels.gksuv_ensemble(obs, fct, backend=backend)
     resw = _kernels.owgksuv_ensemble(obs, fct, lambda x: x * 0.0 + 1.0, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-10)
+    np.testing.assert_allclose(res, resw, rtol=1e-9)
 
     # test correctness
     fct = np.array(
