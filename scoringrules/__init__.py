@@ -78,7 +78,10 @@ from scoringrules._kernels import (
     gksuv_ensemble,
     twgksuv_ensemble,
     owgksuv_ensemble,
+    vrgksuv_ensemble,
     gksmv_ensemble,
+    owgksmv_ensemble,
+    vrgksmv_ensemble,
 )
 
 from scoringrules.backend import backends, register_backend
@@ -148,8 +151,10 @@ __all__ = [
     "gksuv_ensemble",
     "twgksuv_ensemble",
     "owgksuv_ensemble",
+    "vrgksuv_ensemble",
     "gksmv_ensemble",
     "owgksmv_ensemble",
+    "vrgksmv_ensemble",
     "error_spread_score",
     "energy_score",
     "owenergy_score",
