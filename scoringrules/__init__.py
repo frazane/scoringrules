@@ -3,6 +3,8 @@ from importlib.metadata import version
 from scoringrules._brier import (
     brier_score,
     rps_score,
+    log_score,
+    rls_score,
 )
 from scoringrules._crps import (
     crps_beta,
@@ -153,6 +155,8 @@ __all__ = [
     "logs_uniform",
     "brier_score",
     "rps_score",
+    "log_score",
+    "rls_score",
     "gksuv_ensemble",
     "gksmv_ensemble",
     "error_spread_score",
