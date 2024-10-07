@@ -80,8 +80,7 @@ def twgksuv_ensemble(
     /,
     axis: int = -1,
     *,
-    estimator: str = "pwm",
-    sorted_ensemble: bool = False,
+    estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the Threshold-Weighted univariate Gaussian Kernel Score (GKS) for a finite ensemble.
@@ -135,7 +134,6 @@ def twgksuv_ensemble(
         observations,
         forecasts,
         axis=axis,
-        sorted_ensemble=sorted_ensemble,
         estimator=estimator,
         backend=backend,
     )
