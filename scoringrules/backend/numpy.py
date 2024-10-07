@@ -93,6 +93,16 @@ class NumpyBackend(ArrayBackend):
     ) -> "NDArray":
         return np.sum(x, axis=axis, dtype=dtype, keepdims=keepdims)
 
+    def cumsum(
+        self,
+        x: "NDArray",
+        /,
+        axis: int | tuple[int, ...] | None = None,
+        *,
+        dtype: Dtype | None = None,
+    ) -> "NDArray":
+        return np.cumsum(x, axis=axis, dtype=dtype)
+
     def unique_values(self, x: "NDArray") -> "NDArray":
         return np.unique(x)
 
@@ -244,6 +254,9 @@ class NumpyBackend(ArrayBackend):
 
     def size(self, x: "NDArray") -> int:
         return x.size
+
+    def indices(self, dimensions: tuple) -> "NDArray":
+        return np.indices(dimensions)
 
 
 class NumbaBackend(NumpyBackend):

@@ -93,6 +93,16 @@ class JaxBackend(ArrayBackend):
     ) -> "Array":
         return jnp.sum(x, axis=axis, dtype=dtype, keepdims=keepdims)
 
+    def cumsum(
+        self,
+        x: "Array",
+        /,
+        axis: int | tuple[int, ...] | None = None,
+        *,
+        dtype: Dtype | None = None,
+    ) -> "Array":
+        return jnp.cumsum(x, axis=axis, dtype=dtype)
+
     def unique_values(self, x: "Array") -> "Array":
         return jnp.unique(x)
 
@@ -248,6 +258,9 @@ class JaxBackend(ArrayBackend):
 
     def size(self, x: "Array") -> int:
         return x.size
+
+    def indices(self, dimensions: tuple) -> "Array":
+        return jnp.indices(dimensions)
 
 
 if __name__ == "__main__":
