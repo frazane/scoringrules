@@ -137,7 +137,7 @@ class TorchBackend(ArrayBackend):
         *,
         dtype: Dtype | None = None,
     ) -> "Tensor":
-        return torch.arange(start)  # TODO: fix this
+        return torch.arange(start, stop, step, dtype=dtype)  # TODO: fix this
 
     def zeros(
         self,

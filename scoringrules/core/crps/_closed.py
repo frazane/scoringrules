@@ -477,7 +477,7 @@ def hypergeometric(
 
     # if n is a scalar, x always has the same shape, which simplifies the computation
     if B.size(n) == 1:
-        x = B.arange(n + 1)
+        x = B.arange(0, n + 1)
         out_ndims = B.max(B.asarray([_input.ndim for _input in [obs, M, m, N]]), axis=0)
         x = B.expand_dims(x, axis=tuple(range(-out_ndims, 0)))
         x, M, m, N = B.broadcast_arrays(x, M, m, N)
