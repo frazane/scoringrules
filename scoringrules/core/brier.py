@@ -18,7 +18,7 @@ def brier_score(
     if B.any(fct < 0.0) or B.any(fct > 1.0 + EPSILON):
         raise ValueError("Forecasted probabilities must be within 0 and 1.")
 
-    if not set(B.unique_values(obs)) <= {0, 1}:
+    if not set(v.item() for v in B.unique_values(obs)) <= {0, 1}:
         raise ValueError("Observations must be 0, 1, or NaN.")
 
     return B.asarray((fct - obs) ** 2)
@@ -36,12 +36,11 @@ def rps_score(
     if B.any(fct < 0.0) or B.any(fct > 1.0 + EPSILON):
         raise ValueError("Forecast probabilities must be between 0 and 1.")
 
-    obs_mat = B.zeros(fct.shape, dtype=int)
-    index = B.indices(obs.shape)
-    obs_mat[(*index, obs - 1)] = 1
+    categories = B.arange(1, fct.shape[-1] + 1)
+    obs_one_hot = B.where(B.expand_dims(obs, -1) == categories, 1, 0)
 
-    return B.asarray(
-        B.sum((B.cumsum(fct, axis=-1) - B.cumsum(obs_mat, axis=-1)) ** 2, axis=-1)
+    return B.sum(
+        (B.cumsum(fct, axis=-1) - B.cumsum(obs_one_hot, axis=-1)) ** 2, axis=-1
     )
 
 
@@ -53,7 +52,7 @@ def log_score(obs: "ArrayLike", fct: "ArrayLike", backend: "Backend" = None) -> 
     if B.any(fct < 0.0) or B.any(fct > 1.0 + EPSILON):
         raise ValueError("Forecasted probabilities must be within 0 and 1.")
 
-    if not set(B.unique_values(obs)) <= {0, 1}:
+    if not set(v.item() for v in B.unique_values(obs)) <= {0, 1}:
         raise ValueError("Observations must be 0, 1, or NaN.")
 
     return B.asarray(-B.log(B.abs(fct + obs - 1.0)))
@@ -71,13 +70,10 @@ def rls_score(
     if B.any(fct < 0.0) or B.any(fct > 1.0 + EPSILON):
         raise ValueError("Forecast probabilities must be between 0 and 1.")
 
-    obs_mat = B.zeros(fct.shape, dtype=int)
-    index = B.indices(obs.shape)
-    obs_mat[(*index, obs - 1)] = 1
+    categories = B.arange(1, fct.shape[-1] + 1)
+    obs_one_hot = B.where(B.expand_dims(obs, -1) == categories, 1, 0)
 
-    return B.asarray(
-        B.sum(
-            -B.log(B.abs(B.cumsum(fct, axis=-1) + B.cumsum(obs_mat, axis=-1) - 1.0)),
-            axis=-1,
-        )
+    return B.sum(
+        -B.log(B.abs(B.cumsum(fct, axis=-1) + B.cumsum(obs_one_hot, axis=-1) - 1.0)),
+        axis=-1,
     )

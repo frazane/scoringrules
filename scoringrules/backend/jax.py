@@ -47,6 +47,27 @@ class JaxBackend(ArrayBackend):
     ) -> "Array":
         return jnp.mean(x, axis=axis, keepdims=keepdims)
 
+    def std(
+        self,
+        x: "Array",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "Array":
+        return jnp.std(x, ddof=1, axis=axis, keepdims=keepdims)
+
+    def quantile(
+        self,
+        x: "Array",
+        q: "ArrayLike",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "Array":
+        return jnp.quantile(x, q, axis=axis, keepdims=keepdims)
+
     def max(
         self, x: "Array", axis: int | tuple[int, ...] | None, keepdims: bool = False
     ) -> "Array":

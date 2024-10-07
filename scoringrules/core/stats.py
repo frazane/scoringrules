@@ -243,7 +243,7 @@ def _hypergeo_cdf(k, M, n, N, backend=None):
         k, M, n, N = B.broadcast_arrays(k, M, n, N)
         _iter = zip(k.ravel(), M.ravel(), n.ravel(), N.ravel(), strict=True)
         return B.asarray(
-            [_inner(B.arange(_args[0] + 1), *_args[1:]) for _args in _iter]
+            [_inner(B.arange(0, _args[0] + 1), *_args[1:]) for _args in _iter]
         ).reshape(k.shape)
 
 

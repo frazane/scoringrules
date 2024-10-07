@@ -31,6 +31,7 @@ from scoringrules._crps import (
     crps_loglaplace,
     crps_loglogistic,
     crps_lognormal,
+    crps_mixnorm,
     crps_negbinom,
     crps_normal,
     crps_2pnormal,
@@ -53,6 +54,7 @@ from scoringrules._interval import interval_score, weighted_interval_score
 from scoringrules._logs import (
     logs_beta,
     logs_binomial,
+    logs_ensemble,
     logs_exponential,
     logs_exponential2,
     logs_2pexponential,
@@ -63,6 +65,7 @@ from scoringrules._logs import (
     logs_logistic,
     logs_loglogistic,
     logs_lognormal,
+    logs_mixnorm,
     logs_negbinom,
     logs_normal,
     logs_2pnormal,
@@ -79,6 +82,11 @@ from scoringrules._variogram import (
     variogram_score,
     vrvariogram_score,
 )
+from scoringrules._kernels import (
+    gksuv_ensemble,
+    gksmv_ensemble,
+)
+
 from scoringrules.backend import backends, register_backend
 
 __version__ = version("scoringrules")
@@ -111,6 +119,7 @@ __all__ = [
     "crps_loglaplace",
     "crps_loglogistic",
     "crps_lognormal",
+    "crps_mixnorm",
     "crps_negbinom",
     "crps_normal",
     "crps_2pnormal",
@@ -123,6 +132,7 @@ __all__ = [
     "vrcrps_ensemble",
     "logs_beta",
     "logs_binomial",
+    "logs_ensemble",
     "logs_exponential",
     "logs_exponential2",
     "logs_2pexponential",
@@ -133,6 +143,7 @@ __all__ = [
     "logs_logistic",
     "logs_loglogistic",
     "logs_lognormal",
+    "logs_mixnorm",
     "logs_negbinom",
     "logs_normal",
     "logs_2pnormal",
@@ -146,6 +157,8 @@ __all__ = [
     "rps_score",
     "log_score",
     "rls_score",
+    "gksuv_ensemble",
+    "gksmv_ensemble",
     "error_spread_score",
     "energy_score",
     "owenergy_score",

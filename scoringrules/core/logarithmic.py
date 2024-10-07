@@ -251,6 +251,23 @@ def lognormal(
     return s
 
 
+def mixnorm(
+    obs: "ArrayLike",
+    m: "ArrayLike",
+    s: "ArrayLike",
+    w: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the logarithmic score for a mixture of normal distributions."""
+    B = backends.active if backend is None else backends[backend]
+    m, s, w, obs = map(B.asarray, (m, s, w, obs))
+
+    z = (obs[..., None] - m) / s
+    prob = _norm_pdf(z, backend=backend) / s
+    prob = B.sum(w * prob, axis=-1)
+    return -B.log(prob)
+
+
 def negbinom(
     obs: "ArrayLike",
     n: "ArrayLike",
