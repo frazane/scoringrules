@@ -47,6 +47,27 @@ class NumpyBackend(ArrayBackend):
     ) -> "NDArray":
         return np.mean(x, axis=axis, keepdims=keepdims)
 
+    def std(
+        self,
+        x: "NDArray",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "NDArray":
+        return np.std(x, ddof=1, axis=axis, keepdims=keepdims)
+
+    def quantile(
+        self,
+        x: "NDArray",
+        q: "ArrayLike",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "NDArray":
+        return np.quantile(x, q, axis=axis, keepdims=keepdims)
+
     def max(
         self, x: "NDArray", axis: int | tuple[int, ...] | None, keepdims: bool = False
     ) -> "NDArray":
@@ -71,6 +92,16 @@ class NumpyBackend(ArrayBackend):
         keepdims: bool = False,
     ) -> "NDArray":
         return np.sum(x, axis=axis, dtype=dtype, keepdims=keepdims)
+
+    def cumsum(
+        self,
+        x: "NDArray",
+        /,
+        axis: int | tuple[int, ...] | None = None,
+        *,
+        dtype: Dtype | None = None,
+    ) -> "NDArray":
+        return np.cumsum(x, axis=axis, dtype=dtype)
 
     def unique_values(self, x: "NDArray") -> "NDArray":
         return np.unique(x)
@@ -223,6 +254,9 @@ class NumpyBackend(ArrayBackend):
 
     def size(self, x: "NDArray") -> int:
         return x.size
+
+    def indices(self, dimensions: tuple) -> "NDArray":
+        return np.indices(dimensions)
 
 
 class NumbaBackend(NumpyBackend):

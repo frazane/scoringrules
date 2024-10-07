@@ -477,7 +477,7 @@ def hypergeometric(
 
     # if n is a scalar, x always has the same shape, which simplifies the computation
     if B.size(n) == 1:
-        x = B.arange(n + 1)
+        x = B.arange(0, n + 1)
         out_ndims = B.max(B.asarray([_input.ndim for _input in [obs, M, m, N]]), axis=0)
         x = B.expand_dims(x, axis=tuple(range(-out_ndims, 0)))
         x, M, m, N = B.broadcast_arrays(x, M, m, N)
@@ -602,6 +602,31 @@ def lognormal(
         + _norm_cdf(sigmalog / B.sqrt(B.asarray(2.0)), backend=backend)
         - 1
     )
+
+
+def mixnorm(
+    obs: "ArrayLike",
+    m: "ArrayLike",
+    s: "ArrayLike",
+    w: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for a mixture of normal distributions."""
+    B = backends.active if backend is None else backends[backend]
+    m, s, w, obs = map(B.asarray, (m, s, w, obs))
+
+    m_y = obs[..., None] - m
+    m_X = m[..., None] - m[..., None, :]
+    s_X = B.sqrt(s[..., None] ** 2 + s[..., None, :] ** 2)
+    w_X = w[..., None] * w[..., None, :]
+
+    A_y = m_y * (2 * _norm_cdf(m_y / s) - 1) + 2 * s * _norm_pdf(m_y / s)
+    A_X = m_X * (2 * _norm_cdf(m_X / s_X) - 1) + 2 * s_X * _norm_pdf(m_X / s_X)
+
+    sc_1 = B.sum(w * A_y, axis=-1)
+    sc_2 = B.sum(w_X * A_X, axis=(-1, -2))
+
+    return sc_1 - 0.5 * sc_2
 
 
 def negbinom(

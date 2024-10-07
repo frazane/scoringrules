@@ -490,6 +490,32 @@ def test_lognormal(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
+def test_mixnorm(backend):
+    obs, m, s, w = 0.3, [0.0, -2.9, 0.9], [0.5, 1.4, 0.7], [1 / 3, 1 / 3, 1 / 3]
+    res = _crps.crps_mixnorm(obs, m, s, w, backend=backend)
+    expected = 0.4510451
+    assert np.isclose(res, expected)
+
+    res0 = _crps.crps_mixnorm(obs, m, s, backend=backend)
+    assert np.isclose(res, res0)
+
+    w = [0.3, 0.1, 0.6]
+    res = _crps.crps_mixnorm(obs, m, s, w, backend=backend)
+    expected = 0.2354619
+    assert np.isclose(res, expected)
+
+    obs = [-1.6, 0.3]
+    m = [[0.0, -2.9], [0.6, 0.0], [-1.1, -2.3]]
+    s = [[0.5, 1.7], [1.1, 0.7], [1.4, 1.5]]
+    res1 = _crps.crps_mixnorm(obs, m, s, axis=0, backend=backend)
+
+    m = [[0.0, 0.6, -1.1], [-2.9, 0.0, -2.3]]
+    s = [[0.5, 1.1, 1.4], [1.7, 0.7, 1.5]]
+    res2 = _crps.crps_mixnorm(obs, m, s, backend=backend)
+    assert np.allclose(res1, res2)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_negbinom(backend):
     if backend in ["jax", "torch", "tensorflow"]:
         pytest.skip("Not implemented in jax, torch or tensorflow backends")

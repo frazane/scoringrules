@@ -61,7 +61,7 @@ def _crps_ensemble_pwm(
     M: int = fct.shape[-1]
     expected_diff = B.sum(B.abs(obs[..., None] - fct), axis=-1) / M
     β_0 = B.sum(fct, axis=-1) / M
-    β_1 = B.sum(fct * B.arange(M), axis=-1) / (M * (M - 1.0))
+    β_1 = B.sum(fct * B.arange(0, M), axis=-1) / (M * (M - 1.0))
     return expected_diff + β_0 - 2.0 * β_1
 
 

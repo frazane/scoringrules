@@ -47,6 +47,27 @@ class TorchBackend(ArrayBackend):
     ) -> "Tensor":
         return torch.mean(x, axis=axis, keepdim=keepdims)
 
+    def std(
+        self,
+        x: "Tensor",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "Tensor":
+        return torch.std(x, correction=1, axis=axis, keepdim=keepdims)
+
+    def quantile(
+        self,
+        x: "Tensor",
+        q: "TensorLike",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "Tensor":
+        return torch.quantile(x, q, dim=axis, keepdim=keepdims)
+
     def max(
         self, x: "Tensor", axis: int | tuple[int, ...] | None, keepdims: bool = False
     ) -> "Tensor":
@@ -70,6 +91,14 @@ class TorchBackend(ArrayBackend):
         keepdims: bool = False,
     ) -> "Tensor":
         return torch.sum(x, axis=axis, keepdim=keepdims)
+
+    def cumsum(
+        self,
+        x: "Tensor",
+        /,
+        axis: int | tuple[int, ...] | None = None,
+    ) -> "Tensor":
+        return torch.cumsum(x, dim=axis)
 
     def unique_values(self, x: "Tensor", /) -> "Tensor":
         return torch.unique(x)
@@ -108,7 +137,7 @@ class TorchBackend(ArrayBackend):
         *,
         dtype: Dtype | None = None,
     ) -> "Tensor":
-        return torch.arange(start)  # TODO: fix this
+        return torch.arange(start, stop, step, dtype=dtype)  # TODO: fix this
 
     def zeros(
         self,
@@ -240,3 +269,12 @@ class TorchBackend(ArrayBackend):
 
     def size(self, x: "Tensor") -> int:
         return x.numel()
+
+    def indices(self, dimensions: tuple) -> "Tensor":
+        ranges = [self.arange(s) for s in dimensions]
+        if ranges == []:
+            indices = self.asarray(ranges)
+        else:
+            index_grids = torch.meshgrid(*ranges, indexing="ij")
+            indices = torch.stack(index_grids)
+        return indices
