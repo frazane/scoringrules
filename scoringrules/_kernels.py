@@ -88,7 +88,7 @@ def twgksuv_ensemble(
     Computation is performed using the ensemble representation of threshold-weighted kernel scores in
     [Allen et al. (2022)](https://arxiv.org/abs/2202.12732).
 
-    $$ \mathrm{twGKS}(F_{ens}, y) = - \frac{1}{M} \sum_{m = 1}^{M} k(v(x_{m}), v(y)) + \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} k(v(x_{m}), v(x_{j})) + \frac{1}{2} k(v(y), v(y)),$$
+    $$ \mathrm{twGKS}(F_{ens}, y) = - \frac{1}{M} \sum_{m = 1}^{M} k(v(x_{m}), v(y)) + \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} k(v(x_{m}), v(x_{j})) + \frac{1}{2} k(v(y), v(y)), $$
 
     where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical
     distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
@@ -350,6 +350,58 @@ def gksmv_ensemble(
         return kernels.estimator_gufuncs_mv[estimator](observations, forecasts)
 
     return kernels.ensemble_mv(observations, forecasts, estimator, backend=backend)
+
+
+def twgksmv_ensemble(
+    observations: "Array",
+    forecasts: "Array",
+    v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
+    /,
+    m_axis: int = -2,
+    v_axis: int = -1,
+    *,
+    backend: "Backend" = None,
+) -> "Array":
+    r"""Compute the Threshold-Weighted Gaussian Kernel Score (twGKS) for a finite multivariate ensemble.
+
+    Computation is performed using the ensemble representation of threshold-weighted kernel scores in
+    [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
+
+    $$ \mathrm{twGKS}(F_{ens}, y) = - \frac{1}{M} \sum_{m = 1}^{M} k(v(x_{m}), v(y)) + \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} k(v(x_{m}), v(x_{j})) + \frac{1}{2} k(v(y), v(y)), $$
+
+    where $F_{ens}$ is the ensemble forecast $\mathbf{x}_{1}, \dots, \mathbf{x}_{M}$ with
+    $M$ members, $\| \cdotp \|$ is the Euclidean distance, $v$ is the chaining function
+    used to target particular outcomes, and
+
+    $$ k(x_{1}, x_{2}) = \exp \left(- \frac{(x_{1} - x_{2})^{2}}{2} \right) $$
+
+    is the Gaussian kernel.
+
+    Parameters
+    ----------
+    observations: ArrayLike of shape (...,D)
+        The observed values, where the variables dimension is by default the last axis.
+    forecasts: ArrayLike of shape (..., M, D)
+        The predicted forecast ensemble, where the ensemble dimension is by default
+        represented by the second last axis and the variables dimension by the last axis.
+    v_func: tp.Callable
+        Chaining function used to emphasise particular outcomes.
+    m_axis: int
+        The axis corresponding to the ensemble dimension. Defaults to -2.
+    v_axis: int or tuple(int)
+        The axis corresponding to the variables dimension. Defaults to -1.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score: ArrayLike of shape (...)
+        The computed Threshold-Weighted Gaussian Kernel Score.
+    """
+    observations, forecasts = map(v_func, (observations, forecasts))
+    return gksmv_ensemble(
+        observations, forecasts, m_axis=m_axis, v_axis=v_axis, backend=backend
+    )
 
 
 def owgksmv_ensemble(

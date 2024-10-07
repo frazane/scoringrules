@@ -80,6 +80,7 @@ from scoringrules._kernels import (
     owgksuv_ensemble,
     vrgksuv_ensemble,
     gksmv_ensemble,
+    twgksmv_ensemble,
     owgksmv_ensemble,
     vrgksmv_ensemble,
 )
@@ -153,6 +154,7 @@ __all__ = [
     "owgksuv_ensemble",
     "vrgksuv_ensemble",
     "gksmv_ensemble",
+    "twgksmv_ensemble",
     "owgksmv_ensemble",
     "vrgksmv_ensemble",
     "error_spread_score",

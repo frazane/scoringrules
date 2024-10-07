@@ -75,23 +75,21 @@ def test_owenergy_score_correctness(backend):
     np.testing.assert_allclose(res, 0.3345418, rtol=1e-6)
 
 
-# @pytest.mark.parametrize("backend", BACKENDS)
-# def test_twenergy_score_correctness(backend):
-#     fct = np.array(
-#         [[0.79546742, 0.4777960, 0.2164079], [0.02461368, 0.7584595, 0.3181810]]
-#     ).T
-#     obs = np.array([0.2743836, 0.8146400])
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_twenergy_score_correctness(backend):
+    fct = np.array(
+        [[0.79546742, 0.4777960, 0.2164079], [0.02461368, 0.7584595, 0.3181810]]
+    ).T
+    obs = np.array([0.2743836, 0.8146400])
 
-#     def v_func(x, t):
-#         return np.maximum(x, t)
+    def v_func(x):
+        return np.maximum(x, 0.2)
 
-#     t = 0.2
-#     res = twenergy_score(obs, fct, v_func, (t,), backend=backend)
-#     np.testing.assert_allclose(res, 0.3116075, rtol=1e-6)
+    res = twenergy_score(obs, fct, v_func, backend=backend)
+    np.testing.assert_allclose(res, 0.3116075, rtol=1e-6)
 
-#     def v_func(x, t):
-#         return np.minimum(x, t)
+    def v_func(x):
+        return np.minimum(x, 1)
 
-#     t = 1
-#     res = twenergy_score(obs, fct, v_func, (t,), backend=backend)
-#     np.testing.assert_allclose(res, 0.3345418, rtol=1e-6)
+    res = twenergy_score(obs, fct, v_func, backend=backend)
+    np.testing.assert_allclose(res, 0.3345418, rtol=1e-6)

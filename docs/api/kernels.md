@@ -10,6 +10,8 @@
 
 ::: scoringrules.gksmv_ensemble
 
+::: scoringrules.twgksmv_ensemble
+
 ::: scoringrules.owgksmv_ensemble
 
 ::: scoringrules.vrgksmv_ensemble

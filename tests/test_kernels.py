@@ -184,6 +184,33 @@ def test_twgksuv(estimator, backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
+def test_twgksmv(backend):
+    obs = np.random.randn(N, N_VARS)
+    fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
+
+    res0 = _kernels.gksmv_ensemble(obs, fct, backend=backend)
+    res = _kernels.twgksmv_ensemble(obs, fct, lambda x: x, backend=backend)
+    np.testing.assert_allclose(res, res0, rtol=1e-6)
+
+    fct = np.array(
+        [[0.79546742, 0.4777960, 0.2164079], [0.02461368, 0.7584595, 0.3181810]]
+    ).T
+    obs = np.array([0.2743836, 0.8146400])
+
+    def v_func(x):
+        return np.maximum(x, 0.2)
+
+    res = _kernels.twgksmv_ensemble(obs, fct, v_func, backend=backend)
+    np.testing.assert_allclose(res, 0.08671498, rtol=1e-6)
+
+    def v_func(x):
+        return np.minimum(x, 1)
+
+    res = _kernels.twgksmv_ensemble(obs, fct, v_func, backend=backend)
+    np.testing.assert_allclose(res, 0.1016436, rtol=1e-6)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_owgksuv(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
