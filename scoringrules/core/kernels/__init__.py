@@ -1,4 +1,9 @@
-from ._approx import ensemble_uv, ensemble_mv
+from ._approx import (
+    ensemble_uv,
+    ow_ensemble_uv,
+    ensemble_mv,
+    ow_ensemble_mv,
+)
 
 try:
     from ._gufuncs import estimator_gufuncs
@@ -12,7 +17,9 @@ except ImportError:
 
 __all__ = [
     "ensemble_uv",
+    "ow_ensemble_uv",
     "ensemble_mv",
+    "ow_ensemble_mv",
     "estimator_gufuncs",
     "estimator_gufuncs_mv",
 ]
