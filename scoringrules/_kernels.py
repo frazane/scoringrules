@@ -73,6 +73,74 @@ def gksuv_ensemble(
     return kernels.ensemble_uv(observations, forecasts, estimator, backend=backend)
 
 
+def twgksuv_ensemble(
+    observations: "ArrayLike",
+    forecasts: "Array",
+    v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
+    /,
+    axis: int = -1,
+    *,
+    estimator: str = "pwm",
+    sorted_ensemble: bool = False,
+    backend: "Backend" = None,
+) -> "Array":
+    r"""Estimate the Threshold-Weighted univariate Gaussian Kernel Score (GKS) for a finite ensemble.
+
+    Computation is performed using the ensemble representation of threshold-weighted kernel scores in
+    [Allen et al. (2022)](https://arxiv.org/abs/2202.12732).
+
+    $$ \mathrm{twGKS}(F_{ens}, y) = - \frac{1}{M} \sum_{m = 1}^{M} k(v(x_{m}), v(y)) + \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} k(v(x_{m}), v(x_{j})) + \frac{1}{2} k(v(y), v(y)),$$
+
+    where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical
+    distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
+    $M$ members, $v$ is the chaining function used to target particular outcomes, and
+
+    $$ k(x_{1}, x_{2}) = \exp \left(- \frac{(x_{1} - x_{2})^{2}}{2} \right) $$
+
+    is the Gaussian kernel.
+
+    Parameters
+    ----------
+    observations: ArrayLike
+        The observed values.
+    forecasts: ArrayLike
+        The predicted forecast ensemble, where the ensemble dimension is by default
+        represented by the last axis.
+    v_func: tp.Callable
+        Chaining function used to emphasise particular outcomes. For example, a function that
+        only considers values above a certain threshold $t$ by projecting forecasts and observations
+        to $[t, \inf)$.
+    axis: int
+        The axis corresponding to the ensemble. Default is the last axis.
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    twgks: ArrayLike
+        The twGKS between the forecast ensemble and obs for the chosen chaining function.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scoringrules as sr
+    >>>
+    >>> def v_func(x):
+    >>>    return np.maximum(x, -1.0)
+    >>>
+    >>> sr.twgksuv_ensemble(obs, pred, v_func)
+    """
+    observations, forecasts = map(v_func, (observations, forecasts))
+    return gksuv_ensemble(
+        observations,
+        forecasts,
+        axis=axis,
+        sorted_ensemble=sorted_ensemble,
+        estimator=estimator,
+        backend=backend,
+    )
+
+
 def gksmv_ensemble(
     observations: "Array",
     forecasts: "Array",

@@ -1,3 +1,7 @@
 # Kernel scores
 
-::: scoringrules.gks_ensemble
+::: scoringrules.gksuv_ensemble
+
+::: scoringrules.gksmv_ensemble
+
+::: scoringrules.twgksmv_ensemble

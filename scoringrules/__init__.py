@@ -76,6 +76,7 @@ from scoringrules._variogram import (
 )
 from scoringrules._kernels import (
     gksuv_ensemble,
+    twgksuv_ensemble,
     gksmv_ensemble,
 )
 
@@ -144,6 +145,7 @@ __all__ = [
     "logs_uniform",
     "brier_score",
     "gksuv_ensemble",
+    "twgksuv_ensemble",
     "gksmv_ensemble",
     "error_spread_score",
     "energy_score",
