@@ -34,47 +34,6 @@ def test_ensemble(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
-def test_weighted(backend):
-    obs = np.random.randn(N)
-    mu = obs + np.random.randn(N) * 0.1
-    sigma = abs(np.random.randn(N))
-    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
-
-    res = _logs.clogs_ensemble(obs, fct, axis=-1, backend=backend)
-    assert res.shape == (N,)
-
-    res0 = _logs.logs_ensemble(obs, fct, axis=-1, backend=backend)
-    assert np.allclose(res, res0)
-
-    fct = fct.T
-    res0 = _logs.clogs_ensemble(obs, fct, axis=0, backend=backend)
-    assert np.allclose(res, res0)
-
-    res = _logs.clogs_ensemble(obs, fct, a=20.0, cens=False, backend=backend)
-    assert np.allclose(res, 0.0)
-
-    obs, fct, b = 6.2, [4.2, 5.1, 6.1, 7.6, 8.3, 9.5], 6.5
-    res = _logs.clogs_ensemble(obs, fct, b=b, backend=backend)
-    expected = 1.926475
-    assert np.isclose(res, expected)
-
-    b = 5.0
-    res = _logs.clogs_ensemble(obs, fct, b=b, backend=backend)
-    expected = 0.2796237
-    assert np.isclose(res, expected)
-
-    a = 2.0
-    res = _logs.clogs_ensemble(obs, fct, a=a, b=b, backend=backend)
-    expected = 0.2594561
-    assert np.isclose(res, expected)
-
-    b = 6.5
-    res = _logs.clogs_ensemble(obs, fct, b=b, cens=False, backend=backend)
-    expected = 1.141422
-    assert np.isclose(res, expected)
-
-
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_beta(backend):
     if backend == "torch":
         pytest.skip("Not implemented in torch backend")

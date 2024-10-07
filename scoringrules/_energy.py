@@ -24,8 +24,7 @@ def energy_score(
     $$\text{ES}(F_{ens}, \mathbf{y})= \frac{1}{M} \sum_{m=1}^{M} \| \mathbf{x}_{m} -
       \mathbf{y} \| - \frac{1}{2 M^{2}} \sum_{m=1}^{M} \sum_{j=1}^{M} \| \mathbf{x}_{m} - \mathbf{x}_{j} \| $$
 
-    where $\mathbf{X}$ and $\mathbf{X'}$ are independent samples from $F$
-    and $||\cdot||$ is the euclidean norm over the input dimensions (the variables).
+    where $||\cdot||$ is the euclidean norm over the input dimensions (the variables).
 
 
     Parameters
