@@ -85,7 +85,13 @@ from scoringrules._variogram import (
 )
 from scoringrules._kernels import (
     gksuv_ensemble,
+    twgksuv_ensemble,
+    owgksuv_ensemble,
+    vrgksuv_ensemble,
     gksmv_ensemble,
+    twgksmv_ensemble,
+    owgksmv_ensemble,
+    vrgksmv_ensemble,
 )
 
 from scoringrules.backend import backends, register_backend
@@ -159,8 +165,6 @@ __all__ = [
     "rps_score",
     "log_score",
     "rls_score",
-    "gksuv_ensemble",
-    "gksmv_ensemble",
     "error_spread_score",
     "energy_score",
     "owenergy_score",
@@ -170,6 +174,14 @@ __all__ = [
     "owvariogram_score",
     "twvariogram_score",
     "vrvariogram_score",
+    "gksuv_ensemble",
+    "twgksuv_ensemble",
+    "owgksuv_ensemble",
+    "vrgksuv_ensemble",
+    "gksmv_ensemble",
+    "twgksmv_ensemble",
+    "owgksmv_ensemble",
+    "vrgksmv_ensemble",
     "interval_score",
     "weighted_interval_score",
 ]

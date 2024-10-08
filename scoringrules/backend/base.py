@@ -44,6 +44,29 @@ class ArrayBackend(abc.ABC):
         """Calculate the arithmetic mean of the input array ``x``."""
 
     @abc.abstractmethod
+    def std(
+        self,
+        x: "Array",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "Array":
+        """Calculate the standard deviation of the input array ``x``."""
+
+    @abc.abstractmethod
+    def quantile(
+        self,
+        x: "Array",
+        q: "ArrayLike",
+        /,
+        *,
+        axis: int | tuple[int, ...] | None = None,
+        keepdims: bool = False,
+    ) -> "Array":
+        """Calculate the ``q`` quantiles of the input array ``x``."""
+
+    @abc.abstractmethod
     def max(
         self, x: "Array", axis: int | tuple[int, ...] | None, keepdims: bool = False
     ) -> "Array":
@@ -263,3 +286,7 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def size(self, x: "Array") -> int:
         """Return the number of elements in the input array."""
+
+    @abc.abstractmethod
+    def indices(self, x: "Array") -> int:
+        """Return an array representing the indices of a grid."""

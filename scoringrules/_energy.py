@@ -185,7 +185,7 @@ def vrenergy_score(
 ) -> "Array":
     r"""Compute the Vertically Re-scaled Energy Score (vrES) for a finite multivariate ensemble.
 
-    Computation is performed using the ensemble representation of the twES in
+    Computation is performed using the ensemble representation of the vrES in
     [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
 
     \[
@@ -196,7 +196,7 @@ def vrenergy_score(
     \]
 
     where $F_{ens}$ is the ensemble forecast $\mathbf{x}_{1}, \dots, \mathbf{x}_{M}$ with
-    $M$ members, and $v$ is the chaining function used to target particular outcomes.
+    $M$ members, and $w$ is the weight function used to target particular outcomes.
 
 
     Parameters

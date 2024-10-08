@@ -79,3 +79,126 @@ def ensemble_mv(
 
     out = -out
     return out
+
+
+def ow_ensemble_uv(
+    obs: "ArrayLike",
+    fct: "Array",
+    ow: "Array",
+    fw: "Array",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute an outcome-weighted kernel score for a finite univariate ensemble."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-1]
+    wbar = B.mean(fw, axis=-1)
+    e_1 = (
+        B.sum(gauss_kern_uv(obs[..., None], fct, backend=backend) * fw, axis=-1)
+        * ow
+        / (M * wbar)
+    )
+    e_2 = B.sum(
+        gauss_kern_uv(fct[..., None], fct[..., None, :], backend=backend)
+        * fw[..., None]
+        * fw[..., None, :],
+        axis=(-1, -2),
+    )
+    e_2 *= ow / (M**2 * wbar**2)
+    e_3 = gauss_kern_uv(obs, obs, backend=backend) * ow
+
+    out = e_1 - 0.5 * e_2 - 0.5 * e_3
+    out = -out
+    return out
+
+
+def ow_ensemble_mv(
+    obs: "ArrayLike",
+    fct: "Array",
+    ow: "Array",
+    fw: "Array",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute an outcome-weighted kernel score for a finite multivariate ensemble.
+
+    The ensemble and variables axes are on the second last and last dimensions respectively.
+    """
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-2]
+    wbar = B.sum(fw, -1) / M
+
+    err_kern = gauss_kern_mv(B.expand_dims(obs, -2), fct, backend=backend)
+    E_1 = B.sum(err_kern * fw * B.expand_dims(ow, -1), axis=-1) / (M * wbar)
+
+    spread_kern = gauss_kern_mv(
+        B.expand_dims(fct, -3), B.expand_dims(fct, -2), backend=backend
+    )
+    fw_prod = B.expand_dims(fw, -1) * B.expand_dims(fw, -2)
+    spread_kern *= fw_prod * B.expand_dims(ow, (-2, -1))
+    E_2 = B.sum(spread_kern, (-2, -1)) / (M**2 * wbar**2)
+
+    E_3 = gauss_kern_mv(obs, obs, backend=backend) * ow
+
+    out = E_1 - 0.5 * E_2 - 0.5 * E_3
+    out = -out
+    return out
+
+
+def vr_ensemble_uv(
+    obs: "ArrayLike",
+    fct: "Array",
+    ow: "Array",
+    fw: "Array",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute a vertically re-scaled kernel score for a finite univariate ensemble."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-1]
+
+    e_1 = (
+        B.sum(gauss_kern_uv(obs[..., None], fct, backend=backend) * fw, axis=-1)
+        * ow
+        / M
+    )
+    e_2 = B.sum(
+        gauss_kern_uv(
+            B.expand_dims(fct, axis=-1), B.expand_dims(fct, axis=-2), backend=backend
+        )
+        * (B.expand_dims(fw, axis=-1) * B.expand_dims(fw, axis=-2)),
+        axis=(-1, -2),
+    ) / (M**2)
+    e_3 = gauss_kern_uv(obs, obs, backend=backend) * ow * ow
+
+    out = e_1 - 0.5 * e_2 - 0.5 * e_3
+    out = -out
+    return out
+
+
+def vr_ensemble_mv(
+    obs: "ArrayLike",
+    fct: "Array",
+    ow: "Array",
+    fw: "Array",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute a vertically re-scaled kernel score for a finite multivariate ensemble.
+
+    The ensemble and variables axes are on the second last and last dimensions respectively.
+    """
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-2]
+
+    err_kern = gauss_kern_mv(B.expand_dims(obs, -2), fct, backend=backend)
+    E_1 = B.sum(err_kern * fw * B.expand_dims(ow, -1), axis=-1) / M
+
+    spread_kern = gauss_kern_mv(
+        B.expand_dims(fct, -3), B.expand_dims(fct, -2), backend=backend
+    )
+    fw_prod = B.expand_dims(fw, -1) * B.expand_dims(fw, -2)
+    spread_kern *= fw_prod
+    E_2 = B.sum(spread_kern, (-2, -1)) / (M**2)
+
+    E_3 = gauss_kern_mv(obs, obs, backend=backend) * ow * ow
+
+    out = E_1 - 0.5 * E_2 - 0.5 * E_3
+    out = -out
+    return out
