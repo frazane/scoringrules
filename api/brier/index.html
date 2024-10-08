@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.34">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
     
     
       
@@ -26,7 +26,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.35f28582.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.8c3ca2c6.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -413,6 +413,33 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#scoringrules.rps_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      rps_score
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.log_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      log_score
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.rls_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      rls_score
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -611,6 +638,33 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#scoringrules.rps_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      rps_score
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.log_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      log_score
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scoringrules.rls_score" class="md-nav__link">
+    <span class="md-ellipsis">
+      rls_score
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -740,6 +794,354 @@
 
 </div>
 
+<div class="doc doc-object doc-function">
+
+
+<h3 id="scoringrules.rps_score" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">scoringrules.rps_score</span>
+
+
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">rps_score</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">forecasts</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="o">/</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="o">*</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">backend</span><span class="p">:</span> <span class="n">Backend</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Compute the (Discrete) Ranked Probability Score (RPS).</p>
+<p>Suppose the outcome corresponds to one of <span class="arithmatex">\(K\)</span> ordered categories. The RPS is defined as</p>
+<div class="arithmatex">\[ RPS(f, y) = \sum_{k=1}^{K}(\tilde{f}_{k} - \tilde{y}_{k})^2, \]</div>
+<p>where <span class="arithmatex">\(f \in [0, 1]^{K}\)</span> is a vector of length <span class="arithmatex">\(K\)</span> containing forecast probabilities
+that each of the <span class="arithmatex">\(K\)</span> categories will occur, and <span class="arithmatex">\(y \in \{0, 1\}^{K}\)</span> is a vector of
+length <span class="arithmatex">\(K\)</span>, with the <span class="arithmatex">\(k\)</span>-th element equal to one if the <span class="arithmatex">\(k\)</span>-th category occurs. We
+have <span class="arithmatex">\(\sum_{k=1}^{K} y_{k} = \sum_{k=1}^{K} f_{k} = 1\)</span>, and, for <span class="arithmatex">\(k = 1, \dots, K\)</span>,
+<span class="arithmatex">\(\tilde{y}_{k} = \sum_{i=1}^{k} y_{i}\)</span> and <span class="arithmatex">\(\tilde{f}_{k} = \sum_{i=1}^{k} f_{i}\)</span>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>observations</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of 0's and 1's corresponding to unobserved and observed categories</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>forecasts</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Array of forecast probabilities for each category.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>axis</code></td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The axis corresponding to the categories. Default is the last axis.</p>
+              </div>
+            </td>
+            <td>
+                  <code>-1</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>backend</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.Backend">Backend</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The name of the backend used for computations. Defaults to 'numpy'.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>score</code></td>            <td>
+                  <code><span title="scoringrules.core.typing.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The computed Ranked Probability Score.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="scoringrules.log_score" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">scoringrules.log_score</span>
+
+
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">log_score</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">forecasts</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="o">/</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="o">*</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">backend</span><span class="p">:</span> <span class="n">Backend</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Compute the Logarithmic Score (LS) for probability forecasts for binary outcomes.</p>
+<p>The LS is formulated as</p>
+<div class="arithmatex">\[ LS(f, y) = -\log|f + y - 1|, \]</div>
+<p>where <span class="arithmatex">\(f \in [0, 1]\)</span> is the predicted probability of an event and <span class="arithmatex">\(y \in \{0, 1\}\)</span> the actual outcome.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>observations</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Observed outcome, either 0 or 1.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>forecasts</code></td>
+            <td>
+                  <code>NDArray</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Forecasted probabilities between 0 and 1.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>backend</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.Backend">Backend</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The name of the backend used for computations. Defaults to 'numpy'.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>score</code></td>            <td>
+                  <code><span title="scoringrules.core.typing.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The computed Log Score.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="scoringrules.rls_score" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">scoringrules.rls_score</span>
+
+
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">rls_score</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">observations</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">forecasts</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="o">/</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="o">*</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">backend</span><span class="p">:</span> <span class="n">Backend</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Compute the (Discrete) Ranked Logarithmic Score (RLS).</p>
+<p>Suppose the outcome corresponds to one of <span class="arithmatex">\(K\)</span> ordered categories. The RLS is defined as</p>
+<div class="arithmatex">\[ RPS(f, y) = -\sum_{k=1}^{K} \log|\tilde{f}_{k} + \tilde{y}_{k} - 1|, \]</div>
+<p>where <span class="arithmatex">\(f \in [0, 1]^{K}\)</span> is a vector of length <span class="arithmatex">\(K\)</span> containing forecast probabilities
+that each of the <span class="arithmatex">\(K\)</span> categories will occur, and <span class="arithmatex">\(y \in \{0, 1\}^{K}\)</span> is a vector of
+length <span class="arithmatex">\(K\)</span>, with the <span class="arithmatex">\(k\)</span>-th element equal to one if the <span class="arithmatex">\(k\)</span>-th category occurs. We
+have <span class="arithmatex">\(\sum_{k=1}^{K} y_{k} = \sum_{k=1}^{K} f_{k} = 1\)</span>, and, for <span class="arithmatex">\(k = 1, \dots, K\)</span>,
+<span class="arithmatex">\(\tilde{y}_{k} = \sum_{i=1}^{k} y_{i}\)</span> and <span class="arithmatex">\(\tilde{f}_{k} = \sum_{i=1}^{k} f_{i}\)</span>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>observations</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.ArrayLike">ArrayLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Observed outcome, either 0 or 1.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>forecasts</code></td>
+            <td>
+                  <code>NDArray</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Forecasted probabilities between 0 and 1.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>backend</code></td>
+            <td>
+                  <code><span title="scoringrules.core.typing.Backend">Backend</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The name of the backend used for computations. Defaults to 'numpy'.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>score</code></td>            <td>
+                  <code><span title="scoringrules.core.typing.Array">Array</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The computed Ranked Logarithmic Score.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
 
 
 
@@ -785,10 +1187,10 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "toc.follow", "header.autohide"], "search": "../../assets/javascripts/workers/search.07f07601.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "toc.follow", "header.autohide"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.56dfad97.min.js"></script>
+      <script src="../../assets/javascripts/bundle.525ec568.min.js"></script>
       
         <script src="../../scripts/katex.js"></script>
       

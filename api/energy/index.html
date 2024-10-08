@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.34">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
     
     
       
@@ -26,7 +26,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.35f28582.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.8c3ca2c6.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -726,8 +726,7 @@ score when evaluating an ensemble forecast <span class="arithmatex">\(F_{ens}\)<
 <p>The Energy Score is a multivariate scoring rule expressed as</p>
 <div class="arithmatex">\[\text{ES}(F_{ens}, \mathbf{y})= \frac{1}{M} \sum_{m=1}^{M} \| \mathbf{x}_{m} -
   \mathbf{y} \| - \frac{1}{2 M^{2}} \sum_{m=1}^{M} \sum_{j=1}^{M} \| \mathbf{x}_{m} - \mathbf{x}_{j} \| \]</div>
-<p>where <span class="arithmatex">\(\mathbf{X}\)</span> and <span class="arithmatex">\(\mathbf{X'}\)</span> are independent samples from <span class="arithmatex">\(F\)</span>
-and <span class="arithmatex">\(||\cdot||\)</span> is the euclidean norm over the input dimensions (the variables).</p>
+<p>where <span class="arithmatex">\(||\cdot||\)</span> is the euclidean norm over the input dimensions (the variables).</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -1218,7 +1217,7 @@ target particular multivariate outcomes, and <span class="arithmatex">\(\mathbf{
     <div class="doc doc-contents first">
 
         <p>Compute the Vertically Re-scaled Energy Score (vrES) for a finite multivariate ensemble.</p>
-<p>Computation is performed using the ensemble representation of the twES in
+<p>Computation is performed using the ensemble representation of the vrES in
 <a href="https://arxiv.org/abs/2202.12732">Allen et al. (2022)</a>:</p>
 <div class="arithmatex">\[
 \begin{split}
@@ -1227,7 +1226,7 @@ target particular multivariate outcomes, and <span class="arithmatex">\(\mathbf{
 \end{split}
 \]</div>
 <p>where <span class="arithmatex">\(F_{ens}\)</span> is the ensemble forecast <span class="arithmatex">\(\mathbf{x}_{1}, \dots, \mathbf{x}_{M}\)</span> with
-<span class="arithmatex">\(M\)</span> members, and <span class="arithmatex">\(v\)</span> is the chaining function used to target particular outcomes.</p>
+<span class="arithmatex">\(M\)</span> members, and <span class="arithmatex">\(w\)</span> is the weight function used to target particular outcomes.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -1421,10 +1420,10 @@ replacing the expectations with sample means over the ensemble members.</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "toc.follow", "header.autohide"], "search": "../../assets/javascripts/workers/search.07f07601.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.sections", "toc.follow", "header.autohide"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.56dfad97.min.js"></script>
+      <script src="../../assets/javascripts/bundle.525ec568.min.js"></script>
       
         <script src="../../scripts/katex.js"></script>
       
