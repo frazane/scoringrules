@@ -49,3 +49,7 @@
 ::: scoringrules.logs_tt
 
 ::: scoringrules.logs_uniform
+
+## Conditional and Censored Likelihood Score
+
+::: scoringrules.clogs_ensemble

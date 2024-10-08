@@ -72,6 +72,88 @@ def logs_ensemble(
     return logarithmic.mixnorm(observations, forecasts, bw, w, backend=backend)
 
 
+def clogs_ensemble(
+    observations: "ArrayLike",
+    forecasts: "Array",
+    /,
+    a: "ArrayLike" = float("-inf"),
+    b: "ArrayLike" = float("inf"),
+    axis: int = -1,
+    *,
+    bw: "ArrayLike" = None,
+    cens: bool = True,
+    backend: "Backend" = None,
+) -> "Array":
+    r"""Estimate the conditional and censored likelihood score for an ensemble forecast.
+
+    The conditional and censored likelihood scores are introduced by
+    [Diks et al. (2011)](https://doi.org/10.1016/j.jeconom.2011.04.001):
+
+    The weight function is an indicator function of the form $w(z) = 1\{a < z < b\}$.
+
+    The ensemble forecast is converted to a mixture of normal distributions using Gaussian
+    kernel density estimation. The score is then calculated for this smoothed distribution.
+
+    Parameters
+    ----------
+    observations: ArrayLike
+        The observed values.
+    forecasts: ArrayLike
+        The predicted forecast ensemble, where the ensemble dimension is by default
+        represented by the last axis.
+    a: ArrayLike
+        The lower bound in the weight function.
+    b: ArrayLike
+        The upper bound in the weight function.
+    axis: int
+        The axis corresponding to the ensemble. Default is the last axis.
+    bw : ArrayLike
+        The bandwidth parameter for each forecast ensemble. If not given, estimated using
+        Silverman's rule of thumb.
+    cens : Boolean
+        Boolean specifying whether to return the conditional ('cens = False') or the censored
+        likelihood score ('cens = True').
+    backend: str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score:
+        The CoLS or CeLS between the forecast ensemble and obs for the chosen weight parameters.
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.clogs_ensemble(obs, pred, -1.0, 1.0)
+    """
+    B = backends.active if backend is None else backends[backend]
+    forecasts = B.asarray(forecasts)
+
+    if axis != -1:
+        forecasts = B.moveaxis(forecasts, axis, -1)
+
+    M = forecasts.shape[-1]
+
+    # Silverman's rule of thumb for estimating the bandwidth parameter
+    if bw is None:
+        sigmahat = B.std(forecasts, axis=-1)
+        q75 = B.quantile(forecasts, 0.75, axis=-1)
+        q25 = B.quantile(forecasts, 0.25, axis=-1)
+        iqr = q75 - q25
+        bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
+    bw = B.stack([bw] * M, axis=-1)
+
+    return logarithmic.clogs_ensemble(
+        observations,
+        forecasts,
+        a=a,
+        b=b,
+        bw=bw,
+        cens=cens,
+        backend=backend,
+    )
+
+
 def logs_beta(
     observation: "ArrayLike",
     a: "ArrayLike",
@@ -1010,6 +1092,7 @@ def logs_uniform(
 __all__ = [
     "logs_beta",
     "logs_binomial",
+    "logs_ensemble",
     "logs_exponential",
     "logs_exponential2",
     "logs_2pexponential",
@@ -1028,4 +1111,5 @@ __all__ = [
     "logs_poisson",
     "logs_t",
     "logs_uniform",
+    "clogs_ensemble",
 ]
