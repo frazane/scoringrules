@@ -86,6 +86,9 @@ def clogs_ensemble(
 ) -> "Array":
     r"""Estimate the conditional and censored likelihood score for an ensemble forecast.
 
+    The conditional and censored likelihood scores are introduced by
+    [Diks et al. (2011)](https://doi.org/10.1016/j.jeconom.2011.04.001):
+
     The weight function is an indicator function of the form $w(z) = 1\{a < z < b\}$.
 
     The ensemble forecast is converted to a mixture of normal distributions using Gaussian
