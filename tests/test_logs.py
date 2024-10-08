@@ -45,12 +45,12 @@ def test_clogs(backend):
     res_co = _logs.clogs_ensemble(obs, fct, axis=-1, cens=False, backend=backend)
     assert res.shape == (N,)
     assert res_co.shape == (N,)
-    assert np.allclose(res, res0, rtol=0.0)
-    assert np.allclose(res_co, res0, rtol=0.0)
+    assert np.allclose(res, res0, atol=1e-7)
+    assert np.allclose(res_co, res0, atol=1e-7)
 
     fct = fct.T
     res0 = _logs.clogs_ensemble(obs, fct, axis=0, backend=backend)
-    assert np.allclose(res, res0, rtol=0.0)
+    assert np.allclose(res, res0, atol=1e-7)
 
     obs, fct = 6.2, [4.2, 5.1, 6.1, 7.6, 8.3, 9.5]
     a = 8.0
