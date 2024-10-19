@@ -96,6 +96,8 @@ from scoringrules._kernels import (
     vrgksmv_ensemble,
 )
 
+from scoringrules._quantile import quantile_score
+
 from scoringrules.backend import backends, register_backend
 
 __version__ = version("scoringrules")
@@ -188,4 +190,5 @@ __all__ = [
     "vrgksmv_ensemble",
     "interval_score",
     "weighted_interval_score",
+    "quantile_score",
 ]

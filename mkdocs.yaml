@@ -15,6 +15,7 @@ nav:
     - Energy Score: api/energy.md
     - Variogram Score: api/variogram.md
     - Interval Score: api/interval.md
+    - Quantile Score: api/quantile.md
     - Visualization: api/visualization.md
 
 
