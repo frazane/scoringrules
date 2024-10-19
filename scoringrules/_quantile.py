@@ -23,7 +23,8 @@ def quantile_score(
         \end{cases}
     $$
 
-    where $Y$ is the observed value, $F(Y)$ is the forecast value, and $q$ is the quantile level.
+    where $y$ is the observed value and $q_{\alpha}$ is the predicted value at the
+    $\alpha$ quantile level.
 
     Parameters
     ----------
