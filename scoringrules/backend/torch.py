@@ -32,7 +32,8 @@ class TorchBackend(ArrayBackend):
         *,
         dtype: Dtype | None = None,
     ) -> "Tensor":
-        return torch.asarray(obj, dtype=dtype)
+        # torch.asarray(obj) would cancel gradients!
+        return torch.as_tensor(obj, dtype=dtype)
 
     def broadcast_arrays(self, *arrays: "Tensor") -> tuple["Tensor", ...]:
         return torch.broadcast_tensors(*arrays)
