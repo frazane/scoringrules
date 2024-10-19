@@ -15,6 +15,7 @@ def _interval_score(
 ) -> "Array":
     """Winkler or Interval Score for prediction interval PI[lower, upper] and observations."""
     # We don't need the backend here
+    obs = obs[..., None]
     width = upper - lower
     above = obs > upper
     below = obs < lower
