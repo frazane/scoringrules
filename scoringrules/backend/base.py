@@ -68,7 +68,10 @@ class ArrayBackend(abc.ABC):
 
     @abc.abstractmethod
     def max(
-        self, x: "Array", axis: int | tuple[int, ...] | None, keepdims: bool = False
+        self,
+        x: "Array",
+        axis: int | tuple[int, ...] | None,
+        keepdims: bool = False,
     ) -> "Array":
         """Return the maximum value of an input array ``x``."""
 
@@ -111,7 +114,11 @@ class ArrayBackend(abc.ABC):
 
     @abc.abstractmethod
     def concat(
-        self, arrays: tuple["Array", ...] | list["Array"], /, *, axis: int | None = 0
+        self,
+        arrays: tuple["Array", ...] | list["Array"],
+        /,
+        *,
+        axis: int | None = 0,
     ) -> "Array":
         """Join a sequence of arrays along an existing axis."""
 

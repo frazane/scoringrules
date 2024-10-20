@@ -69,7 +69,10 @@ class JaxBackend(ArrayBackend):
         return jnp.quantile(x, q, axis=axis, keepdims=keepdims)
 
     def max(
-        self, x: "Array", axis: int | tuple[int, ...] | None, keepdims: bool = False
+        self,
+        x: "Array",
+        axis: int | tuple[int, ...] | None,
+        keepdims: bool = False,
     ) -> "Array":
         return jnp.max(x, axis=axis, keepdims=keepdims)
 
@@ -107,7 +110,11 @@ class JaxBackend(ArrayBackend):
         return jnp.unique(x)
 
     def concat(
-        self, arrays: tuple["Array", ...] | list["Array"], /, *, axis: int | None = 0
+        self,
+        arrays: tuple["Array", ...] | list["Array"],
+        /,
+        *,
+        axis: int | None = 0,
     ) -> "Array":
         return jnp.concatenate(arrays, axis=axis)
 
