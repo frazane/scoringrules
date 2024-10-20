@@ -69,7 +69,10 @@ class NumpyBackend(ArrayBackend):
         return np.quantile(x, q, axis=axis, keepdims=keepdims)
 
     def max(
-        self, x: "NDArray", axis: int | tuple[int, ...] | None, keepdims: bool = False
+        self,
+        x: "NDArray",
+        axis: int | tuple[int, ...] | None,
+        keepdims: bool = False,
     ) -> "NDArray":
         return np.max(x, axis=axis, keepdims=keepdims)
 
@@ -124,7 +127,11 @@ class NumpyBackend(ArrayBackend):
         return np.squeeze(x, axis=axis)
 
     def stack(
-        self, arrays: tuple["NDArray", ...] | list["NDArray"], /, *, axis: int = 0
+        self,
+        arrays: tuple["NDArray", ...] | list["NDArray"],
+        /,
+        *,
+        axis: int = 0,
     ) -> "NDArray":
         return np.stack(arrays, axis=axis)
 

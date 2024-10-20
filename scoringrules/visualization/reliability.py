@@ -128,7 +128,11 @@ def _uncertainty_band(x, cep, n_bootstrap=100, bandtype="consistency", alpha=0.0
         _x, _y, _cep = corp_reliability(_y, _x)
         res.append(
             interp1d(
-                _x, _cep, fill_value="nan", bounds_error=False, assume_sorted=True
+                _x,
+                _cep,
+                fill_value="nan",
+                bounds_error=False,
+                assume_sorted=True,
             )(x)
         )
     res = np.array(res)

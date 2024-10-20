@@ -149,7 +149,10 @@ def twopexponential(
 
 
 def gamma(
-    obs: "ArrayLike", shape: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike",
+    shape: "ArrayLike",
+    rate: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the logarithmic score for the gamma distribution."""
     B = backends.active if backend is None else backends[backend]

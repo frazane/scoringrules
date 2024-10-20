@@ -1,25 +1,5 @@
 import numpy as np
-from numba import guvectorize, vectorize
-
-
-@vectorize(
-    [
-        "float64(float64, float64, float64, float64)",
-        "float32(float32, float32, float32, float32)",
-    ]
-)
-def _interval_score_gufunc(
-    obs: np.ndarray,
-    lower: np.ndarray,
-    upper: np.ndarray,
-    alpha: np.ndarray,
-):
-    """Interval score or Winkler score."""
-    return (
-        (upper - lower)
-        + (obs < lower) * (2 / alpha) * (lower - obs)
-        + (obs > upper) * (2 / alpha) * (obs - upper)
-    )
+from numba import guvectorize
 
 
 @guvectorize(

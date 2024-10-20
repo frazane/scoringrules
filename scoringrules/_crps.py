@@ -58,7 +58,12 @@ def crps_ensemble(
     if axis != -1:
         forecasts = B.moveaxis(forecasts, axis, -1)
 
-    if not sorted_ensemble and estimator not in ["nrg", "akr", "akr_circperm", "fair"]:
+    if not sorted_ensemble and estimator not in [
+        "nrg",
+        "akr",
+        "akr_circperm",
+        "fair",
+    ]:
         forecasts = B.sort(forecasts, axis=-1)
 
     if backend == "numba":
@@ -865,7 +870,14 @@ def crps_gtclogistic(
     >>> sr.crps_gtclogistic(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
     return crps.gtclogistic(
-        observation, location, scale, lower, upper, lmass, umass, backend=backend
+        observation,
+        location,
+        scale,
+        lower,
+        upper,
+        lmass,
+        umass,
+        backend=backend,
     )
 
 
@@ -953,7 +965,14 @@ def crps_clogistic(
     lmass = stats._logis_cdf((lower - location) / scale)
     umass = 1 - stats._logis_cdf((upper - location) / scale)
     return crps.gtclogistic(
-        observation, location, scale, lower, upper, lmass, umass, backend=backend
+        observation,
+        location,
+        scale,
+        lower,
+        upper,
+        lmass,
+        umass,
+        backend=backend,
     )
 
 
@@ -990,7 +1009,14 @@ def crps_gtcnormal(
     >>> sr.crps_gtcnormal(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
     return crps.gtcnormal(
-        observation, location, scale, lower, upper, lmass, umass, backend=backend
+        observation,
+        location,
+        scale,
+        lower,
+        upper,
+        lmass,
+        umass,
+        backend=backend,
     )
 
 
@@ -1078,7 +1104,14 @@ def crps_cnormal(
     lmass = stats._norm_cdf((lower - location) / scale)
     umass = 1 - stats._norm_cdf((upper - location) / scale)
     return crps.gtcnormal(
-        observation, location, scale, lower, upper, lmass, umass, backend=backend
+        observation,
+        location,
+        scale,
+        lower,
+        upper,
+        lmass,
+        umass,
+        backend=backend,
     )
 
 
@@ -1146,7 +1179,15 @@ def crps_gtct(
     >>> sr.crps_gtct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
     return crps.gtct(
-        observation, df, location, scale, lower, upper, lmass, umass, backend=backend
+        observation,
+        df,
+        location,
+        scale,
+        lower,
+        upper,
+        lmass,
+        umass,
+        backend=backend,
     )
 
 
@@ -1192,7 +1233,15 @@ def crps_tt(
     >>> sr.crps_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     """
     return crps.gtct(
-        observation, df, location, scale, lower, upper, 0.0, 0.0, backend=backend
+        observation,
+        df,
+        location,
+        scale,
+        lower,
+        upper,
+        0.0,
+        0.0,
+        backend=backend,
     )
 
 
@@ -1240,7 +1289,15 @@ def crps_ct(
     lmass = stats._t_cdf((lower - location) / scale, df)
     umass = 1 - stats._t_cdf((upper - location) / scale, df)
     return crps.gtct(
-        observation, df, location, scale, lower, upper, lmass, umass, backend=backend
+        observation,
+        df,
+        location,
+        scale,
+        lower,
+        upper,
+        lmass,
+        umass,
+        backend=backend,
     )
 
 

@@ -76,7 +76,10 @@ class TensorflowBackend(ArrayBackend):
         raise NotImplementedError
 
     def max(
-        self, x: "Tensor", axis: int | tuple[int, ...] | None, keepdims: bool = False
+        self,
+        x: "Tensor",
+        axis: int | tuple[int, ...] | None,
+        keepdims: bool = False,
     ) -> "Tensor":
         return tf.math.reduce_max(x, axis=axis, keepdims=keepdims)
 

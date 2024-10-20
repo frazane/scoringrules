@@ -58,9 +58,13 @@ dev-dependencies = [
 ]
 
 [tool.ruff]
+line-length = 88
 
 [tool.ruff.lint]
 ignore = ["E741"]
 
 [tool.coverage.run]
 omit = ["**/_gufuncs.py", "**/_gufunc.py"]
+
+[tool.coverage.report]
+exclude_also = ["if tp.TYPE_CHECKING:"]

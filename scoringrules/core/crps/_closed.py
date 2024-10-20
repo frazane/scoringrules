@@ -111,7 +111,8 @@ def binomial(
 
         # option 1: in a loop
         s = B.stack(
-            [_inner(params) for params in zip(obs, n, prob, strict=True)], axis=-1
+            [_inner(params) for params in zip(obs, n, prob, strict=True)],
+            axis=-1,
         )
 
         # option 2: apply_along_axis (does not work with JAX)
@@ -526,7 +527,10 @@ def laplace(
 
 
 def logistic(
-    obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike",
+    mu: "ArrayLike",
+    sigma: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the normal distribution."""
     B = backends.active if backend is None else backends[backend]
@@ -648,7 +652,10 @@ def negbinom(
 
 
 def normal(
-    obs: "ArrayLike", mu: "ArrayLike", sigma: "ArrayLike", backend: "Backend" = None
+    obs: "ArrayLike",
+    mu: "ArrayLike",
+    sigma: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the logistic distribution."""
     B = backends.active if backend is None else backends[backend]

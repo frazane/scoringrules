@@ -33,7 +33,8 @@ def ensemble_uv(
     M: int = fct.shape[-1]
     e_1 = B.sum(gauss_kern_uv(obs[..., None], fct, backend=backend), axis=-1) / M
     e_2 = B.sum(
-        gauss_kern_uv(fct[..., None], fct[..., None, :], backend=backend), axis=(-1, -2)
+        gauss_kern_uv(fct[..., None], fct[..., None, :], backend=backend),
+        axis=(-1, -2),
     ) / (M**2)
     e_3 = gauss_kern_uv(obs, obs)
 
@@ -161,7 +162,9 @@ def vr_ensemble_uv(
     )
     e_2 = B.sum(
         gauss_kern_uv(
-            B.expand_dims(fct, axis=-1), B.expand_dims(fct, axis=-2), backend=backend
+            B.expand_dims(fct, axis=-1),
+            B.expand_dims(fct, axis=-2),
+            backend=backend,
         )
         * (B.expand_dims(fw, axis=-1) * B.expand_dims(fw, axis=-2)),
         axis=(-1, -2),
