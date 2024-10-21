@@ -1,3 +1,5 @@
+"""The backend module."""
+
 from .registry import BackendsRegistry
 
 backends = BackendsRegistry()

@@ -20,7 +20,7 @@ We use [uv](https://docs.astral.sh/uv/) for project management and packaging. In
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Then, you can install the library and all dependencies (including development dependencies) and  install the pre-commit hooks:
+Then, you can install the library and all dependencies (including development dependencies) and install the pre-commit hooks:
 
 ```
 uv install
@@ -30,14 +30,14 @@ uv run pre-commit install
 From here you can work on your changes! Once you're satisfied with your changes, and followed the additional instructions below, push everything to your repository and open a pull request on GitHub.
 
 
-### Contributing to the codebase
+## Contributing to the codebase
 Don't forget to include new tests if necessary, then make sure that all tests are passing with
 
 ```
 uv run pytest tests/
 ```
 
-### Contributing to the documentation
+## Contributing to the documentation
 
 You can work on the documentation by modifying `mkdocs.yaml` and files in `docs/`. The most convenient way to do it is to run
 

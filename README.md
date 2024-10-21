@@ -1,9 +1,10 @@
+<!-- centered images -->
 <p align="center">
-  <img src="docs/assets/images/banner_light.svg#gh-light-mode-only" />
-  <img src="docs/assets/images/banner_dark.svg#gh-dark-mode-only" />
+  <img src="docs/_static/banner_dark_long.svg#gh-dark-mode-only" alt="dark banner">
+  <img src="docs/_static/banner_light_long.svg#gh-light-mode-only" alt="light banner">
 </p>
 
-<br>
+# probabilistic forecasting evaluation metricssss
 
 [![CI](https://github.com/frazane/scoringrules/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/frazane/scoringrules/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/github/frazane/scoringrules/graph/badge.svg?token=J194X4HEBH)](https://codecov.io/github/frazane/scoringrules)

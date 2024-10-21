@@ -8,8 +8,8 @@ if tp.TYPE_CHECKING:
 
 
 def crps_ensemble(
-    observations: "ArrayLike",
-    forecasts: "Array",
+    obs: "ArrayLike",
+    fct: "Array",
     /,
     axis: int = -1,
     *,
@@ -17,13 +17,26 @@ def crps_ensemble(
     estimator: str = "pwm",
     backend: "Backend" = None,
 ) -> "Array":
-    r"""Estimate the Continuous Ranked Probability Score (CRPS) for a finite ensemble.
+    r"""Estimate the continuous ranked probability score (CRPS) for a finite ensemble.
+
+    Formally, the CRPS [1]_ [2]_ is expressed as
+
+    .. math::
+        \text{CRPS}(F, y) = \int_{\mathbb{R}}[F(x)-\mathbb{1}\{y \le x\}]^2 dx
+
+    where :math:`F(x) = P(X<x)` is the forecast CDF, :math:`\mathbb{1}\{x \le y\}`
+    the empirical CDF of the scalar observation :math:`y` and :math:`\mathbb{1}` is
+    the indicator function.
+
+    When the true forecast CDF is not fully known, but represented by a finite ensemble,
+    the CRPS can be estimated with some error. Several estimators exist and they are
+    implemented in `scoringrules`. See :doc:`/estimators` for more details.
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs: ArrayLike
         The observed values.
-    forecasts: ArrayLike
+    fct: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     axis: int
@@ -38,8 +51,17 @@ def crps_ensemble(
 
     Returns
     -------
-    crps: ArrayLike
+    array_like
         The CRPS between the forecast ensemble and obs.
+
+    References
+    ----------
+    .. [1] Matheson JE, Winkler RL (1976)
+        Scoring rules for continuous probability distributions.
+        Manag Sci 22(10):1087-1096
+    .. [2] Gneiting, T., & Raftery, A. E. (2007).
+        Strictly proper scoring rules, prediction, and estimation.
+        Journal of the American statistical Association, 102(477), 359-378.
 
     Examples
     --------
@@ -47,7 +69,7 @@ def crps_ensemble(
     >>> sr.crps_ensemble(obs, pred)
     """
     B = backends.active if backend is None else backends[backend]
-    observations, forecasts = map(B.asarray, (observations, forecasts))
+    obs, fct = map(B.asarray, (obs, fct))
 
     if estimator not in crps.estimator_gufuncs:
         raise ValueError(
@@ -56,20 +78,20 @@ def crps_ensemble(
         )
 
     if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
+        fct = B.moveaxis(fct, axis, -1)
 
     if not sorted_ensemble and estimator not in ["nrg", "akr", "akr_circperm", "fair"]:
-        forecasts = B.sort(forecasts, axis=-1)
+        fct = B.sort(fct, axis=-1)
 
     if backend == "numba":
-        return crps.estimator_gufuncs[estimator](observations, forecasts)
+        return crps.estimator_gufuncs[estimator](obs, fct)
 
-    return crps.ensemble(observations, forecasts, estimator, backend=backend)
+    return crps.ensemble(obs, fct, estimator, backend=backend)
 
 
 def twcrps_ensemble(
-    observations: "ArrayLike",
-    forecasts: "Array",
+    obs: "ArrayLike",
+    fct: "Array",
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     axis: int = -1,
@@ -78,22 +100,24 @@ def twcrps_ensemble(
     sorted_ensemble: bool = False,
     backend: "Backend" = None,
 ) -> "Array":
-    r"""Estimate the Threshold-Weighted Continuous Ranked Probability Score (twCRPS) for a finite ensemble.
+    r"""Estimate the threshold-weighted CRPS (twCRPS) for a finite ensemble.
 
-    Computation is performed using the ensemble representation of the twCRPS in
-    [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
+    Computation is performed using the ensemble representation of the twCRPS in [1]_
 
-    $$ \mathrm{twCRPS}(F_{ens}, y) = \frac{1}{M} \sum_{m = 1}^{M} |v(x_{m}) - v(y)| - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |v(x_{m}) - v(x_{j})|,$$
+    .. math::
+        \mathrm{twCRPS}(F_{ens}, y) =
+        \frac{1}{M} \sum_{m = 1}^{M} |v(x_{m}) - v(y)|
+        - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |v(x_{m}) - v(x_{j})|,
 
-    where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical
+    where :math:`F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M` is the empirical
     distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
     $M$ members, and $v$ is the chaining function used to target particular outcomes.
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs: ArrayLike
         The observed values.
-    forecasts: ArrayLike
+    fct: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     v_func: tp.Callable
@@ -110,6 +134,12 @@ def twcrps_ensemble(
     twcrps: ArrayLike
         The twCRPS between the forecast ensemble and obs for the chosen chaining function.
 
+    References
+    ----------
+    .. [1] Allen, S., Ginsbourger, D., & Ziegel, J. (2023).
+        Evaluating forecasts for high-impact events using transformed kernel scores.
+        SIAM/ASA Journal on Uncertainty Quantification, 11(3), 906-940.
+
     Examples
     --------
     >>> import numpy as np
@@ -120,10 +150,10 @@ def twcrps_ensemble(
     >>>
     >>> sr.twcrps_ensemble(obs, pred, v_func)
     """
-    observations, forecasts = map(v_func, (observations, forecasts))
+    obs, fct = map(v_func, (obs, fct))
     return crps_ensemble(
-        observations,
-        forecasts,
+        obs,
+        fct,
         axis=axis,
         sorted_ensemble=sorted_ensemble,
         estimator=estimator,
@@ -132,8 +162,8 @@ def twcrps_ensemble(
 
 
 def crps_quantile(
-    observations: "ArrayLike",
-    forecasts: "Array",
+    obs: "ArrayLike",
+    fct: "Array",
     alpha: "Array",
     /,
     axis: int = -1,
@@ -142,37 +172,42 @@ def crps_quantile(
 ) -> "Array":
     r"""Approximate the CRPS from quantile predictions via the Pinball Loss.
 
-    It is based on the notation in [Berrisch & Ziel, 2022](https://arxiv.org/pdf/2102.00968)
+    It is based on the notation in
+    [Berrisch & Ziel, 2022](https://arxiv.org/pdf/2102.00968)
 
     The CRPS can be approximated as the mean pinball loss for all
     quantile forecasts $F_q$ with level $q \in Q$:
 
-    $$\text{quantileCRPS} = \frac{2}{|Q|} \sum_{q \in Q} PB_q$$
+    $$
+    \text{quantileCRPS} = \frac{2}{|Q|} \sum_{q \in Q} PB_q
+    $$
 
     where the pinball loss is defined as:
 
-    $$\text{PB}_q = \begin{cases}
+    $$
+    \text{PB}_q = \begin{cases}
         q(y - F_q) &\text{if} & y \geq F_q  \\
         (1-q)(F_q - y) &\text{else.} &  \\
-    \end{cases} $$
+    \end{cases}
+    $$
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs:
         The observed values.
-    forecasts: Array
+    fct:
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    alpha: Array
+    alpha:
         The percentile levels. We expect the quantile array to match the axis (see below) of the forecast array.
-    axis: int
+    axis:
         The axis corresponding to the ensemble. Default is the last axis.
-    backend: str
+    backend:
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    qcrps: Array
+    qcrps:
         An array of CRPS scores for each forecast, which should be averaged to get meaningful values.
 
     Examples
@@ -181,23 +216,23 @@ def crps_quantile(
     >>> sr.crps_quantile(obs, fct, alpha)
     """
     B = backends.active if backend is None else backends[backend]
-    observations, forecasts, alpha = map(B.asarray, (observations, forecasts, alpha))
+    obs, fct, alpha = map(B.asarray, (obs, fct, alpha))
 
     if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
+        fct = B.moveaxis(fct, axis, -1)
 
-    if not forecasts.shape[-1] == alpha.shape[-1]:
+    if not fct.shape[-1] == alpha.shape[-1]:
         raise ValueError("Expected matching length of forecasts and alpha values.")
 
     if B.name == "numba":
-        return crps.quantile_pinball_gufunc(observations, forecasts, alpha)
+        return crps.quantile_pinball_gufunc(obs, fct, alpha)
 
-    return crps.quantile_pinball(observations, forecasts, alpha, backend=backend)
+    return crps.quantile_pinball(obs, fct, alpha, backend=backend)
 
 
 def owcrps_ensemble(
-    observations: "ArrayLike",
-    forecasts: "Array",
+    obs: "ArrayLike",
+    fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     axis: int = -1,
@@ -218,9 +253,9 @@ def owcrps_ensemble(
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs: ArrayLike
         The observed values.
-    forecasts: ArrayLike
+    fct: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     w_func: tp.Callable
@@ -253,26 +288,24 @@ def owcrps_ensemble(
             "for the outcome-weighted CRPS."
         )
     if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
+        fct = B.moveaxis(fct, axis, -1)
 
-    obs_weights, fct_weights = map(w_func, (observations, forecasts))
+    obs_weights, fct_weights = map(w_func, (obs, fct))
 
     if backend == "numba":
         return crps.estimator_gufuncs["ow" + estimator](
-            observations, forecasts, obs_weights, fct_weights
+            obs, fct, obs_weights, fct_weights
         )
 
-    observations, forecasts, obs_weights, fct_weights = map(
-        B.asarray, (observations, forecasts, obs_weights, fct_weights)
+    obs, fct, obs_weights, fct_weights = map(
+        B.asarray, (obs, fct, obs_weights, fct_weights)
     )
-    return crps.ow_ensemble(
-        observations, forecasts, obs_weights, fct_weights, backend=backend
-    )
+    return crps.ow_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
 
 
 def vrcrps_ensemble(
-    observations: "ArrayLike",
-    forecasts: "Array",
+    obs: "ArrayLike",
+    fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     axis: int = -1,
@@ -298,9 +331,9 @@ def vrcrps_ensemble(
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs: ArrayLike
         The observed values.
-    forecasts: ArrayLike
+    fct: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     w_func: tp.Callable
@@ -333,25 +366,23 @@ def vrcrps_ensemble(
             "for the outcome-weighted CRPS."
         )
     if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
+        fct = B.moveaxis(fct, axis, -1)
 
-    obs_weights, fct_weights = map(w_func, (observations, forecasts))
+    obs_weights, fct_weights = map(w_func, (obs, fct))
 
     if backend == "numba":
         return crps.estimator_gufuncs["vr" + estimator](
-            observations, forecasts, obs_weights, fct_weights
+            obs, fct, obs_weights, fct_weights
         )
 
-    observations, forecasts, obs_weights, fct_weights = map(
-        B.asarray, (observations, forecasts, obs_weights, fct_weights)
+    obs, fct, obs_weights, fct_weights = map(
+        B.asarray, (obs, fct, obs_weights, fct_weights)
     )
-    return crps.vr_ensemble(
-        observations, forecasts, obs_weights, fct_weights, backend=backend
-    )
+    return crps.vr_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
 
 
 def crps_beta(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     a: "ArrayLike",
     b: "ArrayLike",
     /,
@@ -378,7 +409,7 @@ def crps_beta(
 
     Parameters
     ----------
-    observation:
+    obs:
         The observed values.
     a:
         First shape parameter of the forecast beta distribution.
@@ -402,11 +433,11 @@ def crps_beta(
     >>> sr.crps_beta(0.3, 0.7, 1.1)
     0.0850102437
     """
-    return crps.beta(observation, a, b, lower, upper, backend=backend)
+    return crps.beta(obs, a, b, lower, upper, backend=backend)
 
 
 def crps_binomial(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     n: "ArrayLike",
     prob: "ArrayLike",
     /,
@@ -428,7 +459,7 @@ def crps_binomial(
 
     Parameters
     ----------
-    observation:
+    obs:
         The observed values as an integer or array of integers.
     n:
         Size parameter of the forecast binomial distribution as an integer or array of integers.
@@ -448,11 +479,11 @@ def crps_binomial(
     >>> sr.crps_binomial(4, 10, 0.5)
     0.5955715179443359
     """
-    return crps.binomial(observation, n, prob, backend=backend)
+    return crps.binomial(obs, n, prob, backend=backend)
 
 
 def crps_exponential(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     rate: "ArrayLike",
     /,
     *,
@@ -469,7 +500,7 @@ def crps_exponential(
 
     Parameters
     ----------
-    observation:
+    obs:
         The observed values.
     rate:
         Rate parameter of the forecast exponential distribution.
@@ -492,11 +523,11 @@ def crps_exponential(
     array([0.36047864, 0.24071795])
     ```
     """
-    return crps.exponential(observation, rate, backend=backend)
+    return crps.exponential(obs, rate, backend=backend)
 
 
 def crps_exponentialM(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     /,
     mass: "ArrayLike" = 0.0,
     location: "ArrayLike" = 0.0,
@@ -524,7 +555,7 @@ def crps_exponentialM(
 
     Parameters
     ----------
-    observation:
+    obs:
         The observed values.
     mass:
         Mass parameter of the forecast exponential distribution.
@@ -545,11 +576,11 @@ def crps_exponentialM(
     >>> import scoringrules as sr
     >>> sr.crps_exponentialM(0.4, 0.2, 0.0, 1.0)
     """
-    return crps.exponentialM(observation, mass, location, scale, backend=backend)
+    return crps.exponentialM(obs, mass, location, scale, backend=backend)
 
 
 def crps_2pexponential(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     scale1: "ArrayLike",
     scale2: "ArrayLike",
     location: "ArrayLike",
@@ -572,7 +603,7 @@ def crps_2pexponential(
 
     Parameters
     ----------
-    observation:
+    obs:
         The observed values.
     scale1:
         First scale parameter of the forecast two-piece exponential distribution.
@@ -595,11 +626,11 @@ def crps_2pexponential(
     >>> sr.crps_2pexponential(0.8, 3.0, 1.4, 0.0)
     ```
     """
-    return crps.twopexponential(observation, scale1, scale2, location, backend=backend)
+    return crps.twopexponential(obs, scale1, scale2, location, backend=backend)
 
 
 def crps_gamma(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     shape: "ArrayLike",
     /,
     rate: "ArrayLike | None" = None,
@@ -622,7 +653,7 @@ def crps_gamma(
 
     Parameters
     ----------
-    observation:
+    obs:
         The observed values.
     shape:
         Shape parameter of the forecast gamma distribution.
@@ -657,11 +688,11 @@ def crps_gamma(
     if rate is None:
         rate = 1.0 / scale
 
-    return crps.gamma(observation, shape, rate, backend=backend)
+    return crps.gamma(obs, shape, rate, backend=backend)
 
 
 def crps_gev(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     shape: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
@@ -724,7 +755,7 @@ def crps_gev(
 
     Parameters
     ----------
-    observation:
+    obs:
         The observed values.
     shape:
         Shape parameter of the forecast GEV distribution.
@@ -747,11 +778,11 @@ def crps_gev(
     >>> sr.crps_gev(0.3, 0.1)
     0.2924712413052034
     """
-    return crps.gev(observation, shape, location, scale, backend=backend)
+    return crps.gev(obs, shape, location, scale, backend=backend)
 
 
 def crps_gpd(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     shape: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
@@ -783,7 +814,7 @@ def crps_gpd(
 
     Parameters
     ----------
-    observation:
+    obs:
         The observed values.
     shape:
         Shape parameter of the forecast GPD distribution.
@@ -807,11 +838,11 @@ def crps_gpd(
     >>> sr.crps_gpd(0.3, 0.9)
     0.6849331901197213
     """
-    return crps.gpd(observation, shape, location, scale, mass, backend=backend)
+    return crps.gpd(obs, shape, location, scale, mass, backend=backend)
 
 
 def crps_gtclogistic(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     /,
@@ -839,7 +870,7 @@ def crps_gtclogistic(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     location: ArrayLike
         Location parameter of the forecast distribution.
@@ -865,12 +896,12 @@ def crps_gtclogistic(
     >>> sr.crps_gtclogistic(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
     return crps.gtclogistic(
-        observation, location, scale, lower, upper, lmass, umass, backend=backend
+        obs, location, scale, lower, upper, lmass, umass, backend=backend
     )
 
 
 def crps_tlogistic(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     /,
@@ -886,7 +917,7 @@ def crps_tlogistic(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     location: ArrayLike
         Location parameter of the forecast distribution.
@@ -908,12 +939,12 @@ def crps_tlogistic(
     >>> sr.crps_tlogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     """
     return crps.gtclogistic(
-        observation, location, scale, lower, upper, 0.0, 0.0, backend=backend
+        obs, location, scale, lower, upper, 0.0, 0.0, backend=backend
     )
 
 
 def crps_clogistic(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     /,
@@ -929,7 +960,7 @@ def crps_clogistic(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     location: ArrayLike
         Location parameter of the forecast distribution.
@@ -953,12 +984,12 @@ def crps_clogistic(
     lmass = stats._logis_cdf((lower - location) / scale)
     umass = 1 - stats._logis_cdf((upper - location) / scale)
     return crps.gtclogistic(
-        observation, location, scale, lower, upper, lmass, umass, backend=backend
+        obs, location, scale, lower, upper, lmass, umass, backend=backend
     )
 
 
 def crps_gtcnormal(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     /,
@@ -990,12 +1021,12 @@ def crps_gtcnormal(
     >>> sr.crps_gtcnormal(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
     return crps.gtcnormal(
-        observation, location, scale, lower, upper, lmass, umass, backend=backend
+        obs, location, scale, lower, upper, lmass, umass, backend=backend
     )
 
 
 def crps_tnormal(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     /,
@@ -1011,7 +1042,7 @@ def crps_tnormal(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     location: ArrayLike
         Location parameter of the forecast distribution.
@@ -1032,13 +1063,11 @@ def crps_tnormal(
     >>> import scoringrules as sr
     >>> sr.crps_tnormal(0.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return crps.gtcnormal(
-        observation, location, scale, lower, upper, 0.0, 0.0, backend=backend
-    )
+    return crps.gtcnormal(obs, location, scale, lower, upper, 0.0, 0.0, backend=backend)
 
 
 def crps_cnormal(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     /,
@@ -1054,7 +1083,7 @@ def crps_cnormal(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     location: ArrayLike
         Location parameter of the forecast distribution.
@@ -1078,12 +1107,12 @@ def crps_cnormal(
     lmass = stats._norm_cdf((lower - location) / scale)
     umass = 1 - stats._norm_cdf((upper - location) / scale)
     return crps.gtcnormal(
-        observation, location, scale, lower, upper, lmass, umass, backend=backend
+        obs, location, scale, lower, upper, lmass, umass, backend=backend
     )
 
 
 def crps_gtct(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     df: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
@@ -1118,7 +1147,7 @@ def crps_gtct(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     df: ArrayLike
         Degrees of freedom parameter of the forecast distribution.
@@ -1146,12 +1175,12 @@ def crps_gtct(
     >>> sr.crps_gtct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     """
     return crps.gtct(
-        observation, df, location, scale, lower, upper, lmass, umass, backend=backend
+        obs, df, location, scale, lower, upper, lmass, umass, backend=backend
     )
 
 
 def crps_tt(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     df: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
@@ -1168,7 +1197,7 @@ def crps_tt(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     df: ArrayLike
         Degrees of freedom parameter of the forecast distribution.
@@ -1191,13 +1220,11 @@ def crps_tt(
     >>> import scoringrules as sr
     >>> sr.crps_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return crps.gtct(
-        observation, df, location, scale, lower, upper, 0.0, 0.0, backend=backend
-    )
+    return crps.gtct(obs, df, location, scale, lower, upper, 0.0, 0.0, backend=backend)
 
 
 def crps_ct(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     df: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
@@ -1214,7 +1241,7 @@ def crps_ct(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     df: ArrayLike
         Degrees of freedom parameter of the forecast distribution.
@@ -1240,12 +1267,12 @@ def crps_ct(
     lmass = stats._t_cdf((lower - location) / scale, df)
     umass = 1 - stats._t_cdf((upper - location) / scale, df)
     return crps.gtct(
-        observation, df, location, scale, lower, upper, lmass, umass, backend=backend
+        obs, df, location, scale, lower, upper, lmass, umass, backend=backend
     )
 
 
 def crps_hypergeometric(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     m: "ArrayLike",
     n: "ArrayLike",
     k: "ArrayLike",
@@ -1269,7 +1296,7 @@ def crps_hypergeometric(
 
     Parameters
     ----------
-    observation:
+    obs:
         The observed values.
     m:
         Number of success states in the population.
@@ -1291,11 +1318,11 @@ def crps_hypergeometric(
     >>> sr.crps_hypergeometric(5, 7, 13, 12)
     0.44697415547610597
     """
-    return crps.hypergeometric(observation, m, n, k, backend=backend)
+    return crps.hypergeometric(obs, m, n, k, backend=backend)
 
 
 def crps_laplace(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
@@ -1317,7 +1344,7 @@ def crps_laplace(
 
     Parameters
     ----------
-    observation:
+    obs:
         Observed values.
     location:
         Location parameter of the forecast laplace distribution.
@@ -1334,11 +1361,11 @@ def crps_laplace(
     >>> sr.crps_laplace(0.3, 0.1, 0.2)
     0.12357588823428847
     """
-    return crps.laplace(observation, location, scale, backend=backend)
+    return crps.laplace(obs, location, scale, backend=backend)
 
 
 def crps_logistic(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
     /,
@@ -1357,7 +1384,7 @@ def crps_logistic(
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs: ArrayLike
         Observed values.
     mu: ArrayLike
         Location parameter of the forecast logistic distribution.
@@ -1375,11 +1402,11 @@ def crps_logistic(
     >>> sr.crps_logistic(0.0, 0.4, 0.1)
     0.30363
     """
-    return crps.logistic(observation, mu, sigma, backend=backend)
+    return crps.logistic(obs, mu, sigma, backend=backend)
 
 
 def crps_loglaplace(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     locationlog: "ArrayLike",
     scalelog: "ArrayLike",
     *,
@@ -1408,7 +1435,7 @@ def crps_loglaplace(
 
     Parameters
     ----------
-    observation:
+    obs:
         Observed values.
     locationlog:
         Location parameter of the forecast log-laplace distribution.
@@ -1428,11 +1455,11 @@ def crps_loglaplace(
     >>> sr.crps_loglaplace(3.0, 0.1, 0.9)
     1.162020513653791
     """
-    return crps.loglaplace(observation, locationlog, scalelog, backend=backend)
+    return crps.loglaplace(obs, locationlog, scalelog, backend=backend)
 
 
 def crps_loglogistic(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     mulog: "ArrayLike",
     sigmalog: "ArrayLike",
     backend: "Backend" = None,
@@ -1463,7 +1490,7 @@ def crps_loglogistic(
 
     Parameters
     ----------
-    observation:
+    obs:
         The observed values.
     mulog:
         Location parameter of the log-logistic distribution.
@@ -1484,11 +1511,11 @@ def crps_loglogistic(
     >>> sr.crps_loglogistic(3.0, 0.1, 0.9)
     1.1329527730161177
     """
-    return crps.loglogistic(observation, mulog, sigmalog, backend=backend)
+    return crps.loglogistic(obs, mulog, sigmalog, backend=backend)
 
 
 def crps_lognormal(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     mulog: "ArrayLike",
     sigmalog: "ArrayLike",
     backend: "Backend" = None,
@@ -1510,7 +1537,7 @@ def crps_lognormal(
 
     Parameters
     ----------
-    observation:
+    obs:
         The observed values.
     mulog:
         Mean of the normal underlying distribution.
@@ -1527,11 +1554,11 @@ def crps_lognormal(
     >>> import scoringrules as sr
     >>> sr.crps_lognormal(0.1, 0.4, 0.0)
     """
-    return crps.lognormal(observation, mulog, sigmalog, backend=backend)
+    return crps.lognormal(obs, mulog, sigmalog, backend=backend)
 
 
 def crps_mixnorm(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     m: "ArrayLike",
     s: "ArrayLike",
     /,
@@ -1552,7 +1579,7 @@ def crps_mixnorm(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     m: ArrayLike
         Means of the component normal distributions.
@@ -1576,7 +1603,7 @@ def crps_mixnorm(
     >>> sr.crps_mixnormal(0.0, [0.1, -0.3, 1.0], [0.4, 2.1, 0.7], [0.1, 0.2, 0.7])
     """
     B = backends.active if backend is None else backends[backend]
-    observation, m, s = map(B.asarray, (observation, m, s))
+    obs, m, s = map(B.asarray, (obs, m, s))
 
     if w is None:
         M: int = m.shape[axis]
@@ -1589,11 +1616,11 @@ def crps_mixnorm(
         s = B.moveaxis(s, axis, -1)
         w = B.moveaxis(w, axis, -1)
 
-    return crps.mixnorm(observation, m, s, w, backend=backend)
+    return crps.mixnorm(obs, m, s, w, backend=backend)
 
 
 def crps_negbinom(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     n: "ArrayLike",
     /,
     prob: "ArrayLike | None" = None,
@@ -1614,7 +1641,7 @@ def crps_negbinom(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     n: ArrayLike
         Size parameter of the forecast negative binomial distribution.
@@ -1646,11 +1673,11 @@ def crps_negbinom(
     if prob is None:
         prob = n / (n + mu)
 
-    return crps.negbinom(observation, n, prob, backend=backend)
+    return crps.negbinom(obs, n, prob, backend=backend)
 
 
 def crps_normal(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
     /,
@@ -1660,16 +1687,20 @@ def crps_normal(
     r"""Compute the closed form of the CRPS for the normal distribution.
 
     It is based on the following formulation from
-    [Geiting et al. (2005)](https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml):
+    `Geiting et al. (2005) <https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml>`_:
 
-    $$ \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\},$$
+    .. math::
+        \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \
+         \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) \
+         - \frac{1}{\sqrt{\pi}} \Bigl\},
 
-    where $\Phi(ω)$ and $\phi(ω)$ are respectively the CDF and PDF of the standard normal
-    distribution at the normalized prediction error $\omega = \frac{y - \mu}{\sigma}$.
+    where :math:`\Phi(ω)` and :math:`\phi(ω)` are respectively the CDF and PDF
+    of the standard normal distribution at the normalized prediction error
+    :math:`\omega = \frac{y - \mu}{\sigma}`.
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs: ArrayLike
         The observed values.
     mu: ArrayLike
         Mean of the forecast normal distribution.
@@ -1686,11 +1717,11 @@ def crps_normal(
     >>> import scoringrules as sr
     >>> sr.crps_normal(0.0, 0.1, 0.4)
     """
-    return crps.normal(observation, mu, sigma, backend=backend)
+    return crps.normal(obs, mu, sigma, backend=backend)
 
 
 def crps_2pnormal(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     scale1: "ArrayLike",
     scale2: "ArrayLike",
     location: "ArrayLike",
@@ -1713,7 +1744,7 @@ def crps_2pnormal(
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs: ArrayLike
         The observed values.
     scale1: ArrayLike
         Scale parameter of the lower half of the forecast two-piece normal distribution.
@@ -1737,7 +1768,7 @@ def crps_2pnormal(
     upper = 0.0
     lmass = 0.0
     umass = scale2 / (scale1 + scale2)
-    z = B.minimum(B.asarray(0.0), B.asarray(observation - location)) / scale1
+    z = B.minimum(B.asarray(0.0), B.asarray(obs - location)) / scale1
     s1 = scale1 * crps.gtcnormal(
         z, 0.0, 1.0, lower, upper, lmass, umass, backend=backend
     )
@@ -1745,7 +1776,7 @@ def crps_2pnormal(
     upper = float("inf")
     lmass = scale1 / (scale1 + scale2)
     umass = 0.0
-    z = B.maximum(B.asarray(0.0), B.asarray(observation - location)) / scale2
+    z = B.maximum(B.asarray(0.0), B.asarray(obs - location)) / scale2
     s2 = scale2 * crps.gtcnormal(
         z, 0.0, 1.0, lower, upper, lmass, umass, backend=backend
     )
@@ -1753,7 +1784,7 @@ def crps_2pnormal(
 
 
 def crps_poisson(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     mean: "ArrayLike",
     /,
     *,
@@ -1771,7 +1802,7 @@ def crps_poisson(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     mean: ArrayLike
         Mean parameter of the forecast poisson distribution.
@@ -1786,11 +1817,11 @@ def crps_poisson(
     >>> import scoringrules as sr
     >>> sr.crps_poisson(1, 2)
     """
-    return crps.poisson(observation, mean, backend=backend)
+    return crps.poisson(obs, mean, backend=backend)
 
 
 def crps_t(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     df: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
@@ -1817,7 +1848,7 @@ def crps_t(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     df: ArrayLike
         Degrees of freedom parameter of the forecast t distribution.
@@ -1836,11 +1867,11 @@ def crps_t(
     >>> import scoringrules as sr
     >>> sr.crps_t(0.0, 0.1, 0.4, 0.1)
     """
-    return crps.t(observation, df, location, scale, backend=backend)
+    return crps.t(obs, df, location, scale, backend=backend)
 
 
 def crps_uniform(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     min: "ArrayLike",
     max: "ArrayLike",
     /,
@@ -1862,7 +1893,7 @@ def crps_uniform(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs: ArrayLike
         The observed values.
     min: ArrayLike
         Lower bound of the forecast uniform distribution.
@@ -1883,7 +1914,7 @@ def crps_uniform(
     >>> import scoringrules as sr
     >>> sr.crps_uniform(0.4, 0.0, 1.0, 0.0, 0.0)
     """
-    return crps.uniform(observation, min, max, lmass, umass, backend=backend)
+    return crps.uniform(obs, min, max, lmass, umass, backend=backend)
 
 
 __all__ = [
