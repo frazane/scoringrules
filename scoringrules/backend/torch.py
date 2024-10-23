@@ -70,7 +70,10 @@ class TorchBackend(ArrayBackend):
         return torch.quantile(x, q, dim=axis, keepdim=keepdims)
 
     def max(
-        self, x: "Tensor", axis: int | tuple[int, ...] | None, keepdims: bool = False
+        self,
+        x: "Tensor",
+        axis: int | tuple[int, ...] | None,
+        keepdims: bool = False,
     ) -> "Tensor":
         return torch.max(x, axis=axis, keepdim=keepdims)[0]
 
@@ -105,7 +108,11 @@ class TorchBackend(ArrayBackend):
         return torch.unique(x)
 
     def concat(
-        self, arrays: tuple["Tensor", ...] | list["Tensor"], /, *, axis: int | None = 0
+        self,
+        arrays: tuple["Tensor", ...] | list["Tensor"],
+        /,
+        *,
+        axis: int | None = 0,
     ) -> "Tensor":
         return torch.concat(arrays, axis=axis)
 

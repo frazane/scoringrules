@@ -55,7 +55,10 @@ def _exp_cdf(x: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None) -> "A
 
 
 def _gamma_pdf(
-    x: "ArrayLike", shape: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None
+    x: "ArrayLike",
+    shape: "ArrayLike",
+    rate: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Probability density function for the gamma distribution."""
     B = backends.active if backend is None else backends[backend]
@@ -64,7 +67,10 @@ def _gamma_pdf(
 
 
 def _gamma_cdf(
-    x: "ArrayLike", shape: "ArrayLike", rate: "ArrayLike", backend: "Backend" = None
+    x: "ArrayLike",
+    shape: "ArrayLike",
+    rate: "ArrayLike",
+    backend: "Backend" = None,
 ) -> "Array":
     """Cumulative distribution function for the gamma distribution."""
     B = backends.active if backend is None else backends[backend]
