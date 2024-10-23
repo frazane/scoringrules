@@ -59,11 +59,9 @@ class BackendsRegistry(dict[str, ArrayBackend]):
         """Get a backend from the registry."""
         try:
             return super().__getitem__(__key)
-        except KeyError as err:
-            raise BackendNotRegistered(
-                f"The backend '{__key}' is not registered. "
-                f"You can register it with scoringrules.register_backend('{__key}')"
-            ) from err
+        except KeyError:
+            self.register_backend(__key)
+            return super().__getitem__(__key)
 
     def set_active(self, backend: str):
         self._active = backend
