@@ -49,12 +49,6 @@ def crps_ensemble(
     B = backends.active if backend is None else backends[backend]
     observations, forecasts = map(B.asarray, (observations, forecasts))
 
-    if estimator not in crps.estimator_gufuncs:
-        raise ValueError(
-            f"{estimator} is not a valid estimator. "
-            f"Must be one of {crps.estimator_gufuncs.keys()}"
-        )
-
     if axis != -1:
         forecasts = B.moveaxis(forecasts, axis, -1)
 
@@ -67,6 +61,11 @@ def crps_ensemble(
         forecasts = B.sort(forecasts, axis=-1)
 
     if backend == "numba":
+        if estimator not in crps.estimator_gufuncs:
+            raise ValueError(
+                f"{estimator} is not a valid estimator. "
+                f"Must be one of {crps.estimator_gufuncs.keys()}"
+            )
         return crps.estimator_gufuncs[estimator](observations, forecasts)
 
     return crps.ensemble(observations, forecasts, estimator, backend=backend)
