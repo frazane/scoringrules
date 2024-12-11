@@ -64,7 +64,12 @@ line-length = 88
 ignore = ["E741"]
 
 [tool.coverage.run]
-omit = ["**/_gufuncs.py", "**/_gufunc.py"]
+omit = [
+    "**/_gufuncs.py", # numba gufuncs are not python code
+    "**/_gufunc.py",
+    "scoringrules/backend/*.py", # superfluous
+    "scoringrules/core/typing.py" # only type hints
+]
 
 [tool.coverage.report]
-exclude_also = ["if tp.TYPE_CHECKING:", "except ImportError:"]
+exclude_also = ["if tp.TYPE_CHECKING:", "except ImportError"]
