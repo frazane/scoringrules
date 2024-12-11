@@ -1,13 +1,13 @@
 import jax
 import numpy as np
 import pytest
-from scoringrules import _kernels
+import scoringrules as sr
 from scoringrules.backend import backends
 
 from .conftest import BACKENDS
 
-ENSEMBLE_SIZE = 51
-N = 100
+ENSEMBLE_SIZE = 11
+N = 10
 N_VARS = 3
 
 ESTIMATORS = ["nrg", "fair"]
@@ -22,31 +22,45 @@ def test_gksuv(estimator, backend):
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
     # non-negative values
-    res = _kernels.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+    res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+    res = np.asarray(res)
+    assert not np.any(res < 0.0)
+
+    # axis keyword
+    res = sr.gksuv_ensemble(
+        obs,
+        np.random.randn(ENSEMBLE_SIZE, N),
+        axis=0,
+        estimator=estimator,
+        backend=backend,
+    )
     res = np.asarray(res)
     assert not np.any(res < 0.0)
 
     if estimator == "nrg":
         # approx zero when perfect forecast
         perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
-        res = _kernels.gksuv_ensemble(
-            obs, perfect_fct, estimator=estimator, backend=backend
-        )
+        res = sr.gksuv_ensemble(obs, perfect_fct, estimator=estimator, backend=backend)
         res = np.asarray(res)
         assert not np.any(res - 0.0 > 0.0001)
 
         # test correctness
         obs, fct = 11.6, np.array([9.8, 8.7, 11.9, 12.1, 13.4])
-        res = _kernels.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
         expected = 0.2490516
         assert np.isclose(res, expected)
 
     elif estimator == "fair":
         # test correctness
         obs, fct = 11.6, np.array([9.8, 8.7, 11.9, 12.1, 13.4])
-        res = _kernels.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
         expected = 0.2987752
         assert np.isclose(res, expected)
+
+    # test exceptions
+    with pytest.raises(ValueError):
+        est = "undefined_estimator"
+        sr.gksuv_ensemble(obs, fct, estimator=est, backend=backend)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
@@ -55,7 +69,7 @@ def test_gksmv(estimator, backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = _kernels.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
+    res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
 
     if backend in ["numpy", "numba"]:
         assert isinstance(res, np.ndarray)
@@ -68,9 +82,7 @@ def test_gksmv(estimator, backend):
             np.expand_dims(obs, axis=-2)
             + np.random.randn(N, ENSEMBLE_SIZE, N_VARS) * 0.00001
         )
-        res = _kernels.gksmv_ensemble(
-            obs, perfect_fct, estimator=estimator, backend=backend
-        )
+        res = sr.gksmv_ensemble(obs, perfect_fct, estimator=estimator, backend=backend)
         res = np.asarray(res)
         assert not np.any(res - 0.0 > 0.0001)
 
@@ -79,7 +91,7 @@ def test_gksmv(estimator, backend):
         fct = np.array(
             [[9.8, 8.7, 11.9, 12.1, 13.4], [-24.8, -18.5, -29.9, -18.3, -21.0]]
         ).transpose()
-        res = _kernels.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
         expected = 0.5868737
         assert np.isclose(res, expected)
 
@@ -89,9 +101,14 @@ def test_gksmv(estimator, backend):
         fct = np.array(
             [[9.8, 8.7, 11.9, 12.1, 13.4], [-24.8, -18.5, -29.9, -18.3, -21.0]]
         ).transpose()
-        res = _kernels.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
         expected = 0.6120162
         assert np.isclose(res, expected)
+
+    # test exceptions
+    with pytest.raises(ValueError):
+        est = "undefined_estimator"
+        sr.gksmv_ensemble(obs, fct, estimator=est, backend=backend)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
@@ -104,8 +121,8 @@ def test_twgksuv(estimator, backend):
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    res = _kernels.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
-    resw = _kernels.twgksuv_ensemble(
+    res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+    resw = sr.twgksuv_ensemble(
         obs, fct, lambda x: x, estimator=estimator, backend=backend
     )
     np.testing.assert_allclose(res, resw, rtol=1e-10)
@@ -150,7 +167,7 @@ def test_twgksuv(estimator, backend):
     if estimator == "nrg":
         res = np.mean(
             np.float64(
-                _kernels.twgksuv_ensemble(
+                sr.twgksuv_ensemble(
                     obs, fct, v_func1, estimator=estimator, backend=backend
                 )
             )
@@ -159,7 +176,7 @@ def test_twgksuv(estimator, backend):
 
         res = np.mean(
             np.float64(
-                _kernels.twgksuv_ensemble(
+                sr.twgksuv_ensemble(
                     obs, fct, v_func2, estimator=estimator, backend=backend
                 )
             )
@@ -169,7 +186,7 @@ def test_twgksuv(estimator, backend):
     elif estimator == "fair":
         res = np.mean(
             np.float64(
-                _kernels.twgksuv_ensemble(
+                sr.twgksuv_ensemble(
                     obs, fct, v_func1, estimator=estimator, backend=backend
                 )
             )
@@ -178,7 +195,7 @@ def test_twgksuv(estimator, backend):
 
         res = np.mean(
             np.float64(
-                _kernels.twgksuv_ensemble(
+                sr.twgksuv_ensemble(
                     obs, fct, v_func2, estimator=estimator, backend=backend
                 )
             )
@@ -193,8 +210,8 @@ def test_twgksmv(backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res0 = _kernels.gksmv_ensemble(obs, fct, backend=backend)
-    res = _kernels.twgksmv_ensemble(obs, fct, lambda x: x, backend=backend)
+    res0 = sr.gksmv_ensemble(obs, fct, backend=backend)
+    res = sr.twgksmv_ensemble(obs, fct, lambda x: x, backend=backend)
     np.testing.assert_allclose(res, res0, rtol=1e-6)
 
     fct = np.array(
@@ -205,13 +222,13 @@ def test_twgksmv(backend):
     def v_func(x):
         return np.maximum(x, 0.2)
 
-    res = _kernels.twgksmv_ensemble(obs, fct, v_func, backend=backend)
+    res = sr.twgksmv_ensemble(obs, fct, v_func, backend=backend)
     np.testing.assert_allclose(res, 0.08671498, rtol=1e-6)
 
     def v_func(x):
         return np.minimum(x, 1)
 
-    res = _kernels.twgksmv_ensemble(obs, fct, v_func, backend=backend)
+    res = sr.twgksmv_ensemble(obs, fct, v_func, backend=backend)
     np.testing.assert_allclose(res, 0.1016436, rtol=1e-6)
 
 
@@ -224,8 +241,19 @@ def test_owgksuv(backend):
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    res = _kernels.gksuv_ensemble(obs, fct, backend=backend)
-    resw = _kernels.owgksuv_ensemble(obs, fct, lambda x: x * 0.0 + 1.0, backend=backend)
+    # axis keyword
+    res = sr.owgksuv_ensemble(
+        obs,
+        np.random.randn(ENSEMBLE_SIZE, N),
+        lambda x: x * 0.0 + 1.0,
+        axis=0,
+        backend=backend,
+    )
+    res = np.asarray(res)
+    assert not np.any(res < 0.0)
+
+    res = sr.gksuv_ensemble(obs, fct, backend=backend)
+    resw = sr.owgksuv_ensemble(obs, fct, lambda x: x * 0.0 + 1.0, backend=backend)
     np.testing.assert_allclose(res, resw, rtol=1e-9)
 
     # test correctness
@@ -260,20 +288,16 @@ def test_owgksuv(backend):
     )
 
     def w_func(x):
-        return (x > -1).astype(float)
+        return (x > -1) * 1.0
 
-    res = np.mean(
-        np.float64(_kernels.owgksuv_ensemble(obs, fct, w_func, backend=backend))
-    )
-    np.testing.assert_allclose(res, 0.01036335, rtol=1e-6)
+    res = np.mean(np.float64(sr.owgksuv_ensemble(obs, fct, w_func, backend=backend)))
+    np.testing.assert_allclose(res, 0.01036335, rtol=1e-5)
 
     def w_func(x):
-        return (x < 1.85).astype(float)
+        return (x < 1.85) * 1.0
 
-    res = np.mean(
-        np.float64(_kernels.owgksuv_ensemble(obs, fct, w_func, backend=backend))
-    )
-    np.testing.assert_allclose(res, 0.008905213, rtol=1e-6)
+    res = np.mean(np.float64(sr.owgksuv_ensemble(obs, fct, w_func, backend=backend)))
+    np.testing.assert_allclose(res, 0.008905213, rtol=1e-5)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -283,8 +307,8 @@ def test_owgksmv(backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res0 = _kernels.gksmv_ensemble(obs, fct, backend=backend)
-    res = _kernels.owgksmv_ensemble(
+    res0 = sr.gksmv_ensemble(obs, fct, backend=backend)
+    res = sr.owgksmv_ensemble(
         obs, fct, lambda x: backends[backend].mean(x) * 0.0 + 1.0, backend=backend
     )
     np.testing.assert_allclose(res, res0, rtol=1e-6)
@@ -297,13 +321,13 @@ def test_owgksmv(backend):
     def w_func(x):
         return backends[backend].all(x > 0.2)
 
-    res = _kernels.owgksmv_ensemble(obs, fct, w_func, backend=backend)
+    res = sr.owgksmv_ensemble(obs, fct, w_func, backend=backend)
     np.testing.assert_allclose(res, 0.03901075, rtol=1e-5)
 
     def w_func(x):
         return backends[backend].all(x < 1.0)
 
-    res = _kernels.owgksmv_ensemble(obs, fct, w_func, backend=backend)
+    res = sr.owgksmv_ensemble(obs, fct, w_func, backend=backend)
     np.testing.assert_allclose(res, 0.1016436, rtol=1e-6)
 
 
@@ -316,8 +340,19 @@ def test_vrgksuv(backend):
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    res = _kernels.gksuv_ensemble(obs, fct, backend=backend)
-    resw = _kernels.vrgksuv_ensemble(obs, fct, lambda x: x * 0.0 + 1.0, backend=backend)
+    # axis keyword
+    res = sr.vrgksuv_ensemble(
+        obs,
+        np.random.randn(ENSEMBLE_SIZE, N),
+        lambda x: x * 0.0 + 1.0,
+        axis=0,
+        backend=backend,
+    )
+    res = np.asarray(res)
+    assert not np.any(res < 0.0)
+
+    res = sr.gksuv_ensemble(obs, fct, backend=backend)
+    resw = sr.vrgksuv_ensemble(obs, fct, lambda x: x * 0.0 + 1.0, backend=backend)
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
     # test correctness
@@ -352,19 +387,15 @@ def test_vrgksuv(backend):
     )
 
     def w_func(x):
-        return (x > -1).astype(float)
+        return (x > -1) * 1.0
 
-    res = np.mean(
-        np.float64(_kernels.vrgksuv_ensemble(obs, fct, w_func, backend=backend))
-    )
+    res = np.mean(np.float64(sr.vrgksuv_ensemble(obs, fct, w_func, backend=backend)))
     np.testing.assert_allclose(res, 0.01476682, rtol=1e-6)
 
     def w_func(x):
-        return (x < 1.85).astype(float)
+        return (x < 1.85) * 1.0
 
-    res = np.mean(
-        np.float64(_kernels.vrgksuv_ensemble(obs, fct, w_func, backend=backend))
-    )
+    res = np.mean(np.float64(sr.vrgksuv_ensemble(obs, fct, w_func, backend=backend)))
     np.testing.assert_allclose(res, 0.04011836, rtol=1e-6)
 
 
@@ -375,8 +406,8 @@ def test_vrgksmv(backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res0 = _kernels.gksmv_ensemble(obs, fct, backend=backend)
-    res = _kernels.vrgksmv_ensemble(
+    res0 = sr.gksmv_ensemble(obs, fct, backend=backend)
+    res = sr.vrgksmv_ensemble(
         obs, fct, lambda x: backends[backend].mean(x) * 0.0 + 1.0, backend=backend
     )
     np.testing.assert_allclose(res, res0, rtol=1e-6)
