@@ -1,11 +1,7 @@
 import numpy as np
 import pytest
-from scoringrules._variogram import (
-    owvariogram_score,
-    twvariogram_score,
-    variogram_score,
-    vrvariogram_score,
-)
+
+import scoringrules as sr
 from scoringrules.backend import backends
 
 from .conftest import BACKENDS
@@ -20,8 +16,8 @@ def test_owvs_vs_vs(backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = variogram_score(obs, fct, backend=backend)
-    resw = owvariogram_score(
+    res = sr.variogram_score(obs, fct, backend=backend)
+    resw = sr.owvariogram_score(
         obs,
         fct,
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
@@ -37,8 +33,8 @@ def test_twvs_vs_vs(backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = variogram_score(obs, fct, backend=backend)
-    resw = twvariogram_score(obs, fct, lambda x: x, backend=backend)
+    res = sr.variogram_score(obs, fct, backend=backend)
+    resw = sr.twvariogram_score(obs, fct, lambda x: x, backend=backend)
     np.testing.assert_allclose(res, resw, rtol=5e-4)
 
 
@@ -47,8 +43,8 @@ def test_vrvs_vs_vs(backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = variogram_score(obs, fct, backend=backend)
-    resw = vrvariogram_score(
+    res = sr.variogram_score(obs, fct, backend=backend)
+    resw = sr.vrvariogram_score(
         obs,
         fct,
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
@@ -69,13 +65,13 @@ def test_owvariogram_score_correctness(backend):
             backends[backend].all(x > 0.2) + 0.0
         )  # + 0.0 works to convert to float in every backend
 
-    res = owvariogram_score(obs, fct, w_func, p=0.5, backend=backend)
+    res = sr.owvariogram_score(obs, fct, w_func, p=0.5, backend=backend)
     np.testing.assert_allclose(res, 0.1929739, rtol=1e-6)
 
     def w_func(x):
         return backends[backend].all(x < 1.0) + 0.0
 
-    res = owvariogram_score(obs, fct, w_func, p=1.0, backend=backend)
+    res = sr.owvariogram_score(obs, fct, w_func, p=1.0, backend=backend)
     np.testing.assert_allclose(res, 0.04856366, rtol=1e-6)
 
 
@@ -89,11 +85,11 @@ def test_twvariogram_score_correctness(backend):
     def v_func(x):
         return np.maximum(x, 0.2)
 
-    res = twvariogram_score(obs, fct, v_func, p=0.5, backend=backend)
+    res = sr.twvariogram_score(obs, fct, v_func, p=0.5, backend=backend)
     np.testing.assert_allclose(res, 0.07594679, rtol=1e-6)
 
     def v_func(x):
         return np.minimum(x, 1.0)
 
-    res = twvariogram_score(obs, fct, v_func, p=1.0, backend=backend)
+    res = sr.twvariogram_score(obs, fct, v_func, p=1.0, backend=backend)
     np.testing.assert_allclose(res, 0.04856366, rtol=1e-6)
