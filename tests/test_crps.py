@@ -15,8 +15,8 @@ ESTIMATORS = ["nrg", "fair", "pwm", "int", "qd", "akr", "akr_circperm"]
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_ensemble(estimator, backend):
     obs = np.random.randn(N)
-    mu = obs + np.random.randn(N) * 0.1
-    sigma = abs(np.random.randn(N)) * 0.3
+    mu = obs + np.random.randn(N) * 0.3
+    sigma = abs(np.random.randn(N)) * 0.5
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
     # test exceptions
@@ -25,6 +25,22 @@ def test_crps_ensemble(estimator, backend):
             with pytest.raises(ValueError):
                 sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
             return
+    if backend == "numba":
+        with pytest.raises(ValueError):
+            est = "undefined_estimator"
+            sr.crps_ensemble(obs, fct, estimator=est, backend=backend)
+
+    # test shapes
+    res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
+    assert res.shape == (N,)
+    res = sr.crps_ensemble(
+        obs,
+        np.random.randn(ENSEMBLE_SIZE, N),
+        axis=0,
+        estimator=estimator,
+        backend=backend,
+    )
+    assert res.shape == (N,)
 
     # non-negative values
     res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
@@ -40,6 +56,18 @@ def test_crps_ensemble(estimator, backend):
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_quantile(backend):
+    # test shapes
+    obs = np.random.randn(N)
+    fct = np.random.randn(N, ENSEMBLE_SIZE)
+    alpha = np.linspace(0.1, 0.9, ENSEMBLE_SIZE)
+    res = sr.crps_quantile(obs, fct, alpha, backend=backend)
+    assert res.shape == (N,)
+    fct = np.random.randn(ENSEMBLE_SIZE, N)
+    res = sr.crps_quantile(
+        obs, np.random.randn(ENSEMBLE_SIZE, N), alpha, axis=0, backend=backend
+    )
+    assert res.shape == (N,)
+
     # Test quantile approximation close to analytical normal crps if forecast comes from the normal distribution
     for mu in np.random.sample(size=10):
         for A in [9, 99, 999]:
@@ -548,6 +576,11 @@ def test_crps_negbinom(backend):
     if backend in ["jax", "torch", "tensorflow"]:
         pytest.skip("Not implemented in jax, torch or tensorflow backends")
 
+    # test exceptions
+    with pytest.raises(ValueError):
+        sr.crps_negbinom(0.3, 7.0, 0.8, mu=7.3, backend=backend)
+
+    # test correctness
     obs, n, prob = 2.0, 7.0, 0.8
     res = sr.crps_negbinom(obs, n, prob, backend=backend)
     expected = 0.3834322
@@ -589,6 +622,19 @@ def test_crps_normal(backend):
 
     assert not np.any(np.isnan(res))
     assert not np.any(res - 0.0 > 0.0001)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_crps_2pnormal(backend):
+    obs = np.random.randn(N)
+    mu = obs + np.random.randn(N) * 0.1
+    sigma1 = abs(np.random.randn(N)) * 0.3
+    sigma2 = abs(np.random.randn(N)) * 0.2
+
+    res = sr.crps_2pnormal(obs, sigma1, sigma2, mu, backend=backend)
+    res = np.asarray(res)
+    assert not np.any(np.isnan(res))
+    assert not np.any(res < 0.0)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
