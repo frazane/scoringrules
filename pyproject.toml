@@ -67,4 +67,4 @@ ignore = ["E741"]
 omit = ["**/_gufuncs.py", "**/_gufunc.py"]
 
 [tool.coverage.report]
-exclude_also = ["if tp.TYPE_CHECKING:"]
+exclude_also = ["if tp.TYPE_CHECKING:", "except ImportError:"]
