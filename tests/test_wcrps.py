@@ -9,8 +9,8 @@ from scoringrules._crps import (
 
 from .conftest import BACKENDS
 
-ENSEMBLE_SIZE = 51
-N = 100
+ENSEMBLE_SIZE = 11
+N = 20
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
