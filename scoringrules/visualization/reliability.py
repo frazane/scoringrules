@@ -63,7 +63,7 @@ def reliability_diagram(
     except ImportError as e:
         raise ImportError("matplotlib is required for plotting") from e
 
-    if not IR_AVAILABLE:
+    if not IR_AVAILABLE:  # pragma: no cover
         raise ImportError(
             "scipy>1.12 is required for isotonic regression, "
             "which is used for the reliability diagram"

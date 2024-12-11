@@ -42,11 +42,8 @@ def ensemble_uv(
         out = e_1 - 0.5 * e_2 - 0.5 * e_3
     elif estimator == "fair":
         out = e_1 - 0.5 * e_2 * (M / (M - 1)) - 0.5 * e_3
-    else:
-        raise ValueError(f"{estimator} must be one of 'nrg' and 'fair'")
 
-    out = -out
-    return out
+    return -out
 
 
 def ensemble_mv(
@@ -75,11 +72,8 @@ def ensemble_mv(
         out = e_1 - 0.5 * e_2 - 0.5 * e_3
     elif estimator == "fair":
         out = e_1 - 0.5 * e_2 * (M / (M - 1)) - 0.5 * e_3
-    else:
-        raise ValueError(f"{estimator} must be one of 'nrg' and 'fair'")
 
-    out = -out
-    return out
+    return -out
 
 
 def ow_ensemble_uv(
@@ -108,8 +102,7 @@ def ow_ensemble_uv(
     e_3 = gauss_kern_uv(obs, obs, backend=backend) * ow
 
     out = e_1 - 0.5 * e_2 - 0.5 * e_3
-    out = -out
-    return out
+    return -out
 
 
 def ow_ensemble_mv(
