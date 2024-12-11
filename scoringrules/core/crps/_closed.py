@@ -492,20 +492,24 @@ def hypergeometric(
     else:
         obs, M, m, N = B.broadcast_arrays(obs, M, m, N)
         s = []
-        for i, _n in enumerate(n.view(-1)):
+        for i, _n in enumerate(n.reshape(-1)):
             x = B.arange(_n + 1)
             f_np = _hypergeo_pdf(
-                x, M.view(-1)[i], m.view(-1)[i], N.view(-1)[i], backend=backend
+                x, M.reshape(-1)[i], m.reshape(-1)[i], N.reshape(-1)[i], backend=backend
             )
             F_np = _hypergeo_cdf(
-                x, M.view(-1)[i], m.view(-1)[i], N.view(-1)[i], backend=backend
+                x, M.reshape(-1)[i], m.reshape(-1)[i], N.reshape(-1)[i], backend=backend
             )
             s.append(
                 2
                 * B.sum(
                     f_np
-                    * (B.asarray((obs.view(-1)[i] < x), dtype=float) - F_np + f_np / 2)
-                    * (x - obs.view(-1)[i]),
+                    * (
+                        B.asarray((obs.reshape(-1)[i] < x), dtype=float)
+                        - F_np
+                        + f_np / 2
+                    )
+                    * (x - obs.reshape(-1)[i]),
                     axis=0,
                 )
             )
