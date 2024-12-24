@@ -30,12 +30,6 @@ def _logis_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     return B.exp(-x) / (1 + B.exp(-x)) ** 2
 
 
-def _logis_pdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
-    """Probability density function for the standard logistic distribution."""
-    B = backends.active if backend is None else backends[backend]
-    return B.exp(-x) / (1 + B.exp(-x)) ** 2
-
-
 def _logis_cdf(x: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the standard logistic distribution."""
     B = backends.active if backend is None else backends[backend]
@@ -241,16 +235,16 @@ def _hypergeo_cdf(k, M, n, N, backend=None):
     def _inner(m, M, n, N):
         return B.sum(_hypergeo_pdf(m, M, n, N, backend=backend), axis=0)
 
-    if k.size == 1:
-        m = B.arange(k + 1)
-        M, n, N = B.broadcast_arrays(M, n, N)
-        return _inner(m[:, None], M[None], n[None], N[None])
-    else:
-        k, M, n, N = B.broadcast_arrays(k, M, n, N)
-        _iter = zip(k.ravel(), M.ravel(), n.ravel(), N.ravel(), strict=True)
-        return B.asarray(
-            [_inner(B.arange(0, _args[0] + 1), *_args[1:]) for _args in _iter]
-        ).reshape(k.shape)
+    # if k.size == 1:
+    #     m = B.arange(k + 1)
+    #     M, n, N = B.broadcast_arrays(M, n, N)
+    #     return _inner(m[:, None], M[None], n[None], N[None])
+    # else:
+    k, M, n, N = B.broadcast_arrays(k, M, n, N)
+    _iter = zip(k.ravel(), M.ravel(), n.ravel(), N.ravel(), strict=True)
+    return B.asarray(
+        [_inner(B.arange(0, _args[0] + 1), *_args[1:]) for _args in _iter]
+    ).reshape(k.shape)
 
 
 def _negbinom_pdf(

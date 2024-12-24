@@ -35,5 +35,6 @@ def _error_spread_score_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
 
     for i in range(M):
         e += fct[i] - obs[i]
+    e /= M
 
     out[0] = (s**2 - e**2 - e * s * g) ** 2

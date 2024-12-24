@@ -9,8 +9,8 @@ if tp.TYPE_CHECKING:
 
 
 def gksuv_ensemble(
-    observations: "ArrayLike",
-    forecasts: "Array",
+    obs: "ArrayLike",
+    fct: "Array",
     /,
     axis: int = -1,
     *,
@@ -33,9 +33,9 @@ def gksuv_ensemble(
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs: ArrayLike
         The observed values.
-    forecasts: ArrayLike
+    fct: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     axis: int
@@ -56,26 +56,33 @@ def gksuv_ensemble(
     >>> sr.gks_ensemble(obs, pred)
     """
     B = backends.active if backend is None else backends[backend]
-    observations, forecasts = map(B.asarray, (observations, forecasts))
-
-    if estimator not in kernels.estimator_gufuncs:
-        raise ValueError(
-            f"{estimator} is not a valid estimator. "
-            f"Must be one of {kernels.estimator_gufuncs.keys()}"
-        )
-
-    if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
+    obs, fct = map(B.asarray, (obs, fct))
 
     if backend == "numba":
-        return kernels.estimator_gufuncs[estimator](observations, forecasts)
+        if estimator not in kernels.estimator_gufuncs:
+            raise ValueError(
+                f"{estimator} is not a valid estimator. "
+                f"Must be one of {kernels.estimator_gufuncs.keys()}"
+            )
+    else:
+        if estimator not in ["fair", "nrg"]:
+            raise ValueError(
+                f"{estimator} is not a valid estimator. "
+                f"Must be one of ['fair', 'nrg']"
+            )
 
-    return kernels.ensemble_uv(observations, forecasts, estimator, backend=backend)
+    if axis != -1:
+        fct = B.moveaxis(fct, axis, -1)
+
+    if backend == "numba":
+        return kernels.estimator_gufuncs[estimator](obs, fct)
+
+    return kernels.ensemble_uv(obs, fct, estimator, backend=backend)
 
 
 def twgksuv_ensemble(
-    observations: "ArrayLike",
-    forecasts: "Array",
+    obs: "ArrayLike",
+    fct: "Array",
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     axis: int = -1,
@@ -100,9 +107,9 @@ def twgksuv_ensemble(
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs: ArrayLike
         The observed values.
-    forecasts: ArrayLike
+    fct: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     v_func: tp.Callable
@@ -129,10 +136,10 @@ def twgksuv_ensemble(
     >>>
     >>> sr.twgksuv_ensemble(obs, pred, v_func)
     """
-    observations, forecasts = map(v_func, (observations, forecasts))
+    obs, fct = map(v_func, (obs, fct))
     return gksuv_ensemble(
-        observations,
-        forecasts,
+        obs,
+        fct,
         axis=axis,
         estimator=estimator,
         backend=backend,
@@ -140,8 +147,8 @@ def twgksuv_ensemble(
 
 
 def owgksuv_ensemble(
-    observations: "ArrayLike",
-    forecasts: "Array",
+    obs: "ArrayLike",
+    fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     axis: int = -1,
@@ -166,9 +173,9 @@ def owgksuv_ensemble(
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs: ArrayLike
         The observed values.
-    forecasts: ArrayLike
+    fct: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     w_func: tp.Callable
@@ -195,27 +202,25 @@ def owgksuv_ensemble(
     """
     B = backends.active if backend is None else backends[backend]
 
-    if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
+    obs, fct = map(B.asarray, (obs, fct))
 
-    obs_weights, fct_weights = map(w_func, (observations, forecasts))
+    if axis != -1:
+        fct = B.moveaxis(fct, axis, -1)
+
+    obs_weights, fct_weights = map(w_func, (obs, fct))
 
     if backend == "numba":
-        return kernels.estimator_gufuncs["ow"](
-            observations, forecasts, obs_weights, fct_weights
-        )
+        return kernels.estimator_gufuncs["ow"](obs, fct, obs_weights, fct_weights)
 
-    observations, forecasts, obs_weights, fct_weights = map(
-        B.asarray, (observations, forecasts, obs_weights, fct_weights)
+    obs, fct, obs_weights, fct_weights = map(
+        B.asarray, (obs, fct, obs_weights, fct_weights)
     )
-    return kernels.ow_ensemble_uv(
-        observations, forecasts, obs_weights, fct_weights, backend=backend
-    )
+    return kernels.ow_ensemble_uv(obs, fct, obs_weights, fct_weights, backend=backend)
 
 
 def vrgksuv_ensemble(
-    observations: "ArrayLike",
-    forecasts: "Array",
+    obs: "ArrayLike",
+    fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     axis: int = -1,
@@ -239,9 +244,9 @@ def vrgksuv_ensemble(
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs: ArrayLike
         The observed values.
-    forecasts: ArrayLike
+    fct: ArrayLike
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     w_func: tp.Callable
@@ -268,27 +273,25 @@ def vrgksuv_ensemble(
     """
     B = backends.active if backend is None else backends[backend]
 
-    if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
+    obs, fct = map(B.asarray, (obs, fct))
 
-    obs_weights, fct_weights = map(w_func, (observations, forecasts))
+    if axis != -1:
+        fct = B.moveaxis(fct, axis, -1)
+
+    obs_weights, fct_weights = map(w_func, (obs, fct))
 
     if backend == "numba":
-        return kernels.estimator_gufuncs["vr"](
-            observations, forecasts, obs_weights, fct_weights
-        )
+        return kernels.estimator_gufuncs["vr"](obs, fct, obs_weights, fct_weights)
 
-    observations, forecasts, obs_weights, fct_weights = map(
-        B.asarray, (observations, forecasts, obs_weights, fct_weights)
+    obs, fct, obs_weights, fct_weights = map(
+        B.asarray, (obs, fct, obs_weights, fct_weights)
     )
-    return kernels.vr_ensemble_uv(
-        observations, forecasts, obs_weights, fct_weights, backend=backend
-    )
+    return kernels.vr_ensemble_uv(obs, fct, obs_weights, fct_weights, backend=backend)
 
 
 def gksmv_ensemble(
-    observations: "Array",
-    forecasts: "Array",
+    obs: "Array",
+    fct: "Array",
     /,
     m_axis: int = -2,
     v_axis: int = -1,
@@ -315,9 +318,9 @@ def gksmv_ensemble(
 
     Parameters
     ----------
-    observations: Array
+    obs: Array
         The observed values, where the variables dimension is by default the last axis.
-    forecasts: Array
+    fct: Array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
     m_axis: int
@@ -336,9 +339,7 @@ def gksmv_ensemble(
         The GKS between the forecast ensemble and obs.
     """
     backend = backend if backend is not None else backends._active
-    observations, forecasts = multivariate_array_check(
-        observations, forecasts, m_axis, v_axis, backend=backend
-    )
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
     if estimator not in kernels.estimator_gufuncs_mv:
         raise ValueError(
@@ -347,14 +348,14 @@ def gksmv_ensemble(
         )
 
     if backend == "numba":
-        return kernels.estimator_gufuncs_mv[estimator](observations, forecasts)
+        return kernels.estimator_gufuncs_mv[estimator](obs, fct)
 
-    return kernels.ensemble_mv(observations, forecasts, estimator, backend=backend)
+    return kernels.ensemble_mv(obs, fct, estimator, backend=backend)
 
 
 def twgksmv_ensemble(
-    observations: "Array",
-    forecasts: "Array",
+    obs: "Array",
+    fct: "Array",
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     m_axis: int = -2,
@@ -379,9 +380,9 @@ def twgksmv_ensemble(
 
     Parameters
     ----------
-    observations: ArrayLike of shape (...,D)
+    obs: ArrayLike of shape (...,D)
         The observed values, where the variables dimension is by default the last axis.
-    forecasts: ArrayLike of shape (..., M, D)
+    fct: ArrayLike of shape (..., M, D)
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
     v_func: tp.Callable
@@ -398,15 +399,13 @@ def twgksmv_ensemble(
     score: ArrayLike of shape (...)
         The computed Threshold-Weighted Gaussian Kernel Score.
     """
-    observations, forecasts = map(v_func, (observations, forecasts))
-    return gksmv_ensemble(
-        observations, forecasts, m_axis=m_axis, v_axis=v_axis, backend=backend
-    )
+    obs, fct = map(v_func, (obs, fct))
+    return gksmv_ensemble(obs, fct, m_axis=m_axis, v_axis=v_axis, backend=backend)
 
 
 def owgksmv_ensemble(
-    observations: "Array",
-    forecasts: "Array",
+    obs: "Array",
+    fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     m_axis: int = -2,
@@ -444,9 +443,9 @@ def owgksmv_ensemble(
 
     Parameters
     ----------
-    observations: ArrayLike of shape (...,D)
+    obs: ArrayLike of shape (...,D)
         The observed values, where the variables dimension is by default the last axis.
-    forecasts: ArrayLike of shape (..., M, D)
+    fct: ArrayLike of shape (..., M, D)
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
     w_func: tp.Callable
@@ -465,26 +464,20 @@ def owgksmv_ensemble(
     """
     B = backends.active if backend is None else backends[backend]
 
-    observations, forecasts = multivariate_array_check(
-        observations, forecasts, m_axis, v_axis, backend=backend
-    )
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
-    fct_weights = B.apply_along_axis(w_func, forecasts, -1)
-    obs_weights = B.apply_along_axis(w_func, observations, -1)
+    fct_weights = B.apply_along_axis(w_func, fct, -1)
+    obs_weights = B.apply_along_axis(w_func, obs, -1)
 
     if B.name == "numba":
-        return kernels.estimator_gufuncs_mv["ow"](
-            observations, forecasts, obs_weights, fct_weights
-        )
+        return kernels.estimator_gufuncs_mv["ow"](obs, fct, obs_weights, fct_weights)
 
-    return kernels.ow_ensemble_mv(
-        observations, forecasts, obs_weights, fct_weights, backend=backend
-    )
+    return kernels.ow_ensemble_mv(obs, fct, obs_weights, fct_weights, backend=backend)
 
 
 def vrgksmv_ensemble(
-    observations: "Array",
-    forecasts: "Array",
+    obs: "Array",
+    fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
     *,
@@ -511,9 +504,9 @@ def vrgksmv_ensemble(
 
     Parameters
     ----------
-    observations: ArrayLike of shape (...,D)
+    obs: ArrayLike of shape (...,D)
         The observed values, where the variables dimension is by default the last axis.
-    forecasts: ArrayLike of shape (..., M, D)
+    fct: ArrayLike of shape (..., M, D)
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
     w_func: tp.Callable
@@ -532,18 +525,12 @@ def vrgksmv_ensemble(
     """
     B = backends.active if backend is None else backends[backend]
 
-    observations, forecasts = multivariate_array_check(
-        observations, forecasts, m_axis, v_axis, backend=backend
-    )
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
-    fct_weights = B.apply_along_axis(w_func, forecasts, -1)
-    obs_weights = B.apply_along_axis(w_func, observations, -1)
+    fct_weights = B.apply_along_axis(w_func, fct, -1)
+    obs_weights = B.apply_along_axis(w_func, obs, -1)
 
     if B.name == "numba":
-        return kernels.estimator_gufuncs_mv["vr"](
-            observations, forecasts, obs_weights, fct_weights
-        )
+        return kernels.estimator_gufuncs_mv["vr"](obs, fct, obs_weights, fct_weights)
 
-    return kernels.vr_ensemble_mv(
-        observations, forecasts, obs_weights, fct_weights, backend=backend
-    )
+    return kernels.vr_ensemble_mv(obs, fct, obs_weights, fct_weights, backend=backend)
