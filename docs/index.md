@@ -10,13 +10,33 @@
 <br>
 <br>
 
-Scoringrules is a python library for evaluating probabilistic forecasts by computing
-scoring rules and other diagnostic quantities. It aims to assist forecasting practitioners by
-providing a set of tools based the scientific literature and via its didactic approach.
+
+`scoringrules` is a python library that provides scoring rules to evaluate probabilistic forecasts.
+It's original goal was to reproduce the functionality of the R package
+[`scoringRules`](https://cran.r-project.org/web/packages/scoringRules/index.html) in python,
+thereby allowing forecasting practitioners working in python to enjoy the same tools as those
+working in R. The methods implemented in `scoringrules` are therefore based around those
+available in `scoringRules`, which are rooted in the scientific literature on probabilistic forecasting.
+
+The scoring rules available in `scoringrules` include, but are not limited to, the
+
+- Brier Score
+- Logarithmic Score
+- (Discrete) Ranked Probability Score
+- Continuous Ranked Probability Score (CRPS)
+- Dawid-Sebastiani Score
+- Energy Score
+- Variogram Score
+- Gaussian Kernel Score
+- Threshold-Weighted CRPS
+- Threshold-Weighted Energy Score
+- Quantile Score
+- Interval Score
+
 
 ## Features
 
-- **Fast** computations of several probabilistic univariate and multivariate verification metrics
+- **Fast** computation of several probabilistic univariate and multivariate verification metrics
 - **Multiple backends**: support for numpy (accelerated with numba), jax, pytorch and tensorflow
 - **Didactic approach** to probabilistic forecast evaluation through clear code and documentation
 
@@ -26,6 +46,12 @@ Requires python `>=3.10`!
 ```
 pip install scoringrules
 ```
+
+## Documentation
+
+Learn more about `scoringrules` in its official documentation at https://frazane.github.io/scoringrules/.
+
+
 ## Quick example
 ```python
 import scoringrules as sr
@@ -36,26 +62,24 @@ fct = obs[:,None] + np.random.randn(100, 21) * 0.1
 sr.crps_ensemble(obs, fct)
 ```
 
-## Metrics
-- Brier Score
-- Continuous Ranked Probability Score (CRPS)
-- Logarithmic score
-- Error Spread Score
-- Energy Score
-- Variogram Score
-
 ## Citation
-If you found this library useful for your own research, consider citing:
+If you found this library useful, consider citing:
 
 ```
 @software{zanetta_scoringrules_2024,
   author = {Francesco Zanetta and Sam Allen},
-  title = {Scoringrules: a python library for probabilistic forecast evaluation},
+  title = {scoringrules: a python library for probabilistic forecast evaluation},
   year = {2024},
   url = {https://github.com/frazane/scoringrules}
 }
 ```
 
-
 ## Acknowledgements
-[scoringRules](https://cran.r-project.org/web/packages/scoringRules/index.html) served as a reference for this library. The authors did an outstanding work which greatly facilitated ours. The implementation of the ensemble-based metrics as jit-compiled numpy generalized `ufuncs` was first proposed in [properscoring](https://github.com/properscoring/properscoring), released under Apache License, Version 2.0.
+- The widely-used R package [`scoringRules`](https://cran.r-project.org/web/packages/scoringRules/index.html)
+served as a reference for this library, which greatly facilitated our work. We are additionally
+grateful for fruitful discussions with the authors.
+- The quality of this library has also benefited a lot from discussions with (and contributions from)
+Nick Loveday and Tennessee Leeuwenburg, whose python library [`scores`](https://github.com/nci/scores)
+similarly provides a comprehensive collection of forecast evaluation methods.
+- The implementation of the ensemble-based metrics as jit-compiled numpy generalized `ufuncs`
+was first proposed in [`properscoring`](https://github.com/properscoring/properscoring), released under Apache License, Version 2.0.

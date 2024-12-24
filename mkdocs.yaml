@@ -7,16 +7,21 @@ nav:
   - Home: index.md
   - User guide: user_guide.md
   - Contributing: contributing.md
+  - Theory: theory.md
   - API reference:
-    - Brier Score: api/brier.md
-    - Continuous Ranked Probability Score: api/crps.md
-    - Logarithmic Score: api/logarithmic.md
-    - Error Spread Score: api/error_spread.md
-    - Energy Score: api/energy.md
-    - Variogram Score: api/variogram.md
-    - Interval Score: api/interval.md
-    - Quantile Score: api/quantile.md
-    - Visualization: api/visualization.md
+    - Categorical Outcomes: api/categorical.md
+    - Continuous Univariate Outcomes:
+      - Continuous Ranked Probability Score: api/crps.md
+      - Logarithmic Score: api/logarithmic.md
+      - Error Spread Score: api/error_spread.md
+    - Continuous Multivariate Outcomes:
+      - Energy Score: api/energy.md
+      - Variogram Score: api/variogram.md
+      - Gaussian Kernel Score: api/kernels.md
+    - Functionals:
+      - Interval Score: api/interval.md
+      - Quantile Score: api/quantile.md
+  - Visualization: api/visualization.md
 
 
 theme:

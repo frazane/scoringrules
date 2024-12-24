@@ -1,5 +1,16 @@
 # Logarithmic Score
 
+The Log score is defined as
+
+$$\text{LS}(F, y) = - \log f(y)$$,
+
+where $f$ is the density function associated with $F$. The Log score is only defined for
+forecasts that have a density function. This means the Log score cannot be calculated
+when evaluating discrete forecast distributions, such as ensemble forecasts.
+
+
+## Analytical formulations
+
 ::: scoringrules.logs_beta
 
 ::: scoringrules.logs_binomial
