@@ -1,17 +1,10 @@
-#
-<p align="center">
-  <img src="assets/images/banner_light.svg#only-light" />
-</p>
-<p align="center">
-  <img src="assets/images/banner_dark.svg#only-dark" />
-</p>
-
+# scoringrules documentation
 
 <br>
 <br>
 
+`scoringrules` is a lightweight python library that provides scoring rules to evaluate probabilistic forecasts.
 
-`scoringrules` is a python library that provides scoring rules to evaluate probabilistic forecasts.
 It's original goal was to reproduce the functionality of the R package
 [`scoringRules`](https://cran.r-project.org/web/packages/scoringRules/index.html) in python,
 thereby allowing forecasting practitioners working in python to enjoy the same tools as those
@@ -32,6 +25,26 @@ The scoring rules available in `scoringrules` include, but are not limited to, t
 - Threshold-Weighted Energy Score
 - Quantile Score
 - Interval Score
+
+
+
+
+```{toctree}
+:hidden:
+:caption: Background
+
+theory.md
+```
+
+```{toctree}
+:hidden:
+:caption: Library
+
+user_guide.md
+contributing.md
+reference.md
+```
+
 
 
 ## Features

@@ -1,7 +1,3 @@
-####################
-Proper scoring rules
-####################
-
 # The theory of proper scoring rules
 
 ## Definitions
@@ -27,9 +23,9 @@ be modified to treat scoring rules that are positively oriented.
 It is widely accepted that scoring rules should be *proper*. A scoring rule $S$ is proper
 (with respect to $\mathcal{F}$) if, when $Y \sim G$,
 
-\[
+$$
     \mathbb{E} S(G, Y) \leq \mathbb{E} S(F, Y) \quad \text{for all $F, G \in \mathcal{F}$}.
-\]
+$$
 
 That is, the score is minimised in expectation by the true distribution underlying the outcome $Y$.
 Put differently, if we believe that the outcome arises according to distribution $G$, then
@@ -49,19 +45,19 @@ rules include the *Brier score* and *Logarithmic (Log) score*.
 
 The Brier score is defined as
 
-\[
+$$
     \mathrm{BS}(F, y) = (F - y)^{2},
-\]
+$$
 
 while the Log score is defined as
 
-\[
+$$
     \mathrm{LS}(F, y) = -\log |F + y - 1| =
     \begin{cases}
         -\log F & \text{if} \quad y = 1, \\
         -\log (1 - F) & \text{if} \quad y = 0.
     \end{cases}
-\]
+$$
 
 Other popular binary scoring rules include the spherical score, power score, and pseudo-spherical
 score.
@@ -73,9 +69,9 @@ Suppose now that $Y$ is a categorical variable, taking values in $\Omega = \{1, 
 for $K > 1$. Binary outcomes constitute a particular case when $K = 2$.
 A probabilistic forecast for $Y$ is a vector
 
-\[
+$$
     F = (F_{1}, \dots, F_{K}) \in [0, 1]^{K} \quad \text{such that} \quad \sum_{i=1}^{K} F_{i} = 1.
-\]
+$$
 
 The $i$-th element of $F$ represents the probability that $Y = i$, for $i = 1, \dots, K$.
 
@@ -85,9 +81,9 @@ and then summing these $K$ scores.
 
 For example, the Brier score becomes
 
-\[
+$$
     \mathrm{BS}_{K}(F, y) = \sum_{i=1}^{K} (F_{i} - \mathbf{1}\{y = i\})^{2}.
-\]
+$$
 
 where $\mathbf{1}\{ \cdotp \}$ denotes the indicator function.
 When $K = 2$, we recover the Brier score for binary outcomes (multiplied by a factor of 2).
@@ -95,9 +91,9 @@ When $K = 2$, we recover the Brier score for binary outcomes (multiplied by a fa
 The Log score can similarly be extended, though it is more common to define the Log score for
 categorical outcomes as
 
-\[
+$$
     \mathrm{LS}(F, y) = -\log F_{y}.
-\]
+$$
 
 As in the binary case, this Log score evaluates the forecast $F$ only via the probability
 assigned to the outcome that occurs.
@@ -113,24 +109,26 @@ $F^{(2)}$ assigns all probability to the second category, and the second categor
 To account for the ordering of the categories, it is common to apply the Brier score and
 Log score to cumulative probabilities. Let
 
+$$
 \begin{align}
     \tilde{F} &= (\tilde{F}_{1}, \dots, \tilde{F}_{K}) \in [0, 1]^{K} \quad \text{with
     $\tilde{F}_{j} = \sum_{i=1}^{j} F_{i}$} \quad &\text{for $j = 1, \dots, K$,} \\
     \tilde{y} &= (\tilde{y}_{1}, \dots, \tilde{y}_{K}) \in \{0, 1\}^{K} \quad \text{with
     $\tilde{y}_{j} = \sum_{i=1}^{j} \mathbf{1}\{y = i\}$} \quad &\text{for $j = 1, \dots, K$.}
 \end{align}
+$$
 
 Then, the *Ranked Probability Score (RPS)* is defined as
 
-\[
+$$
     \mathrm{RPS}(F, y) = \sum_{i=1}^{K} (\tilde{F}_{j} - \tilde{y}_{j})^{2},
-\]
+$$
 
 and the *Ranked Logarithmic Score (RLS)* is
 
-\[
+$$
     \mathrm{RLS}(F, y) = - \sum_{i=1}^{K} \log | \tilde{F}_{j} + \tilde{y}_{j} - 1|.
-\]
+$$
 
 These categorical scoring rules can also be implemented when $K = \infty$,
 as is the case for unbounded count data, for example. Other scoring rules for binary
@@ -147,10 +145,12 @@ for binary outcomes.
 
 The *Continuous Ranked Probability Score (CRPS)* is defined as
 
+$$
 \begin{align*}
     \mathrm{CRPS}(F, y) &= \int_{-\infty}^{\infty} (F(x) - \mathbf{1}\{y \le x\})^{2} dx \\
     &= \mathbb{E} | X - y | - \frac{1}{2} \mathbb{E} | X - X^{\prime} |,
 \end{align*}
+$$
 
 where $X, X^{\prime} \sim F$ are independent.
 The CRPS is defined as the Brier score for threshold exceedance forecasts integrated over all
@@ -159,17 +159,17 @@ infinite possible categories.
 
 Similarly, the *Continuous Ranked Logarithmic Score (CRLS)* is defined as
 
-\[
+$$
     \mathrm{CRLS}(F, y) = -\int_{-\infty}^{\infty} \log |F(x) + \mathbf{1}\{y \le x\} - 1| dx.
-\]
+$$
 
 The Log score can additionally be generalised to continuous outcomes whenever
 the forecast $F$ has a density function, denoted here by $f$. In this case, the
 Log score is defined as
 
-\[
+$$
     \mathrm{LS}(F, y) = - \log f(y).
-\]
+$$
 
 The Log score again depends only on the forecast distribution $F$ at the observation $y$,
 ignoring the probability density assigned to other outcomes. This scoring rule is therefore
@@ -177,9 +177,9 @@ ignoring the probability density assigned to other outcomes. This scoring rule i
 
 When $F$ is a normal distribution, the Log score simplifies to the *Dawid-Sebastiani* score,
 
-\[
+$$
     \mathrm{DS}(F, y) = \frac{(y - \mu_{F})^{2}}{\sigma_{F}^{2}} + 2 \log \sigma_{F},
-\]
+$$
 
 where $\mu_{F}$ and $\sigma_{F}$ represent the mean and standard deviation of the forecast
 distribution $F$. While the Dawid-Sebastiani score corresponds to the Log score for a normal distribution,
@@ -196,18 +196,18 @@ Let $\boldsymbol{Y} \in \mathbb{R}^{d}$, with $d > 1$, and suppose $F$ is a mult
 If $F$ admits a multivariate density function $f$, then the Log score can be defined analogously to
 in the univariate case,
 
-\[
+$$
     \mathrm{LS}(F, \boldsymbol{y}) = - \log f(\boldsymbol{y}).
-\]
+$$
 
 The Dawid-Sebastiani score can similarly be extended to higher dimensions
 by replacing the predictive mean $\mu_{F}$ and variance $\sigma_{F}^{2}$ with the mean vector
 $\boldsymbol{\mu}_{F} \in \mathbb{R}^{d}$ and covariance matrix $\Sigma_{F} \in \mathbb{R}^{d \times d}$.
 This becomes
 
-\[
+$$
     \mathrm{DS}(F, \boldsymbol{y}) = (\boldsymbol{y} - \boldsymbol{\mu}_{F})^{\top} \Sigma_{F}^{-1} (\boldsymbol{y} - \boldsymbol{\mu}_{F}) + \log \det(\Sigma_{F}),
-\]
+$$
 
 where $\top$ denotes the vector transpose, and $\det$ the matrix determinant. The Dawid-Sebastiani
 score is equivalent to the Log score for a multivariate normal distribution. However, the
@@ -218,9 +218,9 @@ or must be estimated from a finite sample.
 
 Instead, it is common to evaluate multivariate forecasts using the *Energy score*,
 
-\[
+$$
     \mathrm{ES}(F, \boldsymbol{y}) = \mathbb{E} \| \boldsymbol{X} - \boldsymbol{y} \| - \frac{1}{2} \mathbb{E} \| \boldsymbol{X} - \boldsymbol{X}^{\prime} \|,
-\]
+$$
 
 where $\boldsymbol{X}, \boldsymbol{X}^{\prime} \sim F$ are independent, and $\| \cdot \|$ is the Euclidean distance on $\mathbb{R}^{d}$.
 The Energy score can be interpreted as a multivariate generalisation of the CRPS, which is recovered when $d = 1$.
@@ -231,9 +231,9 @@ The *Variogram score* was introduced as an alternative scoring rule that is less
 univariate forecast performance, thereby focusing on the multivariate dependence structure.
 The Variogram score is defined as
 
-\[
+$$
     \mathrm{VS}(F, \boldsymbol{y}) = \sum_{i=1}^{d} \sum_{j=1}^{d} h_{i,j} \left( \mathbb{E} | X_{i} - X_{j} |^{p} - | y_{i} - y_{j} |^{p} \right)^{2},
-\]
+$$
 
 where $\boldsymbol{X} \sim F$, and $h_{i,j} \ge 0$ are weights assigned to different pairs of dimensions.
 The Variogram score therefore measures the distance between between the expected variogram of
@@ -253,9 +253,9 @@ novel scoring rules that incorporate their personal preferences.
 Schervish (1969) demonstrated that all proper scoring rules for binary outcomes can be
 written in the following form (up to unimportant technical details):
 
-\[
+$$
     S(F, y) = \int_{(0, 1)} c 1\{F > c, y = 0\} + (1 - c) 1\{F < c, y = 1\} + c(1 - c) 1\{F = c\} d \nu(c),
-\]
+$$
 
 for some non-negative measure $\nu$ on $(0, 1)$. The measure $\nu$ emphasises particular trade-offs
 between over-prediction ($F$ high, $y = 0$) and under-prediction ($F$ low, $y = 1$).
@@ -274,9 +274,9 @@ trade-off parameters.
 More generally, for categorical forecasts, a scoring rule is proper if and only if there exists a convex function
 $g : [0, 1]^{K} \to \mathbb{R}$ such that
 
-\[
+$$
     S(F, y) = \langle g^{\prime}(F), F \rangle - g(F) - g^{\prime}(F)_{y} \quad \text{for all $F \in [0, 1]^{K}$ and $y \in \{1, \dots, K\}$,}
-\]
+$$
 
 where $g^{\prime}(F) \in \mathbb{R}^{K}$ is a sub-gradient of $g$ at $F \in \mathcal{F}$,
 and $g^{\prime}(F)_{y}$ is the $y$-th element of this vector, for $y \in \{1, \dots, K\}$.
@@ -290,9 +290,9 @@ Gneiting and Raftery (2007) generalised this to arbitrary outcome domains by sho
 a scoring rule $S$ is proper relative to the set $\mathcal{F}$ if and only if there exists a
 convex function $g : \Omega \to \mathbb{R}$ such that
 
-\[
+$$
     S(F, y) = \int g^{\prime}(F, z) dF(z) - g(F) - g^{\prime}(F, y) \quad \text{for all $F \in \mathcal{F}$ and $y \in \Omega$,}
-\]
+$$
 
 where $g^{\prime}(F, \cdot)$ is a subtangent of $g$ at $F$ (Gneiting and Raftery, 2007, Theorem 1).
 The class of strictly proper scoring rules with respect to $\mathcal{F}$ is characterised by
@@ -314,9 +314,9 @@ assuming the forecast distribution $F$ admits a density function $f$ whose deriv
 $f^{\prime}, f^{\prime \prime}, \dots, f^{(j)}$ exist, a scoring rule $S$ is called *local of order $j$*
 if there exists a function $s : \mathbb{R}^{2+j} \to \overline{\mathbb{R}}$ such that
 
-\[
+$$
     S(F, y) = s(y, f(y), f^{\prime}(y), \dots, f^{(j)}(y)).
-\]
+$$
 
 That is, the scoring rule $S$ can be written as a function of $y$ and the first $j$ derivatives
 of the forecast distribution evaluated at $y$.
@@ -336,9 +336,9 @@ and to integrate this over all thresholds.
 
 That is, if $S_{0}$ is a proper scoring rule for binary outcomes, then
 
-\[
+$$
     S(F, y) = \int_{-\infty}^{\infty} S_{0}(F(x), \mathbf{1}\{y \leq x\}) dH(x),
-\]
+$$
 
 is a proper scoring rule for univariate real-valued outcomes, for some non-negative measure $H$ on the real line.
 
@@ -362,9 +362,9 @@ Many popular scoring rules belong to the very general class of *kernel scores*, 
 scoring rules defined in terms of positive definite kernels. A positive definite kernel on
 $\Omega$ is a symmetric function $k : \Omega \times \Omega \to \mathbb{R}$, such that
 
-\[
+$$
     \sum_{i=1}^{n} \sum_{j=1}^{n} a_{i} a_{j} k(x_{i}, x_{j}) \geq 0,
-\]
+$$
 
 for all $n \in \mathbb{N}$, $a_{i}, a_{j} \in \mathbb{R}$, and $x_{i}, x_{j} \in \Omega$.
 A positive definite kernel constitutes an inner product in a feature space, and can therefore
@@ -372,9 +372,9 @@ be loosely interpreted as a measure of similarity between its two inputs.
 
 The *kernel score* corresponding to the positive definite kernel $k$ is defined as
 
-\[
+$$
     S_{k}(F, y) = \frac{1}{2} \mathbb{E} k(y, y) + \frac{1}{2} \mathbb{E} k(X, X^{\prime}) - \mathbb{E} k(X, y),
-\]
+$$
 
 where $X, X^{\prime} \sim F$ are independent. The first term on the right-hand-side does not
 depend on $F$, so could be removed, but is included here to ensure that the kernel score is always
@@ -382,18 +382,18 @@ non-negative, and to retain an interpretation in terms of Maximum Mean Discrepan
 
 The energy score is the kernel score associated with any kernel
 
-\[
+$$
     k(x, x^{\prime}) = \| x - x_{0} \| + \| x^{\prime} - x_{0} \| - \| x - x^{\prime} \|
-\]
+$$
 
 for arbitrary $x_{0} \in \Omega$, which encompasses the CRPS when $d = 1$. We
 refer to these kernels as *energy kernels*.
 
 Another popular kernel is the Gaussian kernel,
 
-\[
+$$
     k_{\gamma}(x, x^{\prime}) = \exp \left( - \gamma \| x - x^{\prime} \|^{2} \right)
-\]
+$$
 
 for some length-scale parameter $\gamma > 0$. Plugging this into the kernel score definition
 above yields the *Gaussian kernel score*.
@@ -410,9 +410,9 @@ distributions. Aronszajn (195) demonstrated that every positive definite kernel 
 a Hilbert space of functions, referred to as a Reproducing Kernel Hilbert Space and denoted by $\mathcal{H}_{k}$.
 A probability distribution $F$ on $\Omega$ can be converted to an element in an RKHS via its kernel mean embedding,
 
-\[
+$$
 \mu_{F} = \int_{\Omega} k(x, \cdotp)  dF(x),
-\]
+$$
 
 allowing kernel methods to be applied to probabilistic forecasts.
 
@@ -421,9 +421,9 @@ the RKHS norm $\| \cdot \|_{\mathcal{H}_{k}}$ betewen their kernel mean embeddin
 $\| \mu_{F} - \mu_{G} \|_{\mathcal{H}_{k}}$. This is called the *Maximum Mean Discrepancy (MMD)*
 between $F$ and $G$. In practice, it is common to calculate the squared MMD, which can be expressed as
 
-\[
+$$
     \| \mu_{F} - \mu_{G} \|_{\mathcal{H}_{k}}^{2} = \mathbb{E} k(Y, Y^{\prime}) + \mathbb{E} k(X, X^{\prime}) - 2\mathbb{E} k(X, Y),
-\]
+$$
 
 where $X, X^{\prime} \sim F$ and $Y, Y^{\prime} \sim G$ are independent.
 
@@ -472,16 +472,16 @@ observation.
 Evaluating censored forecast distributions was also proposed by Diks et al. (2011) when introducing
 weighted versions of the Log score. They introduce the *censored likelihood score* as
 
-\[
+$$
     \mathrm{ceLS}(F, y; w) = - w(y) \log f(y) - (1 - w(y)) \log \left( 1 - \int_{\mathbb{R}} w(z) f(z) dz \right).
-\]
+$$
 
 Rather than censoring the distribution, Diks et al. (2011) additionally propose the *conditional likelihood score*,
 which evaluates the conditional distribution given the weight function,
 
-\[
+$$
     \mathrm{coLS}(F, y; w) = - w(y) \log f(y) + w(y) \log \left( \int_{\mathbb{R}} w(z) f(z) dz \right).
-\]
+$$
 
 
 
@@ -498,9 +498,9 @@ These forecasts can be evaluated using *scoring functions*. Scoring functions ar
 in essence to scoring rules, but they take a point-valued rather than probabilistic forecast
 as input,
 
-\[
+$$
     s : \Omega \times \Omega \to [0, \infty].
-\]
+$$
 
 We use a lower case $s$ to distinguish scoring functions from scoring rules.
 
@@ -510,34 +510,34 @@ the forecast is a functional $\text{T}$ of a predictive distribution. For exampl
 be the mean, median, or quantile. A scoring rule is called *consistent* for the functional $\text{T}$
 (relative to a class of distributions $\mathcal{F}$), if, when $Y \sim G$,
 
-\[
+$$
     \mathbb{E} s(x_{G}, Y) \leq \mathbb{E} s(x, Y) \quad \text{for all $x \in \Omega, G \in \mathcal{F}$,}
-\]
+$$
 
 where $x_{G} \in \text{T}(G)$.
 
 For example, the *squared error*
 
-\[
+$$
     s(x, y) = (x - y)^{2}
-\]
+$$
 
 is consistent for the mean functional, and the *quantile score* (also called *pinball loss* or *check loss*)
 
-\[
+$$
     s_{\alpha}(x, y) = (\mathbf{1}\{y \leq x\} - \alpha)(x - y) =
     \begin{cases}
         (1 - \alpha)|x - y| & \quad \text{if $y \leq x$}, \\
         \phantom{(1 - }\alpha \phantom{)}|x - y| & \quad \text{if $y \geq x$}
     \end{cases}
-\]
+$$
 
 is consistent for the $\alpha$-quantile (for $\alpha \in (0, 1)$). When $\alpha = 0.5$,
 we recover the *absolute error*
 
-\[
+$$
     s(x, y) = |x - y|,
-\]
+$$
 
 which is consistent for the median functional. Note that these are not the only scoring rules
 that are consistent for the mean, median, and quantiles (see Gneiting 2010, Ehm et al., 2016).
@@ -545,9 +545,9 @@ that are consistent for the mean, median, and quantiles (see Gneiting 2010, Ehm 
 Proper scoring rules can be constructed using consistent scoring functions. In particular,
 if $s$ is a consistent scoring function for a functional $\text{T}$ (relative to $\mathcal{F}$), then
 
-\[
+$$
     S(F, y) = s(\text{T}(F), y)
-\]
+$$
 
 is a proper scoring rule (relative to $\mathcal{F}$). Hence, the squared error, quantile loss,
 and absolute error above all induce proper scoring rules.
@@ -558,6 +558,6 @@ This framework can additionally be used to evaluate interval forecasts, or predi
 Given a central interval forecast in the form of a lower and upper value $L, U \in \mathbb{R}$ with $L < U$,
 the interval score is defined as
 
-\[
+$$
     \mathrm{IS}([L, U], y) = |U - L| + \frac{2}{\alpha} (y - u) \mathbf{1} \{ y > u \} + \frac{2}{\alpha} (l - y) \mathbf{1} \{ y < l \}.
-\]
+$$
