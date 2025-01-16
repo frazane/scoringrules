@@ -151,3 +151,4 @@ scratch_nbs/
 _devlog/
 tests/output
 .devcontainer/
+docs/generated
