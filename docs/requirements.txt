@@ -1,6 +1,1 @@
-mkdocs
-mkdocs-bibtex
-mkdocs-material
-mkdocs-section-index
-mkdocstrings-python
-black
+myst-parser
