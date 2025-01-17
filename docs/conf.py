@@ -47,10 +47,7 @@ html_theme_options = {
     "pygments_dark_style": "monokai",
     # toc
     "collapse_navigation": True,
-    "sticky_navigation": True,
     "navigation_depth": 4,
-    "includehidden": False,
-    "titles_only": False,
 }
 html_title = "scoringrules"
 html_favicon = "_static/favicon.ico"

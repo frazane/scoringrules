@@ -1,5 +1,7 @@
+(theory)=
 # The theory of proper scoring rules
 
+(theory.definitions)=
 ## Definitions
 
 Suppose we issue a probabilistic forecast $F$ for an outcome variable $Y$ that takes values
@@ -435,6 +437,7 @@ introduce efficient methods when pooling probabilistic forecasts.
 
 
 
+(theory.weighted)=
 ### Weighted scoring rules
 
 Often, some outcomes lead to larger impacts than others, making accurate forecasts for these outcomes
@@ -448,10 +451,12 @@ term of the summation in their definition, thereby assigning more weight to part
 For continuous outcomes, this can be extended to the CRPS by incorporating a weight function into
 the integral, yielding the *threshold-weighted CRPS*
 
+$$
 \begin{align*}
     \mathrm{twCRPS}(F, y; w) &= \int_{\mathbb{R}} (F(x) - \mathbb{1}\{y \leq x\})^{2} w(x) dx \\
     &= \mathbb{E} | v(X) - v(y) | - \frac{1}{2} \mathbb{E} | v(X) - v(X^{\prime}) |,
 \end{align*}
+$$
 
 where $X, X^{\prime} \sim F$ are independent, and $v$ is such that $v(x) - v(x^{\prime}) = \int_{x^{\prime}}^{x} w(z) dz$
 for any $x, x^{\prime} \in \mathbb{R}$. Allen et al. (2022) refer to $v$ as the *chaining function*.

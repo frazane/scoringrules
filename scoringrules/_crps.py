@@ -82,16 +82,18 @@ def twcrps_ensemble(
     sorted_ensemble: bool = False,
     backend: "Backend" = None,
 ) -> "Array":
-    r"""Estimate the Threshold-Weighted Continuous Ranked Probability Score (twCRPS) for a finite ensemble.
+    r"""Estimate the threshold-weighted CRPS (twCRPS) for a finite ensemble.
 
-    Computation is performed using the ensemble representation of the twCRPS in
-    [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
+    Computation is performed using the ensemble representation of the twCRPS in [1]_.
 
-    $$ \mathrm{twCRPS}(F_{ens}, y) = \frac{1}{M} \sum_{m = 1}^{M} |v(x_{m}) - v(y)| - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |v(x_{m}) - v(x_{j})|,$$
+    .. math::
+        \mathrm{twCRPS}(F_{ens}, y) = \frac{1}{M} \sum_{m = 1}^{M} |v(x_{m}) - v(y)|
+          - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |v(x_{m}) - v(x_{j})|,
 
-    where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical
-    distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
-    $M$ members, and $v$ is the chaining function used to target particular outcomes.
+    where :math:`F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M` is the empirical
+    distribution function associated with an ensemble forecast :math:`x_{1}, \dots, x_{M}` with
+    :math:`M` members, and :math:`v` is the chaining function used to target particular outcomes.
+
 
     Parameters
     ----------
@@ -113,6 +115,23 @@ def twcrps_ensemble(
     -------
     twcrps: ArrayLike
         The twCRPS between the forecast ensemble and obs for the chosen chaining function.
+
+    See Also
+    --------
+    crps_ensemble : Compute the CRPS for a finite ensemble.
+
+    Notes
+    -----
+    :ref:`theory.weighted`
+        Some theoretical background on weighted versions of scoring rules, needed when
+        one wants to assign more weight to outcomes that are higher impact.
+
+
+    References
+    ----------
+    .. [1] Allen, S., Ginsbourger, D., & Ziegel, J. (2023).
+        Evaluating forecasts for high-impact events using transformed kernel scores.
+        SIAM/ASA Journal on Uncertainty Quantification, 11(3), 906-940.
 
     Examples
     --------
