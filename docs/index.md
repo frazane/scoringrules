@@ -44,7 +44,6 @@ crps_estimators.md
 user_guide.md
 contributing.md
 reference.md
-prova.rst
 ```
 
 
