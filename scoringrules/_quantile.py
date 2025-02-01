@@ -16,28 +16,27 @@ def quantile_score(
 
     The quantile score (Koenker, R. and G. Bassett, 1978) is defined as
 
-    $$
+    .. math::
         S_{\alpha}(q_{\alpha}, y) = \begin{cases}
         (1 - \alpha) (q_{\alpha} - y), & \text{if } y \leq q_{\alpha}, \\
         \alpha (y - q_{\alpha}), & \text{if } y > q_{\alpha}.
         \end{cases}
-    $$
 
-    where $y$ is the observed value and $q_{\alpha}$ is the predicted value at the
-    $\alpha$ quantile level.
+    where :math:`y` is the observed value and :math:`q_{\alpha}` is the predicted value at the
+    :math:`\alpha` quantile level.
 
     Parameters
     ----------
-    obs:
+    obs : array_like
         The observed values.
-    fct:
+    fct : array_like
         The forecast values.
-    alpha:
+    alpha : array_like
         The quantile level.
 
     Returns
     -------
-    score:
+    score : array_like
         The quantile score.
 
     Examples

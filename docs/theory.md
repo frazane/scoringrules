@@ -190,7 +190,7 @@ mean and variance. The Dawid-Sebastiani score evaluates forecasts only via their
 deviation, making it easy to implement in practice, but insensitive to higher moments of the
 predictive distribution.
 
-
+(theory.multivariate)=
 ### Multivariate outcomes:
 
 Let $\boldsymbol{Y} \in \mathbb{R}^{d}$, with $d > 1$, and suppose $F$ is a multivariate probability distribution.

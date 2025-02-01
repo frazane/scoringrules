@@ -152,3 +152,4 @@ _devlog/
 tests/output
 .devcontainer/
 docs/generated
+scoringrules/vendored

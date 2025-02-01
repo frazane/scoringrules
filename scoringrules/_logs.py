@@ -8,8 +8,8 @@ if tp.TYPE_CHECKING:
 
 
 def logs_ensemble(
-    observations: "ArrayLike",
-    forecasts: "Array",
+    obs: "ArrayLike",
+    fct: "Array",
     /,
     axis: int = -1,
     *,
@@ -27,22 +27,22 @@ def logs_ensemble(
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs : array_like
         The observed values.
-    forecasts: ArrayLike
+    fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    axis: int
+    axis : int
         The axis corresponding to the ensemble. Default is the last axis.
-    bw : ArrayLike
+    bw : array_like
         The bandwidth parameter for each forecast ensemble. If not given, estimated using
         Silverman's rule of thumb.
-    backend: str
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between the forecast ensemble and obs.
 
     Examples
@@ -51,30 +51,30 @@ def logs_ensemble(
     >>> sr.logs_ensemble(obs, pred)
     """
     B = backends.active if backend is None else backends[backend]
-    observations, forecasts = map(B.asarray, (observations, forecasts))
+    obs, fct = map(B.asarray, (obs, fct))
 
     if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
+        fct = B.moveaxis(fct, axis, -1)
 
-    M = forecasts.shape[-1]
+    M = fct.shape[-1]
 
     # Silverman's rule of thumb for estimating the bandwidth parameter
     if bw is None:
-        sigmahat = B.std(forecasts, axis=-1)
-        q75 = B.quantile(forecasts, 0.75, axis=-1)
-        q25 = B.quantile(forecasts, 0.25, axis=-1)
+        sigmahat = B.std(fct, axis=-1)
+        q75 = B.quantile(fct, 0.75, axis=-1)
+        q25 = B.quantile(fct, 0.25, axis=-1)
         iqr = q75 - q25
         bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
     bw = B.stack([bw] * M, axis=-1)
 
-    w = B.zeros(forecasts.shape) + 1 / M
+    w = B.zeros(fct.shape) + 1 / M
 
-    return logarithmic.mixnorm(observations, forecasts, bw, w, backend=backend)
+    return logarithmic.mixnorm(obs, fct, bw, w, backend=backend)
 
 
 def clogs_ensemble(
-    observations: "ArrayLike",
-    forecasts: "Array",
+    obs: "ArrayLike",
+    fct: "Array",
     /,
     a: "ArrayLike" = float("-inf"),
     b: "ArrayLike" = float("inf"),
@@ -89,36 +89,36 @@ def clogs_ensemble(
     The conditional and censored likelihood scores are introduced by
     [Diks et al. (2011)](https://doi.org/10.1016/j.jeconom.2011.04.001):
 
-    The weight function is an indicator function of the form $w(z) = 1\{a < z < b\}$.
+    The weight function is an indicator function of the form :math:`w(z) = 1\{a < z < b\}`.
 
     The ensemble forecast is converted to a mixture of normal distributions using Gaussian
     kernel density estimation. The score is then calculated for this smoothed distribution.
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs : array_like
         The observed values.
-    forecasts: ArrayLike
+    fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    a: ArrayLike
+    a : array_like
         The lower bound in the weight function.
-    b: ArrayLike
+    b : array_like
         The upper bound in the weight function.
-    axis: int
+    axis : int
         The axis corresponding to the ensemble. Default is the last axis.
-    bw : ArrayLike
+    bw : array_like
         The bandwidth parameter for each forecast ensemble. If not given, estimated using
         Silverman's rule of thumb.
     cens : Boolean
         Boolean specifying whether to return the conditional ('cens = False') or the censored
         likelihood score ('cens = True').
-    backend: str
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The CoLS or CeLS between the forecast ensemble and obs for the chosen weight parameters.
 
     Examples
@@ -127,25 +127,25 @@ def clogs_ensemble(
     >>> sr.clogs_ensemble(obs, pred, -1.0, 1.0)
     """
     B = backends.active if backend is None else backends[backend]
-    forecasts = B.asarray(forecasts)
+    fct = B.asarray(fct)
 
     if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
+        fct = B.moveaxis(fct, axis, -1)
 
-    M = forecasts.shape[-1]
+    M = fct.shape[-1]
 
     # Silverman's rule of thumb for estimating the bandwidth parameter
     if bw is None:
-        sigmahat = B.std(forecasts, axis=-1)
-        q75 = B.quantile(forecasts, 0.75, axis=-1)
-        q25 = B.quantile(forecasts, 0.25, axis=-1)
+        sigmahat = B.std(fct, axis=-1)
+        q75 = B.quantile(fct, 0.75, axis=-1)
+        q25 = B.quantile(fct, 0.25, axis=-1)
         iqr = q75 - q25
         bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
     bw = B.stack([bw] * M, axis=-1)
 
     return logarithmic.clogs_ensemble(
-        observations,
-        forecasts,
+        obs,
+        fct,
         a=a,
         b=b,
         bw=bw,
@@ -155,7 +155,7 @@ def clogs_ensemble(
 
 
 def logs_beta(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     a: "ArrayLike",
     b: "ArrayLike",
     /,
@@ -170,22 +170,22 @@ def logs_beta(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         The observed values.
-    a:
+    a : array_like
         First shape parameter of the forecast beta distribution.
-    b:
+    b : array_like
         Second shape parameter of the forecast beta distribution.
-    lower:
+    lower : array_like
         Lower bound of the forecast beta distribution.
-    upper:
+    upper : array_like
         Upper bound of the forecast beta distribution.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between Beta(a, b) and obs.
 
     Examples
@@ -193,11 +193,11 @@ def logs_beta(
     >>> import scoringrules as sr
     >>> sr.logs_beta(0.3, 0.7, 1.1)
     """
-    return logarithmic.beta(observation, a, b, lower, upper, backend=backend)
+    return logarithmic.beta(obs, a, b, lower, upper, backend=backend)
 
 
 def logs_binomial(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     n: "ArrayLike",
     prob: "ArrayLike",
     /,
@@ -210,18 +210,18 @@ def logs_binomial(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         The observed values.
-    n:
+    n : array_like
         Size parameter of the forecast binomial distribution as an integer or array of integers.
-    prob:
+    prob : array_like
         Probability parameter of the forecast binomial distribution as a float or array of floats.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between Binomial(n, prob) and obs.
 
     Examples
@@ -229,11 +229,11 @@ def logs_binomial(
     >>> import scoringrules as sr
     >>> sr.logs_binomial(4, 10, 0.5)
     """
-    return logarithmic.binomial(observation, n, prob, backend=backend)
+    return logarithmic.binomial(obs, n, prob, backend=backend)
 
 
 def logs_exponential(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     rate: "ArrayLike",
     /,
     *,
@@ -245,16 +245,16 @@ def logs_exponential(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         The observed values.
-    rate:
+    rate : array_like
         Rate parameter of the forecast exponential distribution.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between Exp(rate) and obs.
 
     Examples
@@ -262,11 +262,11 @@ def logs_exponential(
     >>> import scoringrules as sr
     >>> sr.logs_exponential(0.8, 3.0)
     """
-    return logarithmic.exponential(observation, rate, backend=backend)
+    return logarithmic.exponential(obs, rate, backend=backend)
 
 
 def logs_exponential2(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
@@ -279,18 +279,18 @@ def logs_exponential2(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         The observed values.
-    location:
+    location : array_like
         Location parameter of the forecast exponential distribution.
-    scale:
+    scale : array_like
         Scale parameter of the forecast exponential distribution.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between obs and Exp2(location, scale).
 
     Examples
@@ -298,11 +298,11 @@ def logs_exponential2(
     >>> import scoringrules as sr
     >>> sr.logs_exponential2(0.2, 0.0, 1.0)
     """
-    return logarithmic.exponential2(observation, location, scale, backend=backend)
+    return logarithmic.exponential2(obs, location, scale, backend=backend)
 
 
 def logs_2pexponential(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     scale1: "ArrayLike",
     scale2: "ArrayLike",
     location: "ArrayLike",
@@ -316,20 +316,20 @@ def logs_2pexponential(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         The observed values.
-    scale1:
+    scale1 : array_like
         First scale parameter of the forecast two-piece exponential distribution.
-    scale2:
+    scale2 : array_like
         Second scale parameter of the forecast two-piece exponential distribution.
-    location:
+    location : array_like
         Location parameter of the forecast two-piece exponential distribution.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between 2pExp(sigma1, sigma2, location) and obs.
 
     Examples
@@ -337,13 +337,11 @@ def logs_2pexponential(
     >>> import scoringrules as sr
     >>> sr.logs_2pexponential(0.8, 3.0, 1.4, 0.0)
     """
-    return logarithmic.twopexponential(
-        observation, scale1, scale2, location, backend=backend
-    )
+    return logarithmic.twopexponential(obs, scale1, scale2, location, backend=backend)
 
 
 def logs_gamma(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     shape: "ArrayLike",
     /,
     rate: "ArrayLike | None" = None,
@@ -357,18 +355,18 @@ def logs_gamma(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         The observed values.
-    shape:
+    shape : array_like
         Shape parameter of the forecast gamma distribution.
-    rate:
+    rate : array_like
         Rate parameter of the forecast gamma distribution.
-    scale:
+    scale : array_like
         Scale parameter of the forecast gamma distribution, where `scale = 1 / rate`.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between obs and Gamma(shape, rate).
 
     Examples
@@ -389,11 +387,11 @@ def logs_gamma(
     if rate is None:
         rate = 1.0 / scale
 
-    return logarithmic.gamma(observation, shape, rate, backend=backend)
+    return logarithmic.gamma(obs, shape, rate, backend=backend)
 
 
 def logs_gev(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     shape: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
@@ -407,20 +405,20 @@ def logs_gev(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         The observed values.
-    shape:
+    shape : array_like
         Shape parameter of the forecast GEV distribution.
-    location:
+    location : array_like
         Location parameter of the forecast GEV distribution.
-    scale:
+    scale : array_like
         Scale parameter of the forecast GEV distribution.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between obs and GEV(shape, location, scale).
 
     Examples
@@ -428,11 +426,11 @@ def logs_gev(
     >>> import scoringrules as sr
     >>> sr.logs_gev(0.3, 0.1)
     """
-    return logarithmic.gev(observation, shape, location, scale, backend=backend)
+    return logarithmic.gev(obs, shape, location, scale, backend=backend)
 
 
 def logs_gpd(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     shape: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
@@ -447,20 +445,20 @@ def logs_gpd(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         The observed values.
-    shape:
+    shape : array_like
         Shape parameter of the forecast GPD distribution.
-    location:
+    location : array_like
         Location parameter of the forecast GPD distribution.
-    scale:
+    scale : array_like
         Scale parameter of the forecast GPD distribution.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between obs and GPD(shape, location, scale).
 
     Examples
@@ -468,11 +466,11 @@ def logs_gpd(
     >>> import scoringrules as sr
     >>> sr.logs_gpd(0.3, 0.9)
     """
-    return logarithmic.gpd(observation, shape, location, scale, backend=backend)
+    return logarithmic.gpd(obs, shape, location, scale, backend=backend)
 
 
 def logs_hypergeometric(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     m: "ArrayLike",
     n: "ArrayLike",
     k: "ArrayLike",
@@ -486,20 +484,20 @@ def logs_hypergeometric(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         The observed values.
-    m:
+    m : array_like
         Number of success states in the population.
-    n:
+    n : array_like
         Number of failure states in the population.
-    k:
+    k : array_like
         Number of draws, without replacement. Must be in 0, 1, ..., m + n.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between obs and Hypergeometric(m, n, k).
 
     Examples
@@ -507,11 +505,11 @@ def logs_hypergeometric(
     >>> import scoringrules as sr
     >>> sr.logs_hypergeometric(5, 7, 13, 12)
     """
-    return logarithmic.hypergeometric(observation, m, n, k, backend=backend)
+    return logarithmic.hypergeometric(obs, m, n, k, backend=backend)
 
 
 def logs_laplace(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     /,
@@ -525,21 +523,29 @@ def logs_laplace(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         Observed values.
-    location:
+    location : array_like
         Location parameter of the forecast laplace distribution.
-    scale:
+    scale : array_like
         Scale parameter of the forecast laplace distribution.
         The LS between obs and Laplace(location, scale).
 
+    Returns
+    -------
+    score : array_like
+        The LS between obs and Laplace(location, scale).
+
+    Examples
+    --------
+    >>> import scoringrules as sr
     >>> sr.logs_laplace(0.3, 0.1, 0.2)
     """
-    return logarithmic.laplace(observation, location, scale, backend=backend)
+    return logarithmic.laplace(obs, location, scale, backend=backend)
 
 
 def logs_loglaplace(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     locationlog: "ArrayLike",
     scalelog: "ArrayLike",
     *,
@@ -551,16 +557,16 @@ def logs_loglaplace(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         Observed values.
-    locationlog:
+    locationlog : array_like
         Location parameter of the forecast log-laplace distribution.
-    scalelog:
+    scalelog : array_like
         Scale parameter of the forecast log-laplace distribution.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between obs and Loglaplace(locationlog, scalelog).
 
     Examples
@@ -568,11 +574,11 @@ def logs_loglaplace(
     >>> import scoringrules as sr
     >>> sr.logs_loglaplace(3.0, 0.1, 0.9)
     """
-    return logarithmic.loglaplace(observation, locationlog, scalelog, backend=backend)
+    return logarithmic.loglaplace(obs, locationlog, scalelog, backend=backend)
 
 
 def logs_logistic(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
     /,
@@ -585,16 +591,16 @@ def logs_logistic(
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs : array_like
         Observed values.
-    mu: ArrayLike
+    mu : array_like
         Location parameter of the forecast logistic distribution.
-    sigma: ArrayLike
+    sigma : array_like
         Scale parameter of the forecast logistic distribution.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS for the Logistic(mu, sigma) forecasts given the observations.
 
     Examples
@@ -602,11 +608,11 @@ def logs_logistic(
     >>> import scoringrules as sr
     >>> sr.logs_logistic(0.0, 0.4, 0.1)
     """
-    return logarithmic.logistic(observation, mu, sigma, backend=backend)
+    return logarithmic.logistic(obs, mu, sigma, backend=backend)
 
 
 def logs_loglogistic(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     mulog: "ArrayLike",
     sigmalog: "ArrayLike",
     backend: "Backend" = None,
@@ -617,18 +623,18 @@ def logs_loglogistic(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         The observed values.
-    mulog:
+    mulog : array_like
         Location parameter of the log-logistic distribution.
-    sigmalog:
+    sigmalog : array_like
         Scale parameter of the log-logistic distribution.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between obs and Loglogis(mulog, sigmalog).
 
     Examples
@@ -636,11 +642,11 @@ def logs_loglogistic(
     >>> import scoringrules as sr
     >>> sr.logs_loglogistic(3.0, 0.1, 0.9)
     """
-    return logarithmic.loglogistic(observation, mulog, sigmalog, backend=backend)
+    return logarithmic.loglogistic(obs, mulog, sigmalog, backend=backend)
 
 
 def logs_lognormal(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     mulog: "ArrayLike",
     sigmalog: "ArrayLike",
     backend: "Backend" = None,
@@ -651,16 +657,16 @@ def logs_lognormal(
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         The observed values.
-    mulog:
+    mulog : array_like
         Mean of the normal underlying distribution.
-    sigmalog:
+    sigmalog : array_like
         Standard deviation of the underlying normal distribution.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between Lognormal(mu, sigma) and obs.
 
     Examples
@@ -668,11 +674,11 @@ def logs_lognormal(
     >>> import scoringrules as sr
     >>> sr.logs_lognormal(0.0, 0.4, 0.1)
     """
-    return logarithmic.lognormal(observation, mulog, sigmalog, backend=backend)
+    return logarithmic.lognormal(obs, mulog, sigmalog, backend=backend)
 
 
 def logs_mixnorm(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     m: "ArrayLike",
     s: "ArrayLike",
     /,
@@ -687,22 +693,22 @@ def logs_mixnorm(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs : array_like
         The observed values.
-    m: ArrayLike
+    m : array_like
         Means of the component normal distributions.
-    s: ArrayLike
+    s : array_like
         Standard deviations of the component normal distributions.
-    w: ArrayLike
+    w : array_like
         Non-negative weights assigned to each component.
-    axis: int
+    axis : int
         The axis corresponding to the mixture components. Default is the last axis.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between MixNormal(m, s) and obs.
 
     Examples
@@ -711,7 +717,7 @@ def logs_mixnorm(
     >>> sr.logs_mixnormal(0.0, [0.1, -0.3, 1.0], [0.4, 2.1, 0.7], [0.1, 0.2, 0.7])
     """
     B = backends.active if backend is None else backends[backend]
-    observation, m, s = map(B.asarray, (observation, m, s))
+    obs, m, s = map(B.asarray, (obs, m, s))
 
     if w is None:
         M: int = m.shape[axis]
@@ -724,11 +730,11 @@ def logs_mixnorm(
         s = B.moveaxis(s, axis, -1)
         w = B.moveaxis(w, axis, -1)
 
-    return logarithmic.mixnorm(observation, m, s, w, backend=backend)
+    return logarithmic.mixnorm(obs, m, s, w, backend=backend)
 
 
 def logs_negbinom(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     n: "ArrayLike",
     /,
     prob: "ArrayLike | None" = None,
@@ -742,18 +748,18 @@ def logs_negbinom(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs : array_like
         The observed values.
-    n: ArrayLike
+    n : array_like
         Size parameter of the forecast negative binomial distribution.
-    prob: ArrayLike
+    prob : array_like
         Probability parameter of the forecast negative binomial distribution.
-    mu: ArrayLike
+    mu : array_like
         Mean of the forecast negative binomial distribution.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between NegBinomial(n, prob) and obs.
 
     Examples
@@ -774,11 +780,11 @@ def logs_negbinom(
     if prob is None:
         prob = n / (n + mu)
 
-    return logarithmic.negbinom(observation, n, prob, backend=backend)
+    return logarithmic.negbinom(obs, n, prob, backend=backend)
 
 
 def logs_normal(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
     /,
@@ -792,18 +798,18 @@ def logs_normal(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs : array_like
         The observed values.
-    mu: ArrayLike
+    mu : array_like
         Mean of the forecast normal distribution.
-    sigma: ArrayLike
+    sigma : array_like
         Standard deviation of the forecast normal distribution.
-    backend: str, optional
+    backend : str, optional
         The backend used for computations.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between Normal(mu, sigma) and obs.
 
     Examples
@@ -811,13 +817,11 @@ def logs_normal(
     >>> import scoringrules as sr
     >>> sr.logs_normal(0.0, 0.4, 0.1)
     """
-    return logarithmic.normal(
-        observation, mu, sigma, negative=negative, backend=backend
-    )
+    return logarithmic.normal(obs, mu, sigma, negative=negative, backend=backend)
 
 
 def logs_2pnormal(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     scale1: "ArrayLike",
     scale2: "ArrayLike",
     location: "ArrayLike",
@@ -831,33 +835,31 @@ def logs_2pnormal(
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs : array_like
         The observed values.
-    scale1: ArrayLike
+    scale1 : array_like
         Scale parameter of the lower half of the forecast two-piece normal distribution.
-    scale2: ArrayLike
+    scale2 : array_like
         Scale parameter of the upper half of the forecast two-piece normal distribution.
-    location: ArrayLike
+    location : array_like
         Location parameter of the forecast two-piece normal distribution.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between 2pNormal(scale1, scale2, location) and obs.
     Examples
     --------
     >>> import scoringrules as sr
     >>> sr.logs_2pnormal(0.0, 0.4, 2.0, 0.1)
     """
-    return logarithmic.twopnormal(
-        observation, scale1, scale2, location, backend=backend
-    )
+    return logarithmic.twopnormal(obs, scale1, scale2, location, backend=backend)
 
 
 def logs_poisson(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     mean: "ArrayLike",
     /,
     *,
@@ -869,16 +871,16 @@ def logs_poisson(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs : array_like
         The observed values.
-    mean: ArrayLike
+    mean : array_like
         Mean parameter of the forecast poisson distribution.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between Pois(mean) and obs.
 
     Examples
@@ -886,11 +888,11 @@ def logs_poisson(
     >>> import scoringrules as sr
     >>> sr.logs_poisson(1, 2)
     """
-    return logarithmic.poisson(observation, mean, backend=backend)
+    return logarithmic.poisson(obs, mean, backend=backend)
 
 
 def logs_t(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     df: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
@@ -904,18 +906,18 @@ def logs_t(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs : array_like
         The observed values.
-    df: ArrayLike
+    df : array_like
         Degrees of freedom parameter of the forecast t distribution.
-    location: ArrayLike
+    location : array_like
         Location parameter of the forecast t distribution.
-    sigma: ArrayLike
+    sigma : array_like
         Scale parameter of the forecast t distribution.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between t(df, location, scale) and obs.
 
     Examples
@@ -923,11 +925,11 @@ def logs_t(
     >>> import scoringrules as sr
     >>> sr.logs_t(0.0, 0.1, 0.4, 0.1)
     """
-    return logarithmic.t(observation, df, location, scale, backend=backend)
+    return logarithmic.t(obs, df, location, scale, backend=backend)
 
 
 def logs_tlogistic(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     /,
@@ -942,20 +944,20 @@ def logs_tlogistic(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs : array_like
         The observed values.
-    location: ArrayLike
+    location : array_like
         Location parameter of the forecast distribution.
-    scale: ArrayLike
+    scale : array_like
         Scale parameter of the forecast distribution.
-    lower: ArrayLike
+    lower : array_like
         Lower boundary of the truncated forecast distribution.
-    upper: ArrayLike
+    upper : array_like
         Upper boundary of the truncated forecast distribution.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between tLogistic(location, scale, lower, upper) and obs.
 
     Examples
@@ -963,13 +965,11 @@ def logs_tlogistic(
     >>> import scoringrules as sr
     >>> sr.logs_tlogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return logarithmic.tlogistic(
-        observation, location, scale, lower, upper, backend=backend
-    )
+    return logarithmic.tlogistic(obs, location, scale, lower, upper, backend=backend)
 
 
 def logs_tnormal(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
     /,
@@ -984,20 +984,20 @@ def logs_tnormal(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs : array_like
         The observed values.
-    location: ArrayLike
+    location : array_like
         Location parameter of the forecast distribution.
-    scale: ArrayLike
+    scale : array_like
         Scale parameter of the forecast distribution.
-    lower: ArrayLike
+    lower : array_like
         Lower boundary of the truncated forecast distribution.
-    upper: ArrayLike
+    upper : array_like
         Upper boundary of the truncated forecast distribution.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between tNormal(location, scale, lower, upper) and obs.
 
     Examples
@@ -1005,13 +1005,11 @@ def logs_tnormal(
     >>> import scoringrules as sr
     >>> sr.logs_tnormal(0.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return logarithmic.tnormal(
-        observation, location, scale, lower, upper, backend=backend
-    )
+    return logarithmic.tnormal(obs, location, scale, lower, upper, backend=backend)
 
 
 def logs_tt(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     df: "ArrayLike",
     /,
     location: "ArrayLike" = 0.0,
@@ -1027,22 +1025,22 @@ def logs_tt(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs : array_like
         The observed values.
-    df: ArrayLike
+    df : array_like
         Degrees of freedom parameter of the forecast distribution.
-    location: ArrayLike
+    location : array_like
         Location parameter of the forecast distribution.
-    scale: ArrayLike
+    scale : array_like
         Scale parameter of the forecast distribution.
-    lower: ArrayLike
+    lower : array_like
         Lower boundary of the truncated forecast distribution.
-    upper: ArrayLike
+    upper : array_like
         Upper boundary of the truncated forecast distribution.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between tt(df, location, scale, lower, upper) and obs.
 
     Examples
@@ -1050,13 +1048,11 @@ def logs_tt(
     >>> import scoringrules as sr
     >>> sr.logs_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return logarithmic.tt(
-        observation, df, location, scale, lower, upper, backend=backend
-    )
+    return logarithmic.tt(obs, df, location, scale, lower, upper, backend=backend)
 
 
 def logs_uniform(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     min: "ArrayLike",
     max: "ArrayLike",
     /,
@@ -1069,16 +1065,16 @@ def logs_uniform(
 
     Parameters
     ----------
-    observation: ArrayLike
+    obs : array_like
         The observed values.
-    min: ArrayLike
+    min : array_like
         Lower bound of the forecast uniform distribution.
-    max: ArrayLike
+    max : array_like
         Upper bound of the forecast uniform distribution.
 
     Returns
     -------
-    score:
+    score : array_like
         The LS between U(min, max, lmass, umass) and obs.
 
     Examples
@@ -1086,7 +1082,7 @@ def logs_uniform(
     >>> import scoringrules as sr
     >>> sr.logs_uniform(0.4, 0.0, 1.0)
     """
-    return logarithmic.uniform(observation, min, max, backend=backend)
+    return logarithmic.uniform(obs, min, max, backend=backend)
 
 
 __all__ = [

@@ -69,6 +69,8 @@ def crps_ensemble(
         Weighted variants of the CRPS.
     crps_quantile
         CRPS for quantile forecasts.
+    energy_score
+        The multivariate equivalent of the CRPS.
 
     Notes
     -----
