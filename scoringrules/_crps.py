@@ -19,11 +19,33 @@ def crps_ensemble(
 ) -> "Array":
     r"""Estimate the Continuous Ranked Probability Score (CRPS) for a finite ensemble.
 
+    For a forecast :math:`F` and observation :math:`y`, the CRPS is formally defined as:
+
+    .. math::
+        \begin{align*}
+            \mathrm{CRPS}(F, y) &= \int_{-\infty}^{\infty} (F(x)
+            - \mathbf{1}\{y \le x\})^{2} dx \\
+            &= \mathbb{E} | X - y | - \frac{1}{2} \mathbb{E} | X - X^{\prime} |,
+        \end{align*}
+
+    where :math:`X, X^{\prime} \sim F` are independent. When :math:`F` is the empirical
+    distribution function of an ensemble forecast :math:`x_{1}, \dots, x_{M}`, the CRPS
+    can be estimated in several ways. Currently, scoringrules supports several
+    alternatives for ``estimator``:
+
+    - the energy estimator (``"nrg"``),
+    - the fair estimator (``"fair"``),
+    - the probability weighted moment estimator (``"pwm"``),
+    - the approximate kernel representation estimator (``"akr"``).
+    - the AKR with circular permutation estimator (``"akr_circperm"``).
+    - the integral estimator (``"int"``).
+    - the quantile decomposition estimator (``"qd"``).
+
     Parameters
     ----------
-    observations: ArrayLike
+    observations: array_like
         The observed values.
-    forecasts: ArrayLike
+    forecasts: array_like, shape (..., m)
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     axis: int
@@ -33,18 +55,43 @@ def crps_ensemble(
         Default is False.
     estimator: str
         Indicates the CRPS estimator to be used.
-    backend: str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    crps: ArrayLike
+    crps: array_like
         The CRPS between the forecast ensemble and obs.
+
+    See Also
+    --------
+    twcrps_ensemble, owcrps_ensemble, vrcrps_ensemble
+        Weighted variants of the CRPS.
+    crps_quantile
+        CRPS for quantile forecasts.
+
+    Notes
+    -----
+    :ref:`crps-estimators`
+        Information on the different estimators available for the CRPS.
+
+    References
+    ----------
+    .. [1] Matheson JE, Winkler RL (1976). “Scoring rules for continuous
+        probability distributions.” Management Science, 22(10), 1087-1096.
+        doi:10.1287/mnsc.22.10.1087.
+    .. [2] Gneiting T, Raftery AE (2007). “Strictly proper scoring rules,
+        prediction, and estimation.” Journal of the American Statistical
+        Association, 102(477), 359-378. doi:10.1198/016214506000001437.
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scoringrules as sr
+    >>> obs = np.array([1.0, 2.0, 3.0])
+    >>> pred = np.array([[1.1, 1.2, 1.3], [2.1, 2.2, 2.3], [3.1, 3.2, 3.3]])
     >>> sr.crps_ensemble(obs, pred)
+    0.0
     """
     B = backends.active if backend is None else backends[backend]
     observations, forecasts = map(B.asarray, (observations, forecasts))
@@ -97,23 +144,23 @@ def twcrps_ensemble(
 
     Parameters
     ----------
-    observations: ArrayLike
+    observations: array_like
         The observed values.
-    forecasts: ArrayLike
+    forecasts: array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    v_func: tp.Callable
+    v_func: callable, array_like -> array_like
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold $t$ by projecting forecasts and observations
         to $[t, \inf)$.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
-    backend: str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    twcrps: ArrayLike
+    twcrps: array_like
         The twCRPS between the forecast ensemble and obs for the chosen chaining function.
 
     See Also
@@ -123,15 +170,14 @@ def twcrps_ensemble(
     Notes
     -----
     :ref:`theory.weighted`
-        Some theoretical background on weighted versions of scoring rules, needed when
-        one wants to assign more weight to outcomes that are higher impact.
-
+        Some theoretical background on weighted versions of scoring rules.
 
     References
     ----------
     .. [1] Allen, S., Ginsbourger, D., & Ziegel, J. (2023).
         Evaluating forecasts for high-impact events using transformed kernel scores.
         SIAM/ASA Journal on Uncertainty Quantification, 11(3), 906-940.
+        Available at https://arxiv.org/abs/2202.12732.
 
     Examples
     --------
@@ -154,70 +200,6 @@ def twcrps_ensemble(
     )
 
 
-def crps_quantile(
-    observations: "ArrayLike",
-    forecasts: "Array",
-    alpha: "Array",
-    /,
-    axis: int = -1,
-    *,
-    backend: "Backend" = None,
-) -> "Array":
-    r"""Approximate the CRPS from quantile predictions via the Pinball Loss.
-
-    It is based on the notation in [Berrisch & Ziel, 2022](https://arxiv.org/pdf/2102.00968)
-
-    The CRPS can be approximated as the mean pinball loss for all
-    quantile forecasts $F_q$ with level $q \in Q$:
-
-    $$\text{quantileCRPS} = \frac{2}{|Q|} \sum_{q \in Q} PB_q$$
-
-    where the pinball loss is defined as:
-
-    $$\text{PB}_q = \begin{cases}
-        q(y - F_q) &\text{if} & y \geq F_q  \\
-        (1-q)(F_q - y) &\text{else.} &  \\
-    \end{cases} $$
-
-    Parameters
-    ----------
-    observations: ArrayLike
-        The observed values.
-    forecasts: Array
-        The predicted forecast ensemble, where the ensemble dimension is by default
-        represented by the last axis.
-    alpha: Array
-        The percentile levels. We expect the quantile array to match the axis (see below) of the forecast array.
-    axis: int
-        The axis corresponding to the ensemble. Default is the last axis.
-    backend: str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
-
-    Returns
-    -------
-    qcrps: Array
-        An array of CRPS scores for each forecast, which should be averaged to get meaningful values.
-
-    Examples
-    --------
-    >>> import scoringrules as sr
-    >>> sr.crps_quantile(obs, fct, alpha)
-    """
-    B = backends.active if backend is None else backends[backend]
-    observations, forecasts, alpha = map(B.asarray, (observations, forecasts, alpha))
-
-    if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
-
-    if not forecasts.shape[-1] == alpha.shape[-1]:
-        raise ValueError("Expected matching length of forecasts and alpha values.")
-
-    if B.name == "numba":
-        return crps.quantile_pinball_gufunc(observations, forecasts, alpha)
-
-    return crps.quantile_pinball(observations, forecasts, alpha, backend=backend)
-
-
 def owcrps_ensemble(
     observations: "ArrayLike",
     forecasts: "Array",
@@ -228,35 +210,55 @@ def owcrps_ensemble(
     estimator: tp.Literal["nrg"] = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
-    r"""Estimate the Outcome-Weighted Continuous Ranked Probability Score (owCRPS) for a finite ensemble.
+    r"""Estimate the outcome-weighted CRPS (owCRPS) for a finite ensemble.
 
-    Computation is performed using the ensemble representation of the owCRPS in
-    [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
+    Computation is performed using the ensemble representation of the owCRPS in [1]_.
 
-    $$ \mathrm{owCRPS}(F_{ens}, y) = \frac{1}{M \bar{w}} \sum_{m = 1}^{M} |x_{m} - y|w(x_{m})w(y) - \frac{1}{2 M^{2} \bar{w}^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m} - x_{j}|w(x_{m})w(x_{j})w(y),$$
+    .. math::
+        \begin{aligned}
+        \mathrm{owCRPS}(F_{ens}, y)
+        &= \frac{1}{M \bar{w}} \sum_{m = 1}^{M} |x_{m} - y|\,w(x_{m})\,w(y)\\
+        &\quad - \frac{1}{2 M^{2} \bar{w}^{2}}
+        \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m} - x_{j}|\,
+        w(x_{m})\,w(x_{j})\,w(y).
+        \end{aligned}
 
-    where $F_{ens}(x) = \sum_{m=1}^{M} 1\{ x_{m} \leq x \}/M$ is the empirical
-    distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
-    $M$ members, $w$ is the chosen weight function, and $\bar{w} = \sum_{m=1}^{M}w(x_{m})/M$.
+
+    where :math:`F_{ens}(x) = \sum_{m=1}^{M} 1\{ x_{m} \leq x \}/M` is the empirical
+    distribution function associated with an ensemble forecast
+    :math:`x_{1}, \dots, x_{M}`  with :math:`M` members, :math:`w` is the chosen weight
+    function, and :math:`\bar{w} = \sum_{m=1}^{M}w(x_{m})/M` is the average weight.
 
     Parameters
     ----------
-    observations: ArrayLike
+    observations: array_like
         The observed values.
-    forecasts: ArrayLike
+    forecasts: array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    w_func: tp.Callable
+    w_func: callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
-    backend: str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    owcrps: ArrayLike
+    owcrps: array_like
         The owCRPS between the forecast ensemble and obs for the chosen weight function.
+
+    Notes
+    -----
+    :ref:`theory.weighted`
+        Some theoretical background on weighted versions of scoring rules.
+
+    References
+    ----------
+    .. [1] Allen, S., Ginsbourger, D., & Ziegel, J. (2023).
+        Evaluating forecasts for high-impact events using transformed kernel scores.
+        SIAM/ASA Journal on Uncertainty Quantification, 11(3), 906-940.
+        Available at https://arxiv.org/abs/2202.12732.
 
     Examples
     --------
@@ -303,40 +305,53 @@ def vrcrps_ensemble(
     estimator: tp.Literal["nrg"] = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
-    r"""Estimate the Vertically Re-scaled Continuous Ranked Probability Score (vrCRPS) for a finite ensemble.
+    r"""Estimate the vertically re-scaled CRPS (vrCRPS) for a finite ensemble.
 
-    Computation is performed using the ensemble representation of the vrCRPS in
-    [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
+    Computation is performed using the ensemble representation of the vrCRPS in [1]_.
 
-    $$
-    \begin{split}
-        \mathrm{vrCRPS}(F_{ens}, y) = & \frac{1}{M} \sum_{m = 1}^{M} |x_{m} - y|w(x_{m})w(y) - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m} - x_{j}|w(x_{m})w(x_{j}) \\
-            & + \left( \frac{1}{M} \sum_{m = 1}^{M} |x_{m}| w(x_{m}) - |y| w(y) \right) \left( \frac{1}{M} \sum_{m = 1}^{M} w(x_{m}) - w(y) \right),
-    \end{split}
-    $$
+    .. math::
+        \begin{split}
+            \mathrm{vrCRPS}(F_{ens}, y) = & \frac{1}{M} \sum_{m = 1}^{M} |x_{m}
+            - y|w(x_{m})w(y) - \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} |x_{m}
+            - x_{j}|w(x_{m})w(x_{j}) \\
+            & + \left( \frac{1}{M} \sum_{m = 1}^{M} |x_{m}| w(x_{m})
+            - |y| w(y) \right) \left( \frac{1}{M} \sum_{m = 1}^{M} w(x_{m}) - w(y) \right),
+        \end{split}
 
-    where $F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M$ is the empirical
-    distribution function associated with an ensemble forecast $x_{1}, \dots, x_{M}$ with
-    $M$ members, $w$ is the chosen weight function, and $\bar{w} = \sum_{m=1}^{M}w(x_{m})/M$.
+    where :math:`F_{ens}(x) = \sum_{m=1}^{M} 1 \{ x_{m} \leq x \}/M` is the empirical
+    distribution function associated with an ensemble forecast :math:`x_{1}, \dots, x_{M}` with
+    :math:`M` members, :math:`w` is the chosen weight function, and :math:`\bar{w} = \sum_{m=1}^{M}w(x_{m})/M`.
 
     Parameters
     ----------
-    observations: ArrayLike
+    observations: array_like
         The observed values.
-    forecasts: ArrayLike
+    forecasts: array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    w_func: tp.Callable
+    w_func: callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     axis: int
         The axis corresponding to the ensemble. Default is the last axis.
-    backend: str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    vrcrps: ArrayLike
+    vrcrps: array_like
         The vrCRPS between the forecast ensemble and obs for the chosen weight function.
+
+    Notes
+    -----
+    :ref:`theory.weighted`
+        Some theoretical background on weighted versions of scoring rules.
+
+    References
+    ----------
+    .. [1] Allen, S., Ginsbourger, D., & Ziegel, J. (2023).
+        Evaluating forecasts for high-impact events using transformed kernel scores.
+        SIAM/ASA Journal on Uncertainty Quantification, 11(3), 906-940.
+        Available at https://arxiv.org/abs/2202.12732.
 
     Examples
     --------
@@ -373,6 +388,82 @@ def vrcrps_ensemble(
     )
 
 
+def crps_quantile(
+    observations: "ArrayLike",
+    forecasts: "Array",
+    alpha: "Array",
+    /,
+    axis: int = -1,
+    *,
+    backend: "Backend" = None,
+) -> "Array":
+    r"""Approximate the CRPS from quantile predictions via the Pinball Loss.
+
+    It is based on the notation in [1]_.
+
+    The CRPS can be approximated as the mean pinball loss for all
+    quantile forecasts :math:`F_q` with level :math:`q \in Q`:
+
+    .. math::
+        \text{quantileCRPS} = \frac{2}{|Q|} \sum_{q \in Q} PB_q
+
+    where the pinball loss is defined as:
+
+    .. math::
+        \text{PB}_q = \begin{cases}
+            q(y - F_q) &\text{if} & y \geq F_q  \\
+            (1-q)(F_q - y) &\text{else.} &  \\
+        \end{cases}
+
+    Parameters
+    ----------
+    observations: array_like
+        The observed values.
+    forecasts: Array
+        The predicted forecast ensemble, where the ensemble dimension is by default
+        represented by the last axis.
+    alpha: Array
+        The percentile levels. We expect the quantile array to match the axis (see below) of the forecast array.
+    axis: int
+        The axis corresponding to the ensemble. Default is the last axis.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+
+    Returns
+    -------
+    qcrps: Array
+        An array of CRPS scores for each forecast, which should be averaged to get meaningful values.
+
+    References
+    ----------
+    .. [1] Berrisch, J., & Ziel, F. (2023). CRPS learning.
+        Journal of Econometrics, 237(2), 105221.
+        Available at https://arxiv.org/abs/2102.00968.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scoringrules as sr
+    >>> obs = np.array([1.0, 2.0, 3.0])
+    >>> fct = np.array([[1.1, 1.2, 1.3], [2.1, 2.2, 2.3], [3.1, 3.2, 3.3]])
+    >>> sr.crps_quantile(obs, fct, alpha)
+    0.0
+    """
+    B = backends.active if backend is None else backends[backend]
+    observations, forecasts, alpha = map(B.asarray, (observations, forecasts, alpha))
+
+    if axis != -1:
+        forecasts = B.moveaxis(forecasts, axis, -1)
+
+    if not forecasts.shape[-1] == alpha.shape[-1]:
+        raise ValueError("Expected matching length of forecasts and alpha values.")
+
+    if B.name == "numba":
+        return crps.quantile_pinball_gufunc(observations, forecasts, alpha)
+
+    return crps.quantile_pinball(observations, forecasts, alpha, backend=backend)
+
+
 def crps_beta(
     observation: "ArrayLike",
     a: "ArrayLike",
@@ -385,39 +476,48 @@ def crps_beta(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the beta distribution.
 
-    It is based on the following formulation from
-    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+    It is based on the following formulation from [1]_:
 
-    $$
-    \mathrm{CRPS}(F_{\alpha, \beta}, y) = (u - l)\left\{ \frac{y - l}{u - l}
-    \left( 2F_{\alpha, \beta} \left( \frac{y - l}{u - l} \right) - 1 \right)
-    + \frac{\alpha}{\alpha + \beta} \left( 1 - 2F_{\alpha + 1, \beta}
-    \left( \frac{y - l}{u - l} \right)
-    - \frac{2B(2\alpha, 2\beta)}{\alpha B(\alpha, \beta)^{2}} \right) \right\}
-    $$
+    .. math::
+        \begin{split}
+        \mathrm{CRPS}(F_{\alpha, \beta}, y) = & (u - l)\left\{ \frac{y - l}{u - l}
+        \left( 2F_{\alpha, \beta} \left( \frac{y - l}{u - l} \right) - 1 \right) \right. \\
+        & \left. + \frac{\alpha}{\alpha + \beta} \left( 1 - 2F_{\alpha + 1, \beta}
+        \left( \frac{y - l}{u - l} \right)
+        - \frac{2B(2\alpha, 2\beta)}{\alpha B(\alpha, \beta)^{2}} \right) \right\}
+        \end{split}
 
-    where $F_{\alpha, \beta}$ is the beta distribution function with shape parameters
-    $\alpha, \beta > 0$, and lower and upper bounds $l, u \in \R$, $l < u$.
+
+    where :math:`F_{\alpha, \beta}` is the beta distribution function with
+    shape parameters :math:`\alpha, \beta > 0`, and lower and upper bounds
+    :math:`l, u \in \mathbb{R}`, :math:`l < u`.
 
     Parameters
     ----------
-    observation:
+    observation: array_like
         The observed values.
-    a:
+    a: array_like
         First shape parameter of the forecast beta distribution.
-    b:
+    b: array_like
         Second shape parameter of the forecast beta distribution.
-    lower:
+    lower: array_like
         Lower bound of the forecast beta distribution.
-    upper:
+    upper: array_like
         Upper bound of the forecast beta distribution.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps:
         The CRPS between Beta(a, b) and obs.
+
+    References
+    ----------
+    .. [1] Jordan, A., Krüger, F., & Lerch, S. (2019).
+        Evaluating Probabilistic Forecasts with scoringRules.
+        Journal of Statistical Software, 90(12), 1-37.
+        https://doi.org/10.18637/jss.v090.i12
 
     Examples
     --------
@@ -451,18 +551,18 @@ def crps_binomial(
 
     Parameters
     ----------
-    observation:
+    observation: array_like
         The observed values as an integer or array of integers.
-    n:
+    n: array_like
         Size parameter of the forecast binomial distribution as an integer or array of integers.
-    prob:
+    prob: array_like
         Probability parameter of the forecast binomial distribution as a float or array of floats.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps:
         The CRPS between Binomial(n, prob) and obs.
 
     Examples
@@ -492,28 +592,26 @@ def crps_exponential(
 
     Parameters
     ----------
-    observation:
+    observation: array_like
         The observed values.
-    rate:
+    rate: array_like
         Rate parameter of the forecast exponential distribution.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps:
         The CRPS between Exp(rate) and obs.
 
     Examples
     --------
-    ```pycon
     >>> import scoringrules as sr
     >>> import numpy as np
     >>> sr.crps_exponential(0.8, 3.0)
     0.360478635526275
     >>> sr.crps_exponential(np.array([0.8, 0.9]), np.array([3.0, 2.0]))
     array([0.36047864, 0.24071795])
-    ```
     """
     return crps.exponential(observation, rate, backend=backend)
 
@@ -547,20 +645,20 @@ def crps_exponentialM(
 
     Parameters
     ----------
-    observation:
+    observation: array_like
         The observed values.
-    mass:
+    mass: array_like
         Mass parameter of the forecast exponential distribution.
-    location:
+    location: array_like
         Location parameter of the forecast exponential distribution.
-    scale:
+    scale: array_like
         Scale parameter of the forecast exponential distribution.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps: array_like
         The CRPS between obs and ExpM(mass, location, scale).
 
     Examples
@@ -595,20 +693,20 @@ def crps_2pexponential(
 
     Parameters
     ----------
-    observation:
+    observation: array_like
         The observed values.
-    scale1:
+    scale1: array_like
         First scale parameter of the forecast two-piece exponential distribution.
-    scale2:
+    scale2: array_like
         Second scale parameter of the forecast two-piece exponential distribution.
-    location:
+    location: array_like
         Location parameter of the forecast two-piece exponential distribution.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps: array_like
         The CRPS between 2pExp(sigma1, sigma2, location) and obs.
 
     Examples
@@ -632,34 +730,43 @@ def crps_gamma(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the gamma distribution.
 
-    It is based on the following formulation from
-    [Scheuerer and Möller (2015)](https://doi.org/10.1214/15-AOAS843):
+    It is based on the following formulation from [1]_:
 
-    $$ \mathrm{CRPS}(F_{\alpha, \beta}, y) = y(2F_{\alpha, \beta}(y) - 1)
-    - \frac{\alpha}{\beta} (2 F_{\alpha + 1, \beta}(y) - 1)
-    - \frac{1}{\beta B(1/2, \alpha)}. $$
+    .. math::
+        \mathrm{CRPS}(F_{\alpha, \beta}, y) = y(2F_{\alpha, \beta}(y) - 1)
+        - \frac{\alpha}{\beta} (2 F_{\alpha + 1, \beta}(y) - 1)
+        - \frac{1}{\beta B(1/2, \alpha)},
 
-    where $F_{\alpha, \beta}$ is gamma distribution function with shape
-    parameter $\alpha > 0$ and rate parameter $\beta > 0$ (equivalently,
-    with scale parameter $1/\beta$).
+    where :math:`F_{\alpha, \beta}` is gamma distribution function with shape
+    parameter :math:`\alpha > 0` and rate parameter :math:`\beta > 0` (equivalently,
+    with scale parameter :math:`1/\beta`).
 
     Parameters
     ----------
-    observation:
+    observation: array_like
         The observed values.
-    shape:
+    shape: array_like
         Shape parameter of the forecast gamma distribution.
-    rate:
+    rate: array_like, optional
         Rate parameter of the forecast rate distribution.
-    scale:
-        Scale parameter of the forecast scale distribution, where `scale = 1 / rate`.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        Either ``rate`` or ``scale`` must be provided.
+    scale: array_like, optional
+        Scale parameter of the forecast scale distribution, where ``scale = 1 / rate``.
+        Either ``rate`` or ``scale`` must be provided.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps:
         The CRPS between obs and Gamma(shape, rate).
+
+    References
+    ----------
+    .. [1] Michael Scheuerer. David Möller. "Probabilistic wind speed forecasting
+        on a grid based on ensemble model output statistics."
+        Ann. Appl. Stat. 9 (3) 1328 - 1349, September 2015.
+        https://doi.org/10.1214/15-AOAS843
 
     Examples
     --------
@@ -670,11 +777,11 @@ def crps_gamma(
     Raises
     ------
     ValueError
-        If both `rate` and `scale` are provided, or if neither is provided.
+        If both ``rate`` and ``scale`` are provided, or if neither is provided.
     """
     if (scale is None and rate is None) or (scale is not None and rate is not None):
         raise ValueError(
-            "Either `rate` or `scale` must be provided, but not both or neither."
+            "Either ``rate`` or ``scale`` must be provided, but not both or neither."
         )
 
     if rate is None:
@@ -694,56 +801,13 @@ def crps_gev(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the generalised extreme value (GEV) distribution.
 
-    It is based on the following formulation from
-    [Friederichs and Thorarinsdottir (2012)](https://doi.org/10.1002/env.2176):
+    It is based on the following formulation from [1]_:
 
-    $$
-    \text{CRPS}(F_{\xi, \mu, \sigma}, y) =
-    \sigma \cdot \text{CRPS}(F_{\xi}, \frac{y - \mu}{\sigma})
-    $$
+    .. math::
+        \text{CRPS}(F_{\xi, \mu, \sigma}, y) =
+        \sigma \cdot \text{CRPS}(F_{\xi}, \frac{y - \mu}{\sigma})
 
-    Special cases are handled as follows:
-
-    - For $\xi = 0$:
-
-    $$
-    \text{CRPS}(F_{\xi}, y) = -y - 2\text{Ei}(\log F_{\xi}(y)) + C - \log 2
-    $$
-
-    - For $\xi \neq 0$:
-
-    $$
-    \text{CRPS}(F_{\xi}, y) = y(2F_{\xi}(y) - 1) - 2G_{\xi}(y)
-    - \frac{1 - (2 - 2^{\xi}) \Gamma(1 - \xi)}{\xi}
-    $$
-
-    where $C$ is the Euler-Mascheroni constant, $\text{Ei}$ is the exponential
-    integral, and $\Gamma$ is the gamma function. The GEV cumulative distribution
-    function $F_{\xi}$ and the auxiliary function $G_{\xi}$ are defined as:
-
-    - For $\xi = 0$:
-
-    $$
-    F_{\xi}(x) = \exp(-\exp(-x))
-    $$
-
-    - For $\xi \neq 0$:
-
-    $$
-    F_{\xi}(x) =
-    \begin{cases}
-    0, & x \leq \frac{1}{\xi} \\
-    \exp(-(1 + \xi x)^{-1/\xi}), & x > \frac{1}{\xi}
-    \end{cases}
-    $$
-
-    $$
-    G_{\xi}(x) =
-    \begin{cases}
-    0, & x \leq \frac{1}{\xi} \\
-    \frac{F_{\xi}(x)}{\xi} + \frac{\Gamma_u(1-\xi, -\log F_{\xi}(x))}{\xi}, & x > \frac{1}{\xi}
-    \end{cases}
-    $$
+    see Notes below for special cases.
 
     Parameters
     ----------
@@ -755,14 +819,62 @@ def crps_gev(
         Location parameter of the forecast GEV distribution.
     scale:
         Scale parameter of the forecast GEV distribution.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
-
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps:
         The CRPS between obs and GEV(shape, location, scale).
+
+    Notes
+    -----
+
+    Special cases are handled as follows:
+
+    - For :math:`\xi = 0`:
+
+    .. math::
+        \text{CRPS}(F_{\xi}, y) = -y - 2\text{Ei}(\log F_{\xi}(y)) + C - \log 2
+
+    - For :math:`\xi \neq 0`:
+
+    .. math::
+        \text{CRPS}(F_{\xi}, y) = y(2F_{\xi}(y) - 1) - 2G_{\xi}(y)
+        - \frac{1 - (2 - 2^{\xi}) \Gamma(1 - \xi)}{\xi}
+
+    where :math:`C` is the Euler-Mascheroni constant, :math:`\text{Ei}` is the exponential
+    integral, and :math:`\Gamma` is the gamma function. The GEV cumulative distribution
+    function :math:`F_{\xi}` and the auxiliary function :math:`G_{\xi}` are defined as:
+
+    - For :math:`\xi = 0`:
+
+    .. math::
+        F_{\xi}(x) = \exp(-\exp(-x))
+
+    - For :math:`\xi \neq 0`:
+
+    .. math::
+        F_{\xi}(x) =
+        \begin{cases}
+        0, & x \leq \frac{1}{\xi} \\
+        \exp(-(1 + \xi x)^{-1/\xi}), & x > \frac{1}{\xi}
+        \end{cases}
+
+    .. math::
+        G_{\xi}(x) =
+        \begin{cases}
+        0, & x \leq \frac{1}{\xi} \\
+        \frac{F_{\xi}(x)}{\xi} + \frac{\Gamma_u(1-\xi, -\log F_{\xi}(x))}{\xi}, & x > \frac{1}{\xi}
+        \end{cases}
+
+    References
+    ----------
+    .. [1] Friederichs, P., & Thorarinsdottir, T. L. (2012).
+        A comparison of parametric and non-parametric methods for
+        forecasting extreme events. Environmetrics, 23(7), 595-611.
+        https://doi.org/10.1002/env.2176
+
 
     Examples
     --------
@@ -785,24 +897,20 @@ def crps_gpd(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the generalised pareto distribution (GPD).
 
-    It is based on the following formulation from
-    [Jordan et al. (2019)](https://www.jstatsoft.org/article/view/v090i12):
+    It is based on the following formulation from [1]_:
 
+    .. math::
+        \mathrm{CRPS}(F_{M, \xi}, y) =
+        |y| - \frac{2 (1 - M)}{1 - \xi} \left( 1 - (1 - F_{\xi}(y))^{1 - \xi} \right)
+        + \frac{(1 - M)^{2}}{2 - \xi},
 
-    $$
-    \mathrm{CRPS}(F_{M, \xi}, y) =
-    |y| - \frac{2 (1 - M)}{1 - \xi} \left( 1 - (1 - F_{\xi}(y))^{1 - \xi} \right)
-    + \frac{(1 - M)^{2}}{2 - \xi},
-    $$
+    .. math::
+        \mathrm{CRPS}(F_{M, \xi, \mu, \sigma}, y) =
+        \sigma \mathrm{CRPS} \left( F_{M, \xi}, \frac{y - \mu}{\sigma} \right),
 
-    $$
-    \mathrm{CRPS}(F_{M, \xi, \mu, \sigma}, y) =
-    \sigma \mathrm{CRPS} \left( F_{M, \xi}, \frac{y - \mu}{\sigma} \right),
-    $$
-
-    where $F_{M, \xi, \mu, \sigma}$ is the GPD distribution function with shape
-    parameter $\xi < 1$, location parameter $\mu$, scale parameter $\sigma > 0$,
-    and point mass $M \in [0, 1]$ at the lower boundary. $F_{M, \xi} = F_{M, \xi, 0, 1}$.
+    where :math:`F_{M, \xi, \mu, \sigma}` is the GPD distribution function with shape
+    parameter :math:`\xi < 1`, location parameter :math:`\mu`, scale parameter :math:`\sigma > 0`,
+    and point mass :math:`M \in [0, 1]` at the lower boundary. :math:`F_{M, \xi} = F_{M, \xi, 0, 1}`.
 
     Parameters
     ----------
@@ -816,13 +924,20 @@ def crps_gpd(
         Scale parameter of the forecast GPD distribution.
     mass:
         Mass parameter at the lower boundary of the forecast GPD distribution.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps:
         The CRPS between obs and GPD(shape, location, scale, mass).
+
+    References
+    ----------
+    .. [1] Jordan, A., Krüger, F., & Lerch, S. (2019).
+        Evaluating Probabilistic Forecasts with scoringRules.
+        Journal of Statistical Software, 90(12), 1-37.
+        https://doi.org/10.18637/jss.v090.i12
 
     Examples
     --------
@@ -847,13 +962,27 @@ def crps_gtclogistic(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the generalised truncated and censored logistic distribution.
 
-    $$ \mathrm{CRPS}(F_{l, L}^{u, U}, y) = |y - z| + uU^{2} - lL^{2} - \left( \frac{1 - L - U}{F(u) - F(l)} \right) z \left( \frac{(1 - 2L) F(u) + (1 - 2U) F(l)}{1 - L - U} \right) - \left( \frac{1 - L - U}{F(u) - F(l)} \right) \left( 2 \log F(-z) - 2G(u)U - 2 G(l)L \right) - \left( \frac{1 - L - U}{F(u) - F(l)} \right)^{2} \left( H(u) - H(l) \right), $$
+    .. math::
+        \begin{aligned}
+        \mathrm{CRPS}(F_{l, L}^{u, U}, y) = & \, |y - z| + uU^{2} - lL^{2} \\
+        & - \left( \frac{1 - L - U}{F(u) - F(l)} \right) z
+        \left( \frac{(1 - 2L) F(u) + (1 - 2U) F(l)}{1 - L - U} \right) \\
+        & - \left( \frac{1 - L - U}{F(u) - F(l)} \right)
+        \left( 2 \log F(-z) - 2G(u)U - 2 G(l)L \right) \\
+        & - \left( \frac{1 - L - U}{F(u) - F(l)} \right)^{2} \left( H(u) - H(l) \right),
+        \end{aligned}
 
-    $$ \mathrm{CRPS}(F_{l, L, \mu, \sigma}^{u, U}, y) = \sigma \mathrm{CRPS}(F_{(l - \mu)/\sigma, L}^{(u - \mu)/\sigma, U}, \frac{y - \mu}{\sigma}), $$
+    .. math::
+        \begin{aligned}
+        \mathrm{CRPS}(F_{l, L, \mu, \sigma}^{u, U}, y) = & \, \sigma
+        \mathrm{CRPS}(F_{(l - \mu)/\sigma, L}^{(u - \mu)/\sigma, U}, \frac{y - \mu}{\sigma}),
+        \end{aligned}
 
-    $$G(x) = xF(x) + \log F(-x),$$
+    .. math::
+        G(x) = xF(x) + \log F(-x),
 
-    $$H(x) = F(x) - xF(x)^{2} + (1 - 2F(x))\log F(-x),$$
+    ..math::
+        H(x) = F(x) - xF(x)^{2} + (1 - 2F(x))\log F(-x),
 
     where $F$ is the CDF of the standard logistic distribution, $F_{l, L, \mu, \sigma}^{u, U}$
     is the CDF of the logistic distribution truncated below at $l$ and above at $u$,
@@ -862,19 +991,19 @@ def crps_gtclogistic(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    location: ArrayLike
+    location: array_like
         Location parameter of the forecast distribution.
-    scale: ArrayLike
+    scale: array_like
         Scale parameter of the forecast distribution.
-    lower: ArrayLike
+    lower: array_like
         Lower boundary of the truncated forecast distribution.
-    upper: ArrayLike
+    upper: array_like
         Upper boundary of the truncated forecast distribution.
-    lmass: ArrayLike
+    lmass: array_like
         Point mass assigned to the lower boundary of the forecast distribution.
-    umass: ArrayLike
+    umass: array_like
         Point mass assigned to the upper boundary of the forecast distribution.
 
     Returns
@@ -916,15 +1045,15 @@ def crps_tlogistic(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    location: ArrayLike
+    location: array_like
         Location parameter of the forecast distribution.
-    scale: ArrayLike
+    scale: array_like
         Scale parameter of the forecast distribution.
-    lower: ArrayLike
+    lower: array_like
         Lower boundary of the truncated forecast distribution.
-    upper: ArrayLike
+    upper: array_like
         Upper boundary of the truncated forecast distribution.
 
     Returns
@@ -959,15 +1088,15 @@ def crps_clogistic(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    location: ArrayLike
+    location: array_like
         Location parameter of the forecast distribution.
-    scale: ArrayLike
+    scale: array_like
         Scale parameter of the forecast distribution.
-    lower: ArrayLike
+    lower: array_like
         Lower boundary of the truncated forecast distribution.
-    upper: ArrayLike
+    upper: array_like
         Upper boundary of the truncated forecast distribution.
 
     Returns
@@ -1055,15 +1184,15 @@ def crps_tnormal(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    location: ArrayLike
+    location: array_like
         Location parameter of the forecast distribution.
-    scale: ArrayLike
+    scale: array_like
         Scale parameter of the forecast distribution.
-    lower: ArrayLike
+    lower: array_like
         Lower boundary of the truncated forecast distribution.
-    upper: ArrayLike
+    upper: array_like
         Upper boundary of the truncated forecast distribution.
 
     Returns
@@ -1098,15 +1227,15 @@ def crps_cnormal(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    location: ArrayLike
+    location: array_like
         Location parameter of the forecast distribution.
-    scale: ArrayLike
+    scale: array_like
         Scale parameter of the forecast distribution.
-    lower: ArrayLike
+    lower: array_like
         Lower boundary of the truncated forecast distribution.
-    upper: ArrayLike
+    upper: array_like
         Upper boundary of the truncated forecast distribution.
 
     Returns
@@ -1169,21 +1298,21 @@ def crps_gtct(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    df: ArrayLike
+    df: array_like
         Degrees of freedom parameter of the forecast distribution.
-    location: ArrayLike
+    location: array_like
         Location parameter of the forecast distribution.
-    scale: ArrayLike
+    scale: array_like
         Scale parameter of the forecast distribution.
-    lower: ArrayLike
+    lower: array_like
         Lower boundary of the truncated forecast distribution.
-    upper: ArrayLike
+    upper: array_like
         Upper boundary of the truncated forecast distribution.
-    lmass: ArrayLike
+    lmass: array_like
         Point mass assigned to the lower boundary of the forecast distribution.
-    umass: ArrayLike
+    umass: array_like
         Point mass assigned to the upper boundary of the forecast distribution.
 
     Returns
@@ -1227,17 +1356,17 @@ def crps_tt(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    df: ArrayLike
+    df: array_like
         Degrees of freedom parameter of the forecast distribution.
-    location: ArrayLike
+    location: array_like
         Location parameter of the forecast distribution.
-    scale: ArrayLike
+    scale: array_like
         Scale parameter of the forecast distribution.
-    lower: ArrayLike
+    lower: array_like
         Lower boundary of the truncated forecast distribution.
-    upper: ArrayLike
+    upper: array_like
         Upper boundary of the truncated forecast distribution.
 
     Returns
@@ -1281,17 +1410,17 @@ def crps_ct(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    df: ArrayLike
+    df: array_like
         Degrees of freedom parameter of the forecast distribution.
-    location: ArrayLike
+    location: array_like
         Location parameter of the forecast distribution.
-    scale: ArrayLike
+    scale: array_like
         Scale parameter of the forecast distribution.
-    lower: ArrayLike
+    lower: array_like
         Lower boundary of the truncated forecast distribution.
-    upper: ArrayLike
+    upper: array_like
         Upper boundary of the truncated forecast distribution.
 
     Returns
@@ -1352,12 +1481,12 @@ def crps_hypergeometric(
         Number of failure states in the population.
     k:
         Number of draws, without replacement. Must be in 0, 1, ..., m + n.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps:
         The CRPS between obs and Hypergeometric(m, n, k).
 
     Examples
@@ -1398,12 +1527,12 @@ def crps_laplace(
         Location parameter of the forecast laplace distribution.
     scale:
         Scale parameter of the forecast laplace distribution.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps:
         The CRPS between obs and Laplace(location, scale).
 
     >>> sr.crps_laplace(0.3, 0.1, 0.2)
@@ -1432,11 +1561,11 @@ def crps_logistic(
 
     Parameters
     ----------
-    observations: ArrayLike
+    observations: array_like
         Observed values.
-    mu: ArrayLike
+    mu: array_like
         Location parameter of the forecast logistic distribution.
-    sigma: ArrayLike
+    sigma: array_like
         Scale parameter of the forecast logistic distribution.
 
     Returns
@@ -1489,12 +1618,12 @@ def crps_loglaplace(
         Location parameter of the forecast log-laplace distribution.
     scalelog:
         Scale parameter of the forecast log-laplace distribution.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps:
         The CRPS between obs and Loglaplace(locationlog, scalelog).
 
     Examples
@@ -1544,13 +1673,13 @@ def crps_loglogistic(
         Location parameter of the log-logistic distribution.
     sigmalog:
         Scale parameter of the log-logistic distribution.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
 
     Returns
     -------
-    score:
+    crps:
         The CRPS between obs and Loglogis(mulog, sigmalog).
 
     Examples
@@ -1594,7 +1723,7 @@ def crps_lognormal(
 
     Returns
     -------
-    crps: ArrayLike
+    crps: array_like
         The CRPS between Lognormal(mu, sigma) and obs.
 
     Examples
@@ -1627,22 +1756,22 @@ def crps_mixnorm(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    m: ArrayLike
+    m: array_like
         Means of the component normal distributions.
-    s: ArrayLike
+    s: array_like
         Standard deviations of the component normal distributions.
-    w: ArrayLike
+    w: array_like
         Non-negative weights assigned to each component.
     axis: int
         The axis corresponding to the mixture components. Default is the last axis.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend: str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps:
         The CRPS between MixNormal(m, s) and obs.
 
     Examples
@@ -1689,13 +1818,13 @@ def crps_negbinom(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    n: ArrayLike
+    n: array_like
         Size parameter of the forecast negative binomial distribution.
-    prob: ArrayLike
+    prob: array_like
         Probability parameter of the forecast negative binomial distribution.
-    mu: ArrayLike
+    mu: array_like
         Mean of the forecast negative binomial distribution.
 
     Returns
@@ -1744,11 +1873,11 @@ def crps_normal(
 
     Parameters
     ----------
-    observations: ArrayLike
+    observations: array_like
         The observed values.
-    mu: ArrayLike
+    mu: array_like
         Mean of the forecast normal distribution.
-    sigma: ArrayLike
+    sigma: array_like
         Standard deviation of the forecast normal distribution.
 
     Returns
@@ -1788,13 +1917,13 @@ def crps_2pnormal(
 
     Parameters
     ----------
-    observations: ArrayLike
+    observations: array_like
         The observed values.
-    scale1: ArrayLike
+    scale1: array_like
         Scale parameter of the lower half of the forecast two-piece normal distribution.
-    scale2: ArrayLike
+    scale2: array_like
         Scale parameter of the upper half of the forecast two-piece normal distribution.
-    mu: ArrayLike
+    mu: array_like
         Location parameter of the forecast two-piece normal distribution.
 
     Returns
@@ -1849,9 +1978,9 @@ def crps_poisson(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    mean: ArrayLike
+    mean: array_like
         Mean parameter of the forecast poisson distribution.
 
     Returns
@@ -1895,13 +2024,13 @@ def crps_t(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    df: ArrayLike
+    df: array_like
         Degrees of freedom parameter of the forecast t distribution.
-    location: ArrayLike
+    location: array_like
         Location parameter of the forecast t distribution.
-    sigma: ArrayLike
+    sigma: array_like
         Scale parameter of the forecast t distribution.
 
     Returns
@@ -1940,15 +2069,15 @@ def crps_uniform(
 
     Parameters
     ----------
-    observation: ArrayLike
+    observation: array_like
         The observed values.
-    min: ArrayLike
+    min: array_like
         Lower bound of the forecast uniform distribution.
-    max: ArrayLike
+    max: array_like
         Upper bound of the forecast uniform distribution.
-    lmass: ArrayLike
+    lmass: array_like
         Point mass on the lower bound of the forecast uniform distribution.
-    umass: ArrayLike
+    umass: array_like
         Point mass on the upper bound of the forecast uniform distribution.
 
     Returns

@@ -24,7 +24,7 @@ Univariate
     twgksuv_ensemble
     owgksuv_ensemble
     vrgksuv_ensemble
-    error_spread_score
+    crps_quantile
 
 Multivariate
 --------------------
@@ -107,7 +107,7 @@ Parametric distributions forecasts
     logs_tt
     logs_uniform
 
-Functions of distributions
+Consistent scoring functions
 ==========================
 .. autosummary::
     :toctree: generated
