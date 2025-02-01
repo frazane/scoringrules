@@ -88,10 +88,11 @@ def crps_ensemble(
     --------
     >>> import numpy as np
     >>> import scoringrules as sr
-    >>> obs = np.array([1.0, 2.0, 3.0])
-    >>> pred = np.array([[1.1, 1.2, 1.3], [2.1, 2.2, 2.3], [3.1, 3.2, 3.3]])
+    >>> rng = np.random.default_rng(123)
+    >>> obs = rng.normal(size=3)
+    >>> pred = rng.normal(size=(3, 10))
     >>> sr.crps_ensemble(obs, pred)
-    0.0
+    array([0.69605316, 0.32865417, 0.39048665])
     """
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
@@ -183,11 +184,15 @@ def twcrps_ensemble(
     --------
     >>> import numpy as np
     >>> import scoringrules as sr
-    >>>
+    >>> rng = np.random.default_rng(123)
+    ...
     >>> def v_func(x):
-    >>>    return np.maximum(x, -1.0)
-    >>>
-    >>> sr.twcrps_ensemble(obs, pred, v_func)
+    ...    return np.maximum(x, -1.0)
+    ...
+    >>> obs = rng.normal(size=3)
+    >>> fct = rng.normal(size=(3, 10))
+    >>> sr.twcrps_ensemble(obs, fct, v_func)
+    array([0.69605316, 0.32865417, 0.39048665])
     """
     obs, fct = map(v_func, (obs, fct))
     return crps_ensemble(
@@ -264,11 +269,15 @@ def owcrps_ensemble(
     --------
     >>> import numpy as np
     >>> import scoringrules as sr
-    >>>
+    >>> rng = np.random.default_rng(123)
+    ...
     >>> def w_func(x):
-    >>>    return (x > -1).astype(float)
-    >>>
-    >>> sr.owcrps_ensemble(obs, pred, w_func)
+    ...    return (x > -1).astype(float)
+    ...
+    >>> obs = rng.normal(size=3)
+    >>> fct = rng.normal(size=(3, 10))
+    >>> sr.owcrps_ensemble(obs, fct, w_func)
+    array([0.91103733, 0.45212402, 0.35686667])
     """
     B = backends.active if backend is None else backends[backend]
 
@@ -355,11 +364,15 @@ def vrcrps_ensemble(
     --------
     >>> import numpy as np
     >>> import scoringrules as sr
-    >>>
+    >>> rng = np.random.default_rng(123)
+    ...
     >>> def w_func(x):
-    >>>    return (x > -1).astype(float)
-    >>>
-    >>> sr.vrcrps_ensemble(obs, pred, w_func)
+    ...    return (x > -1).astype(float)
+    ...
+    >>> obs = rng.normal(size=3)
+    >>> fct = rng.normal(size=(3, 10))
+    >>> sr.vrcrps_ensemble(obs, fct, w_func)
+    array([0.90036433, 0.41515255, 0.41653833])
     """
     B = backends.active if backend is None else backends[backend]
 
@@ -436,14 +449,7 @@ def crps_quantile(
         Journal of Econometrics, 237(2), 105221.
         Available at https://arxiv.org/abs/2102.00968.
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import scoringrules as sr
-    >>> obs = np.array([1.0, 2.0, 3.0])
-    >>> fct = np.array([[1.1, 1.2, 1.3], [2.1, 2.2, 2.3], [3.1, 3.2, 3.3]])
-    >>> sr.crps_quantile(obs, fct, alpha)
-    0.0
+    # TODO: add example
     """
     B = backends.active if backend is None else backends[backend]
     obs, fct, alpha = map(B.asarray, (obs, fct, alpha))
@@ -519,7 +525,7 @@ def crps_beta(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_beta(0.3, 0.7, 1.1)
-    0.0850102437
+    0.08501024366637236
     """
     return crps.beta(obs, a, b, lower, upper, backend=backend)
 
@@ -570,7 +576,7 @@ def crps_binomial(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_binomial(4, 10, 0.5)
-    0.5955715179443359
+    0.5955772399902344
     """
     return crps.binomial(obs, n, prob, backend=backend)
 
@@ -619,7 +625,7 @@ def crps_exponential(
     >>> sr.crps_exponential(0.8, 3.0)
     0.360478635526275
     >>> sr.crps_exponential(np.array([0.8, 0.9]), np.array([3.0, 2.0]))
-    array([0.36047864, 0.24071795])
+    array([0.36047864, 0.31529889])
     """
     return crps.exponential(obs, rate, backend=backend)
 
@@ -682,6 +688,7 @@ def crps_exponentialM(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_exponentialM(0.4, 0.2, 0.0, 1.0)
+    0.19251207365702294
     """
     return crps.exponentialM(obs, mass, location, scale, backend=backend)
 
@@ -737,6 +744,7 @@ def crps_2pexponential(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_2pexponential(0.8, 3.0, 1.4, 0.0)
+    array(1.18038524)
     """
     return crps.twopexponential(obs, scale1, scale2, location, backend=backend)
 
@@ -1037,6 +1045,7 @@ def crps_gtclogistic(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_gtclogistic(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
+    0.1658713056903939
     """
     return crps.gtclogistic(
         obs,
@@ -1087,6 +1096,7 @@ def crps_tlogistic(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_tlogistic(0.0, 0.1, 0.4, -1.0, 1.0)
+    0.12714830546327846
     """
     return crps.gtclogistic(
         obs, location, scale, lower, upper, 0.0, 0.0, backend=backend
@@ -1130,6 +1140,7 @@ def crps_clogistic(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_clogistic(0.0, 0.1, 0.4, -1.0, 1.0)
+    0.15805632276434345
     """
     lmass = stats._logis_cdf((lower - location) / scale)
     umass = 1 - stats._logis_cdf((upper - location) / scale)
@@ -1185,8 +1196,9 @@ def crps_gtcnormal(
 
     Examples
     --------
-    >>> import scoring rules as sr
+    >>> import scoringrules as sr
     >>> sr.crps_gtcnormal(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
+    0.1351100832878575
     """
     return crps.gtcnormal(
         obs,
@@ -1237,6 +1249,7 @@ def crps_tnormal(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_tnormal(0.0, 0.1, 0.4, -1.0, 1.0)
+    0.10070146718008832
     """
     return crps.gtcnormal(obs, location, scale, lower, upper, 0.0, 0.0, backend=backend)
 
@@ -1278,6 +1291,7 @@ def crps_cnormal(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_cnormal(0.0, 0.1, 0.4, -1.0, 1.0)
+    0.10338851213123085
     """
     lmass = stats._norm_cdf((lower - location) / scale)
     umass = 1 - stats._norm_cdf((upper - location) / scale)
@@ -1366,6 +1380,7 @@ def crps_gtct(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_gtct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
+    0.13997789333289662
     """
     return crps.gtct(
         obs,
@@ -1420,6 +1435,7 @@ def crps_tt(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
+    0.10323007471747117
     """
     return crps.gtct(
         obs,
@@ -1474,6 +1490,7 @@ def crps_ct(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_ct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
+    0.12672580744453948
     """
     lmass = stats._t_cdf((lower - location) / scale, df)
     umass = 1 - stats._t_cdf((upper - location) / scale, df)
@@ -1589,6 +1606,7 @@ def crps_laplace(
 
     Examples
     --------
+    >>> import scoringrules as sr
     >>> sr.crps_laplace(0.3, 0.1, 0.2)
     0.12357588823428847
     """
@@ -1638,7 +1656,7 @@ def crps_logistic(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_logistic(0.0, 0.4, 0.1)
-    0.30363
+    0.3036299855835619
     """
     return crps.logistic(obs, mu, sigma, backend=backend)
 
@@ -1771,8 +1789,7 @@ def crps_lognormal(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the lognormal distribution.
 
-    It is based on the formulation introduced by
-    [Baran and Lerch (2015)](https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2521)
+    It is based on the formulation introduced by [1]_:
 
     .. math::
         \mathrm{CRPS}(\mathrm{log}\mathcal{N}(\mu, \sigma), y) =
@@ -1799,10 +1816,17 @@ def crps_lognormal(
     crps : array_like
         The CRPS between Lognormal(mu, sigma) and obs.
 
+    References
+    ----------
+    .. [1] Baran, S. and Lerch, S. (2015), Log-normal distribution based
+        Ensemble Model Output Statistics models for probabilistic wind-speed forecasting.
+        Q.J.R. Meteorol. Soc., 141: 2289-2299. https://doi.org/10.1002/qj.2521
+
     Examples
     --------
     >>> import scoringrules as sr
     >>> sr.crps_lognormal(0.1, 0.4, 0.0)
+    1.3918246976412703
     """
     return crps.lognormal(obs, mulog, sigmalog, backend=backend)
 
@@ -1819,8 +1843,7 @@ def crps_mixnorm(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for a mixture of normal distributions.
 
-    It is based on the following formulation from
-    [Grimit et al. (2006)](https://doi.org/10.1256/qj.05.235):
+    It is based on the following formulation from [1]_:
 
     .. math::
         \mathrm{CRPS}(F, y) = \sum_{i=1}^{M} w_{i} A(y - \mu_{i}, \sigma_{i}^{2}) - \frac{1}{2} \sum_{i=1}^{M} \sum_{j=1}^{M} w_{i} w_{j} A(\mu_{i} - \mu_{j}, \sigma_{i}^{2} + \sigma_{j}^{2}),
@@ -1848,13 +1871,21 @@ def crps_mixnorm(
     crps : array_like
         The CRPS between MixNormal(m, s) and obs.
 
+    References
+    ----------
+    .. [1] Grimit, E.P., Gneiting, T., Berrocal, V.J. and Johnson, N.A. (2006),
+        The continuous ranked probability score for circular variables and its
+        application to mesoscale forecast ensemble verification.
+        Q.J.R. Meteorol. Soc., 132: 2925-2942. https://doi.org/10.1256/qj.05.235
+
     Examples
     --------
     >>> import scoringrules as sr
-    >>> sr.crps_mixnormal(0.0, [0.1, -0.3, 1.0], [0.4, 2.1, 0.7], [0.1, 0.2, 0.7])
+    >>> sr.crps_mixnorm(0.0, [0.1, -0.3, 1.0], [0.4, 2.1, 0.7], [0.1, 0.2, 0.7])
+    0.46806866729387275
     """
     B = backends.active if backend is None else backends[backend]
-    observation, m, s = map(B.asarray, (obs, m, s))
+    obs, m, s = map(B.asarray, (obs, m, s))
 
     if w is None:
         M: int = m.shape[axis]
@@ -1881,8 +1912,7 @@ def crps_negbinom(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the negative binomial distribution.
 
-    It is based on the following formulation from
-    [Wei and Held (2014)](https://link.springer.com/article/10.1007/s11749-014-0380-8):
+    It is based on the following formulation from [1]_:
 
     .. math::
         \mathrm{CRPS}(F_{n, p}, y) = y (2 F_{n, p}(y) - 1) - \frac{n(1 - p)}{p^{2}} \left( p (2 F_{n+1, p}(y - 1) - 1) + _{2} F_{1} \left( n + 1, \frac{1}{2}; 2; -\frac{4(1 - p)}{p^{2}} \right) \right),
@@ -1907,10 +1937,17 @@ def crps_negbinom(
     crps : array_like
         The CRPS between NegBinomial(n, prob) and obs.
 
+    References
+    ----------
+    .. [1] Wei, W., Held, L. (2014),
+        Calibration tests for count data.
+        TEST 23, 787-805. https://doi.org/10.1007/s11749-014-0380-8
+
     Examples
     --------
     >>> import scoringrules as sr
     >>> sr.crps_negbinom(2, 5, 0.5)
+    1.5533629909058577
 
     Raises
     ------
@@ -1938,8 +1975,7 @@ def crps_normal(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the normal distribution.
 
-    It is based on the following formulation from
-    [Geiting et al. (2005)](https://journals.ametsoc.org/view/journals/mwre/133/5/mwr2904.1.xml):
+    It is based on the following formulation from [1]_:
 
     .. math::
         \mathrm{CRPS}(\mathcal{N}(\mu, \sigma), y) = \sigma \Bigl\{ \omega [\Phi(ω) - 1] + 2 \phi(\omega) - \frac{1}{\sqrt{\pi}} \Bigl\}
@@ -1961,10 +1997,17 @@ def crps_normal(
     crps : array_like
         The CRPS between Normal(mu, sigma) and obs.
 
+    References
+    ----------
+    .. [1] Gneiting, T., A. E. Raftery, A. H. Westveld, and T. Goldman (2005),
+        Calibrated Probabilistic Forecasting Using Ensemble Model Output Statistics and Minimum CRPS Estimation.
+        Mon. Wea. Rev., 133, 1098-1118, https://doi.org/10.1175/MWR2904.1.
+
     Examples
     --------
     >>> import scoringrules as sr
     >>> sr.crps_normal(0.0, 0.1, 0.4)
+    0.10339992515976162
     """
     return crps.normal(obs, mu, sigma, backend=backend)
 
@@ -2018,6 +2061,7 @@ def crps_2pnormal(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_2pnormal(0.0, 0.4, 2.0, 0.1)
+    0.7243199144002115
     """
     B = backends.active if backend is None else backends[backend]
     obs, scale1, scale2, location = map(B.asarray, (obs, scale1, scale2, location))
@@ -2049,8 +2093,7 @@ def crps_poisson(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the Poisson distribution.
 
-    It is based on the following formulation from
-    [Wei and Held (2014)](https://link.springer.com/article/10.1007/s11749-014-0380-8):
+    It is based on the following formulation from [1]_:
 
     .. math::
         \mathrm{CRPS}(F_{\lambda}, y) = (y - \lambda) (2F_{\lambda}(y) - 1)
@@ -2064,7 +2107,7 @@ def crps_poisson(
     ----------
     obs : array_like
         The observed values.
-    mean: array_like
+    mean : array_like
         Mean parameter of the forecast poisson distribution.
 
     Returns
@@ -2072,10 +2115,17 @@ def crps_poisson(
     crps : array_like
         The CRPS between Pois(mean) and obs.
 
+    References
+    ----------
+    .. [1] Wei, W., Held, L. (2014),
+        Calibration tests for count data.
+        TEST 23, 787-805. https://doi.org/10.1007/s11749-014-0380-8
+
     Examples
     --------
     >>> import scoringrules as sr
     >>> sr.crps_poisson(1, 2)
+    0.4991650450203817
     """
     return crps.poisson(obs, mean, backend=backend)
 
@@ -2112,7 +2162,7 @@ def crps_t(
         Degrees of freedom parameter of the forecast t distribution.
     location : array_like
         Location parameter of the forecast t distribution.
-    sigma: array_like
+    sigma : array_like
         Scale parameter of the forecast t distribution.
 
     Returns
@@ -2131,6 +2181,7 @@ def crps_t(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_t(0.0, 0.1, 0.4, 0.1)
+    0.07687151141732129
     """
     return crps.t(obs, df, location, scale, backend=backend)
 
@@ -2188,6 +2239,7 @@ def crps_uniform(
     --------
     >>> import scoringrules as sr
     >>> sr.crps_uniform(0.4, 0.0, 1.0, 0.0, 0.0)
+    0.09333333333333332
     """
     return crps.uniform(obs, min, max, lmass, umass, backend=backend)
 
