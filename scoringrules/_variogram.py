@@ -20,9 +20,7 @@ def variogram_score(
 ) -> "Array":
     r"""Compute the Variogram Score for a finite multivariate ensemble.
 
-    For a :math:`D`-variate ensemble the Variogram Score
-    [(Sheuerer and Hamill, 2015)](https://journals.ametsoc.org/view/journals/mwre/143/4/mwr-d-14-00269.1.xml#bib9)
-    of order :math:`p` is expressed as
+    For a :math:`D`-variate ensemble the Variogram Score [1]_ is defined as:
 
     .. math::
         \text{VS}_{p}(F_{ens}, \mathbf{y})= \sum_{i=1}^{d} \sum_{j=1}^{d}
@@ -51,6 +49,22 @@ def variogram_score(
     -------
     variogram_score : array_like
         The computed Variogram Score.
+
+    References
+    ----------
+    .. [1] Scheuerer, M., and T. M. Hamill (2015),
+        Variogram-Based Proper Scoring Rules for Probabilistic Forecasts of Multivariate Quantities.
+        Mon. Wea. Rev., 143, 1321-1334, https://doi.org/10.1175/MWR-D-14-00269.1.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scoringrules as sr
+    >>> rng = np.random.default_rng(123)
+    >>> obs = rng.normal(size=(3, 5))
+    >>> fct = rng.normal(size=(3, 10, 5))
+    >>> sr.variogram_score(obs, fct)
+    array([ 8.65630139,  6.84693866, 19.52993307])
     """
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
@@ -73,8 +87,7 @@ def twvariogram_score(
 ) -> "Array":
     r"""Compute the Threshold-Weighted Variogram Score (twVS) for a finite multivariate ensemble.
 
-    Computation is performed using the ensemble representation of the twVS in
-    [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
+    Computation is performed using the ensemble representation of the twVS in [1]_,
 
     .. math::
         \mathrm{twVS}(F_{ens}, \mathbf{y}) = \sum_{i,j=1}^{D}(|v(\mathbf{y})_i - v(\mathbf{y})_{j}|^{p}
@@ -101,11 +114,27 @@ def twvariogram_score(
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
-
     Returns
     -------
     twvariogram_score : array_like
         The computed Threshold-Weighted Variogram Score.
+
+    References
+    ----------
+    .. [1] Allen, S., Ginsbourger, D., & Ziegel, J. (2023).
+        Evaluating forecasts for high-impact events using transformed kernel scores.
+        SIAM/ASA Journal on Uncertainty Quantification, 11(3), 906-940.
+        Available at https://arxiv.org/abs/2202.12732.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scoringrules as sr
+    >>> rng = np.random.default_rng(123)
+    >>> obs = rng.normal(size=(3, 5))
+    >>> fct = rng.normal(size=(3, 10, 5))
+    >>> sr.twvariogram_score(obs, fct, lambda x: np.maximum(x, -0.2))
+    array([5.94996894, 4.72029765, 6.08947229])
     """
     obs, fct = map(v_func, (obs, fct))
     return variogram_score(obs, fct, m_axis, v_axis, p=p, backend=backend)
@@ -160,6 +189,16 @@ def owvariogram_score(
     -------
     owvariogram_score : array_like
         The computed Outcome-Weighted Variogram Score.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scoringrules as sr
+    >>> rng = np.random.default_rng(123)
+    >>> obs = rng.normal(size=(3, 5))
+    >>> fct = rng.normal(size=(3, 10, 5))
+    >>> sr.owvariogram_score(obs, fct, lambda x: x.mean() + 1.0)
+    array([ 9.86816636,  6.75532522, 19.59353723])
     """
     B = backends.active if backend is None else backends[backend]
 
@@ -227,6 +266,16 @@ def vrvariogram_score(
     -------
     vrvariogram_score : array_like
         The computed Vertically Re-scaled Variogram Score.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scoringrules as sr
+    >>> rng = np.random.default_rng(123)
+    >>> obs = rng.normal(size=(3, 5))
+    >>> fct = rng.normal(size=(3, 10, 5))
+    >>> sr.vrvariogram_score(obs, fct, lambda x: x.max() + 1.0)
+    array([46.48256493, 57.90759816, 92.37153472])
     """
     B = backends.active if backend is None else backends[backend]
 
