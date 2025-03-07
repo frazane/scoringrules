@@ -42,12 +42,12 @@ def _owvariogram_score_gufunc(obs, fct, p, ow, fw, out):
                 rho1 = abs(fct[k, i] - fct[k, j]) ** p
                 rho2 = abs(obs[i] - obs[j]) ** p
                 e_1 += (rho1 - rho2) ** 2 * fw[k] * ow
-        for m in range(M):
+        for m in range(k + 1, M):
             for i in range(D):
                 for j in range(D):
                     rho1 = abs(fct[k, i] - fct[k, j]) ** p
                     rho2 = abs(fct[m, i] - fct[m, j]) ** p
-                    e_2 += (rho1 - rho2) ** 2 * fw[k] * fw[m] * ow
+                    e_2 += 2 * ((rho1 - rho2) ** 2) * fw[k] * fw[m] * ow
 
     wbar = np.mean(fw)
 
@@ -75,12 +75,12 @@ def _vrvariogram_score_gufunc(obs, fct, p, ow, fw, out):
                 rho2 = abs(obs[i] - obs[j]) ** p
                 e_1 += (rho1 - rho2) ** 2 * fw[k] * ow
                 e_3_x += (rho1) ** 2 * fw[k]
-        for m in range(M):
+        for m in range(k + 1, M):
             for i in range(D):
                 for j in range(D):
                     rho1 = abs(fct[k, i] - fct[k, j]) ** p
                     rho2 = abs(fct[m, i] - fct[m, j]) ** p
-                    e_2 += (rho1 - rho2) ** 2 * fw[k] * fw[m]
+                    e_2 += 2 * ((rho1 - rho2) ** 2) * fw[k] * fw[m]
 
     e_3_x *= 1 / M
     wbar = np.mean(fw)
