@@ -316,8 +316,8 @@ def gtclogistic(
 
     c = (1 - lmass - umass) / (F_u - F_l)
 
-    s1_u = B.where(u_inf and umass == 0.0, 0.0, u * umass**2)
-    s1_l = B.where(l_inf and lmass == 0.0, 0.0, l * lmass**2)
+    s1_u = B.where(u_inf & (umass == 0.0), 0.0, u * umass**2)
+    s1_l = B.where(l_inf & (lmass == 0.0), 0.0, l * lmass**2)
 
     s1 = B.abs(ω - z) + s1_u - s1_l
     s2 = c * z * ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass)
@@ -359,8 +359,8 @@ def gtcnormal(
 
     u = B.where(u_inf, B.nan, u)
     l = B.where(l_inf, B.nan, l)
-    s1_u = B.where(u_inf and umass == 0.0, 0.0, u * umass**2)
-    s1_l = B.where(l_inf and lmass == 0.0, 0.0, l * lmass**2)
+    s1_u = B.where(u_inf & (umass == 0.0), 0.0, u * umass**2)
+    s1_l = B.where(l_inf & (lmass == 0.0), 0.0, l * lmass**2)
 
     c = (1 - lmass - umass) / (F_u - F_l)
 
@@ -410,8 +410,8 @@ def gtct(
     u = B.where(u_inf, B.nan, u)
     l = B.where(l_inf, B.nan, l)
 
-    s1_u = B.where(u_inf and umass == 0.0, 0.0, u * umass**2)
-    s1_l = B.where(l_inf and lmass == 0.0, 0.0, l * lmass**2)
+    s1_u = B.where(u_inf & (umass == 0.0), 0.0, u * umass**2)
+    s1_l = B.where(l_inf & (lmass == 0.0), 0.0, l * lmass**2)
 
     G_u = B.where(u_inf, 0.0, -f_u * (df + u**2) / (df - 1))
     G_l = B.where(l_inf, 0.0, -f_l * (df + l**2) / (df - 1))
