@@ -21,8 +21,8 @@ def _energy_score_gufunc(
     e_2 = 0.0
     for i in range(M):
         e_1 += float(np.linalg.norm(fct[i] - obs))
-        for j in range(M):
-            e_2 += float(np.linalg.norm(fct[i] - fct[j]))
+        for j in range(i + 1, M):
+            e_2 += 2 * float(np.linalg.norm(fct[i] - fct[j]))
 
     out[0] = e_1 / M - 0.5 / (M**2) * e_2
 
@@ -49,8 +49,8 @@ def _owenergy_score_gufunc(
     e_2 = 0.0
     for i in range(M):
         e_1 += float(np.linalg.norm(fct[i] - obs) * fw[i] * ow)
-        for j in range(M):
-            e_2 += float(np.linalg.norm(fct[i] - fct[j]) * fw[i] * fw[j] * ow)
+        for j in range(i + 1, M):
+            e_2 += 2 * float(np.linalg.norm(fct[i] - fct[j]) * fw[i] * fw[j] * ow)
 
     wbar = np.mean(fw)
 
@@ -81,8 +81,8 @@ def _vrenergy_score_gufunc(
     for i in range(M):
         e_1 += float(np.linalg.norm(fct[i] - obs) * fw[i] * ow)
         wabs_x += np.linalg.norm(fct[i]) * fw[i]
-        for j in range(M):
-            e_2 += float(np.linalg.norm(fct[i] - fct[j]) * fw[i] * fw[j])
+        for j in range(i + 1, M):
+            e_2 += 2 * float(np.linalg.norm(fct[i] - fct[j]) * fw[i] * fw[j])
 
     wabs_x = wabs_x / M
     wbar = np.mean(fw)
