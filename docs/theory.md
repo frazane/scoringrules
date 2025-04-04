@@ -35,6 +35,19 @@ our expected score is minimised by issuing $G$ as our forecast; proper scoring r
 encourage honest predictions, and discourage hedging. A scoring rule is *strictly proper*
 if the above inequality holds with equality if and only if $F = G$.
 
+Proper scoring rules allow us to compare competing forecasters (or prediction strategies)
+via their average score. In practice, for a given forecaster, we typically have access to
+multiple forecasts $F_{1}, F_{2}, \dots, F_{n}$ and observations $y_{1}, \dots, y_{n}$,
+corresponding to different points in time, for example. The forecaster with the lowest average score,
+
+$$
+    \frac{1}{n} \sum_{i=1}^{n} S(F_{i}, y_{i}),
+$$
+
+is then considered to be the most accurate. However, the ordering of competing forecasters will
+generally depend on the chosen scoring rule. It is therefore important to employ a scoring rule
+that encompasses our beliefs about what makes a forecast good.
+
 
 ## Examples
 
@@ -61,8 +74,9 @@ $$
     \end{cases}
 $$
 
-Other popular binary scoring rules include the spherical score, power score, and pseudo-spherical
-score.
+The Brier score is also often referred to as the quadratic score, while the Log score forms
+the basis of the Cross-entropy loss in classifiaction tasks. Other popular scoring rules
+for binary outcomes include the *spherical score*, *power score*, and *pseudo-spherical score*.
 
 
 ### Categorical outcomes:
@@ -75,7 +89,7 @@ $$
     F = (F_{1}, \dots, F_{K}) \in [0, 1]^{K} \quad \text{such that} \quad \sum_{i=1}^{K} F_{i} = 1.
 $$
 
-The $i$-th element of $F$ represents the probability that $Y = i$, for $i = 1, \dots, K$.
+The $i$-th element of $F$ represents the forecast probability that $Y = i$, for $i = 1, \dots, K$.
 
 Proper scoring rules for binary outcomes can readily be used to evaluate probabilistic
 forecasts for categorical outcomes, by applying the score separately for each category,
@@ -375,7 +389,7 @@ be loosely interpreted as a measure of similarity between its two inputs.
 The *kernel score* corresponding to the positive definite kernel $k$ is defined as
 
 $$
-    S_{k}(F, y) = \frac{1}{2} \mathbb{E} k(y, y) + \frac{1}{2} \mathbb{E} k(X, X^{\prime}) - \mathbb{E} k(X, y),
+    S_{k}(F, y) = \frac{1}{2} k(y, y) + \frac{1}{2} \mathbb{E} k(X, X^{\prime}) - \mathbb{E} k(X, y),
 $$
 
 where $X, X^{\prime} \sim F$ are independent. The first term on the right-hand-side does not
