@@ -34,7 +34,9 @@ The scoring rules available in `scoringrules` include, but are not limited to, t
 :caption: Background
 
 theory.md
+forecast_dists.md
 crps_estimators.md
+weighted_scores.md
 ```
 
 ```{toctree}
