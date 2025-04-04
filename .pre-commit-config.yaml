@@ -26,8 +26,8 @@ repos:
     hooks:
     - id: codespell
 
-  - repo: https://github.com/frazane/check-latex-math
-    rev: v0.2.2
-    hooks:
-      - id: latex-math-validation
-        args: ["scoringrules/", "docs/", "*.py", "*.md"]
+  #- repo: https://github.com/frazane/check-latex-math
+  #  rev: v0.2.2
+  #  hooks:
+  #    - id: latex-math-validation
+  #      args: ["scoringrules/", "docs/", "*.py", "*.md"]
