@@ -118,10 +118,10 @@ def _crps_ensemble_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
     e_1 = 0
     e_2 = 0
 
-    for x_i in fct:
-        e_1 += abs(x_i - obs)
-        for x_j in fct:
-            e_2 += abs(x_i - x_j)
+    for i in range(M):
+        e_1 += abs(fct[i] - obs)
+        for j in range(i + 1, M):
+            e_2 += 2 * abs(fct[j] - fct[i])
 
     out[0] = e_1 / M - 0.5 * e_2 / (M**2)
 
@@ -145,10 +145,10 @@ def _crps_ensemble_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
     e_1 = 0
     e_2 = 0
 
-    for x_i in fct:
-        e_1 += abs(x_i - obs)
-        for x_j in fct:
-            e_2 += abs(x_i - x_j)
+    for i in range(M):
+        e_1 += abs(fct[i] - obs)
+        for j in range(i + 1, M):
+            e_2 += 2 * abs(fct[j] - fct[i])
 
     out[0] = e_1 / M - 0.5 * e_2 / (M * (M - 1))
 
@@ -250,10 +250,10 @@ def _owcrps_ensemble_nrg_gufunc(
     e_1 = 0.0
     e_2 = 0.0
 
-    for i, x_i in enumerate(fct):
-        e_1 += abs(x_i - obs) * fw[i] * ow
-        for j, x_j in enumerate(fct):
-            e_2 += abs(x_i - x_j) * fw[i] * fw[j] * ow
+    for i in range(M):
+        e_1 += abs(fct[i] - obs) * fw[i] * ow
+        for j in range(i + 1, M):
+            e_2 += 2 * abs(fct[i] - fct[j]) * fw[i] * fw[j] * ow
 
     wbar = np.mean(fw)
 
@@ -286,10 +286,10 @@ def _vrcrps_ensemble_nrg_gufunc(
     e_1 = 0.0
     e_2 = 0.0
 
-    for i, x_i in enumerate(fct):
-        e_1 += abs(x_i - obs) * fw[i] * ow
-        for j, x_j in enumerate(fct):
-            e_2 += abs(x_i - x_j) * fw[i] * fw[j]
+    for i in range(M):
+        e_1 += abs(fct[i] - obs) * fw[i] * ow
+        for j in range(i + 1, M):
+            e_2 += 2 * abs(fct[i] - fct[j]) * fw[i] * fw[j]
 
     wbar = np.mean(fw)
     wabs_x = np.mean(np.abs(fct) * fw)
