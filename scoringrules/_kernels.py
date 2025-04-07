@@ -12,7 +12,7 @@ def gksuv_ensemble(
     obs: "ArrayLike",
     fct: "Array",
     /,
-    axis: int = -1,
+    m_axis: int = -1,
     *,
     estimator: str = "nrg",
     backend: "Backend" = None,
@@ -40,7 +40,7 @@ def gksuv_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    axis : int
+    m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     estimator : str
         Indicates the estimator to be used.
@@ -73,8 +73,8 @@ def gksuv_ensemble(
                 f"Must be one of ['fair', 'nrg']"
             )
 
-    if axis != -1:
-        fct = B.moveaxis(fct, axis, -1)
+    if m_axis != -1:
+        fct = B.moveaxis(fct, m_axis, -1)
 
     if backend == "numba":
         return kernels.estimator_gufuncs[estimator](obs, fct)
@@ -87,7 +87,7 @@ def twgksuv_ensemble(
     fct: "Array",
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
-    axis: int = -1,
+    m_axis: int = -1,
     *,
     estimator: str = "nrg",
     backend: "Backend" = None,
@@ -120,7 +120,7 @@ def twgksuv_ensemble(
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold :math:`t` by projecting forecasts and observations
         to :math:`[t, \inf)`.
-    axis : int
+    m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
@@ -144,7 +144,7 @@ def twgksuv_ensemble(
     return gksuv_ensemble(
         obs,
         fct,
-        axis=axis,
+        m_axis=m_axis,
         estimator=estimator,
         backend=backend,
     )
@@ -155,7 +155,7 @@ def owgksuv_ensemble(
     fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
-    axis: int = -1,
+    m_axis: int = -1,
     *,
     backend: "Backend" = None,
 ) -> "Array":
@@ -186,7 +186,7 @@ def owgksuv_ensemble(
         represented by the last axis.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
-    axis : int
+    m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
@@ -210,8 +210,8 @@ def owgksuv_ensemble(
 
     obs, fct = map(B.asarray, (obs, fct))
 
-    if axis != -1:
-        fct = B.moveaxis(fct, axis, -1)
+    if m_axis != -1:
+        fct = B.moveaxis(fct, m_axis, -1)
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
 
@@ -229,7 +229,7 @@ def vrgksuv_ensemble(
     fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
-    axis: int = -1,
+    m_axis: int = -1,
     *,
     backend: "Backend" = None,
 ) -> "Array":
@@ -259,7 +259,7 @@ def vrgksuv_ensemble(
         represented by the last axis.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
-    axis : int
+    m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
@@ -283,8 +283,8 @@ def vrgksuv_ensemble(
 
     obs, fct = map(B.asarray, (obs, fct))
 
-    if axis != -1:
-        fct = B.moveaxis(fct, axis, -1)
+    if m_axis != -1:
+        fct = B.moveaxis(fct, m_axis, -1)
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
 
