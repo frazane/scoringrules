@@ -46,7 +46,7 @@ def rps_score(
     obs: "ArrayLike",
     fct: "ArrayLike",
     /,
-    axis: int = -1,
+    k_axis: int = -1,
     *,
     backend: "Backend" = None,
 ) -> "Array":
@@ -70,7 +70,7 @@ def rps_score(
         Array of 0's and 1's corresponding to unobserved and observed categories
     forecasts :
         Array of forecast probabilities for each category.
-    axis: int
+    k_axis: int
         The axis corresponding to the categories. Default is the last axis.
     backend : str
         The name of the backend used for computations. Defaults to 'numpy'.
@@ -84,8 +84,8 @@ def rps_score(
     B = backends.active if backend is None else backends[backend]
     fct = B.asarray(fct)
 
-    if axis != -1:
-        fct = B.moveaxis(fct, axis, -1)
+    if k_axis != -1:
+        fct = B.moveaxis(fct, k_axis, -1)
 
     return brier.rps_score(obs=obs, fct=fct, backend=backend)
 
@@ -129,7 +129,7 @@ def rls_score(
     obs: "ArrayLike",
     fct: "ArrayLike",
     /,
-    axis: int = -1,
+    k_axis: int = -1,
     *,
     backend: "Backend" = None,
 ) -> "Array":
@@ -153,6 +153,8 @@ def rls_score(
         Observed outcome, either 0 or 1.
     fct : array_like
         Forecasted probabilities between 0 and 1.
+    k_axis: int
+        The axis corresponding to the categories. Default is the last axis.
     backend : str
         The name of the backend used for computations. Defaults to 'numpy'.
 
@@ -165,8 +167,8 @@ def rls_score(
     B = backends.active if backend is None else backends[backend]
     fct = B.asarray(fct)
 
-    if axis != -1:
-        fct = B.moveaxis(fct, axis, -1)
+    if k_axis != -1:
+        fct = B.moveaxis(fct, k_axis, -1)
 
     return brier.rls_score(obs=obs, fct=fct, backend=backend)
 
