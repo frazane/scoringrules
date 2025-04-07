@@ -683,7 +683,7 @@ def logs_mixnorm(
     s: "ArrayLike",
     /,
     w: "ArrayLike" = None,
-    axis: "ArrayLike" = -1,
+    mc_axis: "ArrayLike" = -1,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -701,7 +701,7 @@ def logs_mixnorm(
         Standard deviations of the component normal distributions.
     w : array_like
         Non-negative weights assigned to each component.
-    axis : int
+    mc_axis : int
         The axis corresponding to the mixture components. Default is the last axis.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
@@ -720,15 +720,15 @@ def logs_mixnorm(
     obs, m, s = map(B.asarray, (obs, m, s))
 
     if w is None:
-        M: int = m.shape[axis]
+        M: int = m.shape[mc_axis]
         w = B.zeros(m.shape) + 1 / M
     else:
         w = B.asarray(w)
 
-    if axis != -1:
-        m = B.moveaxis(m, axis, -1)
-        s = B.moveaxis(s, axis, -1)
-        w = B.moveaxis(w, axis, -1)
+    if mc_axis != -1:
+        m = B.moveaxis(m, mc_axis, -1)
+        s = B.moveaxis(s, mc_axis, -1)
+        w = B.moveaxis(w, mc_axis, -1)
 
     return logarithmic.mixnorm(obs, m, s, w, backend=backend)
 
