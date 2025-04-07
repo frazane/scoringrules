@@ -20,7 +20,7 @@ def test_owcrps_ensemble(backend):
     res = sr.owcrps_ensemble(obs, np.random.randn(N, M), lambda x: x * 0.0 + 1.0)
     assert res.shape == (N,)
     res = sr.owcrps_ensemble(
-        obs, np.random.randn(M, N), lambda x: x * 0.0 + 1.0, axis=0
+        obs, np.random.randn(M, N), lambda x: x * 0.0 + 1.0, m_axis=0
     )
     assert res.shape == (N,)
 
@@ -37,7 +37,7 @@ def test_vrcrps_ensemble(backend):
     res = sr.vrcrps_ensemble(obs, np.random.randn(N, M), lambda x: x * 0.0 + 1.0)
     assert res.shape == (N,)
     res = sr.vrcrps_ensemble(
-        obs, np.random.randn(M, N), lambda x: x * 0.0 + 1.0, axis=0
+        obs, np.random.randn(M, N), lambda x: x * 0.0 + 1.0, m_axis=0
     )
     assert res.shape == (N,)
 

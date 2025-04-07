@@ -11,7 +11,7 @@ def logs_ensemble(
     obs: "ArrayLike",
     fct: "Array",
     /,
-    axis: int = -1,
+    m_axis: int = -1,
     *,
     bw: "ArrayLike" = None,
     backend: "Backend" = None,
@@ -32,7 +32,7 @@ def logs_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    axis : int
+    m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     bw : array_like
         The bandwidth parameter for each forecast ensemble. If not given, estimated using
@@ -53,19 +53,19 @@ def logs_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if axis != -1:
-        fct = B.moveaxis(fct, axis, -1)
+    if m_axis != -1:
+        fct = B.moveaxis(fct, m_axis, -1)
 
     M = fct.shape[-1]
 
     # Silverman's rule of thumb for estimating the bandwidth parameter
     if bw is None:
-        sigmahat = B.std(fct, axis=-1)
-        q75 = B.quantile(fct, 0.75, axis=-1)
-        q25 = B.quantile(fct, 0.25, axis=-1)
+        sigmahat = B.std(fct, m_axis=-1)
+        q75 = B.quantile(fct, 0.75, m_axis=-1)
+        q25 = B.quantile(fct, 0.25, m_axis=-1)
         iqr = q75 - q25
         bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
-    bw = B.stack([bw] * M, axis=-1)
+    bw = B.stack([bw] * M, m_axis=-1)
 
     w = B.zeros(fct.shape) + 1 / M
 
@@ -78,7 +78,7 @@ def clogs_ensemble(
     /,
     a: "ArrayLike" = float("-inf"),
     b: "ArrayLike" = float("inf"),
-    axis: int = -1,
+    m_axis: int = -1,
     *,
     bw: "ArrayLike" = None,
     cens: bool = True,
@@ -105,7 +105,7 @@ def clogs_ensemble(
         The lower bound in the weight function.
     b : array_like
         The upper bound in the weight function.
-    axis : int
+    m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     bw : array_like
         The bandwidth parameter for each forecast ensemble. If not given, estimated using
@@ -129,19 +129,19 @@ def clogs_ensemble(
     B = backends.active if backend is None else backends[backend]
     fct = B.asarray(fct)
 
-    if axis != -1:
-        fct = B.moveaxis(fct, axis, -1)
+    if m_axis != -1:
+        fct = B.moveaxis(fct, m_axis, -1)
 
     M = fct.shape[-1]
 
     # Silverman's rule of thumb for estimating the bandwidth parameter
     if bw is None:
-        sigmahat = B.std(fct, axis=-1)
-        q75 = B.quantile(fct, 0.75, axis=-1)
-        q25 = B.quantile(fct, 0.25, axis=-1)
+        sigmahat = B.std(fct, m_axis=-1)
+        q75 = B.quantile(fct, 0.75, m_axis=-1)
+        q25 = B.quantile(fct, 0.25, m_axis=-1)
         iqr = q75 - q25
         bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
-    bw = B.stack([bw] * M, axis=-1)
+    bw = B.stack([bw] * M, m_axis=-1)
 
     return logarithmic.clogs_ensemble(
         obs,

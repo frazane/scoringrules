@@ -11,7 +11,7 @@ def error_spread_score(
     observations: "ArrayLike",
     forecasts: "Array",
     /,
-    axis: int = -1,
+    m_axis: int = -1,
     *,
     backend: "Backend" = None,
 ) -> "Array":
@@ -24,7 +24,7 @@ def error_spread_score(
     forecasts: Array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    axis: int
+    m_axis: int
         The axis corresponding to the ensemble. Default is the last axis.
     backend: str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
@@ -37,8 +37,8 @@ def error_spread_score(
     B = backends.active if backend is None else backends[backend]
     observations, forecasts = map(B.asarray, (observations, forecasts))
 
-    if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
+    if m_axis != -1:
+        forecasts = B.moveaxis(forecasts, m_axis, -1)
 
     if B.name == "numba":
         return error_spread._ess_gufunc(observations, forecasts)

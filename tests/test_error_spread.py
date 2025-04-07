@@ -18,7 +18,7 @@ def test_error_spread_score(backend):
 
     obs = np.random.randn(N)
     fct = np.random.randn(ENSEMBLE_SIZE, N)
-    res = sr.error_spread_score(obs, fct, axis=0, backend=backend)
+    res = sr.error_spread_score(obs, fct, m_axis=0, backend=backend)
     assert res.shape == (N,)
 
     # test correctness

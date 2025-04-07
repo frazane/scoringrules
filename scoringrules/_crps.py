@@ -11,7 +11,7 @@ def crps_ensemble(
     obs: "ArrayLike",
     fct: "Array",
     /,
-    axis: int = -1,
+    m_axis: int = -1,
     *,
     sorted_ensemble: bool = False,
     estimator: str = "pwm",
@@ -48,7 +48,7 @@ def crps_ensemble(
     fct : array_like, shape (..., m)
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    axis : int
+    m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     sorted_ensemble : bool
         Boolean indicating whether the ensemble members are already in ascending order.
@@ -99,8 +99,8 @@ def crps_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if axis != -1:
-        fct = B.moveaxis(fct, axis, -1)
+    if m_axis != -1:
+        fct = B.moveaxis(fct, m_axis, -1)
 
     if not sorted_ensemble and estimator not in [
         "nrg",
@@ -108,7 +108,7 @@ def crps_ensemble(
         "akr_circperm",
         "fair",
     ]:
-        fct = B.sort(fct, axis=-1)
+        fct = B.sort(fct, m_axis=-1)
 
     if backend == "numba":
         if estimator not in crps.estimator_gufuncs:
@@ -126,7 +126,7 @@ def twcrps_ensemble(
     fct: "Array",
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
-    axis: int = -1,
+    m_axis: int = -1,
     *,
     estimator: str = "pwm",
     sorted_ensemble: bool = False,
@@ -156,7 +156,7 @@ def twcrps_ensemble(
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold :math:`t` by projecting forecasts and observations
         to :math:`[t, \inf)`.
-    axis : int
+    m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
@@ -200,7 +200,7 @@ def twcrps_ensemble(
     return crps_ensemble(
         obs,
         fct,
-        axis=axis,
+        m_axis=m_axis,
         sorted_ensemble=sorted_ensemble,
         estimator=estimator,
         backend=backend,
@@ -212,7 +212,7 @@ def owcrps_ensemble(
     fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
-    axis: int = -1,
+    m_axis: int = -1,
     *,
     estimator: tp.Literal["nrg"] = "nrg",
     backend: "Backend" = None,
@@ -245,7 +245,7 @@ def owcrps_ensemble(
         represented by the last axis.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
-    axis : int
+    m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
@@ -288,8 +288,8 @@ def owcrps_ensemble(
             "Only the energy form of the estimator is available "
             "for the outcome-weighted CRPS."
         )
-    if axis != -1:
-        fct = B.moveaxis(fct, axis, -1)
+    if m_axis != -1:
+        fct = B.moveaxis(fct, m_axis, -1)
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
 
@@ -309,7 +309,7 @@ def vrcrps_ensemble(
     fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
-    axis: int = -1,
+    m_axis: int = -1,
     *,
     estimator: tp.Literal["nrg"] = "nrg",
     backend: "Backend" = None,
@@ -340,7 +340,7 @@ def vrcrps_ensemble(
         represented by the last axis.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
-    axis : int
+    m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
@@ -383,8 +383,8 @@ def vrcrps_ensemble(
             "Only the energy form of the estimator is available "
             "for the outcome-weighted CRPS."
         )
-    if axis != -1:
-        fct = B.moveaxis(fct, axis, -1)
+    if m_axis != -1:
+        fct = B.moveaxis(fct, m_axis, -1)
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
 
@@ -404,7 +404,7 @@ def crps_quantile(
     fct: "Array",
     alpha: "Array",
     /,
-    axis: int = -1,
+    m_axis: int = -1,
     *,
     backend: "Backend" = None,
 ) -> "Array":
@@ -435,7 +435,7 @@ def crps_quantile(
         represented by the last axis.
     alpha : array_like
         The percentile levels. We expect the quantile array to match the axis (see below) of the forecast array.
-    axis : int
+    m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
@@ -456,8 +456,8 @@ def crps_quantile(
     B = backends.active if backend is None else backends[backend]
     obs, fct, alpha = map(B.asarray, (obs, fct, alpha))
 
-    if axis != -1:
-        fct = B.moveaxis(fct, axis, -1)
+    if m_axis != -1:
+        fct = B.moveaxis(fct, m_axis, -1)
 
     if not fct.shape[-1] == alpha.shape[-1]:
         raise ValueError("Expected matching length of `fct` and `alpha` values.")
@@ -1839,7 +1839,7 @@ def crps_mixnorm(
     s: "ArrayLike",
     /,
     w: "ArrayLike" = None,
-    axis: "ArrayLike" = -1,
+    m_axis: "ArrayLike" = -1,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -1863,7 +1863,7 @@ def crps_mixnorm(
         Standard deviations of the component normal distributions.
     w: array_like
         Non-negative weights assigned to each component.
-    axis : int
+    m_axis : int
         The axis corresponding to the mixture components. Default is the last axis.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
@@ -1890,15 +1890,15 @@ def crps_mixnorm(
     obs, m, s = map(B.asarray, (obs, m, s))
 
     if w is None:
-        M: int = m.shape[axis]
+        M: int = m.shape[m_axis]
         w = B.zeros(m.shape) + 1 / M
     else:
         w = B.asarray(w)
 
-    if axis != -1:
-        m = B.moveaxis(m, axis, -1)
-        s = B.moveaxis(s, axis, -1)
-        w = B.moveaxis(w, axis, -1)
+    if m_axis != -1:
+        m = B.moveaxis(m, m_axis, -1)
+        s = B.moveaxis(s, m_axis, -1)
+        w = B.moveaxis(w, m_axis, -1)
 
     return crps.mixnorm(obs, m, s, w, backend=backend)
 
