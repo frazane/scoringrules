@@ -6,7 +6,7 @@ import scoringrules as sr
 from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 11
-N = 20
+N = 100
 
 ESTIMATORS = ["nrg", "fair", "pwm", "int", "qd", "akr", "akr_circperm"]
 
