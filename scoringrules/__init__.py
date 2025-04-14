@@ -44,10 +44,10 @@ from scoringrules._crps import (
     vrcrps_ensemble,
 )
 from scoringrules._energy import (
-    energy_score,
-    owenergy_score,
-    twenergy_score,
-    vrenergy_score,
+    es_ensemble,
+    owes_ensemble,
+    twes_ensemble,
+    vres_ensemble,
 )
 from scoringrules._error_spread import error_spread_score
 from scoringrules._interval import interval_score, weighted_interval_score
@@ -172,10 +172,10 @@ __all__ = [
     "log_score",
     "rls_score",
     "error_spread_score",
-    "energy_score",
-    "owenergy_score",
-    "twenergy_score",
-    "vrenergy_score",
+    "es_ensemble",
+    "owes_ensemble",
+    "twes_ensemble",
+    "vres_ensemble",
     "variogram_score",
     "owvariogram_score",
     "twvariogram_score",

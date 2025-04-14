@@ -8,7 +8,7 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
 
 
-def energy_score(
+def es_ensemble(
     obs: "Array",
     fct: "Array",
     /,
@@ -44,12 +44,12 @@ def energy_score(
 
     Returns
     -------
-    energy_score : array_like
+    es_ensemble : array_like
         The computed Energy Score.
 
     See Also
     --------
-    twenergy_score, owenergy_score, vrenergy_score
+    twes_ensemble, owes_ensemble, vres_ensemble
         Weighted variants of the Energy Score.
     crps_ensemble
         The univariate equivalent of the Energy Score.
@@ -68,7 +68,7 @@ def energy_score(
     return energy.nrg(obs, fct, backend=backend)
 
 
-def twenergy_score(
+def twes_ensemble(
     obs: "Array",
     fct: "Array",
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
@@ -110,14 +110,14 @@ def twenergy_score(
 
     Returns
     -------
-    twenergy_score : array_like
+    twes_ensemble : array_like
         The computed Threshold-Weighted Energy Score.
     """
     obs, fct = map(v_func, (obs, fct))
-    return energy_score(obs, fct, m_axis=m_axis, v_axis=v_axis, backend=backend)
+    return es_ensemble(obs, fct, m_axis=m_axis, v_axis=v_axis, backend=backend)
 
 
-def owenergy_score(
+def owes_ensemble(
     obs: "Array",
     fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
@@ -162,7 +162,7 @@ def owenergy_score(
 
     Returns
     -------
-    owenergy_score : array_like
+    owes_ensemble : array_like
         The computed Outcome-Weighted Energy Score.
     """
     B = backends.active if backend is None else backends[backend]
@@ -178,7 +178,7 @@ def owenergy_score(
     return energy.ownrg(obs, fct, obs_weights, fct_weights, backend=backend)
 
 
-def vrenergy_score(
+def vres_ensemble(
     obs: "Array",
     fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
@@ -224,7 +224,7 @@ def vrenergy_score(
 
     Returns
     -------
-    vrenergy_score : array_like
+    vres_ensemble : array_like
         The computed Vertically Re-scaled Energy Score.
     """
     B = backends.active if backend is None else backends[backend]

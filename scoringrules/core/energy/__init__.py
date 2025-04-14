@@ -9,9 +9,9 @@ except ImportError:
     _owenergy_score_gufunc = None
     _vrenergy_score_gufunc = None
 
-from ._score import energy_score as nrg
-from ._score import owenergy_score as ownrg
-from ._score import vrenergy_score as vrnrg
+from ._score import es_ensemble as nrg
+from ._score import owes_ensemble as ownrg
+from ._score import vres_ensemble as vrnrg
 
 __all__ = [
     "nrg",
