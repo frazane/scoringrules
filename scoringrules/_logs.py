@@ -60,12 +60,12 @@ def logs_ensemble(
 
     # Silverman's rule of thumb for estimating the bandwidth parameter
     if bw is None:
-        sigmahat = B.std(fct, m_axis=-1)
-        q75 = B.quantile(fct, 0.75, m_axis=-1)
-        q25 = B.quantile(fct, 0.25, m_axis=-1)
+        sigmahat = B.std(fct, axis=-1)
+        q75 = B.quantile(fct, 0.75, axis=-1)
+        q25 = B.quantile(fct, 0.25, axis=-1)
         iqr = q75 - q25
         bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
-    bw = B.stack([bw] * M, m_axis=-1)
+    bw = B.stack([bw] * M, axis=-1)
 
     w = B.zeros(fct.shape) + 1 / M
 
@@ -136,12 +136,12 @@ def clogs_ensemble(
 
     # Silverman's rule of thumb for estimating the bandwidth parameter
     if bw is None:
-        sigmahat = B.std(fct, m_axis=-1)
-        q75 = B.quantile(fct, 0.75, m_axis=-1)
-        q25 = B.quantile(fct, 0.25, m_axis=-1)
+        sigmahat = B.std(fct, axis=-1)
+        q75 = B.quantile(fct, 0.75, axis=-1)
+        q25 = B.quantile(fct, 0.25, axis=-1)
         iqr = q75 - q25
         bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
-    bw = B.stack([bw] * M, m_axis=-1)
+    bw = B.stack([bw] * M, axis=-1)
 
     return logarithmic.clogs_ensemble(
         obs,
