@@ -108,7 +108,7 @@ def crps_ensemble(
         "akr_circperm",
         "fair",
     ]:
-        fct = B.sort(fct, m_axis=-1)
+        fct = B.sort(fct, axis=-1)
 
     if backend == "numba":
         if estimator not in crps.estimator_gufuncs:
