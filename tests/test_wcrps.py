@@ -153,7 +153,7 @@ def test_owcrps_score_correctness(backend):
     )
 
     def w_func(x):
-        return (x > -1).astype(float)
+        return (x > -1) * 1.0
 
     res = np.mean(
         np.float64(sr.owcrps_ensemble(obs, fct, w_func=w_func, backend=backend))
@@ -164,7 +164,7 @@ def test_owcrps_score_correctness(backend):
     np.testing.assert_allclose(res, 0.09320807, rtol=1e-6)
 
     def w_func(x):
-        return (x < 1.85).astype(float)
+        return (x < 1.85) * 1.0
 
     res = np.mean(
         np.float64(sr.owcrps_ensemble(obs, fct, w_func=w_func, backend=backend))
@@ -279,7 +279,7 @@ def test_vrcrps_score_correctness(backend):
     )
 
     def w_func(x):
-        return (x > -1).astype(float)
+        return (x > -1) * 1.0
 
     res = np.mean(
         np.float64(sr.vrcrps_ensemble(obs, fct, w_func=w_func, backend=backend))
@@ -290,7 +290,7 @@ def test_vrcrps_score_correctness(backend):
     np.testing.assert_allclose(res, 0.1003983, rtol=1e-6)
 
     def w_func(x):
-        return (x < 1.85).astype(float)
+        return (x < 1.85) * 1.0
 
     res = np.mean(
         np.float64(sr.vrcrps_ensemble(obs, fct, w_func=w_func, backend=backend))
