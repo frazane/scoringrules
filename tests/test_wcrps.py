@@ -50,7 +50,21 @@ def test_twcrps_vs_crps(backend):
     fct = np.random.randn(N, M) * sigma[..., None] + mu[..., None]
 
     res = sr.crps_ensemble(obs, fct, backend=backend, estimator="nrg")
-    resw = sr.twcrps_ensemble(obs, fct, lambda x: x, estimator="nrg", backend=backend)
+
+    # no argument given
+    resw = sr.twcrps_ensemble(obs, fct, estimator="nrg", backend=backend)
+    np.testing.assert_allclose(res, resw, rtol=1e-10)
+
+    # a and b
+    resw = sr.twcrps_ensemble(
+        obs, fct, a=float("-inf"), b=float("inf"), estimator="nrg", backend=backend
+    )
+    np.testing.assert_allclose(res, resw, rtol=1e-10)
+
+    # v_func as identity function
+    resw = sr.twcrps_ensemble(
+        obs, fct, v_func=lambda x: x, estimator="nrg", backend=backend
+    )
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
 
@@ -160,7 +174,16 @@ def test_twcrps_score_correctness(backend):
 
     res = np.mean(
         np.float64(
-            sr.twcrps_ensemble(obs, fct, v_func, estimator="nrg", backend=backend)
+            sr.twcrps_ensemble(
+                obs, fct, v_func=v_func, estimator="nrg", backend=backend
+            )
+        )
+    )
+    np.testing.assert_allclose(res, 0.09489662, rtol=1e-6)
+
+    res = np.mean(
+        np.float64(
+            sr.twcrps_ensemble(obs, fct, a=-1.0, estimator="nrg", backend=backend)
         )
     )
     np.testing.assert_allclose(res, 0.09489662, rtol=1e-6)
@@ -170,7 +193,16 @@ def test_twcrps_score_correctness(backend):
 
     res = np.mean(
         np.float64(
-            sr.twcrps_ensemble(obs, fct, v_func, estimator="nrg", backend=backend)
+            sr.twcrps_ensemble(
+                obs, fct, v_func=v_func, estimator="nrg", backend=backend
+            )
+        )
+    )
+    np.testing.assert_allclose(res, 0.0994809, rtol=1e-6)
+
+    res = np.mean(
+        np.float64(
+            sr.twcrps_ensemble(obs, fct, b=1.85, estimator="nrg", backend=backend)
         )
     )
     np.testing.assert_allclose(res, 0.0994809, rtol=1e-6)

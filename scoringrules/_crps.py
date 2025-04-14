@@ -124,10 +124,12 @@ def crps_ensemble(
 def twcrps_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
+    a: "ArrayLike" = float("-inf"),
+    b: "ArrayLike" = float("inf"),
     m_axis: int = -1,
     *,
+    v_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     estimator: str = "pwm",
     sorted_ensemble: bool = False,
     backend: "Backend" = None,
@@ -152,12 +154,18 @@ def twcrps_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
+    a : array_like
+        The lower bound(s) to be used in the default weight function that restricts attention
+        to values in the range [a, b].
+    b : array_like
+        The upper bound(s) to be used in the default weight function that restricts attention
+        to values in the range [a, b].
+    m_axis : int
+        The axis corresponding to the ensemble. Default is the last axis.
     v_func : callable, array_like -> array_like
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold :math:`t` by projecting forecasts and observations
         to :math:`[t, \inf)`.
-    m_axis : int
-        The axis corresponding to the ensemble. Default is the last axis.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
@@ -193,9 +201,16 @@ def twcrps_ensemble(
     ...
     >>> obs = rng.normal(size=3)
     >>> fct = rng.normal(size=(3, 10))
-    >>> sr.twcrps_ensemble(obs, fct, v_func)
+    >>> sr.twcrps_ensemble(obs, fct, v_func=v_func)
     array([0.69605316, 0.32865417, 0.39048665])
     """
+    if v_func is None:
+        B = backends.active if backend is None else backends[backend]
+        a, b, obs, fct = map(B.asarray, (a, b, obs, fct))
+
+        def v_func(x):
+            return B.minimum(B.maximum(x, a), b)
+
     obs, fct = map(v_func, (obs, fct))
     return crps_ensemble(
         obs,
