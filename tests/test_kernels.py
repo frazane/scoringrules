@@ -26,11 +26,11 @@ def test_gksuv(estimator, backend):
     res = np.asarray(res)
     assert not np.any(res < 0.0)
 
-    # axis keyword
+    # m_axis keyword
     res = sr.gksuv_ensemble(
         obs,
         np.random.randn(ENSEMBLE_SIZE, N),
-        axis=0,
+        m_axis=0,
         estimator=estimator,
         backend=backend,
     )
@@ -241,12 +241,12 @@ def test_owgksuv(backend):
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    # axis keyword
+    # m_axis keyword
     res = sr.owgksuv_ensemble(
         obs,
         np.random.randn(ENSEMBLE_SIZE, N),
         lambda x: x * 0.0 + 1.0,
-        axis=0,
+        m_axis=0,
         backend=backend,
     )
     res = np.asarray(res)
@@ -340,12 +340,12 @@ def test_vrgksuv(backend):
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    # axis keyword
+    # m_axis keyword
     res = sr.vrgksuv_ensemble(
         obs,
         np.random.randn(ENSEMBLE_SIZE, N),
         lambda x: x * 0.0 + 1.0,
-        axis=0,
+        m_axis=0,
         backend=backend,
     )
     res = np.asarray(res)
