@@ -85,10 +85,12 @@ def gksuv_ensemble(
 def twgksuv_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
+    a: float = float("-inf"),
+    b: float = float("inf"),
     m_axis: int = -1,
     *,
+    v_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
@@ -116,12 +118,18 @@ def twgksuv_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
+    a : float
+        The lower bound to be used in the default weight function that restricts attention
+        to values in the range [a, b].
+    b : float
+        The upper bound to be used in the default weight function that restricts attention
+        to values in the range [a, b].
+    m_axis : int
+        The axis corresponding to the ensemble. Default is the last axis.
     v_func : callable, array_like -> array_like
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold :math:`t` by projecting forecasts and observations
         to :math:`[t, \inf)`.
-    m_axis : int
-        The axis corresponding to the ensemble. Default is the last axis.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -138,8 +146,15 @@ def twgksuv_ensemble(
     >>> def v_func(x):
     >>>    return np.maximum(x, -1.0)
     >>>
-    >>> sr.twgksuv_ensemble(obs, pred, v_func)
+    >>> sr.twgksuv_ensemble(obs, pred, v_func=v_func)
     """
+    if v_func is None:
+        B = backends.active if backend is None else backends[backend]
+        a, b, obs, fct = map(B.asarray, (a, b, obs, fct))
+
+        def v_func(x):
+            return B.minimum(B.maximum(x, a), b)
+
     obs, fct = map(v_func, (obs, fct))
     return gksuv_ensemble(
         obs,
@@ -153,10 +168,12 @@ def twgksuv_ensemble(
 def owgksuv_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
+    a: float = float("-inf"),
+    b: float = float("inf"),
     m_axis: int = -1,
     *,
+    w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the univariate Outcome-Weighted Gaussian Kernel Score (owGKS) for a finite ensemble.
@@ -184,10 +201,16 @@ def owgksuv_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    w_func : callable, array_like -> array_like
-        Weight function used to emphasise particular outcomes.
+    a : float
+        The lower bound to be used in the default weight function that restricts attention
+        to values in the range [a, b].
+    b : float
+        The upper bound to be used in the default weight function that restricts attention
+        to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    w_func : callable, array_like -> array_like
+        Weight function used to emphasise particular outcomes.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -204,33 +227,37 @@ def owgksuv_ensemble(
     >>> def w_func(x):
     >>>    return (x > -1).astype(float)
     >>>
-    >>> sr.owgksuv_ensemble(obs, pred, w_func)
+    >>> sr.owgksuv_ensemble(obs, pred, w_func=w_func)
     """
     B = backends.active if backend is None else backends[backend]
-
     obs, fct = map(B.asarray, (obs, fct))
 
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
 
+    if w_func is None:
+
+        def w_func(x):
+            return ((a < x) & (x < b)) * 1.0
+
     obs_weights, fct_weights = map(w_func, (obs, fct))
+    obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
 
     if backend == "numba":
         return kernels.estimator_gufuncs["ow"](obs, fct, obs_weights, fct_weights)
 
-    obs, fct, obs_weights, fct_weights = map(
-        B.asarray, (obs, fct, obs_weights, fct_weights)
-    )
     return kernels.ow_ensemble_uv(obs, fct, obs_weights, fct_weights, backend=backend)
 
 
 def vrgksuv_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
+    a: float = float("-inf"),
+    b: float = float("inf"),
     m_axis: int = -1,
     *,
+    w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the Vertically Re-scaled Gaussian Kernel Score (vrGKS) for a finite ensemble.
@@ -257,10 +284,16 @@ def vrgksuv_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    w_func : callable, array_like -> array_like
-        Weight function used to emphasise particular outcomes.
+    a : float
+        The lower bound to be used in the default weight function that restricts attention
+        to values in the range [a, b].
+    b : float
+        The upper bound to be used in the default weight function that restricts attention
+        to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    w_func : callable, array_like -> array_like
+        Weight function used to emphasise particular outcomes.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -277,23 +310,25 @@ def vrgksuv_ensemble(
     >>> def w_func(x):
     >>>    return (x > -1).astype(float)
     >>>
-    >>> sr.vrgksuv_ensemble(obs, pred, w_func)
+    >>> sr.vrgksuv_ensemble(obs, pred, w_func=w_func)
     """
     B = backends.active if backend is None else backends[backend]
-
     obs, fct = map(B.asarray, (obs, fct))
 
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
 
+    if w_func is None:
+
+        def w_func(x):
+            return ((a < x) & (x < b)) * 1.0
+
     obs_weights, fct_weights = map(w_func, (obs, fct))
+    obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
 
     if backend == "numba":
         return kernels.estimator_gufuncs["vr"](obs, fct, obs_weights, fct_weights)
 
-    obs, fct, obs_weights, fct_weights = map(
-        B.asarray, (obs, fct, obs_weights, fct_weights)
-    )
     return kernels.vr_ensemble_uv(obs, fct, obs_weights, fct_weights, backend=backend)
 
 

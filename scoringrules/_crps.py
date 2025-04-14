@@ -306,6 +306,7 @@ def owcrps_ensemble(
     """
 
     B = backends.active if backend is None else backends[backend]
+    obs, fct = map(B.asarray, (obs, fct))
 
     if estimator != "nrg":
         raise ValueError(
@@ -318,18 +319,16 @@ def owcrps_ensemble(
     if w_func is None:
 
         def w_func(x):
-            return ((a < x) & (x < b)).astype(float)
+            return ((a < x) & (x < b)) * 1.0
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
+    obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
 
     if backend == "numba":
         return crps.estimator_gufuncs["ow" + estimator](
             obs, fct, obs_weights, fct_weights
         )
 
-    obs, fct, obs_weights, fct_weights = map(
-        B.asarray, (obs, fct, obs_weights, fct_weights)
-    )
     return crps.ow_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
 
 
@@ -414,6 +413,7 @@ def vrcrps_ensemble(
     array([0.90036433, 0.41515255, 0.41653833])
     """
     B = backends.active if backend is None else backends[backend]
+    obs, fct = map(B.asarray, (obs, fct))
 
     if estimator != "nrg":
         raise ValueError(
@@ -429,15 +429,13 @@ def vrcrps_ensemble(
             return ((a < x) & (x < b)).astype(float)
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
+    obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
 
     if backend == "numba":
         return crps.estimator_gufuncs["vr" + estimator](
             obs, fct, obs_weights, fct_weights
         )
 
-    obs, fct, obs_weights, fct_weights = map(
-        B.asarray, (obs, fct, obs_weights, fct_weights)
-    )
     return crps.vr_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
 
 

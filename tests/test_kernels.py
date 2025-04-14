@@ -121,9 +121,21 @@ def test_twgksuv(estimator, backend):
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+    res = sr.gksuv_ensemble(obs, fct, backend=backend, estimator=estimator)
+
+    # no argument given
+    resw = sr.twgksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+    np.testing.assert_allclose(res, resw, rtol=1e-10)
+
+    # a and b
     resw = sr.twgksuv_ensemble(
-        obs, fct, lambda x: x, estimator=estimator, backend=backend
+        obs, fct, a=float("-inf"), b=float("inf"), estimator=estimator, backend=backend
+    )
+    np.testing.assert_allclose(res, resw, rtol=1e-10)
+
+    # v_func as identity function
+    resw = sr.twgksuv_ensemble(
+        obs, fct, v_func=lambda x: x, estimator=estimator, backend=backend
     )
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
@@ -168,7 +180,7 @@ def test_twgksuv(estimator, backend):
         res = np.mean(
             np.float64(
                 sr.twgksuv_ensemble(
-                    obs, fct, v_func1, estimator=estimator, backend=backend
+                    obs, fct, v_func=v_func1, estimator=estimator, backend=backend
                 )
             )
         )
@@ -177,7 +189,25 @@ def test_twgksuv(estimator, backend):
         res = np.mean(
             np.float64(
                 sr.twgksuv_ensemble(
-                    obs, fct, v_func2, estimator=estimator, backend=backend
+                    obs, fct, a=-1.0, estimator=estimator, backend=backend
+                )
+            )
+        )
+        np.testing.assert_allclose(res, 0.01018774, rtol=1e-6)
+
+        res = np.mean(
+            np.float64(
+                sr.twgksuv_ensemble(
+                    obs, fct, v_func=v_func2, estimator=estimator, backend=backend
+                )
+            )
+        )
+        np.testing.assert_allclose(res, 0.0089314, rtol=1e-6)
+
+        res = np.mean(
+            np.float64(
+                sr.twgksuv_ensemble(
+                    obs, fct, b=1.85, estimator=estimator, backend=backend
                 )
             )
         )
@@ -187,7 +217,7 @@ def test_twgksuv(estimator, backend):
         res = np.mean(
             np.float64(
                 sr.twgksuv_ensemble(
-                    obs, fct, v_func1, estimator=estimator, backend=backend
+                    obs, fct, v_func=v_func1, estimator=estimator, backend=backend
                 )
             )
         )
@@ -196,7 +226,25 @@ def test_twgksuv(estimator, backend):
         res = np.mean(
             np.float64(
                 sr.twgksuv_ensemble(
-                    obs, fct, v_func2, estimator=estimator, backend=backend
+                    obs, fct, a=-1.0, estimator=estimator, backend=backend
+                )
+            )
+        )
+        np.testing.assert_allclose(res, 0.130842, rtol=1e-6)
+
+        res = np.mean(
+            np.float64(
+                sr.twgksuv_ensemble(
+                    obs, fct, v_func=v_func2, estimator=estimator, backend=backend
+                )
+            )
+        )
+        np.testing.assert_allclose(res, 0.1283745, rtol=1e-6)
+
+        res = np.mean(
+            np.float64(
+                sr.twgksuv_ensemble(
+                    obs, fct, b=1.85, estimator=estimator, backend=backend
                 )
             )
         )
@@ -245,16 +293,30 @@ def test_owgksuv(backend):
     res = sr.owgksuv_ensemble(
         obs,
         np.random.randn(ENSEMBLE_SIZE, N),
-        lambda x: x * 0.0 + 1.0,
+        w_func=lambda x: x * 0.0 + 1.0,
         m_axis=0,
         backend=backend,
     )
     res = np.asarray(res)
     assert not np.any(res < 0.0)
 
-    res = sr.gksuv_ensemble(obs, fct, backend=backend)
-    resw = sr.owgksuv_ensemble(obs, fct, lambda x: x * 0.0 + 1.0, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-6)
+    res = sr.gksuv_ensemble(obs, fct, backend=backend, estimator="nrg")
+
+    # no argument given
+    resw = sr.owgksuv_ensemble(obs, fct, backend=backend)
+    np.testing.assert_allclose(res, resw, rtol=1e-4)
+
+    # a and b
+    resw = sr.owgksuv_ensemble(
+        obs, fct, a=float("-inf"), b=float("inf"), backend=backend
+    )
+    np.testing.assert_allclose(res, resw, rtol=1e-4)
+
+    # w_func as identity function
+    resw = sr.owgksuv_ensemble(
+        obs, fct, w_func=lambda x: x * 0.0 + 1.0, backend=backend
+    )
+    np.testing.assert_allclose(res, resw, rtol=1e-4)
 
     # test correctness
     fct = np.array(
@@ -290,13 +352,23 @@ def test_owgksuv(backend):
     def w_func(x):
         return (x > -1) * 1.0
 
-    res = np.mean(np.float64(sr.owgksuv_ensemble(obs, fct, w_func, backend=backend)))
+    res = np.mean(
+        np.float64(sr.owgksuv_ensemble(obs, fct, w_func=w_func, backend=backend))
+    )
+    np.testing.assert_allclose(res, 0.01036335, rtol=1e-5)
+
+    res = np.mean(np.float64(sr.owgksuv_ensemble(obs, fct, a=-1.0, backend=backend)))
     np.testing.assert_allclose(res, 0.01036335, rtol=1e-5)
 
     def w_func(x):
         return (x < 1.85) * 1.0
 
-    res = np.mean(np.float64(sr.owgksuv_ensemble(obs, fct, w_func, backend=backend)))
+    res = np.mean(
+        np.float64(sr.owgksuv_ensemble(obs, fct, w_func=w_func, backend=backend))
+    )
+    np.testing.assert_allclose(res, 0.008905213, rtol=1e-5)
+
+    res = np.mean(np.float64(sr.owgksuv_ensemble(obs, fct, b=1.85, backend=backend)))
     np.testing.assert_allclose(res, 0.008905213, rtol=1e-5)
 
 
@@ -344,16 +416,30 @@ def test_vrgksuv(backend):
     res = sr.vrgksuv_ensemble(
         obs,
         np.random.randn(ENSEMBLE_SIZE, N),
-        lambda x: x * 0.0 + 1.0,
+        w_func=lambda x: x * 0.0 + 1.0,
         m_axis=0,
         backend=backend,
     )
     res = np.asarray(res)
     assert not np.any(res < 0.0)
 
-    res = sr.gksuv_ensemble(obs, fct, backend=backend)
-    resw = sr.vrgksuv_ensemble(obs, fct, lambda x: x * 0.0 + 1.0, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-10)
+    res = sr.gksuv_ensemble(obs, fct, backend=backend, estimator="nrg")
+
+    # no argument given
+    resw = sr.vrgksuv_ensemble(obs, fct, backend=backend)
+    np.testing.assert_allclose(res, resw, rtol=1e-5)
+
+    # a and b
+    resw = sr.vrgksuv_ensemble(
+        obs, fct, a=float("-inf"), b=float("inf"), backend=backend
+    )
+    np.testing.assert_allclose(res, resw, rtol=1e-5)
+
+    # w_func as identity function
+    resw = sr.vrgksuv_ensemble(
+        obs, fct, w_func=lambda x: x * 0.0 + 1.0, backend=backend
+    )
+    np.testing.assert_allclose(res, resw, rtol=1e-5)
 
     # test correctness
     fct = np.array(
@@ -389,13 +475,23 @@ def test_vrgksuv(backend):
     def w_func(x):
         return (x > -1) * 1.0
 
-    res = np.mean(np.float64(sr.vrgksuv_ensemble(obs, fct, w_func, backend=backend)))
+    res = np.mean(
+        np.float64(sr.vrgksuv_ensemble(obs, fct, w_func=w_func, backend=backend))
+    )
+    np.testing.assert_allclose(res, 0.01476682, rtol=1e-6)
+
+    res = np.mean(np.float64(sr.vrgksuv_ensemble(obs, fct, a=-1.0, backend=backend)))
     np.testing.assert_allclose(res, 0.01476682, rtol=1e-6)
 
     def w_func(x):
         return (x < 1.85) * 1.0
 
-    res = np.mean(np.float64(sr.vrgksuv_ensemble(obs, fct, w_func, backend=backend)))
+    res = np.mean(
+        np.float64(sr.vrgksuv_ensemble(obs, fct, w_func=w_func, backend=backend))
+    )
+    np.testing.assert_allclose(res, 0.04011836, rtol=1e-6)
+
+    res = np.mean(np.float64(sr.vrgksuv_ensemble(obs, fct, b=1.85, backend=backend)))
     np.testing.assert_allclose(res, 0.04011836, rtol=1e-6)
 
 
