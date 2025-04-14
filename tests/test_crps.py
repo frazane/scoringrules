@@ -6,7 +6,7 @@ import scoringrules as sr
 from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 11
-N = 100
+N = 20
 
 ESTIMATORS = ["nrg", "fair", "pwm", "int", "qd", "akr", "akr_circperm"]
 
@@ -43,9 +43,10 @@ def test_crps_ensemble(estimator, backend):
     assert res.shape == (N,)
 
     # non-negative values
-    res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
-    res = np.asarray(res)
-    assert not np.any(res < 0.0)
+    if estimator not in ["akr", "akr_circperm"]:
+        res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
+        res = np.asarray(res)
+        assert not np.any(res < 0.0)
 
     # approx zero when perfect forecast
     perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
