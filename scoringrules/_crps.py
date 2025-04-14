@@ -336,10 +336,12 @@ def owcrps_ensemble(
 def vrcrps_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
+    a: float = float("-inf"),
+    b: float = float("inf"),
     m_axis: int = -1,
     *,
+    w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     estimator: tp.Literal["nrg"] = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
@@ -367,10 +369,16 @@ def vrcrps_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
-    w_func : callable, array_like -> array_like
-        Weight function used to emphasise particular outcomes.
+    a : float
+        The lower bound to be used in the default weight function that restricts attention
+        to values in the range [a, b].
+    b : float
+        The upper bound to be used in the default weight function that restricts attention
+        to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    w_func : callable, array_like -> array_like
+        Weight function used to emphasise particular outcomes.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
@@ -414,6 +422,11 @@ def vrcrps_ensemble(
         )
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
+
+    if w_func is None:
+
+        def w_func(x):
+            return ((a < x) & (x < b)).astype(float)
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
 
