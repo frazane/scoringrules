@@ -8,7 +8,7 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, Backend
 
 
-def variogram_score(
+def vs_ensemble(
     obs: "Array",
     fct: "Array",
     /,
@@ -47,7 +47,7 @@ def variogram_score(
 
     Returns
     -------
-    variogram_score : array_like
+    vs_ensemble : array_like
         The computed Variogram Score.
 
     References
@@ -63,7 +63,7 @@ def variogram_score(
     >>> rng = np.random.default_rng(123)
     >>> obs = rng.normal(size=(3, 5))
     >>> fct = rng.normal(size=(3, 10, 5))
-    >>> sr.variogram_score(obs, fct)
+    >>> sr.vs_ensemble(obs, fct)
     array([ 8.65630139,  6.84693866, 19.52993307])
     """
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
@@ -74,7 +74,7 @@ def variogram_score(
     return variogram.vs(obs, fct, p, backend=backend)
 
 
-def twvariogram_score(
+def twvs_ensemble(
     obs: "Array",
     fct: "Array",
     v_func: tp.Callable,
@@ -116,7 +116,7 @@ def twvariogram_score(
 
     Returns
     -------
-    twvariogram_score : array_like
+    twvs_ensemble : array_like
         The computed Threshold-Weighted Variogram Score.
 
     References
@@ -133,14 +133,14 @@ def twvariogram_score(
     >>> rng = np.random.default_rng(123)
     >>> obs = rng.normal(size=(3, 5))
     >>> fct = rng.normal(size=(3, 10, 5))
-    >>> sr.twvariogram_score(obs, fct, lambda x: np.maximum(x, -0.2))
+    >>> sr.twvs_ensemble(obs, fct, lambda x: np.maximum(x, -0.2))
     array([5.94996894, 4.72029765, 6.08947229])
     """
     obs, fct = map(v_func, (obs, fct))
-    return variogram_score(obs, fct, m_axis, v_axis, p=p, backend=backend)
+    return vs_ensemble(obs, fct, m_axis, v_axis, p=p, backend=backend)
 
 
-def owvariogram_score(
+def owvs_ensemble(
     obs: "Array",
     fct: "Array",
     w_func: tp.Callable,
@@ -187,7 +187,7 @@ def owvariogram_score(
 
     Returns
     -------
-    owvariogram_score : array_like
+    owvs_ensemble : array_like
         The computed Outcome-Weighted Variogram Score.
 
     Examples
@@ -197,7 +197,7 @@ def owvariogram_score(
     >>> rng = np.random.default_rng(123)
     >>> obs = rng.normal(size=(3, 5))
     >>> fct = rng.normal(size=(3, 10, 5))
-    >>> sr.owvariogram_score(obs, fct, lambda x: x.mean() + 1.0)
+    >>> sr.owvs_ensemble(obs, fct, lambda x: x.mean() + 1.0)
     array([ 9.86816636,  6.75532522, 19.59353723])
     """
     B = backends.active if backend is None else backends[backend]
@@ -215,7 +215,7 @@ def owvariogram_score(
     return variogram.owvs(obs, fct, obs_weights, fct_weights, p=p, backend=backend)
 
 
-def vrvariogram_score(
+def vrvs_ensemble(
     obs: "Array",
     fct: "Array",
     w_func: tp.Callable,
@@ -264,7 +264,7 @@ def vrvariogram_score(
 
     Returns
     -------
-    vrvariogram_score : array_like
+    vrvs_ensemble : array_like
         The computed Vertically Re-scaled Variogram Score.
 
     Examples
@@ -274,7 +274,7 @@ def vrvariogram_score(
     >>> rng = np.random.default_rng(123)
     >>> obs = rng.normal(size=(3, 5))
     >>> fct = rng.normal(size=(3, 10, 5))
-    >>> sr.vrvariogram_score(obs, fct, lambda x: x.max() + 1.0)
+    >>> sr.vrvs_ensemble(obs, fct, lambda x: x.max() + 1.0)
     array([46.48256493, 57.90759816, 92.37153472])
     """
     B = backends.active if backend is None else backends[backend]

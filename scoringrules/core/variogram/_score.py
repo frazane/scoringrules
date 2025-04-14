@@ -6,7 +6,7 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, Backend
 
 
-def variogram_score(
+def vs_ensemble(
     obs: "Array",  # (... D)
     fct: "Array",  # (... M D)
     p: float = 1,
@@ -22,7 +22,7 @@ def variogram_score(
     return B.sum((vobs - vfct) ** 2, axis=(-2, -1))  # (...)
 
 
-def owvariogram_score(
+def owvs_ensemble(
     obs: "Array",
     fct: "Array",
     ow: "Array",
@@ -57,7 +57,7 @@ def owvariogram_score(
     return E_1 - 0.5 * E_2
 
 
-def vrvariogram_score(
+def vrvs_ensemble(
     obs: "Array",
     fct: "Array",
     ow: "Array",

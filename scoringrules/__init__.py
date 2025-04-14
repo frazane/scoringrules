@@ -80,10 +80,10 @@ from scoringrules._logs import (
     clogs_ensemble,
 )
 from scoringrules._variogram import (
-    owvariogram_score,
-    twvariogram_score,
-    variogram_score,
-    vrvariogram_score,
+    owvs_ensemble,
+    twvs_ensemble,
+    vs_ensemble,
+    vrvs_ensemble,
 )
 from scoringrules._kernels import (
     gksuv_ensemble,
@@ -176,10 +176,10 @@ __all__ = [
     "owes_ensemble",
     "twes_ensemble",
     "vres_ensemble",
-    "variogram_score",
-    "owvariogram_score",
-    "twvariogram_score",
-    "vrvariogram_score",
+    "vs_ensemble",
+    "owvs_ensemble",
+    "twvs_ensemble",
+    "vrvs_ensemble",
     "gksuv_ensemble",
     "twgksuv_ensemble",
     "owgksuv_ensemble",
