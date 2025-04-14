@@ -17,10 +17,10 @@ def test_owcrps_ensemble(backend):
 
     # test shapes
     obs = np.random.randn(N)
-    res = sr.owcrps_ensemble(obs, np.random.randn(N, M), lambda x: x * 0.0 + 1.0)
+    res = sr.owcrps_ensemble(obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0)
     assert res.shape == (N,)
     res = sr.owcrps_ensemble(
-        obs, np.random.randn(M, N), lambda x: x * 0.0 + 1.0, m_axis=0
+        obs, np.random.randn(M, N), w_func=lambda x: x * 0.0 + 1.0, m_axis=0
     )
     assert res.shape == (N,)
 
@@ -76,7 +76,21 @@ def test_owcrps_vs_crps(backend):
     fct = np.random.randn(N, M) * sigma[..., None] + mu[..., None]
 
     res = sr.crps_ensemble(obs, fct, backend=backend, estimator="nrg")
-    resw = sr.owcrps_ensemble(obs, fct, lambda x: x * 0.0 + 1.0, backend=backend)
+
+    # no argument given
+    resw = sr.owcrps_ensemble(obs, fct, estimator="nrg", backend=backend)
+    np.testing.assert_allclose(res, resw, rtol=1e-5)
+
+    # a and b
+    resw = sr.owcrps_ensemble(
+        obs, fct, a=float("-inf"), b=float("inf"), estimator="nrg", backend=backend
+    )
+    np.testing.assert_allclose(res, resw, rtol=1e-5)
+
+    # w_func as identity function
+    resw = sr.owcrps_ensemble(
+        obs, fct, w_func=lambda x: x * 0.0 + 1.0, estimator="nrg", backend=backend
+    )
     np.testing.assert_allclose(res, resw, rtol=1e-5)
 
 
@@ -127,13 +141,23 @@ def test_owcrps_score_correctness(backend):
     def w_func(x):
         return (x > -1).astype(float)
 
-    res = np.mean(np.float64(sr.owcrps_ensemble(obs, fct, w_func, backend=backend)))
+    res = np.mean(
+        np.float64(sr.owcrps_ensemble(obs, fct, w_func=w_func, backend=backend))
+    )
+    np.testing.assert_allclose(res, 0.09320807, rtol=1e-6)
+
+    res = np.mean(np.float64(sr.owcrps_ensemble(obs, fct, a=-1.0, backend=backend)))
     np.testing.assert_allclose(res, 0.09320807, rtol=1e-6)
 
     def w_func(x):
         return (x < 1.85).astype(float)
 
-    res = np.mean(np.float64(sr.owcrps_ensemble(obs, fct, w_func, backend=backend)))
+    res = np.mean(
+        np.float64(sr.owcrps_ensemble(obs, fct, w_func=w_func, backend=backend))
+    )
+    np.testing.assert_allclose(res, 0.09933139, rtol=1e-6)
+
+    res = np.mean(np.float64(sr.owcrps_ensemble(obs, fct, b=1.85, backend=backend)))
     np.testing.assert_allclose(res, 0.09933139, rtol=1e-6)
 
 
