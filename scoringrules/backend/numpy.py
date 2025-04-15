@@ -198,6 +198,17 @@ class NumpyBackend(ArrayBackend):
         out = np.sort(x, axis=axis)
         return -out if descending else out
 
+    def argsort(
+        self,
+        x: "NDArray",
+        /,
+        *,
+        axis: int = -1,
+        descending: bool = False,
+    ) -> "NDArray":
+        x = -x if descending else x
+        return np.argsort(x, axis=axis)
+
     def norm(
         self, x: "NDArray", axis: int | tuple[int, ...] | None = None
     ) -> "NDArray":

@@ -202,6 +202,17 @@ class ArrayBackend(abc.ABC):
         """Test whether any input array element evaluates to ``True`` along a specified axis."""
 
     @abc.abstractmethod
+    def argsort(
+        self,
+        x: "Array",
+        /,
+        *,
+        axis: int = -1,
+        descending: bool = False,
+    ) -> "Array":
+        """Return the indices of a sorted copy of an input array ``x``."""
+
+    @abc.abstractmethod
     def sort(
         self,
         x: "Array",

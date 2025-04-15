@@ -225,6 +225,17 @@ class TensorflowBackend(ArrayBackend):
         direction = "DESCENDING" if descending else "ASCENDING"
         return tf.sort(x, axis=axis, direction=direction)
 
+    def argsort(
+        self,
+        x: "Tensor",
+        /,
+        *,
+        axis: int = -1,
+        descending: bool = False,
+    ) -> "Tensor":
+        direction = "DESCENDING" if descending else "ASCENDING"
+        return tf.argsort(x, axis=axis, direction=direction)
+
     def norm(self, x: "Tensor", axis: int | tuple[int, ...] | None = None) -> "Tensor":
         return tf.norm(x, axis=axis)
 
