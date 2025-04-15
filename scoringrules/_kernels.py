@@ -238,7 +238,7 @@ def owgksuv_ensemble(
     if w_func is None:
 
         def w_func(x):
-            return ((a < x) & (x < b)) * 1.0
+            return ((a <= x) & (x <= b)) * 1.0
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
     obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
@@ -321,7 +321,7 @@ def vrgksuv_ensemble(
     if w_func is None:
 
         def w_func(x):
-            return ((a < x) & (x < b)) * 1.0
+            return ((a <= x) & (x <= b)) * 1.0
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
     obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
