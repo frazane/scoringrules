@@ -276,6 +276,9 @@ class NumpyBackend(ArrayBackend):
     def indices(self, dimensions: tuple) -> "NDArray":
         return np.indices(dimensions)
 
+    def gather(self, x: "NDArray", ind: "NDArray", axis: int) -> "NDArray":
+        return np.take_along_axis(x, ind, axis=axis)
+
 
 class NumbaBackend(NumpyBackend):
     """Numba backend."""

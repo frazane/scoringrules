@@ -27,7 +27,10 @@ def ensemble(
     elif estimator == "akr_circperm":
         out = _crps_ensemble_akr_circperm(obs, fct, ens_w, backend=backend)
     else:
-        raise ValueError(f"{estimator} is not an available estimator")
+        raise ValueError(
+            f"{estimator} can only be used with `numpy` "
+            "backend and needs `numba` to be installed"
+        )
 
     return out
 
@@ -128,7 +131,7 @@ def ow_ensemble(
 ) -> "Array":
     """Outcome-Weighted CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
-    wbar = B.mean(ens_w * fw, axis=-1)
+    wbar = B.sum(ens_w * fw, axis=-1)
     e_1 = B.sum(ens_w * B.abs(obs[..., None] - fct) * fw, axis=-1) * ow / wbar
     e_2 = B.sum(
         ens_w[..., None]
@@ -161,6 +164,6 @@ def vr_ensemble(
         * fw[..., None, :],
         axis=(-1, -2),
     )
-    e_3 = B.mean(ens_w * B.abs(fct) * fw, axis=-1) - B.abs(obs) * ow
-    e_3 *= B.mean(ens_w * fw, axis=1) - ow
+    e_3 = B.sum(ens_w * B.abs(fct) * fw, axis=-1) - B.abs(obs) * ow
+    e_3 *= B.sum(ens_w * fw, axis=1) - ow
     return e_1 - 0.5 * e_2 + e_3

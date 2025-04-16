@@ -112,13 +112,13 @@ def crps_ensemble(
         M = fct.shape[-1]
         ens_w = B.zeros(fct.shape) + 1.0 / M
     else:
-        ens_w = map(B.asarray, ens_w)
+        ens_w = B.asarray(ens_w)
         ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
         if m_axis != -1:
-            ens_w = B.moveaxis(ens_w, -1, -1)
+            ens_w = B.moveaxis(ens_w, m_axis, -1)
         if sort_ensemble:
             ind = B.argsort(fct, axis=-1)
-            ens_w = ens_w[ind]
+            ens_w = B.gather(ens_w, ind, axis=-1)
 
     if sort_ensemble:
         fct = B.sort(fct, axis=-1)
@@ -333,7 +333,7 @@ def owcrps_ensemble(
         M = fct.shape[m_axis]
         ens_w = B.zeros(fct.shape) + 1.0 / M
     else:
-        ens_w = map(B.asarray, ens_w)
+        ens_w = B.asarray(ens_w)
         ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
 
     if m_axis != -1:
@@ -446,7 +446,7 @@ def vrcrps_ensemble(
         M = fct.shape[m_axis]
         ens_w = B.zeros(fct.shape) + 1.0 / M
     else:
-        ens_w = map(B.asarray, ens_w)
+        ens_w = B.asarray(ens_w)
         ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
 
     if m_axis != -1:

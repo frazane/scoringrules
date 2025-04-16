@@ -21,7 +21,7 @@ def test_crps_ensemble(estimator, backend):
 
     # test exceptions
     if backend in ["numpy", "jax", "torch", "tensorflow"]:
-        if estimator not in ["nrg", "fair", "pwm"]:
+        if estimator == "int":
             with pytest.raises(ValueError):
                 sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
             return
@@ -43,7 +43,7 @@ def test_crps_ensemble(estimator, backend):
     assert res.shape == (N,)
 
     # non-negative values
-    if estimator not in ["akr", "akr_circperm"]:
+    if estimator not in ["akr", "akr_circperm", "int"]:
         res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
         res = np.asarray(res)
         assert not np.any(res < 0.0)
@@ -53,6 +53,58 @@ def test_crps_ensemble(estimator, backend):
     res = sr.crps_ensemble(obs, perfect_fct, estimator=estimator, backend=backend)
     res = np.asarray(res)
     assert not np.any(res - 0.0 > 0.0001)
+
+    # test equivalence of different estimators
+    res_nrg = sr.crps_ensemble(obs, fct, estimator="nrg", backend=backend)
+    res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm", backend=backend)
+    res_qd = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
+    assert np.allclose(res_nrg, res_pwm)
+    assert np.allclose(res_nrg, res_qd)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_crps_ensemble_corr(backend):
+    obs = np.random.randn(N)
+    mu = obs + np.random.randn(N) * 0.3
+    sigma = abs(np.random.randn(N)) * 0.5
+    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+
+    # test equivalence of different estimators
+    res_nrg = sr.crps_ensemble(obs, fct, estimator="nrg", backend=backend)
+    res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm", backend=backend)
+    res_qd = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
+    assert np.allclose(res_nrg, res_pwm)
+    assert np.allclose(res_nrg, res_qd)
+
+    w = np.abs(np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None])
+    res_nrg = sr.crps_ensemble(obs, fct, ens_w=w, estimator="nrg", backend=backend)
+    res_pwm = sr.crps_ensemble(obs, fct, ens_w=w, estimator="pwm", backend=backend)
+    res_qd = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd", backend=backend)
+    assert np.allclose(res_nrg, res_pwm)
+    assert np.allclose(res_nrg, res_qd)
+
+    # test correctness
+    obs = -0.6042506
+    fct = np.array(
+        [
+            1.7812118,
+            0.5863797,
+            0.7038174,
+            -0.7743998,
+            -0.2751647,
+            1.1863249,
+            1.2990966,
+            -0.3242982,
+            -0.5968781,
+            0.9064937,
+        ]
+    )
+    res = sr.crps_ensemble(obs, fct)
+    assert np.isclose(res, 0.6126602)
+
+    w = np.arange(10)
+    res = sr.crps_ensemble(obs, fct, ens_w=w)
+    assert np.isclose(res, 0.4923673)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

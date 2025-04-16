@@ -308,3 +308,7 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def indices(self, x: "Array") -> int:
         """Return an array representing the indices of a grid."""
+
+    @abc.abstractmethod
+    def gather(self, x: "Array", ind: "Array", axis: int) -> "Array":
+        """Reorder an array ``x`` depending on a template ``ind`` across an axis ``axis``."""

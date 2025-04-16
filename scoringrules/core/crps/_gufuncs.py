@@ -165,8 +165,8 @@ def _crps_ensemble_fair_gufunc(
 
 @guvectorize(
     [
-        "void(float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:])",
+        "void(float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:])",
     ],
     "(),(n),(n)->()",
 )
@@ -271,15 +271,15 @@ def _owcrps_ensemble_nrg_gufunc(
         for j in range(i + 1, M):
             e_2 += 2 * ens_w[i] * ens_w[j] * abs(fct[i] - fct[j]) * fw[i] * fw[j] * ow
 
-    wbar = np.mean(ens_w * fw)
+    wbar = np.sum(ens_w * fw)
 
     out[0] = e_1 / wbar - 0.5 * e_2 / (wbar**2)
 
 
 @guvectorize(
     [
-        "void(float32[:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:], float64[:])",
+        "void(float32[:], float32[:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:], float64[:], float64[:])",
     ],
     "(),(n),(),(n),(n)->()",
 )
@@ -308,8 +308,8 @@ def _vrcrps_ensemble_nrg_gufunc(
         for j in range(i + 1, M):
             e_2 += 2 * ens_w[i] * ens_w[j] * abs(fct[i] - fct[j]) * fw[i] * fw[j]
 
-    wbar = np.mean(ens_w * fw)
-    wabs_x = np.mean(ens_w * np.abs(fct) * fw)
+    wbar = np.sum(ens_w * fw)
+    wabs_x = np.sum(ens_w * np.abs(fct) * fw)
     wabs_y = abs(obs) * ow
 
     out[0] = e_1 - 0.5 * e_2 + (wabs_x - wabs_y) * (wbar - ow)

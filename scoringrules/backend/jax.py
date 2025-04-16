@@ -279,6 +279,9 @@ class JaxBackend(ArrayBackend):
     def indices(self, dimensions: tuple) -> "Array":
         return jnp.indices(dimensions)
 
+    def gather(self, x: "Array", ind: "Array", axis: int) -> "Array":
+        return jnp.take_along_axis(x, ind, axis=axis)
+
 
 if __name__ == "__main__":
     B = JaxBackend()

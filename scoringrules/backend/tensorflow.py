@@ -315,6 +315,10 @@ class TensorflowBackend(ArrayBackend):
         indices = tf.stack(index_grids)
         return indices
 
+    def gather(self, x: "Tensor", ind: "Tensor", axis: int) -> "Tensor":
+        d = len(x.shape)
+        return tf.gather(x, ind, axis=axis, batch_dims=d)
+
 
 if __name__ == "__main__":
     B = TensorflowBackend()
