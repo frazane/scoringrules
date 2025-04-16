@@ -20,13 +20,14 @@ def ensemble(
         out = _crps_ensemble_pwm(obs, fct, w, backend=backend)
     elif estimator == "fair":
         out = _crps_ensemble_fair(obs, fct, w, backend=backend)
-    elif estimator == "fair":
+    elif estimator == "qd":
         out = _crps_ensemble_qd(obs, fct, w, backend=backend)
+    elif estimator == "akr":
+        out = _crps_ensemble_akr(obs, fct, w, backend=backend)
+    elif estimator == "akr_circperm":
+        out = _crps_ensemble_akr_circperm(obs, fct, w, backend=backend)
     else:
-        raise ValueError(
-            f"{estimator} can only be used with `numpy` "
-            "backend and needs `numba` to be installed"
-        )
+        raise ValueError(f"{estimator} is not an available estimator")
 
     return out
 
@@ -80,6 +81,31 @@ def _crps_ensemble_qd(
     c = B.where(dif > 0, 1 - a, -a)
     s = B.sum(w * c * dif, axis=-1)
     return 2 * s
+
+
+def _crps_ensemble_akr(
+    obs: "Array", fct: "Array", w: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS estimator based on the approximate kernel representation."""
+    B = backends.active if backend is None else backends[backend]
+    M = fct.shape[-1]
+    e_1 = B.sum(B.abs(obs[..., None] - fct) * w, axis=-1)
+    ind = [(i + 1) % M for i in range(M)]
+    e_2 = B.sum(B.abs(fct[..., ind] - fct) * w[..., ind], axis=-1)
+    return e_1 - 0.5 * e_2
+
+
+def _crps_ensemble_akr_circperm(
+    obs: "Array", fct: "Array", w: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS estimator based on the AKR with cyclic permutation."""
+    B = backends.active if backend is None else backends[backend]
+    M = fct.shape[-1]
+    e_1 = B.sum(B.abs(obs[..., None] - fct) * w, axis=-1)
+    shift = int((M - 1) / 2)
+    ind = [(i + shift) % M for i in range(M)]
+    e_2 = B.sum(B.abs(fct[..., ind] - fct) * w[..., ind], axis=-1)
+    return e_1 - 0.5 * e_2
 
 
 def quantile_pinball(
