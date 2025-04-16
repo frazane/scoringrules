@@ -13,7 +13,7 @@ def crps_ensemble(
     /,
     m_axis: int = -1,
     *,
-    w: "Array" = None,
+    ens_w: "Array" = None,
     sorted_ensemble: bool = False,
     estimator: str = "pwm",
     backend: "Backend" = None,
@@ -51,7 +51,7 @@ def crps_ensemble(
         represented by the last axis.
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
-    w : array, shape (..., m)
+    ens_w : array, shape (..., m)
         Weights assigned to the ensemble members. Array with the same shape as fct.
         Default is equal weighting.
     sorted_ensemble : bool
@@ -108,16 +108,17 @@ def crps_ensemble(
 
     sort_ensemble = not sorted_ensemble and estimator in ["qd", "pwm"]
 
-    if w is None:
+    if ens_w is None:
         M = fct.shape[-1]
-        w = B.zeros(fct.shape) + 1.0 / M
+        ens_w = B.zeros(fct.shape) + 1.0 / M
     else:
-        w = map(B.asarray, w)
-        w = B.moveaxis(w, m_axis, -1)
-        w = w / B.sum(w, axis=-1, keepdims=True)
+        ens_w = map(B.asarray, ens_w)
+        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
+        if m_axis != -1:
+            ens_w = B.moveaxis(ens_w, -1, -1)
         if sort_ensemble:
             ind = B.argsort(fct, axis=-1)
-            w = w[ind]
+            ens_w = ens_w[ind]
 
     if sort_ensemble:
         fct = B.sort(fct, axis=-1)
@@ -128,9 +129,9 @@ def crps_ensemble(
                 f"{estimator} is not a valid estimator. "
                 f"Must be one of {crps.estimator_gufuncs.keys()}"
             )
-        return crps.estimator_gufuncs[estimator](obs, fct, w)
+        return crps.estimator_gufuncs[estimator](obs, fct, ens_w)
 
-    return crps.ensemble(obs, fct, w, estimator, backend=backend)
+    return crps.ensemble(obs, fct, ens_w, estimator, backend=backend)
 
 
 def twcrps_ensemble(
@@ -141,6 +142,7 @@ def twcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     estimator: str = "pwm",
     sorted_ensemble: bool = False,
@@ -174,6 +176,9 @@ def twcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting.
     v_func : callable, array_like -> array_like
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold :math:`t` by projecting forecasts and observations
@@ -228,6 +233,7 @@ def twcrps_ensemble(
         obs,
         fct,
         m_axis=m_axis,
+        ens_w=ens_w,
         sorted_ensemble=sorted_ensemble,
         estimator=estimator,
         backend=backend,
@@ -242,8 +248,8 @@ def owcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
-    estimator: tp.Literal["nrg"] = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the outcome-weighted CRPS (owCRPS) for a finite ensemble.
@@ -280,6 +286,9 @@ def owcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     backend : str, optional
@@ -320,13 +329,16 @@ def owcrps_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if estimator != "nrg":
-        raise ValueError(
-            "Only the energy form of the estimator is available "
-            "for the outcome-weighted CRPS."
-        )
+    if ens_w is None:
+        M = fct.shape[m_axis]
+        ens_w = B.zeros(fct.shape) + 1.0 / M
+    else:
+        ens_w = map(B.asarray, ens_w)
+        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
+
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
+        ens_w = B.moveaxis(ens_w, m_axis, -1)
 
     if w_func is None:
 
@@ -337,11 +349,11 @@ def owcrps_ensemble(
     obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
 
     if backend == "numba":
-        return crps.estimator_gufuncs["ow" + estimator](
-            obs, fct, obs_weights, fct_weights
+        return crps.estimator_gufuncs["ownrg"](
+            obs, fct, obs_weights, fct_weights, ens_w
         )
 
-    return crps.ow_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
+    return crps.ow_ensemble(obs, fct, obs_weights, fct_weights, ens_w, backend=backend)
 
 
 def vrcrps_ensemble(
@@ -352,8 +364,8 @@ def vrcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
-    estimator: tp.Literal["nrg"] = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the vertically re-scaled CRPS (vrCRPS) for a finite ensemble.
@@ -388,6 +400,9 @@ def vrcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     backend : str, optional
@@ -427,13 +442,16 @@ def vrcrps_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if estimator != "nrg":
-        raise ValueError(
-            "Only the energy form of the estimator is available "
-            "for the outcome-weighted CRPS."
-        )
+    if ens_w is None:
+        M = fct.shape[m_axis]
+        ens_w = B.zeros(fct.shape) + 1.0 / M
+    else:
+        ens_w = map(B.asarray, ens_w)
+        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
+
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
+        ens_w = B.moveaxis(ens_w, m_axis, -1)
 
     if w_func is None:
 
@@ -444,11 +462,11 @@ def vrcrps_ensemble(
     obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
 
     if backend == "numba":
-        return crps.estimator_gufuncs["vr" + estimator](
-            obs, fct, obs_weights, fct_weights
+        return crps.estimator_gufuncs["vrnrg"](
+            obs, fct, obs_weights, fct_weights, ens_w
         )
 
-    return crps.vr_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
+    return crps.vr_ensemble(obs, fct, obs_weights, fct_weights, ens_w, backend=backend)
 
 
 def crps_quantile(

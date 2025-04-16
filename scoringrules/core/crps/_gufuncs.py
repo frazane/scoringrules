@@ -28,13 +28,15 @@ def quantile_pinball_gufunc(
 
 @guvectorize(
     [
-        "void(float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:])",
+        "void(float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(),(n)->()",
+    "(),(n),(n)->()",
 )
-def _crps_ensemble_int_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
-    """CRPS estimator based on the integral form."""
+def _crps_ensemble_int_gufunc(
+    obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
+):
+    """CRPS estimator based on the integral form."""  # TODO: currently does not use weight argument
     obs = obs[0]
     M = fct.shape[0]
 
@@ -76,7 +78,7 @@ def _crps_ensemble_int_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
         "void(float32[:], float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(),(n)->()",
+    "(),(n),(n)->()",
 )
 def _crps_ensemble_qd_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
@@ -106,7 +108,7 @@ def _crps_ensemble_qd_gufunc(
         "void(float32[:], float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(),(n)->()",
+    "(),(n),(n)->()",
 )
 def _crps_ensemble_nrg_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
@@ -135,7 +137,7 @@ def _crps_ensemble_nrg_gufunc(
         "void(float32[:], float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(),(n)->()",
+    "(),(n),(n)->()",
 )
 def _crps_ensemble_fair_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
@@ -166,7 +168,7 @@ def _crps_ensemble_fair_gufunc(
         "void(float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:])",
     ],
-    "(),(n)->()",
+    "(),(n),(n)->()",
 )
 def _crps_ensemble_pwm_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
@@ -197,7 +199,7 @@ def _crps_ensemble_pwm_gufunc(
         "void(float32[:], float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(),(n)->()",
+    "(),(n),(n)->()",
 )
 def _crps_ensemble_akr_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
@@ -220,7 +222,7 @@ def _crps_ensemble_akr_gufunc(
         "void(float32[:], float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(),(n)->()",
+    "(),(n),(n)->()",
 )
 def _crps_ensemble_akr_circperm_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
@@ -239,16 +241,17 @@ def _crps_ensemble_akr_circperm_gufunc(
 
 @guvectorize(
     [
-        "void(float32[:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:], float64[:])",
+        "void(float32[:], float32[:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(),(n),(),(n)->()",
+    "(),(n),(),(n),(n)->()",
 )
 def _owcrps_ensemble_nrg_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
     ow: np.ndarray,
     fw: np.ndarray,
+    ens_w: np.ndarray,
     out: np.ndarray,
 ):
     """Outcome-weighted CRPS estimator based on the energy form."""
@@ -264,13 +267,13 @@ def _owcrps_ensemble_nrg_gufunc(
     e_2 = 0.0
 
     for i in range(M):
-        e_1 += abs(fct[i] - obs) * fw[i] * ow
+        e_1 += ens_w[i] * abs(fct[i] - obs) * fw[i] * ow
         for j in range(i + 1, M):
-            e_2 += 2 * abs(fct[i] - fct[j]) * fw[i] * fw[j] * ow
+            e_2 += 2 * ens_w[i] * ens_w[j] * abs(fct[i] - fct[j]) * fw[i] * fw[j] * ow
 
-    wbar = np.mean(fw)
+    wbar = np.mean(ens_w * fw)
 
-    out[0] = e_1 / (M * wbar) - 0.5 * e_2 / ((M * wbar) ** 2)
+    out[0] = e_1 / wbar - 0.5 * e_2 / (wbar**2)
 
 
 @guvectorize(
@@ -278,13 +281,14 @@ def _owcrps_ensemble_nrg_gufunc(
         "void(float32[:], float32[:], float32[:], float32[:], float32[:])",
         "void(float64[:], float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(),(n),(),(n)->()",
+    "(),(n),(),(n),(n)->()",
 )
 def _vrcrps_ensemble_nrg_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
     ow: np.ndarray,
     fw: np.ndarray,
+    ens_w: np.ndarray,
     out: np.ndarray,
 ):
     """Vertically re-scaled CRPS estimator based on the energy form."""
@@ -300,15 +304,15 @@ def _vrcrps_ensemble_nrg_gufunc(
     e_2 = 0.0
 
     for i in range(M):
-        e_1 += abs(fct[i] - obs) * fw[i] * ow
+        e_1 += ens_w[i] * abs(fct[i] - obs) * fw[i] * ow
         for j in range(i + 1, M):
-            e_2 += 2 * abs(fct[i] - fct[j]) * fw[i] * fw[j]
+            e_2 += 2 * ens_w[i] * ens_w[j] * abs(fct[i] - fct[j]) * fw[i] * fw[j]
 
-    wbar = np.mean(fw)
-    wabs_x = np.mean(np.abs(fct) * fw)
+    wbar = np.mean(ens_w * fw)
+    wabs_x = np.mean(ens_w * np.abs(fct) * fw)
     wabs_y = abs(obs) * ow
 
-    out[0] = e_1 / M - 0.5 * e_2 / (M**2) + (wabs_x - wabs_y) * (wbar - ow)
+    out[0] = e_1 - 0.5 * e_2 + (wabs_x - wabs_y) * (wbar - ow)
 
 
 @njit(["float32(float32)", "float64(float64)"])
