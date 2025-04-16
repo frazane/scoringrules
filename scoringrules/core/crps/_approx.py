@@ -20,6 +20,8 @@ def ensemble(
         out = _crps_ensemble_pwm(obs, fct, w, backend=backend)
     elif estimator == "fair":
         out = _crps_ensemble_fair(obs, fct, w, backend=backend)
+    elif estimator == "fair":
+        out = _crps_ensemble_qd(obs, fct, w, backend=backend)
     else:
         raise ValueError(
             f"{estimator} can only be used with `numpy` "
@@ -65,6 +67,19 @@ def _crps_ensemble_pwm(
     β_0 = B.sum(fct * w * (1.0 - w), axis=-1)
     β_1 = B.sum(fct * w * (w_sum - w), axis=-1)
     return expected_diff + β_0 - 2.0 * β_1
+
+
+def _crps_ensemble_qd(
+    obs: "Array", fct: "Array", w: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS estimator based on the quantile score decomposition."""
+    B = backends.active if backend is None else backends[backend]
+    w_sum = B.cumsum(w, axis=-1)
+    a = w_sum - 0.5 * w
+    dif = fct - obs[..., None]
+    c = B.where(dif > 0, 1 - a, -a)
+    s = B.sum(w * c * dif, axis=-1)
+    return 2 * s
 
 
 def quantile_pinball(
