@@ -9,16 +9,17 @@ if tp.TYPE_CHECKING:
 def ensemble(
     obs: "ArrayLike",
     fct: "Array",
+    w: "Array",
     estimator: str = "pwm",
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for a finite ensemble."""
     if estimator == "nrg":
-        out = _crps_ensemble_nrg(obs, fct, backend=backend)
+        out = _crps_ensemble_nrg(obs, fct, w, backend=backend)
     elif estimator == "pwm":
-        out = _crps_ensemble_pwm(obs, fct, backend=backend)
+        out = _crps_ensemble_pwm(obs, fct, w, backend=backend)
     elif estimator == "fair":
-        out = _crps_ensemble_fair(obs, fct, backend=backend)
+        out = _crps_ensemble_fair(obs, fct, w, backend=backend)
     else:
         raise ValueError(
             f"{estimator} can only be used with `numpy` "
@@ -29,39 +30,40 @@ def ensemble(
 
 
 def _crps_ensemble_fair(
-    obs: "Array", fct: "Array", backend: "Backend" = None
+    obs: "Array", fct: "Array", w: "Array", backend: "Backend" = None
 ) -> "Array":
     """Fair version of the CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-1]
-    e_1 = B.sum(B.abs(obs[..., None] - fct), axis=-1) / M
+    e_1 = B.sum(B.abs(obs[..., None] - fct) * w, axis=-1)
     e_2 = B.sum(
-        B.abs(fct[..., None] - fct[..., None, :]),
+        B.abs(fct[..., None] - fct[..., None, :]) * w[..., None] * w[..., None, :],
         axis=(-1, -2),
-    ) / (M * (M - 1))
+    ) / (1 - B.sum(w * w, axis=-1))
     return e_1 - 0.5 * e_2
 
 
 def _crps_ensemble_nrg(
-    obs: "Array", fct: "Array", backend: "Backend" = None
+    obs: "Array", fct: "Array", w: "Array", backend: "Backend" = None
 ) -> "Array":
     """CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-1]
-    e_1 = B.sum(B.abs(obs[..., None] - fct), axis=-1) / M
-    e_2 = B.sum(B.abs(fct[..., None] - fct[..., None, :]), (-1, -2)) / (M**2)
+    e_1 = B.sum(B.abs(obs[..., None] - fct) * w, axis=-1)
+    e_2 = B.sum(
+        B.abs(fct[..., None] - fct[..., None, :]) * w[..., None] * w[..., None, :],
+        (-1, -2),
+    )
     return e_1 - 0.5 * e_2
 
 
 def _crps_ensemble_pwm(
-    obs: "Array", fct: "Array", backend: "Backend" = None
+    obs: "Array", fct: "Array", w: "Array", backend: "Backend" = None
 ) -> "Array":
     """CRPS estimator based on the probability weighted moment (PWM) form."""
     B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-1]
-    expected_diff = B.sum(B.abs(obs[..., None] - fct), axis=-1) / M
-    β_0 = B.sum(fct, axis=-1) / M
-    β_1 = B.sum(fct * B.arange(0, M), axis=-1) / (M * (M - 1.0))
+    w_sum = B.cumsum(w, axis=-1)
+    expected_diff = B.sum(B.abs(obs[..., None] - fct) * w, axis=-1)
+    β_0 = B.sum(fct * w * (1.0 - w), axis=-1)
+    β_1 = B.sum(fct * w * (w_sum - w), axis=-1)
     return expected_diff + β_0 - 2.0 * β_1
 
 

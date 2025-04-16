@@ -13,6 +13,7 @@ def crps_ensemble(
     /,
     m_axis: int = -1,
     *,
+    w: "Array" = None,
     sorted_ensemble: bool = False,
     estimator: str = "pwm",
     backend: "Backend" = None,
@@ -45,11 +46,14 @@ def crps_ensemble(
     ----------
     obs : array_like
         The observed values.
-    fct : array_like, shape (..., m)
+    fct : array, shape (..., m)
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    w : array, shape (..., m)
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting.
     sorted_ensemble : bool
         Boolean indicating whether the ensemble members are already in ascending order.
         Default is False.
@@ -102,12 +106,20 @@ def crps_ensemble(
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
 
-    if not sorted_ensemble and estimator not in [
-        "nrg",
-        "akr",
-        "akr_circperm",
-        "fair",
-    ]:
+    sort_ensemble = not sorted_ensemble and estimator in ["qd", "pwm"]
+
+    if w is None:
+        M = fct.shape[-1]
+        w = B.zeros(fct.shape) + 1.0 / M
+    else:
+        w = map(B.asarray, w)
+        w = B.moveaxis(w, m_axis, -1)
+        w = w / B.sum(w, axis=-1, keepdims=True)
+        if sort_ensemble:
+            ind = B.argsort(fct, axis=-1)
+            w = w[ind]
+
+    if sort_ensemble:
         fct = B.sort(fct, axis=-1)
 
     if backend == "numba":
@@ -116,9 +128,9 @@ def crps_ensemble(
                 f"{estimator} is not a valid estimator. "
                 f"Must be one of {crps.estimator_gufuncs.keys()}"
             )
-        return crps.estimator_gufuncs[estimator](obs, fct)
+        return crps.estimator_gufuncs[estimator](obs, fct, w)
 
-    return crps.ensemble(obs, fct, estimator, backend=backend)
+    return crps.ensemble(obs, fct, w, estimator, backend=backend)
 
 
 def twcrps_ensemble(
@@ -151,7 +163,7 @@ def twcrps_ensemble(
     ----------
     obs : array_like
         The observed values.
-    fct : array_like
+    fct : array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     a : float
@@ -257,7 +269,7 @@ def owcrps_ensemble(
     ----------
     obs : array_like
         The observed values.
-    fct : array_like
+    fct : array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     a : float
@@ -365,7 +377,7 @@ def vrcrps_ensemble(
     ----------
     obs : array_like
         The observed values.
-    fct : array_like
+    fct : array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     a : float
@@ -470,7 +482,7 @@ def crps_quantile(
     ----------
     obs : array_like
         The observed values.
-    fct : array_like
+    fct : array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     alpha : array_like
