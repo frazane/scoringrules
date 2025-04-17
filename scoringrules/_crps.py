@@ -480,8 +480,8 @@ def vrcrps_ensemble(
 def crps_quantile(
     obs: "ArrayLike",
     fct: "Array",
-    alpha: "Array",
     /,
+    alpha: "Array",
     m_axis: int = -1,
     *,
     backend: "Backend" = None,
@@ -551,9 +551,9 @@ def crps_quantile(
 
 def crps_beta(
     obs: "ArrayLike",
+    /,
     a: "ArrayLike",
     b: "ArrayLike",
-    /,
     lower: "ArrayLike" = 0.0,
     upper: "ArrayLike" = 1.0,
     *,
@@ -632,9 +632,9 @@ def crps_beta(
 
 def crps_binomial(
     obs: "ArrayLike",
+    /,
     n: "ArrayLike",
     prob: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -692,8 +692,8 @@ def crps_binomial(
 
 def crps_exponential(
     obs: "ArrayLike",
-    rate: "ArrayLike",
     /,
+    rate: "ArrayLike",
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -753,9 +753,9 @@ def crps_exponential(
 def crps_exponentialM(
     obs: "ArrayLike",
     /,
-    mass: "ArrayLike" = 0.0,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
+    mass: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -823,15 +823,15 @@ def crps_exponentialM(
             )
         if B.any(mass < 0) or B.any(mass > 1):
             raise ValueError("`mass` contains entries outside the range [0, 1].")
-    return crps.exponentialM(obs, mass, location, scale, backend=backend)
+    return crps.exponentialM(obs, location, scale, mass, backend=backend)
 
 
 def crps_2pexponential(
     obs: "ArrayLike",
+    /,
     scale1: "ArrayLike",
     scale2: "ArrayLike",
-    location: "ArrayLike",
-    /,
+    location: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -899,8 +899,8 @@ def crps_2pexponential(
 
 def crps_gamma(
     obs: "ArrayLike",
-    shape: "ArrayLike",
     /,
+    shape: "ArrayLike",
     rate: "ArrayLike | None" = None,
     *,
     scale: "ArrayLike | None" = None,
@@ -986,8 +986,8 @@ def crps_gamma(
 
 def crps_gev(
     obs: "ArrayLike",
-    shape: "ArrayLike",
     /,
+    shape: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     *,
@@ -1096,8 +1096,8 @@ def crps_gev(
 
 def crps_gpd(
     obs: "ArrayLike",
-    shape: "ArrayLike",
     /,
+    shape: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     mass: "ArrayLike" = 0.0,
@@ -1178,9 +1178,9 @@ def crps_gpd(
 
 def crps_gtclogistic(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     lmass: "ArrayLike" = 0.0,
@@ -1280,9 +1280,9 @@ def crps_gtclogistic(
 
 def crps_tlogistic(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
@@ -1344,9 +1344,9 @@ def crps_tlogistic(
 
 def crps_clogistic(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
@@ -1410,9 +1410,9 @@ def crps_clogistic(
 
 def crps_gtcnormal(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     lmass: "ArrayLike" = 0.0,
@@ -1484,9 +1484,9 @@ def crps_gtcnormal(
 
 def crps_tnormal(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
@@ -1539,9 +1539,9 @@ def crps_tnormal(
 
 def crps_cnormal(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
@@ -1605,8 +1605,8 @@ def crps_cnormal(
 
 def crps_gtct(
     obs: "ArrayLike",
-    df: "ArrayLike",
     /,
+    df: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
@@ -1718,8 +1718,8 @@ def crps_gtct(
 
 def crps_tt(
     obs: "ArrayLike",
-    df: "ArrayLike",
     /,
+    df: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
@@ -1790,8 +1790,8 @@ def crps_tt(
 
 def crps_ct(
     obs: "ArrayLike",
-    df: "ArrayLike",
     /,
+    df: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
@@ -1864,10 +1864,10 @@ def crps_ct(
 
 def crps_hypergeometric(
     obs: "ArrayLike",
+    /,
     m: "ArrayLike",
     n: "ArrayLike",
     k: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -1986,9 +1986,9 @@ def crps_laplace(
 
 def crps_logistic(
     obs: "ArrayLike",
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -2007,9 +2007,9 @@ def crps_logistic(
     ----------
     obs : array_like
         Observed values.
-    mu: array_like
+    location: array_like
         Location parameter of the forecast logistic distribution.
-    sigma: array_like
+    scale: array_like
         Scale parameter of the forecast logistic distribution.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -2018,7 +2018,7 @@ def crps_logistic(
     Returns
     -------
     crps : array_like
-        The CRPS for the Logistic(mu, sigma) forecasts given the observations.
+        The CRPS for the Logistic(location, scale) forecasts given the observations.
 
     References
     ----------
@@ -2035,18 +2035,19 @@ def crps_logistic(
     """
     if check_pars:
         B = backends.active if backend is None else backends[backend]
-        sigma = B.asarray(sigma)
-        if B.any(sigma <= 0):
+        scale = B.asarray(scale)
+        if B.any(scale <= 0):
             raise ValueError(
                 "`sigma` contains non-positive entries. The scale parameter of the logistic distribution must be positive."
             )
-    return crps.logistic(obs, mu, sigma, backend=backend)
+    return crps.logistic(obs, location, scale, backend=backend)
 
 
 def crps_loglaplace(
     obs: "ArrayLike",
-    locationlog: "ArrayLike",
-    scalelog: "ArrayLike",
+    /,
+    locationlog: "ArrayLike" = 0.0,
+    scalelog: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -2116,8 +2117,10 @@ def crps_loglaplace(
 
 def crps_loglogistic(
     obs: "ArrayLike",
-    mulog: "ArrayLike",
-    sigmalog: "ArrayLike",
+    /,
+    mulog: "ArrayLike" = 0.0,
+    sigmalog: "ArrayLike" = 1.0,
+    *,
     backend: "Backend" = None,
     check_pars: bool = False,
 ) -> "ArrayLike":
@@ -2186,8 +2189,10 @@ def crps_loglogistic(
 
 def crps_lognormal(
     obs: "ArrayLike",
-    mulog: "ArrayLike",
-    sigmalog: "ArrayLike",
+    /,
+    mulog: "ArrayLike" = 0.0,
+    sigmalog: "ArrayLike" = 1.0,
+    *,
     backend: "Backend" = None,
     check_pars: bool = False,
 ) -> "ArrayLike":
@@ -2247,9 +2252,9 @@ def crps_lognormal(
 
 def crps_mixnorm(
     obs: "ArrayLike",
-    m: "ArrayLike",
-    s: "ArrayLike",
     /,
+    m: "ArrayLike" = 0.0,
+    s: "ArrayLike" = 1.0,
     w: "ArrayLike" = None,
     m_axis: "ArrayLike" = -1,
     *,
@@ -2330,8 +2335,8 @@ def crps_mixnorm(
 
 def crps_negbinom(
     obs: "ArrayLike",
-    n: "ArrayLike",
     /,
+    n: "ArrayLike",
     prob: "ArrayLike | None" = None,
     *,
     mu: "ArrayLike | None" = None,
@@ -2404,9 +2409,9 @@ def crps_negbinom(
 
 def crps_normal(
     obs: "ArrayLike",
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
     /,
+    mu: "ArrayLike" = 0.0,
+    sigma: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -2462,10 +2467,10 @@ def crps_normal(
 
 def crps_2pnormal(
     obs: "ArrayLike",
-    scale1: "ArrayLike",
-    scale2: "ArrayLike",
-    location: "ArrayLike",
     /,
+    scale1: "ArrayLike" = 1.0,
+    scale2: "ArrayLike" = 1.0,
+    location: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -2547,8 +2552,8 @@ def crps_2pnormal(
 
 def crps_poisson(
     obs: "ArrayLike",
-    mean: "ArrayLike",
     /,
+    mean: "ArrayLike",
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -2604,8 +2609,8 @@ def crps_poisson(
 
 def crps_t(
     obs: "ArrayLike",
-    df: "ArrayLike",
     /,
+    df: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     *,
@@ -2675,9 +2680,9 @@ def crps_t(
 
 def crps_uniform(
     obs: "ArrayLike",
-    min: "ArrayLike",
-    max: "ArrayLike",
     /,
+    min: "ArrayLike" = 0.0,
+    max: "ArrayLike" = 1.0,
     lmass: "ArrayLike" = 0.0,
     umass: "ArrayLike" = 0.0,
     *,
