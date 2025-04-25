@@ -230,6 +230,32 @@ def test_crps_gamma(backend):
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
+def test_crps_csg0(backend):
+    obs, shape, rate, shift = 0.7, 0.5, 2.0, 0.3
+    expected = 0.5411044
+
+    expected_gamma = sr.crps_gamma(obs, shape, rate, backend=backend)
+    res_gamma = sr.crps_csg0(obs, shape=shape, rate=rate, shift=0.0, backend=backend)
+    assert np.isclose(res_gamma, expected_gamma)
+
+    res = sr.crps_csg0(obs, shape=shape, rate=rate, shift=shift, backend=backend)
+    assert np.isclose(res, expected)
+
+    res = sr.crps_csg0(obs, shape=shape, scale=1.0 / rate, shift=shift, backend=backend)
+    assert np.isclose(res, expected)
+
+    with pytest.raises(ValueError):
+        sr.crps_csg0(
+            obs, shape=shape, rate=rate, scale=1.0 / rate, shift=shift, backend=backend
+        )
+        return
+
+    with pytest.raises(ValueError):
+        sr.crps_csg0(obs, shape=shape, shift=shift, backend=backend)
+        return
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_gev(backend):
     if backend == "torch":
         pytest.skip("`expi` not implemented in torch backend")
