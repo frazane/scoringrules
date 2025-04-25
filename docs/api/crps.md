@@ -25,6 +25,8 @@ also be viewed as the Brier score integrated over all real-valued thresholds.
 
 ::: scoringrules.crps_gamma
 
+::: scoringrules.crps_csg0
+
 ::: scoringrules.crps_gev
 
 ::: scoringrules.crps_gpd
