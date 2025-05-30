@@ -8,8 +8,8 @@
 
 project = "scoringrules"
 author = "scoringrules contributors"
-copyright = "2024"
-release = "0.7.0"
+copyright = "2024-2025"
+release = "0.8.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
