@@ -16,11 +16,11 @@ def test_ensemble(backend):
     sigma = abs(np.random.randn(N))
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    res = sr.logs_ensemble(obs, fct, axis=-1, backend=backend)
+    res = sr.logs_ensemble(obs, fct, m_axis=-1, backend=backend)
     assert res.shape == (N,)
 
     fct = fct.T
-    res0 = sr.logs_ensemble(obs, fct, axis=0, backend=backend)
+    res0 = sr.logs_ensemble(obs, fct, m_axis=0, backend=backend)
     assert np.allclose(res, res0)
 
     obs, fct = 6.2, [4.2, 5.1, 6.1, 7.6, 8.3, 9.5]
@@ -41,16 +41,16 @@ def test_clogs(backend):
     sigma = abs(np.random.randn(N))
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    res0 = sr.logs_ensemble(obs, fct, axis=-1, backend=backend)
-    res = sr.clogs_ensemble(obs, fct, axis=-1, backend=backend)
-    res_co = sr.clogs_ensemble(obs, fct, axis=-1, cens=False, backend=backend)
+    res0 = sr.logs_ensemble(obs, fct, m_axis=-1, backend=backend)
+    res = sr.clogs_ensemble(obs, fct, m_axis=-1, backend=backend)
+    res_co = sr.clogs_ensemble(obs, fct, m_axis=-1, cens=False, backend=backend)
     assert res.shape == (N,)
     assert res_co.shape == (N,)
     assert np.allclose(res, res0, atol=1e-5)
     assert np.allclose(res_co, res0, atol=1e-5)
 
     fct = fct.T
-    res0 = sr.clogs_ensemble(obs, fct, axis=0, backend=backend)
+    res0 = sr.clogs_ensemble(obs, fct, m_axis=0, backend=backend)
     assert np.allclose(res, res0, atol=1e-5)
 
     obs, fct = 6.2, [4.2, 5.1, 6.1, 7.6, 8.3, 9.5]
@@ -368,7 +368,7 @@ def test_mixnorm(backend):
     obs = [-1.6, 0.3]
     m = [[0.0, -2.9], [0.6, 0.0], [-1.1, -2.3]]
     s = [[0.5, 1.7], [1.1, 0.7], [1.4, 1.5]]
-    res1 = sr.logs_mixnorm(obs, m, s, axis=0, backend=backend)
+    res1 = sr.logs_mixnorm(obs, m, s, mc_axis=0, backend=backend)
 
     m = [[0.0, 0.6, -1.1], [-2.9, 0.0, -2.3]]
     s = [[0.5, 1.1, 1.4], [1.7, 0.7, 1.5]]

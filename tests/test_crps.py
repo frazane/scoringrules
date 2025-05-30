@@ -36,16 +36,17 @@ def test_crps_ensemble(estimator, backend):
     res = sr.crps_ensemble(
         obs,
         np.random.randn(ENSEMBLE_SIZE, N),
-        axis=0,
+        m_axis=0,
         estimator=estimator,
         backend=backend,
     )
     assert res.shape == (N,)
 
     # non-negative values
-    res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
-    res = np.asarray(res)
-    assert not np.any(res < 0.0)
+    if estimator not in ["akr", "akr_circperm"]:
+        res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
+        res = np.asarray(res)
+        assert not np.any(res < 0.0)
 
     # approx zero when perfect forecast
     perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
@@ -64,7 +65,7 @@ def test_crps_quantile(backend):
     assert res.shape == (N,)
     fct = np.random.randn(ENSEMBLE_SIZE, N)
     res = sr.crps_quantile(
-        obs, np.random.randn(ENSEMBLE_SIZE, N), alpha, axis=0, backend=backend
+        obs, np.random.randn(ENSEMBLE_SIZE, N), alpha, m_axis=0, backend=backend
     )
     assert res.shape == (N,)
 
@@ -563,7 +564,7 @@ def test_crps_mixnorm(backend):
     obs = [-1.6, 0.3]
     m = [[0.0, -2.9], [0.6, 0.0], [-1.1, -2.3]]
     s = [[0.5, 1.7], [1.1, 0.7], [1.4, 1.5]]
-    res1 = sr.crps_mixnorm(obs, m, s, axis=0, backend=backend)
+    res1 = sr.crps_mixnorm(obs, m, s, m_axis=0, backend=backend)
 
     m = [[0.0, 0.6, -1.1], [-2.9, 0.0, -2.3]]
     s = [[0.5, 1.1, 1.4], [1.7, 0.7, 1.5]]

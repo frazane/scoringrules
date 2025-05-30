@@ -50,7 +50,7 @@ def test_rps(backend):
     ]
     res1 = sr.rps_score(obs, fct, backend=backend)
     fct = np.transpose(fct)
-    res2 = sr.rps_score(obs, fct, axis=0, backend=backend)
+    res2 = sr.rps_score(obs, fct, k_axis=0, backend=backend)
     assert np.allclose(res1, res2)
 
 
@@ -100,6 +100,6 @@ def test_rls(backend):
     res1 = sr.rls_score(obs, fct, backend=backend)
 
     fct = np.transpose(fct)
-    res2 = sr.rls_score(obs, fct, axis=0, backend=backend)
+    res2 = sr.rls_score(obs, fct, k_axis=0, backend=backend)
 
     assert np.allclose(res1, res2)

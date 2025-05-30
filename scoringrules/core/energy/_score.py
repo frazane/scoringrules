@@ -6,7 +6,7 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, Backend
 
 
-def energy_score(obs: "Array", fct: "Array", backend=None) -> "Array":
+def es_ensemble(obs: "Array", fct: "Array", backend=None) -> "Array":
     """
     Compute the energy score based on a finite ensemble.
 
@@ -23,7 +23,7 @@ def energy_score(obs: "Array", fct: "Array", backend=None) -> "Array":
     return E_1 - 0.5 * E_2
 
 
-def owenergy_score(
+def owes_ensemble(
     obs: "Array",  # (... D)
     fct: "Array",  # (... M D)
     ow: "Array",  # (...)
@@ -48,7 +48,7 @@ def owenergy_score(
     return E_1 - 0.5 * E_2
 
 
-def vrenergy_score(
+def vres_ensemble(
     obs: "Array",
     fct: "Array",
     ow: "Array",

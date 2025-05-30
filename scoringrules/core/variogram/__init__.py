@@ -9,9 +9,9 @@ except ImportError:
     _variogram_score_gufunc = None
     _vrvariogram_score_gufunc = None
 
-from ._score import owvariogram_score as owvs
-from ._score import variogram_score as vs
-from ._score import vrvariogram_score as vrvs
+from ._score import owvs_ensemble as owvs
+from ._score import vs_ensemble as vs
+from ._score import vrvs_ensemble as vrvs
 
 __all__ = [
     "vs",
