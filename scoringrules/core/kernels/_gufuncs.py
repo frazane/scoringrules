@@ -65,10 +65,10 @@ def _ks_ensemble_uv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarra
     e_1 = 0
     e_2 = 0
 
-    for x_i in fct:
-        e_1 += _gauss_kern_uv(x_i, obs)
-        for x_j in fct:
-            e_2 += _gauss_kern_uv(x_i, x_j)
+    for i in range(M):
+        e_1 += _gauss_kern_uv(fct[i], obs)
+        for j in range(i + 1, M):  # important to start from i + 1 and not i
+            e_2 += 2 * _gauss_kern_uv(fct[j], fct[i])
     e_3 = _gauss_kern_uv(obs, obs)
 
     out[0] = -(e_1 / M - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3)
@@ -161,8 +161,8 @@ def _ks_ensemble_mv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
     e_2 = 0.0
     for i in range(M):
         e_1 += float(_gauss_kern_mv(fct[i], obs))
-        for j in range(M):
-            e_2 += float(_gauss_kern_mv(fct[i], fct[j]))
+        for j in range(i + 1, M):
+            e_2 += 2 * float(_gauss_kern_mv(fct[i], fct[j]))
     e_3 = float(_gauss_kern_mv(obs, obs))
 
     out[0] = -(e_1 / M - 0.5 * e_2 / (M**2) - 0.5 * e_3)
@@ -183,8 +183,8 @@ def _ks_ensemble_mv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarra
     e_2 = 0.0
     for i in range(M):
         e_1 += float(_gauss_kern_mv(fct[i], obs))
-        for j in range(M):
-            e_2 += float(_gauss_kern_mv(fct[i], fct[j]))
+        for j in range(i + 1, M):
+            e_2 += 2 * float(_gauss_kern_mv(fct[i], fct[j]))
     e_3 = float(_gauss_kern_mv(obs, obs))
 
     out[0] = -(e_1 / M - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3)
