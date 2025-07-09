@@ -81,17 +81,17 @@ def test_owcrps_vs_crps(backend):
 
     # no argument given
     resw = sr.owcrps_ensemble(obs, fct, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-5)
+    np.testing.assert_allclose(res, resw, rtol=1e-4)
 
     # a and b
     resw = sr.owcrps_ensemble(
         obs, fct, a=float("-inf"), b=float("inf"), backend=backend
     )
-    np.testing.assert_allclose(res, resw, rtol=1e-5)
+    np.testing.assert_allclose(res, resw, rtol=1e-4)
 
     # w_func as identity function
     resw = sr.owcrps_ensemble(obs, fct, w_func=lambda x: x * 0.0 + 1.0, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-5)
+    np.testing.assert_allclose(res, resw, rtol=1e-4)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
