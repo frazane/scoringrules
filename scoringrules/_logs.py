@@ -181,7 +181,7 @@ def logs_beta(
         Lower bound of the forecast beta distribution.
     upper : array_like
         Upper bound of the forecast beta distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -234,7 +234,7 @@ def logs_binomial(
         Size parameter of the forecast binomial distribution as an integer or array of integers.
     prob : array_like
         Probability parameter of the forecast binomial distribution as a float or array of floats.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -276,7 +276,7 @@ def logs_exponential(
         The observed values.
     rate : array_like
         Rate parameter of the forecast exponential distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -323,7 +323,7 @@ def logs_exponential2(
         Location parameter of the forecast exponential distribution.
     scale : array_like
         Scale parameter of the forecast exponential distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -373,7 +373,7 @@ def logs_2pexponential(
         Second scale parameter of the forecast two-piece exponential distribution.
     location : array_like
         Location parameter of the forecast two-piece exponential distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -427,7 +427,7 @@ def logs_gamma(
         Rate parameter of the forecast gamma distribution.
     scale : array_like
         Scale parameter of the forecast gamma distribution, where `scale = 1 / rate`.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -495,7 +495,7 @@ def logs_gev(
         Location parameter of the forecast GEV distribution.
     scale : array_like
         Scale parameter of the forecast GEV distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -546,7 +546,7 @@ def logs_gpd(
         Location parameter of the forecast GPD distribution.
     scale : array_like
         Scale parameter of the forecast GPD distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -596,7 +596,7 @@ def logs_hypergeometric(
         Number of failure states in the population.
     k : array_like
         Number of draws, without replacement. Must be in 0, 1, ..., m + n.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -639,7 +639,7 @@ def logs_laplace(
     scale : array_like
         Scale parameter of the forecast laplace distribution.
         The LS between obs and Laplace(location, scale).
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -686,7 +686,7 @@ def logs_loglaplace(
         Location parameter of the forecast log-laplace distribution.
     scalelog : array_like
         Scale parameter of the forecast log-laplace distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -733,7 +733,7 @@ def logs_logistic(
         Location parameter of the forecast logistic distribution.
     sigma : array_like
         Scale parameter of the forecast logistic distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -780,7 +780,7 @@ def logs_loglogistic(
         Location parameter of the log-logistic distribution.
     sigmalog : array_like
         Scale parameter of the log-logistic distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -827,7 +827,7 @@ def logs_lognormal(
         Mean of the normal underlying distribution.
     sigmalog : array_like
         Standard deviation of the underlying normal distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -859,7 +859,7 @@ def logs_mixnorm(
     m: "ArrayLike" = 0.0,
     s: "ArrayLike" = 1.0,
     w: "ArrayLike" = None,
-    m_axis: "ArrayLike" = -1,
+    mc_axis: "ArrayLike" = -1,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -878,9 +878,9 @@ def logs_mixnorm(
         Standard deviations of the component normal distributions.
     w : array_like
         Non-negative weights assigned to each component.
-    m_axis : int
+    mc_axis : int
         The axis corresponding to the mixture components. Default is the last axis.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -900,11 +900,11 @@ def logs_mixnorm(
     obs, m, s = map(B.asarray, (obs, m, s))
 
     if w is None:
-        M: int = m.shape[m_axis]
+        M: int = m.shape[mc_axis]
         w = B.zeros(m.shape) + 1 / M
     else:
         w = B.asarray(w)
-        w = w / B.sum(w, axis=m_axis, keepdims=True)
+        w = w / B.sum(w, axis=mc_axis, keepdims=True)
 
     if check_pars:
         if B.any(s <= 0):
@@ -914,10 +914,10 @@ def logs_mixnorm(
         if B.any(w < 0):
             raise ValueError("`w` contains negative entries")
 
-    if m_axis != -1:
-        m = B.moveaxis(m, m_axis, -1)
-        s = B.moveaxis(s, m_axis, -1)
-        w = B.moveaxis(w, m_axis, -1)
+    if mc_axis != -1:
+        m = B.moveaxis(m, mc_axis, -1)
+        s = B.moveaxis(s, mc_axis, -1)
+        w = B.moveaxis(w, mc_axis, -1)
 
     return logarithmic.mixnorm(obs, m, s, w, backend=backend)
 
@@ -946,7 +946,7 @@ def logs_negbinom(
         Probability parameter of the forecast negative binomial distribution.
     mu : array_like
         Mean of the forecast negative binomial distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -1006,7 +1006,7 @@ def logs_normal(
         Mean of the forecast normal distribution.
     sigma : array_like
         Standard deviation of the forecast normal distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -1056,7 +1056,7 @@ def logs_2pnormal(
         Scale parameter of the upper half of the forecast two-piece normal distribution.
     location : array_like
         Location parameter of the forecast two-piece normal distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -1103,7 +1103,7 @@ def logs_poisson(
         The observed values.
     mean : array_like
         Mean parameter of the forecast poisson distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -1210,7 +1210,7 @@ def logs_tlogistic(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -1265,7 +1265,7 @@ def logs_tnormal(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -1323,7 +1323,7 @@ def logs_tt(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
@@ -1376,7 +1376,7 @@ def logs_uniform(
         Lower bound of the forecast uniform distribution.
     max : array_like
         Upper bound of the forecast uniform distribution.
-    backend : str, optional
+    backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
         Boolean indicating whether distribution parameter checks should be carried out prior to implementation.

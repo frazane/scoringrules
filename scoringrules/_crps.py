@@ -46,7 +46,7 @@ def crps_ensemble(
     ----------
     obs : array_like
         The observed values.
-    fct : array, shape (..., m)
+    fct : array_like, shape (..., m)
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     m_axis : int
@@ -167,7 +167,7 @@ def twcrps_ensemble(
     ----------
     obs : array_like
         The observed values.
-    fct : array
+    fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     a : float
@@ -508,7 +508,7 @@ def crps_quantile(
     ----------
     obs : array_like
         The observed values.
-    fct : array
+    fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     alpha : array_like
@@ -1335,7 +1335,6 @@ def crps_tlogistic(
         location,
         scale,
         lower,
-        upper,
         0.0,
         0.0,
         backend=backend,

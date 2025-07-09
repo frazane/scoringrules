@@ -22,6 +22,11 @@ def test_owcrps_ensemble(backend):
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_vrcrps_ensemble(backend):
+    # test exceptions
+    with pytest.raises(ValueError):
+        est = "not_nrg"
+        sr.vrcrps_ensemble(1, 1.1, w_func=lambda x: x, estimator=est, backend=backend)
+
     # test shapes
     obs = np.random.randn(N)
     res = sr.vrcrps_ensemble(obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0)

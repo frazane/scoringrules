@@ -368,7 +368,7 @@ def test_mixnorm(backend):
     obs = [-1.6, 0.3]
     m = [[0.0, -2.9], [0.6, 0.0], [-1.1, -2.3]]
     s = [[0.5, 1.7], [1.1, 0.7], [1.4, 1.5]]
-    res1 = sr.logs_mixnorm(obs, m, s, m_axis=0, backend=backend)
+    res1 = sr.logs_mixnorm(obs, m, s, mc_axis=0, backend=backend)
 
     m = [[0.0, 0.6, -1.1], [-2.9, 0.0, -2.3]]
     s = [[0.5, 1.1, 1.4], [1.7, 0.7, 1.5]]
