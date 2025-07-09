@@ -66,7 +66,10 @@ def es_ensemble(
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
     if backend == "numba":
-        return energy._energy_score_gufunc(obs, fct)
+        if estimator == "nrg":
+            return energy._energy_score_nrg_gufunc(obs, fct)
+        elif estimator == "fair":
+            return energy._energy_score_fair_gufunc(obs, fct)
 
     return energy.es(obs, fct, estimator=estimator, backend=backend)
 

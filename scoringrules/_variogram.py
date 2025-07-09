@@ -72,7 +72,10 @@ def vs_ensemble(
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
     if backend == "numba":
-        return variogram._variogram_score_gufunc(obs, fct, p)
+        if estimator == "nrg":
+            return variogram._variogram_score_nrg_gufunc(obs, fct, p)
+        elif estimator == "fair":
+            return variogram._variogram_score_fair_gufunc(obs, fct, p)
 
     return variogram.vs(obs, fct, p, estimator=estimator, backend=backend)
 
