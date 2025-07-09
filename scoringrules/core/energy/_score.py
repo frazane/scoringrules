@@ -6,7 +6,9 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, Backend
 
 
-def es_ensemble(obs: "Array", fct: "Array", backend=None) -> "Array":
+def es_ensemble(
+    obs: "Array", fct: "Array", estimator: str = "nrg", backend=None
+) -> "Array":
     """
     Compute the energy score based on a finite ensemble.
 
@@ -19,7 +21,17 @@ def es_ensemble(obs: "Array", fct: "Array", backend=None) -> "Array":
     E_1 = B.sum(err_norm, -1) / M
 
     spread_norm = B.norm(B.expand_dims(fct, -3) - B.expand_dims(fct, -2), -1)
-    E_2 = B.sum(spread_norm, (-2, -1)) / (M**2)
+    E_2 = B.sum(spread_norm, (-2, -1))
+
+    if estimator == "nrg":
+        E_2 *= 1 / (M**2)
+    elif estimator == "fair":
+        E_2 *= 1 / (M * (M - 1))
+    else:
+        raise ValueError(
+            f"{estimator} must be one of 'nrg' and 'fair' for the energy score."
+        )
+
     return E_1 - 0.5 * E_2
 
 
