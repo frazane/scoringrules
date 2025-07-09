@@ -45,7 +45,7 @@ pip install scoringrules
 
 ## Documentation
 
-Learn more about `scoringrules` in its official documentation at https://frazane.github.io/scoringrules/.
+Learn more about `scoringrules` in its official documentation at https://scoringrules.readthedocs.io/en/latest/.
 
 
 ## Quick example
@@ -77,5 +77,3 @@ grateful for fruitful discussions with the authors.
 - The quality of this library has also benefited a lot from discussions with (and contributions from)
 Nick Loveday and Tennessee Leeuwenburg, whose python library [`scores`](https://github.com/nci/scores)
 similarly provides a comprehensive collection of forecast evaluation methods.
-- The implementation of the ensemble-based metrics as jit-compiled numpy generalized `ufuncs`
-was first proposed in [`properscoring`](https://github.com/properscoring/properscoring), released under Apache License, Version 2.0.

@@ -39,11 +39,10 @@ uv run pytest tests/
 
 ### Contributing to the documentation
 
-You can work on the documentation by modifying `mkdocs.yaml` and files in `docs/`. The most convenient way to do it is to run
+You can work on the documentation by modifying files in `docs/`. The most convenient way to do it is to run
 
 ```
-uvx --with-requirements docs/requirements.txt mkdocs serve
+uvx --with-requirements docs/requirements.txt sphinx-autobuild docs/ docs/_build/
 ```
 
-and open the locally hosted documentation on your browser. It will be updated automatically every time you make changes and save. If you edit or add pieces of LaTex math, please make sure they
-are rendered correctly.
+and open the locally hosted documentation on your browser. It will be updated automatically every time you make changes and save. If you edit or add pieces of LaTex math, please make sure they are rendered correctly.

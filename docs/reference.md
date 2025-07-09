@@ -32,14 +32,16 @@ Multivariate
 .. autosummary::
     :toctree: generated
 
-    energy_score
-    twenergy_score
-    owenergy_score
-    vrenergy_score
-    variogram_score
-    owvariogram_score
-    twvariogram_score
-    vrvariogram_score
+    es_ensemble
+    owes_ensemble
+    twes_ensemble
+    vres_ensemble
+
+    vs_ensemble
+    owvs_ensemble
+    twvs_ensemble
+    vrvs_ensemble
+
     gksmv_ensemble
     twgksmv_ensemble
     owgksmv_ensemble
@@ -108,7 +110,7 @@ Parametric distributions forecasts
     logs_uniform
 
 Consistent scoring functions
-==========================
+============================
 .. autosummary::
     :toctree: generated
 
@@ -117,7 +119,7 @@ Consistent scoring functions
 
 
 Categorical forecasts
-=================================
+=====================
 .. autosummary::
     :toctree: generated
 
