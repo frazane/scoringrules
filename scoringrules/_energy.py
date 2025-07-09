@@ -15,6 +15,7 @@ def es_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Energy Score for a finite multivariate ensemble.
@@ -39,6 +40,9 @@ def es_ensemble(
     v_axis : int
         The axis corresponding to the variables dimension on the forecasts array (or the observations
         array with an extra dimension on `m_axis`). Defaults to -1.
+    ens_w : array_like
+        Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
+        Default is equal weighting.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -59,13 +63,19 @@ def es_ensemble(
     :ref:`theory.multivariate`
         Some theoretical background on scoring rules for multivariate forecasts.
     """
-    backend = backend if backend is not None else backends._active
+    B = backends.active if backend is None else backends[backend]
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
-    if backend == "numba":
-        return energy._energy_score_gufunc(obs, fct)
+    if ens_w is None:
+        M = fct.shape[m_axis]
+        ens_w = B.zeros(fct.shape[:v_axis] + fct.shape[(v_axis + 1) :]) + 1.0 / M
+    else:
+        ens_w = B.moveaxis(ens_w, m_axis, -2)
 
-    return energy.nrg(obs, fct, backend=backend)
+    if backend == "numba":
+        return energy._energy_score_gufunc(obs, fct, ens_w)
+
+    return energy.nrg(obs, fct, ens_w, backend=backend)
 
 
 def twes_ensemble(

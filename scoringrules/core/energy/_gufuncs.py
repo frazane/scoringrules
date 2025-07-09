@@ -4,14 +4,15 @@ from numba import guvectorize
 
 @guvectorize(
     [
-        "void(float32[:], float32[:,:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:])",
+        "void(float32[:], float32[:,:], float32[:], float32[:])",
+        "void(float64[:], float64[:,:], float64[:], float64[:])",
     ],
-    "(d),(m,d)->()",
+    "(d),(m,d),(m)->()",
 )
 def _energy_score_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
+    ens_w: np.ndarray,
     out: np.ndarray,
 ):
     """Compute the Energy Score for a finite ensemble."""
@@ -20,11 +21,11 @@ def _energy_score_gufunc(
     e_1 = 0.0
     e_2 = 0.0
     for i in range(M):
-        e_1 += float(np.linalg.norm(fct[i] - obs))
+        e_1 += float(np.linalg.norm(fct[i] - obs)) * ens_w[i]
         for j in range(i + 1, M):
-            e_2 += 2 * float(np.linalg.norm(fct[i] - fct[j]))
+            e_2 += 2 * float(np.linalg.norm(fct[i] - fct[j])) * ens_w[i] * ens_w[j]
 
-    out[0] = e_1 / M - 0.5 / (M**2) * e_2
+    out[0] = e_1 - 0.5 * e_2
 
 
 @guvectorize(

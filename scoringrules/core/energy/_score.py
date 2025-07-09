@@ -6,20 +6,22 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, Backend
 
 
-def es_ensemble(obs: "Array", fct: "Array", backend=None) -> "Array":
+def es_ensemble(obs: "Array", fct: "Array", ens_w: "Array", backend=None) -> "Array":
     """
     Compute the energy score based on a finite ensemble.
 
     The ensemble and variables axes are on the second last and last dimensions respectively.
     """
     B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-2]
 
     err_norm = B.norm(fct - B.expand_dims(obs, -2), -1)
-    E_1 = B.sum(err_norm, -1) / M
+    E_1 = B.sum(err_norm * ens_w, -1)
 
     spread_norm = B.norm(B.expand_dims(fct, -3) - B.expand_dims(fct, -2), -1)
-    E_2 = B.sum(spread_norm, (-2, -1)) / (M**2)
+    E_2 = B.sum(
+        spread_norm * B.expand_dims(ens_w, -1) * B.expand_dims(ens_w, -2), (-2, -1)
+    )
+
     return E_1 - 0.5 * E_2
 
 
