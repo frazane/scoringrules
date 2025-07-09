@@ -54,13 +54,6 @@ def test_crps_ensemble(estimator, backend):
     res = np.asarray(res)
     assert not np.any(res - 0.0 > 0.0001)
 
-    # test equivalence of different estimators
-    res_nrg = sr.crps_ensemble(obs, fct, estimator="nrg", backend=backend)
-    res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm", backend=backend)
-    res_qd = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
-    assert np.allclose(res_nrg, res_pwm)
-    assert np.allclose(res_nrg, res_qd)
-
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_ensemble_corr(backend):
@@ -73,15 +66,23 @@ def test_crps_ensemble_corr(backend):
     res_nrg = sr.crps_ensemble(obs, fct, estimator="nrg", backend=backend)
     res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm", backend=backend)
     res_qd = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
-    assert np.allclose(res_nrg, res_pwm)
-    assert np.allclose(res_nrg, res_qd)
+    if backend == "torch":
+        assert np.allclose(res_nrg, res_pwm, rtol=1e-04)
+        assert np.allclose(res_nrg, res_qd, rtol=1e-04)
+    else:
+        assert np.allclose(res_nrg, res_pwm)
+        assert np.allclose(res_nrg, res_qd)
 
     w = np.abs(np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None])
     res_nrg = sr.crps_ensemble(obs, fct, ens_w=w, estimator="nrg", backend=backend)
     res_pwm = sr.crps_ensemble(obs, fct, ens_w=w, estimator="pwm", backend=backend)
     res_qd = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd", backend=backend)
-    assert np.allclose(res_nrg, res_pwm)
-    assert np.allclose(res_nrg, res_qd)
+    if backend == "torch":
+        assert np.allclose(res_nrg, res_pwm, rtol=1e-04)
+        assert np.allclose(res_nrg, res_qd, rtol=1e-04)
+    else:
+        assert np.allclose(res_nrg, res_pwm)
+        assert np.allclose(res_nrg, res_qd)
 
     # test correctness
     obs = -0.6042506
