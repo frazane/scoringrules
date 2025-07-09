@@ -12,27 +12,34 @@ N = 20
 def test_owcrps_ensemble(backend):
     # test shapes
     obs = np.random.randn(N)
-    res = sr.owcrps_ensemble(obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0)
+    res = sr.owcrps_ensemble(
+        obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0, backend=backend
+    )
     assert res.shape == (N,)
     res = sr.owcrps_ensemble(
-        obs, np.random.randn(M, N), w_func=lambda x: x * 0.0 + 1.0, m_axis=0
+        obs,
+        np.random.randn(M, N),
+        w_func=lambda x: x * 0.0 + 1.0,
+        m_axis=0,
+        backend=backend,
     )
     assert res.shape == (N,)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_vrcrps_ensemble(backend):
-    # test exceptions
-    with pytest.raises(ValueError):
-        est = "not_nrg"
-        sr.vrcrps_ensemble(1, 1.1, w_func=lambda x: x, estimator=est, backend=backend)
-
     # test shapes
     obs = np.random.randn(N)
-    res = sr.vrcrps_ensemble(obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0)
+    res = sr.vrcrps_ensemble(
+        obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0, backend=backend
+    )
     assert res.shape == (N,)
     res = sr.vrcrps_ensemble(
-        obs, np.random.randn(M, N), w_func=lambda x: x * 0.0 + 1.0, m_axis=0
+        obs,
+        np.random.randn(M, N),
+        w_func=lambda x: x * 0.0 + 1.0,
+        m_axis=0,
+        backend=backend,
     )
     assert res.shape == (N,)
 

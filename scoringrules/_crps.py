@@ -1335,6 +1335,7 @@ def crps_tlogistic(
         location,
         scale,
         lower,
+        upper,
         0.0,
         0.0,
         backend=backend,
