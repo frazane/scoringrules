@@ -10,16 +10,36 @@ def vs_ensemble(
     obs: "Array",  # (... D)
     fct: "Array",  # (... M D)
     p: float = 1,
+    estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the Variogram Score for a multivariate finite ensemble."""
     B = backends.active if backend is None else backends[backend]
     M: int = fct.shape[-2]
-    fct_diff = B.expand_dims(fct, -2) - B.expand_dims(fct, -1)  # (... M D D)
-    vfct = B.sum(B.abs(fct_diff) ** p, axis=-3) / M  # (... D D)
-    obs_diff = B.expand_dims(obs, -2) - B.expand_dims(obs, -1)  # (... D D)
-    vobs = B.abs(obs_diff) ** p  # (... D D)
-    return B.sum((vobs - vfct) ** 2, axis=(-2, -1))  # (...)
+
+    fct_diff = (
+        B.abs(B.expand_dims(fct, -2) - B.expand_dims(fct, -1)) ** p
+    )  # (... M D D)
+    obs_diff = B.abs(B.expand_dims(obs, -2) - B.expand_dims(obs, -1)) ** p  # (... D D)
+
+    if estimator == "nrg":
+        vfct = B.sum(B.abs(fct_diff) ** p, axis=-3) / M  # (... D D)
+        out = B.sum((obs_diff - vfct) ** 2, axis=(-2, -1))  # (...)
+
+    elif estimator == "fair":
+        E_1 = (fct_diff - B.expand_dims(obs_diff, axis=-3)) ** 2  # (... M D D)
+        E_1 = B.sum(E_1, axis=(-2, -1))  # (... M)
+        E_1 = B.sum(E_1, axis=-1) / M  # (...)
+
+        E_2 = (
+            B.expand_dims(fct_diff, -3) - B.expand_dims(fct_diff, -4)
+        ) ** 2  # (... M M D D)
+        E_2 = B.sum(E_2, axis=(-2, -1))  # (... M M)
+        E_2 = B.sum(E_2, axis=(-2, -1)) / (M * (M - 1))  # (...)
+
+        out = E_1 - 0.5 * E_2
+
+    return out
 
 
 def owvs_ensemble(
