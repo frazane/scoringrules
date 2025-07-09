@@ -66,10 +66,12 @@ def es_ensemble(
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
     if backend == "numba":
-        if estimator == "nrg":
-            return energy._energy_score_nrg_gufunc(obs, fct)
-        elif estimator == "fair":
-            return energy._energy_score_fair_gufunc(obs, fct)
+        if estimator not in energy.estimator_gufuncs:
+            raise ValueError(
+                f"{estimator} is not a valid estimator. "
+                f"Must be one of {energy.estimator_gufuncs.keys()}"
+            )
+        return energy.estimator_gufuncs[estimator](obs, fct)
 
     return energy.es(obs, fct, estimator=estimator, backend=backend)
 
