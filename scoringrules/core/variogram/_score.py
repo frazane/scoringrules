@@ -9,14 +9,16 @@ if tp.TYPE_CHECKING:
 def vs_ensemble(
     obs: "Array",  # (... D)
     fct: "Array",  # (... M D)
+    ens_w: "Array",  # (... M)
     p: float = 1,
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the Variogram Score for a multivariate finite ensemble."""
     B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-2]
     fct_diff = B.expand_dims(fct, -2) - B.expand_dims(fct, -1)  # (... M D D)
-    vfct = B.sum(B.abs(fct_diff) ** p, axis=-3) / M  # (... D D)
+    vfct = B.sum(
+        B.expand_dims(ens_w, (-1, -2)) * B.abs(fct_diff) ** p, axis=-3
+    )  # (... D D)
     obs_diff = B.expand_dims(obs, -2) - B.expand_dims(obs, -1)  # (... D D)
     vobs = B.abs(obs_diff) ** p  # (... D D)
     return B.sum((vobs - vfct) ** 2, axis=(-2, -1))  # (...)

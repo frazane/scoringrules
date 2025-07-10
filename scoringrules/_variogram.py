@@ -15,6 +15,7 @@ def vs_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     p: float = 1.0,
     backend: "Backend" = None,
 ) -> "Array":
@@ -36,12 +37,15 @@ def vs_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
-    p : float
-        The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
     m_axis : int
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int
         The axis corresponding to the variables dimension. Defaults to -1.
+    ens_w : array_like
+        Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
+        Default is equal weighting.
+    p : float
+        The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
     backend: str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -66,12 +70,19 @@ def vs_ensemble(
     >>> sr.vs_ensemble(obs, fct)
     array([ 8.65630139,  6.84693866, 19.52993307])
     """
+    B = backends.active if backend is None else backends[backend]
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
-    if backend == "numba":
-        return variogram._variogram_score_gufunc(obs, fct, p)
+    if ens_w is None:
+        M = fct.shape[m_axis]
+        ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
+    else:
+        ens_w = B.moveaxis(ens_w, m_axis, -2)
 
-    return variogram.vs(obs, fct, p, backend=backend)
+    if backend == "numba":
+        return variogram._variogram_score_gufunc(obs, fct, ens_w, p)
+
+    return variogram.vs(obs, fct, ens_w, p, backend=backend)
 
 
 def twvs_ensemble(

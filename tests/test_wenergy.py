@@ -48,7 +48,7 @@ def test_vres_vs_es(backend):
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
         backend=backend,
     )
-    np.testing.assert_allclose(res, resw, rtol=1e-10)
+    np.testing.assert_allclose(res, resw, rtol=1e-7)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

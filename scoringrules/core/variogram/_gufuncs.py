@@ -4,12 +4,12 @@ from numba import guvectorize
 
 @guvectorize(
     [
-        "void(float32[:], float32[:,:], float32, float32[:])",
-        "void(float64[:], float64[:,:], float64, float64[:])",
+        "void(float32[:], float32[:,:], float32[:], float32,  float32[:])",
+        "void(float64[:], float64[:,:], float64[:], float64, float64[:])",
     ],
-    "(d),(m,d),()->()",
+    "(d),(m,d),(m),()->()",
 )
-def _variogram_score_gufunc(obs, fct, p, out):
+def _variogram_score_gufunc(obs, fct, ens_w, p, out):
     M = fct.shape[-2]
     D = fct.shape[-1]
     out[0] = 0.0
@@ -17,8 +17,7 @@ def _variogram_score_gufunc(obs, fct, p, out):
         for j in range(D):
             vfct = 0.0
             for m in range(M):
-                vfct += abs(fct[m, i] - fct[m, j]) ** p
-            vfct = vfct / M
+                vfct += ens_w[m] * abs(fct[m, i] - fct[m, j]) ** p
             vobs = abs(obs[i] - obs[j]) ** p
             out[0] += (vobs - vfct) ** 2
 

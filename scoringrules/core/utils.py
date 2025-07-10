@@ -4,7 +4,7 @@ _V_AXIS = -1
 _M_AXIS = -2
 
 
-def _multivariate_shape_compatibility(obs, fct, ens_w, m_axis) -> None:
+def _multivariate_shape_compatibility(obs, fct, m_axis) -> None:
     f_shape = fct.shape
     o_shape = obs.shape
     o_shape_broadcast = o_shape[:m_axis] + (f_shape[m_axis],) + o_shape[m_axis:]
@@ -28,5 +28,5 @@ def multivariate_array_check(obs, fct, m_axis, v_axis, backend=None):
     obs, fct = map(B.asarray, (obs, fct))
     m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
     v_axis = v_axis if v_axis >= 0 else fct.ndim + v_axis
-    _multivariate_shape_compatibility(obs, fct, m_axis, v_axis)
+    _multivariate_shape_compatibility(obs, fct, m_axis)
     return _multivariate_shape_permute(obs, fct, m_axis, v_axis, backend=backend)
