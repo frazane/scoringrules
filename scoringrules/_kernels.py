@@ -66,12 +66,6 @@ def gksuv_ensemble(
                 f"{estimator} is not a valid estimator. "
                 f"Must be one of {kernels.estimator_gufuncs.keys()}"
             )
-    else:
-        if estimator not in ["fair", "nrg"]:
-            raise ValueError(
-                f"{estimator} is not a valid estimator. "
-                f"Must be one of ['fair', 'nrg']"
-            )
 
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
