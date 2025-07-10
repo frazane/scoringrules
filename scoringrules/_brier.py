@@ -8,8 +8,8 @@ if tp.TYPE_CHECKING:
 
 
 def brier_score(
-    observations: "ArrayLike",
-    forecasts: "ArrayLike",
+    obs: "ArrayLike",
+    fct: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -19,58 +19,60 @@ def brier_score(
 
     The BS is formulated as
 
-    $$ BS(f, y) = (f - y)^2, $$
+    .. math::
+       BS(f, y) = (f - y)^2,
 
-    where $f \in [0, 1]$ is the predicted probability of an event and $y \in \{0, 1\}$ the actual outcome.
+    where :math:`f \in [0, 1]` is the predicted probability of an event and :math:`y \in \{0, 1\}` the actual outcome.
 
     Parameters
     ----------
-    observations: NDArray
+    obs : array_like
         Observed outcome, either 0 or 1.
-    forecasts : NDArray
+    fct : array_like
         Forecasted probabilities between 0 and 1.
-    backend: str
+    backend : str
         The name of the backend used for computations. Defaults to 'numpy'.
 
     Returns
     -------
-    brier_score : NDArray
+    brier_score : array_like
         The computed Brier Score.
 
     """
-    return brier.brier_score(obs=observations, fct=forecasts, backend=backend)
+    return brier.brier_score(obs=obs, fct=fct, backend=backend)
 
 
 def rps_score(
-    observations: "ArrayLike",
-    forecasts: "ArrayLike",
+    obs: "ArrayLike",
+    fct: "ArrayLike",
     /,
-    axis: int = -1,
+    k_axis: int = -1,
     *,
     backend: "Backend" = None,
 ) -> "Array":
     r"""
     Compute the (Discrete) Ranked Probability Score (RPS).
 
-    Suppose the outcome corresponds to one of $K$ ordered categories. The RPS is defined as
+    Suppose the outcome corresponds to one of :math:`K` ordered categories. The RPS is defined as
 
-    $$ RPS(f, y) = \sum_{k=1}^{K}(\tilde{f}_{k} - \tilde{y}_{k})^2, $$
+    .. math::
+       RPS(f, y) = \sum_{k=1}^{K}(\tilde{f}_{k} - \tilde{y}_{k})^2,
 
-    where $f \in [0, 1]^{K}$ is a vector of length $K$ containing forecast probabilities
-    that each of the $K$ categories will occur, and $y \in \{0, 1\}^{K}$ is a vector of
-    length $K$, with the $k$-th element equal to one if the $k$-th category occurs. We
-    have $\sum_{k=1}^{K} y_{k} = \sum_{k=1}^{K} f_{k} = 1$, and, for $k = 1, \dots, K$,
-    $\tilde{y}_{k} = \sum_{i=1}^{k} y_{i}$ and $\tilde{f}_{k} = \sum_{i=1}^{k} f_{i}$.
+    where :math:`f \in [0, 1]^{K}` is a vector of length :math:`K` containing forecast probabilities
+    that each of the :math:`K` categories will occur, and :math:`y \in \{0, 1\}^{K}` is a vector of
+    length :math:`K`, with the :math:`k`-th element equal to one if the :math:`k`-th category occurs. We
+    have :math:`\sum_{k=1}^{K} y_{k} = \sum_{k=1}^{K} f_{k} = 1`, and, for :math:`k = 1, \dots, K`,
+    :math:`\tilde{y}_{k} = \sum_{i=1}^{k} y_{i}` and :math:`\tilde{f}_{k} = \sum_{i=1}^{k} f_{i}`.
 
     Parameters
     ----------
-    observations:
+    obs : array_like
         Array of 0's and 1's corresponding to unobserved and observed categories
     forecasts :
         Array of forecast probabilities for each category.
-    axis: int
+    k_axis: int
         The axis corresponding to the categories. Default is the last axis.
-    backend: str
+    backend : str
         The name of the backend used for computations. Defaults to 'numpy'.
 
     Returns
@@ -80,17 +82,17 @@ def rps_score(
 
     """
     B = backends.active if backend is None else backends[backend]
-    forecasts = B.asarray(forecasts)
+    fct = B.asarray(fct)
 
-    if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
+    if k_axis != -1:
+        fct = B.moveaxis(fct, k_axis, -1)
 
-    return brier.rps_score(obs=observations, fct=forecasts, backend=backend)
+    return brier.rps_score(obs=obs, fct=fct, backend=backend)
 
 
 def log_score(
-    observations: "ArrayLike",
-    forecasts: "ArrayLike",
+    obs: "ArrayLike",
+    fct: "ArrayLike",
     /,
     *,
     backend: "Backend" = None,
@@ -100,17 +102,18 @@ def log_score(
 
     The LS is formulated as
 
-    $$ LS(f, y) = -\log|f + y - 1|, $$
+    .. math::
+       LS(f, y) = -\log|f + y - 1|,
 
-    where $f \in [0, 1]$ is the predicted probability of an event and $y \in \{0, 1\}$ the actual outcome.
+    where :math:`f \in [0, 1]` is the predicted probability of an event and :math:`y \in \{0, 1\}` the actual outcome.
 
     Parameters
     ----------
-    observations: NDArray
+    obs : array_like
         Observed outcome, either 0 or 1.
-    forecasts : NDArray
+    fct : array_like
         Forecasted probabilities between 0 and 1.
-    backend: str
+    backend : str
         The name of the backend used for computations. Defaults to 'numpy'.
 
     Returns
@@ -119,52 +122,55 @@ def log_score(
         The computed Log Score.
 
     """
-    return brier.log_score(obs=observations, fct=forecasts, backend=backend)
+    return brier.log_score(obs=obs, fct=fct, backend=backend)
 
 
 def rls_score(
-    observations: "ArrayLike",
-    forecasts: "ArrayLike",
+    obs: "ArrayLike",
+    fct: "ArrayLike",
     /,
-    axis: int = -1,
+    k_axis: int = -1,
     *,
     backend: "Backend" = None,
 ) -> "Array":
     r"""
     Compute the (Discrete) Ranked Logarithmic Score (RLS).
 
-    Suppose the outcome corresponds to one of $K$ ordered categories. The RLS is defined as
+    Suppose the outcome corresponds to one of :math:`K` ordered categories. The RLS is defined as
 
-    $$ RPS(f, y) = -\sum_{k=1}^{K} \log|\tilde{f}_{k} + \tilde{y}_{k} - 1|, $$
+    .. math::
+       RPS(f, y) = -\sum_{k=1}^{K} \log|\tilde{f}_{k} + \tilde{y}_{k} - 1|,
 
-    where $f \in [0, 1]^{K}$ is a vector of length $K$ containing forecast probabilities
-    that each of the $K$ categories will occur, and $y \in \{0, 1\}^{K}$ is a vector of
-    length $K$, with the $k$-th element equal to one if the $k$-th category occurs. We
-    have $\sum_{k=1}^{K} y_{k} = \sum_{k=1}^{K} f_{k} = 1$, and, for $k = 1, \dots, K$,
-    $\tilde{y}_{k} = \sum_{i=1}^{k} y_{i}$ and $\tilde{f}_{k} = \sum_{i=1}^{k} f_{i}$.
+    where :math:`f \in [0, 1]^{K}` is a vector of length :math:`K` containing forecast probabilities
+    that each of the :math:`K` categories will occur, and :math:`y \in \{0, 1\}^{K}` is a vector of
+    length :math:`K`, with the :math:`k`-th element equal to one if the :math:`k`-th category occurs. We
+    have :math:`\sum_{k=1}^{K} y_{k} = \sum_{k=1}^{K} f_{k} = 1`, and, for :math:`k = 1, \dots, K`,
+    :math:`\tilde{y}_{k} = \sum_{i=1}^{k} y_{i}` and :math:`\tilde{f}_{k} = \sum_{i=1}^{k} f_{i}`.
 
     Parameters
     ----------
-    observations: NDArray
+    obs : array_like
         Observed outcome, either 0 or 1.
-    forecasts : NDArray
+    fct : array_like
         Forecasted probabilities between 0 and 1.
-    backend: str
+    k_axis: int
+        The axis corresponding to the categories. Default is the last axis.
+    backend : str
         The name of the backend used for computations. Defaults to 'numpy'.
 
     Returns
     -------
-    score:
+    score : array_like
         The computed Ranked Logarithmic Score.
 
     """
     B = backends.active if backend is None else backends[backend]
-    forecasts = B.asarray(forecasts)
+    fct = B.asarray(fct)
 
-    if axis != -1:
-        forecasts = B.moveaxis(forecasts, axis, -1)
+    if k_axis != -1:
+        fct = B.moveaxis(fct, k_axis, -1)
 
-    return brier.rls_score(obs=observations, fct=forecasts, backend=backend)
+    return brier.rls_score(obs=obs, fct=fct, backend=backend)
 
 
 __all__ = [

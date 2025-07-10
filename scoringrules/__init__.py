@@ -1,4 +1,6 @@
 from importlib.metadata import version
+import functools
+import warnings
 
 from scoringrules._brier import (
     brier_score,
@@ -44,10 +46,10 @@ from scoringrules._crps import (
     vrcrps_ensemble,
 )
 from scoringrules._energy import (
-    energy_score,
-    owenergy_score,
-    twenergy_score,
-    vrenergy_score,
+    es_ensemble,
+    owes_ensemble,
+    twes_ensemble,
+    vres_ensemble,
 )
 from scoringrules._error_spread import error_spread_score
 from scoringrules._interval import interval_score, weighted_interval_score
@@ -80,10 +82,10 @@ from scoringrules._logs import (
     clogs_ensemble,
 )
 from scoringrules._variogram import (
-    owvariogram_score,
-    twvariogram_score,
-    variogram_score,
-    vrvariogram_score,
+    owvs_ensemble,
+    twvs_ensemble,
+    vs_ensemble,
+    vrvs_ensemble,
 )
 from scoringrules._kernels import (
     gksuv_ensemble,
@@ -95,13 +97,36 @@ from scoringrules._kernels import (
     owgksmv_ensemble,
     vrgksmv_ensemble,
 )
-
 from scoringrules._quantile import quantile_score
-
 from scoringrules.backend import backends, register_backend
 
-__version__ = version("scoringrules")
 
+def _deprecated_alias(new_func, old_func_name, remove_version):
+    """Return a deprecated alias for a renamed function."""
+
+    @functools.wraps(new_func)
+    def wrapper(*args, **kwargs):
+        warnings.warn(
+            f"{old_func_name} is deprecated and will be removed in {remove_version}. "
+            f"Use {new_func.__name__} instead.",
+            DeprecationWarning,
+        )
+        return new_func(*args, **kwargs)
+
+    return wrapper
+
+
+energy_score = _deprecated_alias(es_ensemble, "energy_score", "v1.0.0")
+owenergy_score = _deprecated_alias(owes_ensemble, "owenergy_score", "v1.0.0")
+twenergy_score = _deprecated_alias(twes_ensemble, "twenergy_score", "v1.0.0")
+vrenergy_score = _deprecated_alias(vres_ensemble, "vrenergy_score", "v1.0.0")
+
+variogram_score = _deprecated_alias(vs_ensemble, "variogram_score", "v1.0.0")
+owvariogram_score = _deprecated_alias(owvs_ensemble, "owvariogram_score", "v1.0.0")
+twvariogram_score = _deprecated_alias(twvs_ensemble, "twvariogram_score", "v1.0.0")
+vrvariogram_score = _deprecated_alias(vrvs_ensemble, "vrvariogram_score", "v1.0.0")
+
+__version__ = version("scoringrules")
 
 __all__ = [
     "register_backend",
@@ -172,14 +197,14 @@ __all__ = [
     "log_score",
     "rls_score",
     "error_spread_score",
-    "energy_score",
-    "owenergy_score",
-    "twenergy_score",
-    "vrenergy_score",
-    "variogram_score",
-    "owvariogram_score",
-    "twvariogram_score",
-    "vrvariogram_score",
+    "es_ensemble",
+    "owes_ensemble",
+    "twes_ensemble",
+    "vres_ensemble",
+    "vs_ensemble",
+    "owvs_ensemble",
+    "twvs_ensemble",
+    "vrvs_ensemble",
     "gksuv_ensemble",
     "twgksuv_ensemble",
     "owgksuv_ensemble",

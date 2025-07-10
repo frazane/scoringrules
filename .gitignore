@@ -71,6 +71,7 @@ instance/
 # Sphinx documentation
 docs/_build/
 docs/build/
+_build*
 
 # PyBuilder
 .pybuilder/
@@ -151,3 +152,5 @@ scratch_nbs/
 _devlog/
 tests/output
 .devcontainer/
+docs/generated
+scoringrules/vendored

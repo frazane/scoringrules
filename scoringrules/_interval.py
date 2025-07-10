@@ -22,33 +22,32 @@ def interval_score(
     [(Gneiting & Raftery, 2012)](https://doi.org/10.1198/016214506000001437)
     is defined as
 
-    $$
-    \text{IS} =
-        \begin{cases}
-        (u - l) + \frac{2}{\alpha}(l - y)  & \text{for } y < l \\
-        (u - l)                            & \text{for } l \leq y \leq u \\
-        (u - l) + \frac{2}{\alpha}(y - u)  & \text{for } y > u. \\
-        \end{cases}
-    $$
+    .. math::
+        \text{IS} =
+            \begin{cases}
+            (u - l) + \frac{2}{\alpha}(l - y)  & \text{for } y < l \\
+            (u - l)                            & \text{for } l \leq y \leq u \\
+            (u - l) + \frac{2}{\alpha}(y - u)  & \text{for } y > u. \\
+            \end{cases}
 
-    for an $1 - \alpha$ prediction interval of $[l, u]$ and the true value $y$.
+    for an :math:`1 - \alpha` prediction interval of :math:`[l, u]` and the true value :math:`y`.
 
     Parameters
     ----------
-    obs:
+    obs : array_like
         The observations as a scalar or array of values.
-    lower:
+    lower : array_like
         The predicted lower bound of the PI as a scalar or array of values.
-    upper:
+    upper : array_like
         The predicted upper bound of the PI as a scalar or array of values.
-    alpha:
+    alpha : array_like
         The 1 - alpha level for the PI as a scalar or array of values.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
     -------
-    score:
+    interval_score : array_like
         Array with the interval score for the input values.
 
     Raises
@@ -125,42 +124,40 @@ def weighted_interval_score(
     The WIS [(Bracher et al., 2022)](https://doi.org/10.1371/journal.pcbi.1008618)
     is defined as
 
-    $$
-    \text{WIS}_{\alpha_{0:K}}(F, y) = \frac{1}{K+0.5}(w_0 \times |y - m|
-    + \sum_{k=1}^K (w_k \times IS_{\alpha_k}(F, y)))
-    $$
+    .. math::
+        \text{WIS}_{\alpha_{0:K}}(F, y) = \frac{1}{K+0.5}(w_0 \times |y - m|
+        + \sum_{k=1}^K (w_k \times IS_{\alpha_k}(F, y)))
 
-    where $m$ denotes the median prediction, $w_0$ denotes the weight of the
-    median prediction, $IS_{\alpha_k}(F, y)$ denotes the interval score for the
-    $1 - \alpha$ prediction interval and $w_k$ is the according weight.
+    where :math:`m` denotes the median prediction, :math:`w_0` denotes the weight of the
+    median prediction, :math:`IS_{\alpha_k}(F, y)` denotes the interval score for the
+    :math:`1 - \alpha` prediction interval and :math:`w_k` is the according weight.
     The WIS is calculated for a set of (central) PIs and the predictive median.
     The weights are an optional parameter and default weight is the canonical
-    weight $w_k = \frac{2}{\alpha_k}$ and $w_0 = 0.5$.
+    weight :math:`w_k = \frac{2}{\alpha_k}` and :math:`w_0 = 0.5`.
     For these weights, it holds that:
 
-    $$
-    \text{WIS}_{\alpha_{0:K}}(F, y) \approx \text{CRPS}(F, y).
-    $$
+    .. math::
+        \text{WIS_{\alpha_{0:K}}(F, y) \approx \text{CRPS}(F, y).
 
     Parameters
     ----------
-    obs:
+    obs : array_like
         The observations as a scalar or array of shape `(...,)`.
-    median:
+    median : array_like
         The predicted median of the distribution as a scalar or array of shape `(...,)`.
-    lower:
+    lower : array_like
         The predicted lower bound of the PI. If `alpha` is an array of shape `(K,)`,
         `lower` must have shape `(...,K)`.
-    upper:
+    upper : array_like
         The predicted upper bound of the PI. If `alpha` is an array of shape `(K,)`,
         `upper` must have shape `(...,K)`.
-    alpha:
+    alpha : array_like
         The 1 - alpha level for the prediction intervals as an array of shape `(K,)`.
-    w_median:
+    w_median : float
         The weight for the median prediction. Defaults to 0.5.
-    w_alpha:
+    w_alpha : array_like
         The weights for the PI. Defaults to `2/alpha`.
-    backend:
+    backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
     Returns
