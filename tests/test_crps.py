@@ -66,7 +66,7 @@ def test_crps_ensemble_corr(backend):
     res_nrg = sr.crps_ensemble(obs, fct, estimator="nrg", backend=backend)
     res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm", backend=backend)
     res_qd = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
-    if backend == "torch":
+    if backend in ["torch", "jax"]:
         assert np.allclose(res_nrg, res_pwm, rtol=1e-03)
         assert np.allclose(res_nrg, res_qd, rtol=1e-03)
     else:
@@ -77,7 +77,7 @@ def test_crps_ensemble_corr(backend):
     res_nrg = sr.crps_ensemble(obs, fct, ens_w=w, estimator="nrg", backend=backend)
     res_pwm = sr.crps_ensemble(obs, fct, ens_w=w, estimator="pwm", backend=backend)
     res_qd = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd", backend=backend)
-    if backend == "torch":
+    if backend in ["torch", "jax"]:
         assert np.allclose(res_nrg, res_pwm, rtol=1e-03)
         assert np.allclose(res_nrg, res_qd, rtol=1e-03)
     else:
