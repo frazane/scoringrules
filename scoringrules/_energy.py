@@ -68,7 +68,7 @@ def es_ensemble(
 
     if ens_w is None:
         M = fct.shape[m_axis]
-        ens_w = B.zeros(fct.shape[:v_axis] + fct.shape[(v_axis + 1) :]) + 1.0 / M
+        ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
     else:
         ens_w = B.moveaxis(ens_w, m_axis, -2)
 
@@ -86,6 +86,7 @@ def twes_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Threshold-Weighted Energy Score (twES) for a finite multivariate ensemble.
@@ -115,6 +116,9 @@ def twes_ensemble(
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int or tuple of int
         The axis corresponding to the variables dimension. Defaults to -1.
+    ens_w : array_like
+        Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
+        Default is equal weighting.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -124,7 +128,9 @@ def twes_ensemble(
         The computed Threshold-Weighted Energy Score.
     """
     obs, fct = map(v_func, (obs, fct))
-    return es_ensemble(obs, fct, m_axis=m_axis, v_axis=v_axis, backend=backend)
+    return es_ensemble(
+        obs, fct, m_axis=m_axis, v_axis=v_axis, ens_w=ens_w, backend=backend
+    )
 
 
 def owes_ensemble(
@@ -135,6 +141,7 @@ def owes_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Outcome-Weighted Energy Score (owES) for a finite multivariate ensemble.
@@ -167,6 +174,9 @@ def owes_ensemble(
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int or tuple of ints
         The axis corresponding to the variables dimension. Defaults to -1.
+    ens_w : array_like
+        Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
+        Default is equal weighting.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -176,16 +186,23 @@ def owes_ensemble(
         The computed Outcome-Weighted Energy Score.
     """
     B = backends.active if backend is None else backends[backend]
-
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
     fct_weights = B.apply_along_axis(w_func, fct, -1)
     obs_weights = B.apply_along_axis(w_func, obs, -1)
 
-    if B.name == "numba":
-        return energy._owenergy_score_gufunc(obs, fct, obs_weights, fct_weights)
+    if ens_w is None:
+        M = fct.shape[m_axis]
+        ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
+    else:
+        ens_w = B.moveaxis(ens_w, m_axis, -2)
 
-    return energy.ownrg(obs, fct, obs_weights, fct_weights, backend=backend)
+    if B.name == "numba":
+        return energy._owenergy_score_gufunc(obs, fct, obs_weights, fct_weights, ens_w)
+
+    return energy.ownrg(
+        obs, fct, obs_weights, fct_weights, ens_w=ens_w, backend=backend
+    )
 
 
 def vres_ensemble(
@@ -193,9 +210,10 @@ def vres_ensemble(
     fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
     /,
-    *,
     m_axis: int = -2,
     v_axis: int = -1,
+    *,
+    ens_w: "Array" = None,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Vertically Re-scaled Energy Score (vrES) for a finite multivariate ensemble.
@@ -229,6 +247,9 @@ def vres_ensemble(
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int or tuple of int
         The axis corresponding to the variables dimension. Defaults to -1.
+    ens_w : array_like
+        Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
+        Default is equal weighting.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -238,13 +259,20 @@ def vres_ensemble(
         The computed Vertically Re-scaled Energy Score.
     """
     B = backends.active if backend is None else backends[backend]
-
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
     fct_weights = B.apply_along_axis(w_func, fct, -1)
     obs_weights = B.apply_along_axis(w_func, obs, -1)
 
-    if backend == "numba":
-        return energy._vrenergy_score_gufunc(obs, fct, obs_weights, fct_weights)
+    if ens_w is None:
+        M = fct.shape[m_axis]
+        ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
+    else:
+        ens_w = B.moveaxis(ens_w, m_axis, -2)
 
-    return energy.vrnrg(obs, fct, obs_weights, fct_weights, backend=backend)
+    if backend == "numba":
+        return energy._vrenergy_score_gufunc(obs, fct, obs_weights, fct_weights, ens_w)
+
+    return energy.vrnrg(
+        obs, fct, obs_weights, fct_weights, ens_w=ens_w, backend=backend
+    )

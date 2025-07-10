@@ -30,22 +30,24 @@ def owes_ensemble(
     fct: "Array",  # (... M D)
     ow: "Array",  # (...)
     fw: "Array",  # (... M)
+    ens_w: "Array",  # (... M)
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the outcome-weighted energy score based on a finite ensemble."""
     B = backends.active if backend is None else backends[backend]
-    M = fct.shape[-2]
-    wbar = B.sum(fw, -1) / M
+    wbar = B.sum(fw * ens_w, -1)
 
     err_norm = B.norm(fct - B.expand_dims(obs, -2), -1)  # (... M)
-    E_1 = B.sum(err_norm * fw * B.expand_dims(ow, -1), -1) / (M * wbar)  # (...)
+    E_1 = B.sum(err_norm * fw * B.expand_dims(ow, -1) * ens_w, -1) / wbar  # (...)
 
     spread_norm = B.norm(
         B.expand_dims(fct, -2) - B.expand_dims(fct, -3), -1
     )  # (... M M)
     fw_prod = B.expand_dims(fw, -1) * B.expand_dims(fw, -2)  # (... M M)
     spread_norm *= fw_prod * B.expand_dims(ow, (-2, -1))  # (... M M)
-    E_2 = B.sum(spread_norm, (-2, -1)) / (M**2 * wbar**2)  # (...)
+    E_2 = B.sum(
+        spread_norm * B.expand_dims(ens_w, -1) * B.expand_dims(ens_w, -2), (-2, -1)
+    ) / (wbar**2)  # (...)
 
     return E_1 - 0.5 * E_2
 
@@ -55,23 +57,26 @@ def vres_ensemble(
     fct: "Array",
     ow: "Array",
     fw: "Array",
+    ens_w: "Array",
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the vertically re-scaled energy score based on a finite ensemble."""
     B = backends.active if backend is None else backends[backend]
-    M, D = fct.shape[-2:]
-    wbar = B.sum(fw, -1) / M
+    wbar = B.sum(fw * ens_w, -1)
 
     err_norm = B.norm(fct - B.expand_dims(obs, -2), -1)  # (... M)
     err_norm *= fw * B.expand_dims(ow, -1)  # (... M)
-    E_1 = B.sum(err_norm, -1) / M  # (...)
+    E_1 = B.sum(err_norm * ens_w, -1)  # (...)
 
     spread_norm = B.norm(
         B.expand_dims(fct, -2) - B.expand_dims(fct, -3), -1
     )  # (... M M)
     fw_prod = B.expand_dims(fw, -2) * B.expand_dims(fw, -1)  # (... M M)
-    E_2 = B.sum(spread_norm * fw_prod, (-2, -1)) / (M**2)  # (...)
+    E_2 = B.sum(
+        spread_norm * fw_prod * B.expand_dims(ens_w, -1) * B.expand_dims(ens_w, -2),
+        (-2, -1),
+    )  # (...)
 
-    rhobar = B.sum(B.norm(fct, -1) * fw, -1) / M  # (...)
+    rhobar = B.sum(B.norm(fct, -1) * fw * ens_w, -1)  # (...)
     E_3 = (rhobar - B.norm(obs, -1) * ow) * (wbar - ow)  # (...)
     return E_1 - 0.5 * E_2 + E_3
