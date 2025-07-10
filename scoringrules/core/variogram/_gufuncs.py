@@ -24,12 +24,12 @@ def _variogram_score_gufunc(obs, fct, ens_w, p, out):
 
 @guvectorize(
     [
-        "void(float32[:], float32[:,:], float32, float32, float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64, float64, float64[:], float64[:])",
+        "void(float32[:], float32[:,:], float32, float32[:], float32[:], float32, float32[:])",
+        "void(float64[:], float64[:,:], float64, float64[:], float64[:], float64, float64[:])",
     ],
-    "(d),(m,d),(),(),(m)->()",
+    "(d),(m,d),(),(m),(m),()->()",
 )
-def _owvariogram_score_gufunc(obs, fct, p, ow, fw, out):
+def _owvariogram_score_gufunc(obs, fct, ow, fw, ens_w, p, out):
     M = fct.shape[-2]
     D = fct.shape[-1]
 
@@ -55,12 +55,12 @@ def _owvariogram_score_gufunc(obs, fct, p, ow, fw, out):
 
 @guvectorize(
     [
-        "void(float32[:], float32[:,:], float32, float32, float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64, float64, float64[:], float64[:])",
+        "void(float32[:], float32[:,:], float32, float32[:], float32[:], float32, float32[:])",
+        "void(float64[:], float64[:,:], float64, float64[:], float64[:], float64, float64[:])",
     ],
-    "(d),(m,d),(),(),(m)->()",
+    "(d),(m,d),(),(m),(m),()->()",
 )
-def _vrvariogram_score_gufunc(obs, fct, p, ow, fw, out):
+def _vrvariogram_score_gufunc(obs, fct, ow, fw, ens_w, p, out):
     M = fct.shape[-2]
     D = fct.shape[-1]
 

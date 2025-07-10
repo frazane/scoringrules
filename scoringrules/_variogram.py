@@ -93,6 +93,7 @@ def twvs_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     p: float = 1.0,
     backend: "Backend" = None,
 ) -> "Array":
@@ -122,6 +123,9 @@ def twvs_ensemble(
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int
         The axis corresponding to the variables dimension. Defaults to -1.
+    ens_w : array_like
+        Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
+        Default is equal weighting.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -148,7 +152,7 @@ def twvs_ensemble(
     array([5.94996894, 4.72029765, 6.08947229])
     """
     obs, fct = map(v_func, (obs, fct))
-    return vs_ensemble(obs, fct, m_axis, v_axis, p=p, backend=backend)
+    return vs_ensemble(obs, fct, m_axis, v_axis, ens_w=ens_w, p=p, backend=backend)
 
 
 def owvs_ensemble(
@@ -159,6 +163,7 @@ def owvs_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     p: float = 1.0,
     backend: "Backend" = None,
 ) -> "Array":
@@ -193,6 +198,9 @@ def owvs_ensemble(
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int
         The axis corresponding to the variables dimension. Defaults to -1.
+    ens_w : array_like
+        Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
+        Default is equal weighting.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -212,7 +220,6 @@ def owvs_ensemble(
     array([ 9.86816636,  6.75532522, 19.59353723])
     """
     B = backends.active if backend is None else backends[backend]
-
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
     obs_weights = B.apply_along_axis(w_func, obs, -1)
@@ -220,10 +227,12 @@ def owvs_ensemble(
 
     if backend == "numba":
         return variogram._owvariogram_score_gufunc(
-            obs, fct, p, obs_weights, fct_weights
+            obs, fct, obs_weights, fct_weights, ens_w, p
         )
 
-    return variogram.owvs(obs, fct, obs_weights, fct_weights, p=p, backend=backend)
+    return variogram.owvs(
+        obs, fct, obs_weights, fct_weights, ens_w=ens_w, p=p, backend=backend
+    )
 
 
 def vrvs_ensemble(
@@ -234,6 +243,7 @@ def vrvs_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     p: float = 1.0,
     backend: "Backend" = None,
 ) -> "Array":
@@ -270,6 +280,9 @@ def vrvs_ensemble(
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int
         The axis corresponding to the variables dimension. Defaults to -1.
+    ens_w : array_like
+        Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
+        Default is equal weighting.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -297,7 +310,9 @@ def vrvs_ensemble(
 
     if backend == "numba":
         return variogram._vrvariogram_score_gufunc(
-            obs, fct, p, obs_weights, fct_weights
+            obs, fct, obs_weights, fct_weights, ens_w, p
         )
 
-    return variogram.vrvs(obs, fct, obs_weights, fct_weights, p=p, backend=backend)
+    return variogram.vrvs(
+        obs, fct, obs_weights, fct_weights, ensw=ens_w, p=p, backend=backend
+    )

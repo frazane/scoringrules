@@ -29,13 +29,13 @@ def owvs_ensemble(
     fct: "Array",
     ow: "Array",
     fw: "Array",
+    ens_w: "Array",
     p: float = 1,
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the Outcome-Weighted Variogram Score for a multivariate finite ensemble."""
     B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-2]
-    wbar = B.mean(fw, axis=-1)
+    wbar = B.mean(fw * ens_w, axis=-1)
 
     fct_diff = B.expand_dims(fct, -2) - B.expand_dims(fct, -1)  # (... M D D)
     fct_diff = B.abs(fct_diff) ** p  # (... M D D)
@@ -46,15 +46,16 @@ def owvs_ensemble(
 
     E_1 = (fct_diff - B.expand_dims(obs_diff, -3)) ** 2  # (... M D D)
     E_1 = B.sum(E_1, axis=(-2, -1))  # (... M)
-    E_1 = B.sum(E_1 * fw * B.expand_dims(ow, -1), axis=-1) / (M * wbar)  # (...)
+    E_1 = B.sum(E_1 * fw * B.expand_dims(ow, -1) * ens_w, axis=-1) / wbar  # (...)
 
     fct_diff_spread = B.expand_dims(fct_diff, -3) - B.expand_dims(
         fct_diff, -4
     )  # (... M M D D)
     fw_prod = B.expand_dims(fw, -2) * B.expand_dims(fw, -1)  # (... M M)
+    ew_prod = B.expand_dims(ens_w, -2) * B.expand_dims(ens_w, -1)  # (... M M)
     E_2 = B.sum(fct_diff_spread**2, axis=(-2, -1))  # (... M M)
-    E_2 *= fw_prod * B.expand_dims(ow, (-2, -1))  # (... M M)
-    E_2 = B.sum(E_2, axis=(-2, -1)) / (M**2 * wbar**2)  # (...)
+    E_2 *= fw_prod * B.expand_dims(ow, (-2, -1)) * ew_prod  # (... M M)
+    E_2 = B.sum(E_2, axis=(-2, -1)) / (wbar**2)  # (...)
 
     return E_1 - 0.5 * E_2
 
@@ -64,13 +65,13 @@ def vrvs_ensemble(
     fct: "Array",
     ow: "Array",
     fw: "Array",
+    ens_w: "Array",
     p: float = 1,
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the Vertically Re-scaled Variogram Score for a multivariate finite ensemble."""
     B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-2]
-    wbar = B.mean(fw, axis=-1)
+    wbar = B.mean(fw * ens_w, axis=-1)
 
     fct_diff = (
         B.abs(B.expand_dims(fct, -2) - B.expand_dims(fct, -1)) ** p
@@ -79,7 +80,7 @@ def vrvs_ensemble(
 
     E_1 = (fct_diff - B.expand_dims(obs_diff, axis=-3)) ** 2  # (... M D D)
     E_1 = B.sum(E_1, axis=(-2, -1))  # (... M)
-    E_1 = B.sum(E_1 * fw * B.expand_dims(ow, axis=-1), axis=-1) / M  # (...)
+    E_1 = B.sum(E_1 * fw * B.expand_dims(ow, axis=-1) * ens_w, axis=-1)  # (...)
 
     E_2 = (
         B.expand_dims(fct_diff, -3) - B.expand_dims(fct_diff, -4)
@@ -87,10 +88,11 @@ def vrvs_ensemble(
     E_2 = B.sum(E_2, axis=(-2, -1))  # (... M M)
 
     fw_prod = B.expand_dims(fw, axis=-2) * B.expand_dims(fw, axis=-1)  # (... M M)
-    E_2 = B.sum(E_2 * fw_prod, axis=(-2, -1)) / (M**2)  # (...)
+    ew_prod = B.expand_dims(ens_w, -2) * B.expand_dims(ens_w, -1)  # (... M M)
+    E_2 = B.sum(E_2 * fw_prod * ew_prod, axis=(-2, -1))  # (...)
 
     E_3 = B.sum(fct_diff**2, axis=(-2, -1))  # (... M)
-    E_3 = B.sum(E_3 * fw, axis=-1) / M  # (...)
+    E_3 = B.sum(E_3 * fw * ens_w, axis=-1)  # (...)
     E_3 -= B.sum(obs_diff**2, axis=(-2, -1)) * ow  # (...)
     E_3 *= wbar - ow  # (...)
 
