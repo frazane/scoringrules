@@ -12,6 +12,7 @@ def vs_ensemble(
     obs: "Array",
     fct: "Array",
     /,
+    w: "Array",
     m_axis: int = -2,
     v_axis: int = -1,
     *,
@@ -24,7 +25,7 @@ def vs_ensemble(
     For a :math:`D`-variate ensemble the Variogram Score [1]_ is defined as:
 
     .. math::
-        \text{VS}_{p}(F_{ens}, \mathbf{y})= \sum_{i=1}^{d} \sum_{j=1}^{d}
+        \text{VS}_{p}(F_{ens}, \mathbf{y})= \sum_{i=1}^{d} \sum_{j=1}^{d} w_{i,j}
         \left( \frac{1}{M} \sum_{m=1}^{M} | x_{m,i} - x_{m,j} |^{p} - | y_{i} - y_{j} |^{p} \right)^{2},
 
     where :math:`\mathbf{X}` and :math:`\mathbf{X'}` are independently sampled ensembles from from :math:`F`.
@@ -37,6 +38,9 @@ def vs_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
+    w : array_like
+        The weights assigned to pairs of dimensions. Must be of shape (..., D, D), where
+        D is the dimension, so that the weights are in the last two axes.
     m_axis : int
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int
@@ -80,9 +84,9 @@ def vs_ensemble(
         ens_w = B.moveaxis(ens_w, m_axis, -2)
 
     if backend == "numba":
-        return variogram._variogram_score_gufunc(obs, fct, ens_w, p)
+        return variogram._variogram_score_gufunc(obs, fct, w, ens_w, p)
 
-    return variogram.vs(obs, fct, ens_w, p, backend=backend)
+    return variogram.vs(obs, fct, w, ens_w, p, backend=backend)
 
 
 def twvs_ensemble(
