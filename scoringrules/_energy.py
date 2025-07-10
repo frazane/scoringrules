@@ -67,7 +67,7 @@ def es_ensemble(
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
     if ens_w is None:
-        M = fct.shape[m_axis]
+        M = fct.shape[-2]
         ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
     else:
         ens_w = B.moveaxis(ens_w, m_axis, -2)
@@ -192,7 +192,7 @@ def owes_ensemble(
     obs_weights = B.apply_along_axis(w_func, obs, -1)
 
     if ens_w is None:
-        M = fct.shape[m_axis]
+        M = fct.shape[-2]
         ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
     else:
         ens_w = B.moveaxis(ens_w, m_axis, -2)
@@ -265,7 +265,7 @@ def vres_ensemble(
     obs_weights = B.apply_along_axis(w_func, obs, -1)
 
     if ens_w is None:
-        M = fct.shape[m_axis]
+        M = fct.shape[-2]
         ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
     else:
         ens_w = B.moveaxis(ens_w, m_axis, -2)
