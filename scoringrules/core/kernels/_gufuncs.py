@@ -20,12 +20,14 @@ def _gauss_kern_mv(x1: float, x2: float) -> float:
 
 @guvectorize(
     [
-        "void(float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:])",
+        "void(float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(),(n)->()",
+    "(),(n),(n)->()",
 )
-def _ks_ensemble_uv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
+def _ks_ensemble_uv_nrg_gufunc(
+    obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
+):
     """Standard version of the kernel score."""
     obs = obs[0]
     M = fct.shape[-1]
@@ -37,23 +39,25 @@ def _ks_ensemble_uv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
     e_1 = 0
     e_2 = 0
 
-    for x_i in fct:
-        e_1 += _gauss_kern_uv(x_i, obs)
-        for x_j in fct:
-            e_2 += _gauss_kern_uv(x_i, x_j)
+    for i in range(M):
+        e_1 += _gauss_kern_uv(fct[i], obs) * w[i]
+        for j in range(M):
+            e_2 += _gauss_kern_uv(fct[i], fct[j]) * w[i] * w[j]
     e_3 = _gauss_kern_uv(obs, obs)
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M**2) - 0.5 * e_3)
+    out[0] = -(e_1 - 0.5 * e_2 - 0.5 * e_3)
 
 
 @guvectorize(
     [
-        "void(float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:])",
+        "void(float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(),(n)->()",
+    "(),(n),(n)->()",
 )
-def _ks_ensemble_uv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
+def _ks_ensemble_uv_fair_gufunc(
+    obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
+):
     """Fair version of the kernel score."""
     obs = obs[0]
     M = fct.shape[-1]
@@ -65,33 +69,33 @@ def _ks_ensemble_uv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarra
     e_1 = 0
     e_2 = 0
 
-    for x_i in fct:
-        e_1 += _gauss_kern_uv(x_i, obs)
-        for x_j in fct:
-            e_2 += _gauss_kern_uv(x_i, x_j)
+    for i in range(M):
+        e_1 += _gauss_kern_uv(fct[i], obs) * w[i]
+        for j in range(i + 1, M):
+            e_2 += _gauss_kern_uv(fct[i], fct[j]) * w[i] * w[j]
     e_3 = _gauss_kern_uv(obs, obs)
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3)
+    out[0] = -(e_1 - e_2 / (1 - np.sum(w * w)) - 0.5 * e_3)
 
 
 @guvectorize(
     [
-        "void(float32[:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:], float64[:])",
+        "void(float32[:], float32[:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(),(n),(),(n)->()",
+    "(),(n),(),(n),(n)->()",
 )
 def _owks_ensemble_uv_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
     ow: np.ndarray,
     fw: np.ndarray,
+    w: np.ndarray,
     out: np.ndarray,
 ):
     """Outcome-weighted kernel score for univariate ensembles."""
     obs = obs[0]
     ow = ow[0]
-    M = fct.shape[-1]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -101,34 +105,34 @@ def _owks_ensemble_uv_gufunc(
     e_2 = 0.0
 
     for i, x_i in enumerate(fct):
-        e_1 += _gauss_kern_uv(x_i, obs) * fw[i] * ow
+        e_1 += _gauss_kern_uv(x_i, obs) * fw[i] * ow * w[i]
         for j, x_j in enumerate(fct):
-            e_2 += _gauss_kern_uv(x_i, x_j) * fw[i] * fw[j] * ow
+            e_2 += _gauss_kern_uv(x_i, x_j) * fw[i] * fw[j] * ow * w[i] * w[j]
     e_3 = _gauss_kern_uv(obs, obs) * ow
 
-    wbar = np.mean(fw)
+    wbar = np.sum(fw * w)
 
-    out[0] = -(e_1 / (M * wbar) - 0.5 * e_2 / ((M * wbar) ** 2) - 0.5 * e_3)
+    out[0] = -(e_1 / wbar - 0.5 * e_2 / (wbar**2) - 0.5 * e_3)
 
 
 @guvectorize(
     [
-        "void(float32[:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:], float64[:])",
+        "void(float32[:], float32[:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(),(n),(),(n)->()",
+    "(),(n),(),(n),(n)->()",
 )
 def _vrks_ensemble_uv_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
     ow: np.ndarray,
     fw: np.ndarray,
+    w: np.ndarray,
     out: np.ndarray,
 ):
     """Vertically re-scaled kernel score for univariate ensembles."""
     obs = obs[0]
     ow = ow[0]
-    M = fct.shape[-1]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -138,70 +142,75 @@ def _vrks_ensemble_uv_gufunc(
     e_2 = 0.0
 
     for i, x_i in enumerate(fct):
-        e_1 += _gauss_kern_uv(x_i, obs) * fw[i] * ow
+        e_1 += _gauss_kern_uv(x_i, obs) * fw[i] * ow * w[i]
         for j, x_j in enumerate(fct):
-            e_2 += _gauss_kern_uv(x_i, x_j) * fw[i] * fw[j]
+            e_2 += _gauss_kern_uv(x_i, x_j) * fw[i] * fw[j] * w[i] * w[j]
     e_3 = _gauss_kern_uv(obs, obs) * ow * ow
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M**2) - 0.5 * e_3)
+    out[0] = -(e_1 - 0.5 * e_2 - 0.5 * e_3)
 
 
 @guvectorize(
     [
-        "void(float32[:], float32[:,:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:])",
+        "void(float32[:], float32[:,:], float32[:], float32[:])",
+        "void(float64[:], float64[:,:], float64[:], float64[:])",
     ],
-    "(d),(m,d)->()",
+    "(d),(m,d),(m)->()",
 )
-def _ks_ensemble_mv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
+def _ks_ensemble_mv_nrg_gufunc(
+    obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
+):
     """Standard version of the multivariate kernel score."""
     M = fct.shape[0]
 
     e_1 = 0.0
     e_2 = 0.0
     for i in range(M):
-        e_1 += float(_gauss_kern_mv(fct[i], obs))
+        e_1 += float(_gauss_kern_mv(fct[i], obs)) * w[i]
         for j in range(M):
-            e_2 += float(_gauss_kern_mv(fct[i], fct[j]))
+            e_2 += float(_gauss_kern_mv(fct[i], fct[j])) * w[i] * w[j]
     e_3 = float(_gauss_kern_mv(obs, obs))
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M**2) - 0.5 * e_3)
+    out[0] = -(e_1 - 0.5 * e_2 - 0.5 * e_3)
 
 
 @guvectorize(
     [
-        "void(float32[:], float32[:,:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:])",
+        "void(float32[:], float32[:,:], float32[:], float32[:])",
+        "void(float64[:], float64[:,:], float64[:], float64[:])",
     ],
-    "(d),(m,d)->()",
+    "(d),(m,d),(m)->()",
 )
-def _ks_ensemble_mv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
+def _ks_ensemble_mv_fair_gufunc(
+    obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
+):
     """Fair version of the multivariate kernel score."""
     M = fct.shape[0]
 
     e_1 = 0.0
     e_2 = 0.0
     for i in range(M):
-        e_1 += float(_gauss_kern_mv(fct[i], obs))
-        for j in range(M):
-            e_2 += float(_gauss_kern_mv(fct[i], fct[j]))
+        e_1 += float(_gauss_kern_mv(fct[i], obs) * w[i])
+        for j in range(i + 1, M):
+            e_2 += float(_gauss_kern_mv(fct[i], fct[j]) * w[i] * w[j])
     e_3 = float(_gauss_kern_mv(obs, obs))
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3)
+    out[0] = -(e_1 - e_2 / (1 - np.sum(w * w)) - 0.5 * e_3)
 
 
 @guvectorize(
     [
-        "void(float32[:], float32[:,:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:], float64[:], float64[:])",
+        "void(float32[:], float32[:,:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:,:], float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(d),(m,d),(),(m)->()",
+    "(d),(m,d),(),(m),(m)->()",
 )
 def _owks_ensemble_mv_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
     ow: np.ndarray,
     fw: np.ndarray,
+    w: np.ndarray,
     out: np.ndarray,
 ):
     """Outcome-weighted kernel score for multivariate ensembles."""
@@ -211,28 +220,31 @@ def _owks_ensemble_mv_gufunc(
     e_1 = 0.0
     e_2 = 0.0
     for i in range(M):
-        e_1 += float(_gauss_kern_mv(fct[i], obs) * fw[i] * ow)
+        e_1 += float(_gauss_kern_mv(fct[i], obs) * fw[i] * ow * w[i])
         for j in range(M):
-            e_2 += float(_gauss_kern_mv(fct[i], fct[j]) * fw[i] * fw[j] * ow)
+            e_2 += float(
+                _gauss_kern_mv(fct[i], fct[j]) * fw[i] * fw[j] * ow * w[i] * w[j]
+            )
     e_3 = float(_gauss_kern_mv(obs, obs)) * ow
 
-    wbar = np.mean(fw)
+    wbar = np.sum(fw * w)
 
-    out[0] = -(e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2) - 0.5 * e_3)
+    out[0] = -(e_1 / wbar - 0.5 * e_2 / (wbar**2) - 0.5 * e_3)
 
 
 @guvectorize(
     [
-        "void(float32[:], float32[:,:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:], float64[:], float64[:])",
+        "void(float32[:], float32[:,:], float32[:], float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:,:], float64[:], float64[:], float64[:], float64[:])",
     ],
-    "(d),(m,d),(),(m)->()",
+    "(d),(m,d),(),(m),(m)->()",
 )
 def _vrks_ensemble_mv_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
     ow: np.ndarray,
     fw: np.ndarray,
+    w: np.ndarray,
     out: np.ndarray,
 ):
     """Vertically re-scaled kernel score for multivariate ensembles."""
@@ -242,12 +254,12 @@ def _vrks_ensemble_mv_gufunc(
     e_1 = 0.0
     e_2 = 0.0
     for i in range(M):
-        e_1 += float(_gauss_kern_mv(fct[i], obs) * fw[i] * ow)
+        e_1 += float(_gauss_kern_mv(fct[i], obs) * fw[i] * ow * w[i])
         for j in range(M):
-            e_2 += float(_gauss_kern_mv(fct[i], fct[j]) * fw[i] * fw[j])
+            e_2 += float(_gauss_kern_mv(fct[i], fct[j]) * fw[i] * fw[j] * w[i] * w[j])
     e_3 = float(_gauss_kern_mv(obs, obs)) * ow * ow
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M**2) - 0.5 * e_3)
+    out[0] = -(e_1 - 0.5 * e_2 - 0.5 * e_3)
 
 
 estimator_gufuncs = {
