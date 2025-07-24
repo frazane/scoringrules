@@ -216,8 +216,8 @@ def _ks_ensemble_mv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
     e_2 = 0.0
     for i in range(M):
         e_1 += float(_gauss_kern_mv(fct[i], obs))
-        for j in range(i + 1, M):
-            e_2 += 2 * float(_gauss_kern_mv(fct[i], fct[j]))
+        for j in range(M):
+            e_2 += float(_gauss_kern_mv(fct[i], fct[j]))
     e_3 = float(_gauss_kern_mv(obs, obs))
 
     out[0] = -(e_1 / M - 0.5 * e_2 / (M**2) - 0.5 * e_3)
@@ -239,10 +239,10 @@ def _ks_ensemble_mv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarra
     for i in range(M):
         e_1 += float(_gauss_kern_mv(fct[i], obs))
         for j in range(i + 1, M):
-            e_2 += 2 * float(_gauss_kern_mv(fct[i], fct[j]))
+            e_2 += float(_gauss_kern_mv(fct[i], fct[j]))
     e_3 = float(_gauss_kern_mv(obs, obs))
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3)
+    out[0] = -(e_1 / M - e_2 / (M * (M - 1)) - 0.5 * e_3)
 
 
 @guvectorize(

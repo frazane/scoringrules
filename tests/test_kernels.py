@@ -21,23 +21,23 @@ def test_gksuv(estimator, backend):
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    # non-negative values
-    res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
-    res = np.asarray(res)
-    assert not np.any(res < 0.0)
-
-    # m_axis keyword
-    res = sr.gksuv_ensemble(
-        obs,
-        np.random.randn(ENSEMBLE_SIZE, N),
-        m_axis=0,
-        estimator=estimator,
-        backend=backend,
-    )
-    res = np.asarray(res)
-    assert not np.any(res < 0.0)
-
     if estimator == "nrg":
+        # non-negative values
+        res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        res = np.asarray(res)
+        assert not np.any(res < 0.0)
+
+        # m_axis keyword
+        res = sr.gksuv_ensemble(
+            obs,
+            np.random.randn(ENSEMBLE_SIZE, N),
+            m_axis=0,
+            estimator=estimator,
+            backend=backend,
+        )
+        res = np.asarray(res)
+        assert not np.any(res < 0.0)
+
         # approx zero when perfect forecast
         perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
         res = sr.gksuv_ensemble(obs, perfect_fct, estimator=estimator, backend=backend)

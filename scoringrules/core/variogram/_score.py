@@ -9,7 +9,7 @@ if tp.TYPE_CHECKING:
 def vs_ensemble(
     obs: "Array",  # (... D)
     fct: "Array",  # (... M D)
-    p: float = 1,
+    p: float = 0.5,
     estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
@@ -47,7 +47,7 @@ def owvs_ensemble(
     fct: "Array",
     ow: "Array",
     fw: "Array",
-    p: float = 1,
+    p: float = 0.5,
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the Outcome-Weighted Variogram Score for a multivariate finite ensemble."""
@@ -73,7 +73,7 @@ def vrvs_ensemble(
     fct: "Array",
     ow: "Array",
     fw: "Array",
-    p: float = 1,
+    p: float = 0.5,
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the Vertically Re-scaled Variogram Score for a multivariate finite ensemble."""

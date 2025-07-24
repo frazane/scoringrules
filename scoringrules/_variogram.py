@@ -88,7 +88,7 @@ def twvs_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    p: float = 1.0,
+    p: float = 0.5,
     estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
@@ -159,7 +159,7 @@ def owvs_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    p: float = 1.0,
+    p: float = 0.5,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Outcome-Weighted Variogram Score (owVS) for a finite multivariate ensemble.
@@ -234,7 +234,7 @@ def vrvs_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    p: float = 1.0,
+    p: float = 0.5,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Vertically Re-scaled Variogram Score (vrVS) for a finite multivariate ensemble.
