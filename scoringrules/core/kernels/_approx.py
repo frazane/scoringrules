@@ -35,13 +35,14 @@ def ensemble_uv(
     e_2 = B.sum(
         gauss_kern_uv(fct[..., None], fct[..., None, :], backend=backend),
         axis=(-1, -2),
-    ) / (M**2)
+    )
     e_3 = gauss_kern_uv(obs, obs)
 
     if estimator == "nrg":
-        out = e_1 - 0.5 * e_2 - 0.5 * e_3
+        out = e_1 - 0.5 * e_2 / (M**2) - 0.5 * e_3
     elif estimator == "fair":
-        out = e_1 - 0.5 * e_2 * (M / (M - 1)) - 0.5 * e_3
+        e_2 -= B.sum(gauss_kern_uv(fct, fct, backend=backend), axis=-1)
+        out = e_1 - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3
 
     return -out
 
@@ -65,13 +66,14 @@ def ensemble_mv(
     e_2 = B.sum(
         gauss_kern_mv(B.expand_dims(fct, -3), B.expand_dims(fct, -2), backend=backend),
         axis=(-2, -1),
-    ) / (M**2)
+    )
     e_3 = gauss_kern_mv(obs, obs)
 
     if estimator == "nrg":
-        out = e_1 - 0.5 * e_2 - 0.5 * e_3
+        out = e_1 - 0.5 * e_2 / (M**2) - 0.5 * e_3
     elif estimator == "fair":
-        out = e_1 - 0.5 * e_2 * (M / (M - 1)) - 0.5 * e_3
+        e_2 -= B.sum(gauss_kern_mv(fct, fct, backend=backend), axis=-1)
+        out = e_1 - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3
 
     return -out
 

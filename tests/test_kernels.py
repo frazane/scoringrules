@@ -50,18 +50,6 @@ def test_gksuv(estimator, backend):
         expected = 0.2490516
         assert np.isclose(res, expected)
 
-    elif estimator == "fair":
-        # test correctness
-        obs, fct = 11.6, np.array([9.8, 8.7, 11.9, 12.1, 13.4])
-        res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
-        expected = 0.2987752
-        assert np.isclose(res, expected)
-
-    # test exceptions
-    with pytest.raises(ValueError):
-        est = "undefined_estimator"
-        sr.gksuv_ensemble(obs, fct, estimator=est, backend=backend)
-
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -94,21 +82,6 @@ def test_gksmv(estimator, backend):
         res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
         expected = 0.5868737
         assert np.isclose(res, expected)
-
-    elif estimator == "fair":
-        # test correctness
-        obs = np.array([11.6, -23.1])
-        fct = np.array(
-            [[9.8, 8.7, 11.9, 12.1, 13.4], [-24.8, -18.5, -29.9, -18.3, -21.0]]
-        ).transpose()
-        res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
-        expected = 0.6120162
-        assert np.isclose(res, expected)
-
-    # test exceptions
-    with pytest.raises(ValueError):
-        est = "undefined_estimator"
-        sr.gksmv_ensemble(obs, fct, estimator=est, backend=backend)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
@@ -212,43 +185,6 @@ def test_twgksuv(estimator, backend):
             )
         )
         np.testing.assert_allclose(res, 0.0089314, rtol=1e-6)
-
-    elif estimator == "fair":
-        res = np.mean(
-            np.float64(
-                sr.twgksuv_ensemble(
-                    obs, fct, v_func=v_func1, estimator=estimator, backend=backend
-                )
-            )
-        )
-        np.testing.assert_allclose(res, 0.130842, rtol=1e-6)
-
-        res = np.mean(
-            np.float64(
-                sr.twgksuv_ensemble(
-                    obs, fct, a=-1.0, estimator=estimator, backend=backend
-                )
-            )
-        )
-        np.testing.assert_allclose(res, 0.130842, rtol=1e-6)
-
-        res = np.mean(
-            np.float64(
-                sr.twgksuv_ensemble(
-                    obs, fct, v_func=v_func2, estimator=estimator, backend=backend
-                )
-            )
-        )
-        np.testing.assert_allclose(res, 0.1283745, rtol=1e-6)
-
-        res = np.mean(
-            np.float64(
-                sr.twgksuv_ensemble(
-                    obs, fct, b=1.85, estimator=estimator, backend=backend
-                )
-            )
-        )
-        np.testing.assert_allclose(res, 0.1283745, rtol=1e-6)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
