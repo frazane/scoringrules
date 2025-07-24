@@ -186,7 +186,7 @@ def owes_ensemble(
     obs_weights = B.apply_along_axis(w_func, obs, -1)
 
     if B.name == "numba":
-        return energy._owenergy_score_gufunc(obs, fct, obs_weights, fct_weights)
+        return energy.estimator_gufuncs["ownrg"](obs, fct, obs_weights, fct_weights)
 
     return energy.owes(obs, fct, obs_weights, fct_weights, backend=backend)
 
@@ -248,6 +248,6 @@ def vres_ensemble(
     obs_weights = B.apply_along_axis(w_func, obs, -1)
 
     if backend == "numba":
-        return energy._vrenergy_score_gufunc(obs, fct, obs_weights, fct_weights)
+        return energy.estimator_gufuncs["vrnrg"](obs, fct, obs_weights, fct_weights)
 
     return energy.vres(obs, fct, obs_weights, fct_weights, backend=backend)
