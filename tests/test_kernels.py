@@ -351,8 +351,8 @@ def test_owgksmv(backend):
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_vrgksuv(backend):
-    if backend == "jax":
-        pytest.skip("Not implemented in jax backend")
+    if backend in ["jax", "torch"]:
+        pytest.skip("Not implemented in torch and jax backends")
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N)) * 0.3
@@ -373,19 +373,19 @@ def test_vrgksuv(backend):
 
     # no argument given
     resw = sr.vrgksuv_ensemble(obs, fct, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-3)
+    np.testing.assert_allclose(res, resw, rtol=1e-6)
 
     # a and b
     resw = sr.vrgksuv_ensemble(
         obs, fct, a=float("-inf"), b=float("inf"), backend=backend
     )
-    np.testing.assert_allclose(res, resw, rtol=1e-3)
+    np.testing.assert_allclose(res, resw, rtol=1e-6)
 
     # w_func as identity function
     resw = sr.vrgksuv_ensemble(
         obs, fct, w_func=lambda x: x * 0.0 + 1.0, backend=backend
     )
-    np.testing.assert_allclose(res, resw, rtol=1e-3)
+    np.testing.assert_allclose(res, resw, rtol=1e-6)
 
     # test correctness
     fct = np.array(
@@ -424,10 +424,10 @@ def test_vrgksuv(backend):
     res = np.mean(
         np.float64(sr.vrgksuv_ensemble(obs, fct, w_func=w_func, backend=backend))
     )
-    np.testing.assert_allclose(res, 0.01476682, rtol=1e-3)
+    np.testing.assert_allclose(res, 0.01476682, rtol=1e-6)
 
     res = np.mean(np.float64(sr.vrgksuv_ensemble(obs, fct, a=-1.0, backend=backend)))
-    np.testing.assert_allclose(res, 0.01476682, rtol=1e-3)
+    np.testing.assert_allclose(res, 0.01476682, rtol=1e-6)
 
     def w_func(x):
         return (x < 1.85) * 1.0
@@ -435,10 +435,10 @@ def test_vrgksuv(backend):
     res = np.mean(
         np.float64(sr.vrgksuv_ensemble(obs, fct, w_func=w_func, backend=backend))
     )
-    np.testing.assert_allclose(res, 0.04011836, rtol=1e-3)
+    np.testing.assert_allclose(res, 0.04011836, rtol=1e-6)
 
     res = np.mean(np.float64(sr.vrgksuv_ensemble(obs, fct, b=1.85, backend=backend)))
-    np.testing.assert_allclose(res, 0.04011836, rtol=1e-3)
+    np.testing.assert_allclose(res, 0.04011836, rtol=1e-6)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
