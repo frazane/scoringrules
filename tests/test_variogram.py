@@ -49,4 +49,4 @@ def test_variogram_score_correctness(backend):
     np.testing.assert_allclose(res, 0.05083489, rtol=1e-5)
 
     res = sr.vs_ensemble(obs, fct.T, p=1.0, backend=backend)
-    np.testing.assert_allclose(res, 0.04856365, rtol=1e-5)
+    np.testing.assert_allclose(res, 0.04856366, rtol=1e-5)

@@ -15,7 +15,7 @@ def vs_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    p: float = 1.0,
+    p: float = 0.5,
     estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
