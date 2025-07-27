@@ -269,6 +269,9 @@ class JaxBackend(ArrayBackend):
     def indices(self, dimensions: tuple) -> "Array":
         return jnp.indices(dimensions)
 
+    def roll(self, x: "Array", shift: int = 1, axis: int = -1) -> "Array":
+        return jnp.roll(x, shift=shift, axis=axis)
+
 
 if __name__ == "__main__":
     B = JaxBackend()

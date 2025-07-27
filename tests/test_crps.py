@@ -21,7 +21,7 @@ def test_crps_ensemble(estimator, backend):
 
     # test exceptions
     if backend in ["numpy", "jax", "torch", "tensorflow"]:
-        if estimator not in ["nrg", "fair", "pwm"]:
+        if estimator == "int":
             with pytest.raises(ValueError):
                 sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
             return
@@ -53,6 +53,27 @@ def test_crps_ensemble(estimator, backend):
     res = sr.crps_ensemble(obs, perfect_fct, estimator=estimator, backend=backend)
     res = np.asarray(res)
     assert not np.any(res - 0.0 > 0.0001)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_crps_estimators(backend):
+    obs = np.random.randn(N)
+    mu = obs + np.random.randn(N) * 0.3
+    sigma = abs(np.random.randn(N)) * 0.5
+    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+
+    # equality of estimators
+    res_nrg = sr.crps_ensemble(obs, fct, estimator="nrg", backend=backend)
+    res_fair = sr.crps_ensemble(obs, fct, estimator="fair", backend=backend)
+    res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm", backend=backend)
+    res_qd = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
+
+    assert np.allclose(res_nrg, res_qd)
+    assert np.allclose(res_fair, res_pwm)
+
+    if backend == "numba":
+        res_int = sr.crps_ensemble(obs, fct, estimator="int", backend=backend)
+        assert np.allclose(res_nrg, res_int)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

@@ -215,6 +215,26 @@ $$
 
 Some examples are given below.
 
+More generally, for any positive definite kernel $k$, we have that
+
+$$ \mathbb{E} S_{k}(F_{M}, y) = \mathbb{E} S_{k}(F, y) + \frac{1}{2M} \left( \mathbb{E} k(x_{1}, x_{1}) - \mathbb{E} k(x_{1}, x_{2}) \right). $$
+
+Using this, a fair version of the kernel score is
+
+$$
+    S_{k}^{f}(F_{M}, y) = \frac{1}{M(M - 1)} \sum_{i=1}^{M-1} \sum_{j=i+1}^{M} k(x_{i}, x_{j}) + \frac{1}{2} k(y, y) - \frac{1}{M} \sum_{i=1}^{M} k(x_{i}, y).
+$$
+
+The first term on the right-hand side is simply the mean of $k(x_i, x_j)$ over all $i,j = 1, \dots, M$ such that $i \neq j$.
+
+For kernels defined in terms of conditionally negative definite functions, as described above, we have that
+
+$$
+\mathbb{E} k(x_{1}, x_{1}) - \mathbb{E} k(x_{1}, x_{2}) = 2 \mathbb{E} \rho(x_1, x_{0}) - \mathbb{E} \left[ \rho(x_1, x_0) + \rho(x_2, x_{0}) - \rho(x_1, x_2) \right] = \mathbb{E} \rho(x_1, x_2),
+$$
+
+showing that we recover the previous results in this case.
+
 
 #### CRPS
 
