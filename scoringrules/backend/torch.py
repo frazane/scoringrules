@@ -288,4 +288,4 @@ class TorchBackend(ArrayBackend):
         return indices
 
     def roll(self, x: "Tensor", shift: int = 1, axis: int = -1) -> "Tensor":
-        return torch.roll(x, shift=shift, dims=axis)
+        return torch.roll(x, shifts=shift, dims=axis)
