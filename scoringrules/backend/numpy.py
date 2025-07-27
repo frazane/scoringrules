@@ -198,6 +198,17 @@ class NumpyBackend(ArrayBackend):
         out = np.sort(x, axis=axis)
         return -out if descending else out
 
+    def argsort(
+        self,
+        x: "NDArray",
+        /,
+        *,
+        axis: int = -1,
+        descending: bool = False,
+    ) -> "NDArray":
+        x = -x if descending else x
+        return np.argsort(x, axis=axis)
+
     def norm(
         self, x: "NDArray", axis: int | tuple[int, ...] | None = None
     ) -> "NDArray":
@@ -264,6 +275,9 @@ class NumpyBackend(ArrayBackend):
 
     def indices(self, dimensions: tuple) -> "NDArray":
         return np.indices(dimensions)
+
+    def gather(self, x: "NDArray", ind: "NDArray", axis: int) -> "NDArray":
+        return np.take_along_axis(x, ind, axis=axis)
 
 
 class NumbaBackend(NumpyBackend):
