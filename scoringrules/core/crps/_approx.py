@@ -19,6 +19,12 @@ def ensemble(
         out = _crps_ensemble_pwm(obs, fct, backend=backend)
     elif estimator == "fair":
         out = _crps_ensemble_fair(obs, fct, backend=backend)
+    elif estimator == "qd":
+        out = _crps_ensemble_qd(obs, fct, backend=backend)
+    elif estimator == "akr":
+        out = _crps_ensemble_akr(obs, fct, backend=backend)
+    elif estimator == "akr_circperm":
+        out = _crps_ensemble_akr_circperm(obs, fct, backend=backend)
     else:
         raise ValueError(
             f"{estimator} can only be used with `numpy` "
@@ -63,6 +69,40 @@ def _crps_ensemble_pwm(
     β_0 = B.sum(fct, axis=-1) / M
     β_1 = B.sum(fct * B.arange(0, M), axis=-1) / (M * (M - 1.0))
     return expected_diff + β_0 - 2.0 * β_1
+
+
+def _crps_ensemble_akr(
+    obs: "Array", fct: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS estimator based on the approximate kernel representation."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-1]
+    e_1 = B.sum(B.abs(obs[..., None] - fct), axis=-1) / M
+    e_2 = B.sum(B.abs(fct - B.roll(fct, shift=1, axis=-1)), -1) / M
+    return e_1 - 0.5 * e_2
+
+
+def _crps_ensemble_akr_circperm(
+    obs: "Array", fct: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS estimator based on the AKR with cyclic permutation."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-1]
+    e_1 = B.sum(B.abs(obs[..., None] - fct), axis=-1) / M
+    shift = M // 2
+    e_2 = B.sum(B.abs(fct - B.roll(fct, shift=shift, axis=-1)), -1) / M
+    return e_1 - 0.5 * e_2
+
+
+def _crps_ensemble_qd(obs: "Array", fct: "Array", backend: "Backend" = None) -> "Array":
+    """CRPS estimator based on the quantile decomposition form."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-1]
+    alpha = B.arange(1, M + 1) - 0.5
+    below = (fct <= obs[..., None]) * alpha * (obs[..., None] - fct)
+    above = (fct > obs[..., None]) * (M - alpha) * (fct - obs[..., None])
+    out = B.sum(below + above, axis=-1) / (M**2)
+    return 2 * out
 
 
 def quantile_pinball(
