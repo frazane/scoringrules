@@ -14,6 +14,24 @@ def es_ensemble(
 
     The ensemble and variables axes are on the second last and last dimensions respectively.
     """
+    if estimator == "nrg":
+        out = _es_ensemble_nrg(obs, fct, backend=backend)
+    elif estimator == "fair":
+        out = _es_ensemble_fair(obs, fct, backend=backend)
+    elif estimator == "akr":
+        out = _es_ensemble_akr(obs, fct, backend=backend)
+    elif estimator == "akr_circperm":
+        out = _es_ensemble_akr_circperm(obs, fct, backend=backend)
+    else:
+        raise ValueError(
+            f"{estimator} must be one of 'nrg' and 'fair' for the energy score."
+        )
+
+    return out
+
+
+def _es_ensemble_nrg(obs: "Array", fct: "Array", backend: "Backend" = None) -> "Array":
+    """Compute the Energy Score for a finite ensemble."""
     B = backends.active if backend is None else backends[backend]
     M: int = fct.shape[-2]
 
@@ -21,16 +39,52 @@ def es_ensemble(
     E_1 = B.sum(err_norm, -1) / M
 
     spread_norm = B.norm(B.expand_dims(fct, -3) - B.expand_dims(fct, -2), -1)
-    E_2 = B.sum(spread_norm, (-2, -1))
+    E_2 = B.sum(spread_norm, (-2, -1)) / (M**2)
 
-    if estimator == "nrg":
-        E_2 *= 1 / (M**2)
-    elif estimator == "fair":
-        E_2 *= 1 / (M * (M - 1))
-    else:
-        raise ValueError(
-            f"{estimator} must be one of 'nrg' and 'fair' for the energy score."
-        )
+    return E_1 - 0.5 * E_2
+
+
+def _es_ensemble_fair(obs: "Array", fct: "Array", backend: "Backend" = None) -> "Array":
+    """Compute the fair Energy Score for a finite ensemble."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-2]
+
+    err_norm = B.norm(fct - B.expand_dims(obs, -2), -1)
+    E_1 = B.sum(err_norm, -1) / M
+
+    spread_norm = B.norm(B.expand_dims(fct, -3) - B.expand_dims(fct, -2), -1)
+    E_2 = B.sum(spread_norm, (-2, -1)) / (M * (M - 1))
+
+    return E_1 - 0.5 * E_2
+
+
+def _es_ensemble_akr(obs: "Array", fct: "Array", backend: "Backend" = None) -> "Array":
+    """Compute the Energy Score for a finite ensemble using the approximate kernel representation."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-2]
+
+    err_norm = B.norm(fct - B.expand_dims(obs, -2), -1)
+    E_1 = B.sum(err_norm, -1) / M
+
+    spread_norm = B.norm(fct - B.roll(fct, shift=1, axis=-2), -1)
+    E_2 = B.sum(spread_norm, -1) / M
+
+    return E_1 - 0.5 * E_2
+
+
+def _es_ensemble_akr_circperm(
+    obs: "Array", fct: "Array", backend: "Backend" = None
+) -> "Array":
+    """Compute the Energy Score for a finite ensemble using the AKR with cyclic permutation."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-2]
+
+    err_norm = B.norm(fct - B.expand_dims(obs, -2), -1)
+    E_1 = B.sum(err_norm, -1) / M
+
+    shift = M // 2
+    spread_norm = B.norm(fct - B.roll(fct, shift=shift, axis=-2), -1)
+    E_2 = B.sum(spread_norm, -1) / M
 
     return E_1 - 0.5 * E_2
 
