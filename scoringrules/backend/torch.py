@@ -286,3 +286,6 @@ class TorchBackend(ArrayBackend):
             index_grids = torch.meshgrid(*ranges, indexing="ij")
             indices = torch.stack(index_grids)
         return indices
+
+    def roll(self, x: "Tensor", shift: int = 1, axis: int = -1) -> "Tensor":
+        return torch.roll(x, shift=shift, dims=axis)
