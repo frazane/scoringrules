@@ -14,7 +14,7 @@ def crps_ensemble(
     m_axis: int = -1,
     *,
     sorted_ensemble: bool = False,
-    estimator: str = "pwm",
+    estimator: str = "qd",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the Continuous Ranked Probability Score (CRPS) for a finite ensemble.
@@ -130,7 +130,7 @@ def twcrps_ensemble(
     m_axis: int = -1,
     *,
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
-    estimator: str = "pwm",
+    estimator: str = "qd",
     sorted_ensemble: bool = False,
     backend: "Backend" = None,
 ) -> "Array":
