@@ -3,10 +3,13 @@ import math
 import numpy as np
 from numba import guvectorize, njit, vectorize
 
+from scoringrules.core.utils import lazy_gufunc_wrapper_uv
+
 INV_SQRT_PI = 1 / np.sqrt(np.pi)
 EPSILON = 1e-6
 
 
+@lazy_gufunc_wrapper_uv
 @guvectorize("(),(a),(a)->()")
 def quantile_pinball_gufunc(
     obs: np.ndarray, fct: np.ndarray, alpha: np.ndarray, out: np.ndarray
@@ -78,9 +81,16 @@ def _crps_ensemble_qd_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     out[0] = (2 / M**2) * integral
 
 
-@guvectorize("(),(n)->()")
+@guvectorize(
+    [
+        "void(float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:])",
+    ],
+    "(),(n)->()",
+)
 def _crps_ensemble_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimator based on the energy form."""
+    obs = obs[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -128,7 +138,6 @@ def _crps_ensemble_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
 @guvectorize("(),(n)->()")
 def _crps_ensemble_pwm_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimator based on the probability weighted moment (PWM) form."""
-    # obs = obs[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -167,7 +176,6 @@ def _crps_ensemble_akr_circperm_gufunc(
 ):
     """CRPS estimaton based on the AKR with cyclic permutation."""
     M = fct.shape[-1]
-    # obs = obs[0]
     e_1 = 0.0
     e_2 = 0.0
     for i, forecast in enumerate(fct):
@@ -186,8 +194,6 @@ def _owcrps_ensemble_nrg_gufunc(
     out: np.ndarray,
 ):
     """Outcome-weighted CRPS estimator based on the energy form."""
-    # obs = obs[0]
-    # ow = ow[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -216,8 +222,6 @@ def _vrcrps_ensemble_nrg_gufunc(
     out: np.ndarray,
 ):
     """Vertically re-scaled CRPS estimator based on the energy form."""
-    # obs = obs[0]
-    # ow = ow[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -284,29 +288,16 @@ def _crps_logistic_ufunc(obs: float, mu: float, sigma: float) -> float:
     return out
 
 
-def _lazy_gufunc_wrapper(func):
-    """Wrapper for lazy gufuncs so they return a value instead of having to take in an output array."""
-    """This is a workaround for lazy gufuncs that do not return an output array."""
-
-    def wrapper(*args):
-        out = np.empty_like(args[0])
-        # breakpoint()
-        func(*args, out)
-        return out
-
-    return wrapper
-
-
 estimator_gufuncs = {
-    "akr_circperm": _lazy_gufunc_wrapper(_crps_ensemble_akr_circperm_gufunc),
-    "akr": _lazy_gufunc_wrapper(_crps_ensemble_akr_gufunc),
+    "akr_circperm": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_circperm_gufunc),
+    "akr": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_gufunc),
     "fair": _crps_ensemble_fair_gufunc,
-    "int": _lazy_gufunc_wrapper(_crps_ensemble_int_gufunc),
-    "nrg": _lazy_gufunc_wrapper(_crps_ensemble_nrg_gufunc),
-    "pwm": _lazy_gufunc_wrapper(_crps_ensemble_pwm_gufunc),
-    "qd": _lazy_gufunc_wrapper(_crps_ensemble_qd_gufunc),
-    "ownrg": _lazy_gufunc_wrapper(_owcrps_ensemble_nrg_gufunc),
-    "vrnrg": _lazy_gufunc_wrapper(_vrcrps_ensemble_nrg_gufunc),
+    "int": lazy_gufunc_wrapper_uv(_crps_ensemble_int_gufunc),
+    "nrg": lazy_gufunc_wrapper_uv(_crps_ensemble_nrg_gufunc),
+    "pwm": lazy_gufunc_wrapper_uv(_crps_ensemble_pwm_gufunc),
+    "qd": lazy_gufunc_wrapper_uv(_crps_ensemble_qd_gufunc),
+    "ownrg": lazy_gufunc_wrapper_uv(_owcrps_ensemble_nrg_gufunc),
+    "vrnrg": lazy_gufunc_wrapper_uv(_vrcrps_ensemble_nrg_gufunc),
 }
 
 __all__ = [
