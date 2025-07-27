@@ -25,12 +25,15 @@ def ensemble(
         out = _crps_ensemble_akr(obs, fct, backend=backend)
     elif estimator == "akr_circperm":
         out = _crps_ensemble_akr_circperm(obs, fct, backend=backend)
-    else:
+    elif estimator == "int":
         raise ValueError(
-            f"{estimator} can only be used with `numpy` "
+            "'int' estimator can only be used with `numpy` "
             "backend and needs `numba` to be installed"
         )
-
+    else:
+        raise ValueError(
+            f"{estimator} not a valid estimator, must be one of 'nrg', 'fair', 'pwm', 'qd', 'akr', 'akr_circperm' and 'int'."
+        )
     return out
 
 

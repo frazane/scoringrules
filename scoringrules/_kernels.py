@@ -60,18 +60,17 @@ def gksuv_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
+    if m_axis != -1:
+        fct = B.moveaxis(fct, m_axis, -1)
+
     if backend == "numba":
         if estimator not in kernels.estimator_gufuncs:
             raise ValueError(
                 f"{estimator} is not a valid estimator. "
                 f"Must be one of {kernels.estimator_gufuncs.keys()}"
             )
-
-    if m_axis != -1:
-        fct = B.moveaxis(fct, m_axis, -1)
-
-    if backend == "numba":
-        return kernels.estimator_gufuncs[estimator](obs, fct)
+        else:
+            return kernels.estimator_gufuncs[estimator](obs, fct)
 
     return kernels.ensemble_uv(obs, fct, estimator, backend=backend)
 
@@ -380,14 +379,14 @@ def gksmv_ensemble(
     backend = backend if backend is not None else backends._active
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
-    if estimator not in kernels.estimator_gufuncs_mv:
-        raise ValueError(
-            f"{estimator} is not a valid estimator. "
-            f"Must be one of {kernels.estimator_gufuncs_mv.keys()}"
-        )
-
     if backend == "numba":
-        return kernels.estimator_gufuncs_mv[estimator](obs, fct)
+        if estimator not in kernels.estimator_gufuncs_mv:
+            raise ValueError(
+                f"{estimator} is not a valid estimator. "
+                f"Must be one of {kernels.estimator_gufuncs_mv.keys()}"
+            )
+        else:
+            return kernels.estimator_gufuncs_mv[estimator](obs, fct)
 
     return kernels.ensemble_mv(obs, fct, estimator, backend=backend)
 
