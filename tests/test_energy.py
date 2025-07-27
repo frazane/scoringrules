@@ -29,5 +29,5 @@ def test_energy_score(backend):
     ).T
     obs = np.array([0.2743836, 0.8146400])
     res = sr.es_ensemble(obs, fct, backend=backend)
-    expected = 0.334542  # TODO: test this against scoringRules
+    expected = 0.3345418
     np.testing.assert_allclose(res, expected, atol=1e-6)
