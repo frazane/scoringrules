@@ -60,9 +60,16 @@ def _crps_ensemble_int_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
     out[0] = integral
 
 
-@guvectorize("(),(n)->()")
+@guvectorize(
+    [
+        "void(float32[:], float32[:], float32[:])",
+        "void(float64[:], float64[:], float64[:])",
+    ],
+    "(),(n)->()",
+)
 def _crps_ensemble_qd_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimator based on the quantile decomposition form."""
+    obs = obs[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -295,7 +302,7 @@ estimator_gufuncs = {
     "int": lazy_gufunc_wrapper_uv(_crps_ensemble_int_gufunc),
     "nrg": lazy_gufunc_wrapper_uv(_crps_ensemble_nrg_gufunc),
     "pwm": lazy_gufunc_wrapper_uv(_crps_ensemble_pwm_gufunc),
-    "qd": lazy_gufunc_wrapper_uv(_crps_ensemble_qd_gufunc),
+    "qd": _crps_ensemble_qd_gufunc,
     "ownrg": lazy_gufunc_wrapper_uv(_owcrps_ensemble_nrg_gufunc),
     "vrnrg": lazy_gufunc_wrapper_uv(_vrcrps_ensemble_nrg_gufunc),
 }
