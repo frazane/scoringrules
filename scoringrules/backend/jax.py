@@ -269,6 +269,15 @@ class JaxBackend(ArrayBackend):
     def indices(self, dimensions: tuple) -> "Array":
         return jnp.indices(dimensions)
 
+    def inv(self, x: "Array") -> "Array":
+        return jnp.linalg.inv(x)
+
+    def cov(self, x: "Array", rowvar: bool = True, bias: bool = False) -> "Array":
+        return jnp.cov(x, rowavar=rowvar, bias=bias)
+
+    def det(self, x: "Array") -> "Array":
+        return jnp.linalg.det(x)
+
 
 if __name__ == "__main__":
     B = JaxBackend()

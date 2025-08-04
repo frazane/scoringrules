@@ -304,6 +304,21 @@ class TensorflowBackend(ArrayBackend):
         indices = tf.stack(index_grids)
         return indices
 
+    def inv(self, x: "Tensor") -> "Tensor":
+        return tf.linalg.inv(x)
+
+    def cov(self, x: "Tensor", rowvar: bool = True, bias: bool = False) -> "Tensor":
+        if not rowvar:
+            x = tf.transpose(x)
+        x = x - tf.reduce_mean(x, axis=1, keepdims=True)
+        correction = tf.cast(tf.shape(x)[1], x.dtype) - 1.0
+        if bias:
+            correction += 1.0
+        return tf.matmul(x, x, transpose_b=True) / correction
+
+    def det(self, x: "Tensor") -> "Tensor":
+        return tf.linalg.det(x)
+
 
 if __name__ == "__main__":
     B = TensorflowBackend()

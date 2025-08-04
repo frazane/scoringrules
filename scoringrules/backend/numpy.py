@@ -268,12 +268,8 @@ class NumpyBackend(ArrayBackend):
     def inv(self, x: "NDArray") -> "NDArray":
         return np.linalg.inv(x)
 
-    def cov(self, x: "NDArray") -> "NDArray":
-        if len(x.shape) == 2:
-            return np.cov(x)
-        else:
-            centered = x - x.mean(axis=-2, keepdims=True)
-            return (centered.transpose(0, 2, 1) @ centered) / (x.shape[-2] - 1)
+    def cov(self, x: "NDArray", rowvar: bool = True, bias: bool = False) -> "NDArray":
+        return np.cov(x, rowvar=rowvar, bias=bias)
 
     def det(self, x: "NDArray") -> "NDArray":
         return np.linalg.det(x)

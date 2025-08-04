@@ -286,3 +286,13 @@ class TorchBackend(ArrayBackend):
             index_grids = torch.meshgrid(*ranges, indexing="ij")
             indices = torch.stack(index_grids)
         return indices
+
+    def inv(self, x: "Tensor") -> "Tensor":
+        return torch.linalg.inv(x)
+
+    def cov(self, x: "Tensor", rowvar: bool = True, bias: bool = False) -> "Tensor":
+        correction = 0 if bias else 1
+        return torch.cov(x, rowvar=rowvar, correction=correction)
+
+    def det(self, x: "Tensor") -> "Tensor":
+        return torch.linalg.det(x)

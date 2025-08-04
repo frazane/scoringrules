@@ -297,3 +297,15 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def indices(self, x: "Array") -> int:
         """Return an array representing the indices of a grid."""
+
+    @abc.abstractmethod
+    def inv(self, x: "Array") -> "Array":
+        """Return the inverse of a matrix."""
+
+    @abc.abstractmethod
+    def cov(self, x: "Array", rowvar: bool, bias: bool) -> "Array":
+        """Return the covariance matrix from a sample."""
+
+    @abc.abstractmethod
+    def det(self, x: "Array") -> "Array":
+        """Return the determinant of a matrix."""
