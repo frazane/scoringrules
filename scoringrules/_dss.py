@@ -8,7 +8,57 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, Backend
 
 
-def dss_ensemble(
+def dssuv_ensemble(
+    obs: "Array",
+    fct: "Array",
+    /,
+    m_axis: int = -2,
+    *,
+    bias: bool = False,
+    backend: "Backend" = None,
+) -> "Array":
+    r"""Compute the Dawid-Sebastiani-Score for a finite univariate ensemble.
+
+    The Dawid-Sebastiani Score for an ensemble forecast is defined as
+
+    .. math::
+        \text{DSS}(F_{ens}, y)= \frac{(y - \bar{x)^2}{\sigma^2} + 2 \log \sigma
+
+    where :math:`\bar{x}` and :math:`\sigma` are the mean and standard deviation of the ensemble members.
+
+    Parameters
+    ----------
+    obs : array_like
+        The observed values.
+    fct : array_like, shape (..., m)
+        The predicted forecast ensemble, where the ensemble dimension is by default
+        represented by the last axis.
+    m_axis : int
+        The axis corresponding to the ensemble. Default is the last axis.
+    bias : bool
+        Logical specifying whether the biased or unbiased estimator of the standard deviation
+        should be used to calculate the score. Default is the unbiased estimator (`bias=False`).
+    backend : str
+        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+
+    Returns
+    -------
+    score: Array
+        The computed Dawid-Sebastiani Score.
+    """
+    B = backends.active if backend is None else backends[backend]
+    obs, fct = map(B.asarray, (obs, fct))
+
+    if m_axis != -1:
+        fct = B.moveaxis(fct, m_axis, -1)
+
+    if backend == "numba":
+        return dss._dss_uv_gufunc(obs, fct, bias)
+
+    return dss.ds_score_uv(obs, fct, bias, backend=backend)
+
+
+def dssmv_ensemble(
     obs: "Array",
     fct: "Array",
     /,
@@ -54,6 +104,6 @@ def dss_ensemble(
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
     if backend == "numba":
-        return dss._dss_gufunc(obs, fct, bias)
+        return dss._dss_mv_gufunc(obs, fct, bias)
 
-    return dss.dss(obs, fct, bias, backend=backend)
+    return dss.ds_score_mv(obs, fct, bias, backend=backend)

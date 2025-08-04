@@ -6,7 +6,23 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, Backend
 
 
-def ds_score(
+def ds_score_uv(
+    obs: "Array",
+    fct: "Array",
+    bias: bool = False,
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the Dawid Sebastiani Score for a univariate finite ensemble."""
+    B = backends.active if backend is None else backends[backend]
+    ens_mean = B.mean(fct, axis=-1)
+    obs_cent = obs - ens_mean
+    sig = B.std(fct, axis=-1, bias=bias)
+    bias_precision = ((obs_cent - ens_mean) / sig) ** 2
+    log_sig = 2 * B.log(sig)
+    return bias_precision + log_sig
+
+
+def ds_score_mv(
     obs: "Array",  # (... D)
     fct: "Array",  # (... M D)
     bias: bool = False,
@@ -23,7 +39,7 @@ def ds_score(
         if depth == len(batch_dims):
             fct_i = fct[tuple(current_index)]  # (M, D)
             obs_i = obs[tuple(current_index)]  # (D)
-            score = ds_score_mat(obs_i, fct_i, bias, backend=backend)  # ()
+            score = ds_score_mv_mat(obs_i, fct_i, bias, backend=backend)  # ()
             out[tuple(current_index)] = score
             return
 
@@ -34,7 +50,7 @@ def ds_score(
     return out
 
 
-def ds_score_mat(
+def ds_score_mv_mat(
     obs: "Array",  # (D)
     fct: "Array",  # (M D)
     bias: bool = False,
