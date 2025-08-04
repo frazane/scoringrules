@@ -1,19 +1,16 @@
 import numpy as np
 from numba import guvectorize
 
+from scoringrules.core.utils import lazy_gufunc_wrapper_mv
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:])",
-    ],
-    "(d),(m,d)->()",
-)
-def _dss_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
-    M = fct.shape[0]
-    bias = obs - (np.sum(fct, axis=0) / M)
-    cov = np.cov(fct, rowvar=False).astype(bias.dtype)
-    prec = np.linalg.inv(cov).astype(bias.dtype)
+
+@lazy_gufunc_wrapper_mv
+@guvectorize("(d),(m,d)->()")
+def _dss_gufunc(obs: np.ndarray, fct: np.ndarray, bias: bool, out: np.ndarray):
+    ens_mean = np.mean(fct, axis=-2)
+    obs_cent = obs - ens_mean
+    cov = np.cov(fct, rowvar=False, bias=bias)
+    prec = np.linalg.inv(cov)
     log_det = np.log(np.linalg.det(cov))
-    bias_precision = bias.T @ prec @ bias
-    out[0] = log_det + bias_precision
+    bias_precision = np.transpose(obs_cent) @ prec @ obs_cent
+    out[0] = bias_precision + log_det
