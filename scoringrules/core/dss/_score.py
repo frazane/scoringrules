@@ -15,9 +15,8 @@ def ds_score_uv(
     """Compute the Dawid Sebastiani Score for a univariate finite ensemble."""
     B = backends.active if backend is None else backends[backend]
     ens_mean = B.mean(fct, axis=-1)
-    obs_cent = obs - ens_mean
     sig = B.std(fct, axis=-1, bias=bias)
-    bias_precision = ((obs_cent - ens_mean) / sig) ** 2
+    bias_precision = ((obs - ens_mean) / sig) ** 2
     log_sig = 2 * B.log(sig)
     return bias_precision + log_sig
 

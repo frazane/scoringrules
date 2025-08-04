@@ -12,7 +12,7 @@ def dssuv_ensemble(
     obs: "Array",
     fct: "Array",
     /,
-    m_axis: int = -2,
+    m_axis: int = -1,
     *,
     bias: bool = False,
     backend: "Backend" = None,
