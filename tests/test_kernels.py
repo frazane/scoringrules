@@ -1,4 +1,3 @@
-import jax
 import numpy as np
 import pytest
 import scoringrules as sr
@@ -62,7 +61,7 @@ def test_gksmv(estimator, backend):
     if backend in ["numpy", "numba"]:
         assert isinstance(res, np.ndarray)
     elif backend == "jax":
-        assert isinstance(res, jax.Array)
+        assert "jax" in res.__module__
 
     if estimator == "nrg":
         # approx zero when perfect forecast

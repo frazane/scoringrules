@@ -1,14 +1,11 @@
 import numpy as np
 from numba import guvectorize
 
+from scoringrules.core.utils import lazy_gufunc_wrapper_uv
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:], float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(),(a),(a),(a),(),(a) ->()",
-)
+
+@lazy_gufunc_wrapper_uv
+@guvectorize("(),(),(a),(a),(a),(),(a) ->()", cache=True)
 def _weighted_interval_score_gufunc(
     obs: np.ndarray,
     median: np.ndarray,
@@ -20,9 +17,6 @@ def _weighted_interval_score_gufunc(
     out: np.ndarray,
 ):
     """Weighted Interval score (WIS)."""
-    obs = obs[0]
-    med = median[0]
-    w_med = weight_median[0]
     K = alpha.shape[0]
     wis = 0
     for low, upp, a, w_a in zip(lower, upper, alpha, weight_alpha):  # noqa: B905
@@ -32,6 +26,6 @@ def _weighted_interval_score_gufunc(
             + (obs > upp) * (2 / a) * (obs - upp)
         )
         wis += w_a * ws_a
-    wis += w_med * np.abs(obs - med)
+    wis += weight_median * np.abs(obs - median)
     wis /= K + 1 / 2
     out[0] = wis
