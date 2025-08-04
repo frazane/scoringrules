@@ -54,9 +54,11 @@ class TorchBackend(ArrayBackend):
         /,
         *,
         axis: int | tuple[int, ...] | None = None,
+        bias: bool = False,
         keepdims: bool = False,
     ) -> "Tensor":
-        return torch.std(x, correction=1, axis=axis, keepdim=keepdims)
+        correction = 0 if bias else 1
+        return torch.std(x, correction=correction, axis=axis, keepdim=keepdims)
 
     def quantile(
         self,

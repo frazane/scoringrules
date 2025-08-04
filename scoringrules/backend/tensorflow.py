@@ -58,10 +58,12 @@ class TensorflowBackend(ArrayBackend):
         /,
         *,
         axis: int | tuple[int, ...] | None = None,
+        bias: bool = False,
         keepdims: bool = False,
     ) -> "Tensor":
         n = x.shape.num_elements() if axis is None else x.shape[axis]
-        resc = self.sqrt(n / (n - 1))
+        if not bias:
+            resc = self.sqrt(n / (n - 1))
         return tf.math.reduce_std(x, axis=axis, keepdims=keepdims) * resc
 
     def quantile(

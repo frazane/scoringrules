@@ -53,9 +53,11 @@ class JaxBackend(ArrayBackend):
         /,
         *,
         axis: int | tuple[int, ...] | None = None,
+        bias: bool = False,
         keepdims: bool = False,
     ) -> "Array":
-        return jnp.std(x, ddof=1, axis=axis, keepdims=keepdims)
+        ddof = 0 if bias else 1
+        return jnp.std(x, ddof=ddof, axis=axis, keepdims=keepdims)
 
     def quantile(
         self,

@@ -50,6 +50,7 @@ class ArrayBackend(abc.ABC):
         /,
         *,
         axis: int | tuple[int, ...] | None = None,
+        bias: bool = False,
         keepdims: bool = False,
     ) -> "Array":
         """Calculate the standard deviation of the input array ``x``."""

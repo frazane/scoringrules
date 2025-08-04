@@ -53,9 +53,11 @@ class NumpyBackend(ArrayBackend):
         /,
         *,
         axis: int | tuple[int, ...] | None = None,
+        bias: bool = False,
         keepdims: bool = False,
     ) -> "NDArray":
-        return np.std(x, ddof=1, axis=axis, keepdims=keepdims)
+        ddof = 0 if bias else 1
+        return np.std(x, ddof=ddof, axis=axis, keepdims=keepdims)
 
     def quantile(
         self,
