@@ -1,3 +1,5 @@
+import numpy as np
+
 from scoringrules.backend import backends
 
 _V_AXIS = -1
@@ -30,3 +32,36 @@ def multivariate_array_check(obs, fct, m_axis, v_axis, backend=None):
     v_axis = v_axis if v_axis >= 0 else fct.ndim + v_axis
     _multivariate_shape_compatibility(obs, fct, m_axis)
     return _multivariate_shape_permute(obs, fct, m_axis, v_axis, backend=backend)
+
+
+def lazy_gufunc_wrapper_uv(func):
+    """
+    Wrapper for lazy/dynamic generalized universal functions so
+    they return a value instead of modifying an output array in-place.
+    This is the univariate version, which assumes that the shape of the
+    return value is the same as the first input argument (the observations).
+    """
+
+    def wrapper(*args):
+        out = np.empty_like(args[0])
+        func(*args, out)
+        return out
+
+    return wrapper
+
+
+def lazy_gufunc_wrapper_mv(func):
+    """
+    Wrapper for lazy/dynamic generalized universal functions so
+    they return a value instead of modifying an output array in-place.
+    This is the multivariate version, which assumes that the shape of the
+    return value is reduced to the shape of the first input argument
+    (the observations) along the last axis.
+    """
+
+    def wrapper(*args):
+        out = np.empty_like(args[0][..., 0])
+        func(*args, out)
+        return out
+
+    return wrapper
