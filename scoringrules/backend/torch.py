@@ -292,7 +292,9 @@ class TorchBackend(ArrayBackend):
 
     def cov(self, x: "Tensor", rowvar: bool = True, bias: bool = False) -> "Tensor":
         correction = 0 if bias else 1
-        return torch.cov(x, rowvar=rowvar, correction=correction)
+        if not rowvar:
+            x = torch.transpose(x, -2, -1)
+        return torch.cov(x, correction=correction)
 
     def det(self, x: "Tensor") -> "Tensor":
         return torch.linalg.det(x)

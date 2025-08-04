@@ -20,7 +20,7 @@ def dss_ensemble(
 ) -> "Array":
     r"""Compute the Dawid-Sebastiani-Score for a finite multivariate ensemble.
 
-    ## TO-DO ##
+
 
     Parameters
     ----------

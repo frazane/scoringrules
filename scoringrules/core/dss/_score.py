@@ -15,15 +15,15 @@ def ds_score(
     """Compute the Dawid Sebastiani Score for a multivariate finite ensemble."""
     B = backends.active if backend is None else backends[backend]
 
-    *batch_dims, _, D = fct.shape
+    batch_dims = fct.shape[:-2]
     out = B.zeros(batch_dims)
 
     # nested loop over all batch dimensions
     def recursive_loop(current_index, depth):
         if depth == len(batch_dims):
             fct_i = fct[tuple(current_index)]  # (M, D)
-            obs_i = obs[tuple(current_index)]
-            score = ds_score_mat(obs_i, fct_i, bias)  # shape (D, D)
+            obs_i = obs[tuple(current_index)]  # (D)
+            score = ds_score_mat(obs_i, fct_i, bias, backend=backend)  # ()
             out[tuple(current_index)] = score
             return
 
