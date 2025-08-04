@@ -49,7 +49,7 @@ def test_vrvs_vs_vs(backend):
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
         backend=backend,
     )
-    np.testing.assert_allclose(res, resw, rtol=5e-4)
+    np.testing.assert_allclose(res, resw, atol=1e-6)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
