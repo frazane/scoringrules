@@ -265,6 +265,19 @@ class NumpyBackend(ArrayBackend):
     def indices(self, dimensions: tuple) -> "NDArray":
         return np.indices(dimensions)
 
+    def inv(self, x: "NDArray") -> "NDArray":
+        return np.linalg.inv(x)
+
+    def cov(self, x: "NDArray") -> "NDArray":
+        if len(x.shape) == 2:
+            return np.cov(x)
+        else:
+            centered = x - x.mean(axis=-2, keepdims=True)
+            return (centered.transpose(0, 2, 1) @ centered) / (x.shape[-2] - 1)
+
+    def det(self, x: "NDArray") -> "NDArray":
+        return np.linalg.det(x)
+
 
 class NumbaBackend(NumpyBackend):
     """Numba backend."""

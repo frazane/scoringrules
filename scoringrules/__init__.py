@@ -51,6 +51,7 @@ from scoringrules._energy import (
     twes_ensemble,
     vres_ensemble,
 )
+from scoringrules._dawid_sebastiani import dawid_sebastiani_score
 from scoringrules._error_spread import error_spread_score
 from scoringrules._interval import interval_score, weighted_interval_score
 from scoringrules._logs import (
@@ -163,6 +164,7 @@ __all__ = [
     "crps_quantile",
     "crps_t",
     "crps_uniform",
+    "dawid_sebastiani_score",
     "owcrps_ensemble",
     "twcrps_ensemble",
     "vrcrps_ensemble",
