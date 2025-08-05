@@ -106,11 +106,23 @@ def crps_ensemble(
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
 
-    sort_ensemble = not sorted_ensemble and estimator in ["qd", "pwm"]
+    sort_ensemble = not sorted_ensemble and estimator in ["qd", "pwm", "int"]
+
+    if sort_ensemble:
+        fct_uns = fct
+        fct = B.sort(fct, axis=-1)
 
     if ens_w is None:
-        M = fct.shape[-1]
-        ens_w = B.zeros(fct.shape) + 1.0 / M
+        if backend == "numba":
+            if estimator not in crps.estimator_gufuncs:
+                raise ValueError(
+                    f"{estimator} is not a valid estimator. "
+                    f"Must be one of {crps.estimator_gufuncs.keys()}"
+                )
+            return crps.estimator_gufuncs[estimator](obs, fct)
+
+        return crps.ensemble(obs, fct, estimator, backend=backend)
+
     else:
         ens_w = B.asarray(ens_w)
         if B.any(ens_w < 0):
@@ -119,21 +131,17 @@ def crps_ensemble(
         if m_axis != -1:
             ens_w = B.moveaxis(ens_w, m_axis, -1)
         if sort_ensemble:
-            ind = B.argsort(fct, axis=-1)
+            ind = B.argsort(fct_uns, axis=-1)
             ens_w = B.gather(ens_w, ind, axis=-1)
+        if backend == "numba":
+            if estimator not in crps.estimator_gufuncs:
+                raise ValueError(
+                    f"{estimator} is not a valid estimator. "
+                    f"Must be one of {crps.estimator_gufuncs.keys()}"
+                )
+            return crps.estimator_gufuncs_w[estimator](obs, fct, ens_w)
 
-    if sort_ensemble:
-        fct = B.sort(fct, axis=-1)
-
-    if backend == "numba":
-        if estimator not in crps.estimator_gufuncs:
-            raise ValueError(
-                f"{estimator} is not a valid estimator. "
-                f"Must be one of {crps.estimator_gufuncs.keys()}"
-            )
-        return crps.estimator_gufuncs[estimator](obs, fct, ens_w)
-
-    return crps.ensemble(obs, fct, ens_w, estimator, backend=backend)
+        return crps.ensemble_w(obs, fct, ens_w, estimator, backend=backend)
 
 
 def twcrps_ensemble(

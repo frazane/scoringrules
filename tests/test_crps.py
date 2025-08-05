@@ -64,24 +64,22 @@ def test_crps_ensemble_corr(backend):
 
     # test equivalence of different estimators
     res_nrg = sr.crps_ensemble(obs, fct, estimator="nrg", backend=backend)
-    res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm", backend=backend)
     res_qd = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
+    res_fair = sr.crps_ensemble(obs, fct, estimator="fair", backend=backend)
+    res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm", backend=backend)
     if backend in ["torch", "jax"]:
-        assert np.allclose(res_nrg, res_pwm, rtol=1e-03)
         assert np.allclose(res_nrg, res_qd, rtol=1e-03)
+        assert np.allclose(res_fair, res_pwm, rtol=1e-03)
     else:
-        assert np.allclose(res_nrg, res_pwm)
         assert np.allclose(res_nrg, res_qd)
+        assert np.allclose(res_fair, res_pwm)
 
     w = np.abs(np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None])
     res_nrg = sr.crps_ensemble(obs, fct, ens_w=w, estimator="nrg", backend=backend)
-    res_pwm = sr.crps_ensemble(obs, fct, ens_w=w, estimator="pwm", backend=backend)
     res_qd = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd", backend=backend)
     if backend in ["torch", "jax"]:
-        assert np.allclose(res_nrg, res_pwm, rtol=1e-03)
         assert np.allclose(res_nrg, res_qd, rtol=1e-03)
     else:
-        assert np.allclose(res_nrg, res_pwm)
         assert np.allclose(res_nrg, res_qd)
 
     # test correctness
@@ -100,11 +98,11 @@ def test_crps_ensemble_corr(backend):
             0.9064937,
         ]
     )
-    res = sr.crps_ensemble(obs, fct)
+    res = sr.crps_ensemble(obs, fct, estimator="qd")
     assert np.isclose(res, 0.6126602)
 
     w = np.arange(10)
-    res = sr.crps_ensemble(obs, fct, ens_w=w)
+    res = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd")
     assert np.isclose(res, 0.4923673)
 
 
