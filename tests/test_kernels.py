@@ -303,19 +303,19 @@ def test_owgksuv(backend):
 
     # no argument given
     resw = sr.owgksuv_ensemble(obs, fct, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-2)
+    np.testing.assert_allclose(res, resw, atol=1e-6)
 
     # a and b
     resw = sr.owgksuv_ensemble(
         obs, fct, a=float("-inf"), b=float("inf"), backend=backend
     )
-    np.testing.assert_allclose(res, resw, rtol=1e-2)
+    np.testing.assert_allclose(res, resw, atol=1e-6)
 
     # w_func as identity function
     resw = sr.owgksuv_ensemble(
         obs, fct, w_func=lambda x: x * 0.0 + 1.0, backend=backend
     )
-    np.testing.assert_allclose(res, resw, rtol=1e-2)
+    np.testing.assert_allclose(res, resw, atol=1e-6)
 
     # test correctness
     fct = np.array(
