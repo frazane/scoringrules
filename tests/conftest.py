@@ -6,7 +6,7 @@ import pytest
 from scoringrules.backend import backends
 
 DATA_DIR = Path(__file__).parent / "data"
-RUN_TESTS = ["numpy", "numba", "torch"]
+RUN_TESTS = ["numpy", "numba", "jax", "torch"]
 BACKENDS = [b for b in backends.available_backends if b in RUN_TESTS]
 
 if os.getenv("SR_TEST_OUTPUT", "False").lower() in ("true", "1", "t"):
