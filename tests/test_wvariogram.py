@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+
 import scoringrules as sr
 from scoringrules.backend import backends
 
@@ -23,9 +24,7 @@ def test_owvs_vs_vs(backend):
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
         backend=backend,
     )
-    np.testing.assert_allclose(
-        res, resw, rtol=1e-3
-    )  # TODO: not sure why tolerance must be so high
+    np.testing.assert_allclose(res, resw, rtol=1e-3)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -50,7 +49,7 @@ def test_vrvs_vs_vs(backend):
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
         backend=backend,
     )
-    np.testing.assert_allclose(res, resw, rtol=5e-4)
+    np.testing.assert_allclose(res, resw, atol=1e-6)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

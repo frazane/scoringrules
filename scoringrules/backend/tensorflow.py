@@ -304,6 +304,9 @@ class TensorflowBackend(ArrayBackend):
         indices = tf.stack(index_grids)
         return indices
 
+    def roll(self, x: "Tensor", shift: int = 1, axis: int = -1) -> "Tensor":
+        return tf.roll(x, shift=shift, axis=axis)
+
 
 if __name__ == "__main__":
     B = TensorflowBackend()

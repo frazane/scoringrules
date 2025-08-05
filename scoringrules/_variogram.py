@@ -15,7 +15,8 @@ def vs_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    p: float = 1.0,
+    p: float = 0.5,
+    estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Variogram Score for a finite multivariate ensemble.
@@ -42,6 +43,8 @@ def vs_ensemble(
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int
         The axis corresponding to the variables dimension. Defaults to -1.
+    estimator : str
+        The variogram score estimator to be used.
     backend: str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -69,9 +72,12 @@ def vs_ensemble(
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
     if backend == "numba":
-        return variogram._variogram_score_gufunc(obs, fct, p)
+        if estimator == "nrg":
+            return variogram._variogram_score_nrg_gufunc(obs, fct, p)
+        elif estimator == "fair":
+            return variogram._variogram_score_fair_gufunc(obs, fct, p)
 
-    return variogram.vs(obs, fct, p, backend=backend)
+    return variogram.vs(obs, fct, p, estimator=estimator, backend=backend)
 
 
 def twvs_ensemble(
@@ -82,7 +88,8 @@ def twvs_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    p: float = 1.0,
+    p: float = 0.5,
+    estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Threshold-Weighted Variogram Score (twVS) for a finite multivariate ensemble.
@@ -111,6 +118,8 @@ def twvs_ensemble(
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int
         The axis corresponding to the variables dimension. Defaults to -1.
+    estimator : str
+        The variogram score estimator to be used.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -137,7 +146,9 @@ def twvs_ensemble(
     array([5.94996894, 4.72029765, 6.08947229])
     """
     obs, fct = map(v_func, (obs, fct))
-    return vs_ensemble(obs, fct, m_axis, v_axis, p=p, backend=backend)
+    return vs_ensemble(
+        obs, fct, m_axis, v_axis, p=p, estimator=estimator, backend=backend
+    )
 
 
 def owvs_ensemble(
@@ -148,7 +159,7 @@ def owvs_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    p: float = 1.0,
+    p: float = 0.5,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Outcome-Weighted Variogram Score (owVS) for a finite multivariate ensemble.
@@ -223,7 +234,7 @@ def vrvs_ensemble(
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    p: float = 1.0,
+    p: float = 0.5,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Vertically Re-scaled Variogram Score (vrVS) for a finite multivariate ensemble.

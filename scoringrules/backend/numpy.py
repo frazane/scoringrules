@@ -265,6 +265,9 @@ class NumpyBackend(ArrayBackend):
     def indices(self, dimensions: tuple) -> "NDArray":
         return np.indices(dimensions)
 
+    def roll(self, x: "NDArray", shift: int = 1, axis: int = -1) -> "NDArray":
+        return np.roll(x, shift=shift, axis=axis)
+
 
 class NumbaBackend(NumpyBackend):
     """Numba backend."""
