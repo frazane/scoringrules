@@ -275,7 +275,7 @@ class JaxBackend(ArrayBackend):
         return jnp.linalg.inv(x)
 
     def cov(self, x: "Array", rowvar: bool = True, bias: bool = False) -> "Array":
-        return jnp.cov(x, rowavar=rowvar, bias=bias)
+        return jnp.cov(x, rowvar=rowvar, bias=bias)
 
     def det(self, x: "Array") -> "Array":
         return jnp.linalg.det(x)
