@@ -53,9 +53,11 @@ class NumpyBackend(ArrayBackend):
         /,
         *,
         axis: int | tuple[int, ...] | None = None,
+        bias: bool = False,
         keepdims: bool = False,
     ) -> "NDArray":
-        return np.std(x, ddof=1, axis=axis, keepdims=keepdims)
+        ddof = 0 if bias else 1
+        return np.std(x, ddof=ddof, axis=axis, keepdims=keepdims)
 
     def quantile(
         self,
@@ -264,6 +266,18 @@ class NumpyBackend(ArrayBackend):
 
     def indices(self, dimensions: tuple) -> "NDArray":
         return np.indices(dimensions)
+
+    def inv(self, x: "NDArray") -> "NDArray":
+        return np.linalg.inv(x)
+
+    def cov(self, x: "NDArray", rowvar: bool = True, bias: bool = False) -> "NDArray":
+        return np.cov(x, rowvar=rowvar, bias=bias)
+
+    def det(self, x: "NDArray") -> "NDArray":
+        return np.linalg.det(x)
+
+    def reshape(self, x: "NDArray", shape: int | tuple[int, ...]) -> "NDArray":
+        return np.reshape(x, shape)
 
 
 class NumbaBackend(NumpyBackend):
