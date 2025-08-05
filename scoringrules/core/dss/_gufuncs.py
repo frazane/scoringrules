@@ -8,8 +8,11 @@ from scoringrules.core.utils import lazy_gufunc_wrapper_uv, lazy_gufunc_wrapper_
 @guvectorize("(),(n),()->()")
 def _dss_uv_gufunc(obs: np.ndarray, fct: np.ndarray, bias: bool, out: np.ndarray):
     ens_mean = np.mean(fct)
-    correction = 0 if bias else 1
-    sig = np.std(fct, ddof=correction)
+    fact = len(fct) - 1.0
+    if bias:
+        fact += 1.0
+    var = np.sum((fct - ens_mean) ** 2) / fact
+    sig = np.sqrt(var)
     log_sig = 2 * np.log(sig)
     bias_precision = ((obs - ens_mean) / sig) ** 2
     out[0] = bias_precision + log_sig
