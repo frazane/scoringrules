@@ -67,15 +67,19 @@ def es_ensemble(
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
     if ens_w is None:
-        M = fct.shape[-2]
-        ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
+        if backend == "numba":
+            return energy._energy_score_gufunc(obs, fct)
+
+        return energy.nrg(obs, fct, backend=backend)
     else:
-        ens_w = B.moveaxis(ens_w, m_axis, -2)
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
+        if backend == "numba":
+            return energy._energy_score_gufunc_w(obs, fct, ens_w)
 
-    if backend == "numba":
-        return energy._energy_score_gufunc(obs, fct, ens_w)
-
-    return energy.nrg(obs, fct, ens_w, backend=backend)
+        return energy.nrg_w(obs, fct, ens_w, backend=backend)
 
 
 def twes_ensemble(
@@ -192,17 +196,23 @@ def owes_ensemble(
     obs_weights = B.apply_along_axis(w_func, obs, -1)
 
     if ens_w is None:
-        M = fct.shape[-2]
-        ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
+        if B.name == "numba":
+            return energy._owenergy_score_gufunc(obs, fct, obs_weights, fct_weights)
+
+        return energy.ownrg(obs, fct, obs_weights, fct_weights, backend=backend)
     else:
-        ens_w = B.moveaxis(ens_w, m_axis, -2)
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
+        if B.name == "numba":
+            return energy._owenergy_score_gufunc_w(
+                obs, fct, obs_weights, fct_weights, ens_w
+            )
 
-    if B.name == "numba":
-        return energy._owenergy_score_gufunc(obs, fct, obs_weights, fct_weights, ens_w)
-
-    return energy.ownrg(
-        obs, fct, obs_weights, fct_weights, ens_w=ens_w, backend=backend
-    )
+        return energy.ownrg_w(
+            obs, fct, obs_weights, fct_weights, ens_w=ens_w, backend=backend
+        )
 
 
 def vres_ensemble(
@@ -265,14 +275,20 @@ def vres_ensemble(
     obs_weights = B.apply_along_axis(w_func, obs, -1)
 
     if ens_w is None:
-        M = fct.shape[-2]
-        ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
+        if backend == "numba":
+            return energy._vrenergy_score_gufunc(obs, fct, obs_weights, fct_weights)
+
+        return energy.vrnrg(obs, fct, obs_weights, fct_weights, backend=backend)
     else:
-        ens_w = B.moveaxis(ens_w, m_axis, -2)
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
+        if backend == "numba":
+            return energy._vrenergy_score_gufunc_w(
+                obs, fct, obs_weights, fct_weights, ens_w
+            )
 
-    if backend == "numba":
-        return energy._vrenergy_score_gufunc(obs, fct, obs_weights, fct_weights, ens_w)
-
-    return energy.vrnrg(
-        obs, fct, obs_weights, fct_weights, ens_w=ens_w, backend=backend
-    )
+        return energy.vrnrg_w(
+            obs, fct, obs_weights, fct_weights, ens_w=ens_w, backend=backend
+        )

@@ -59,13 +59,13 @@ def test_owenergy_score_correctness(backend):
     obs = np.array([0.2743836, 0.8146400])
 
     def w_func(x):
-        return backends[backend].all(x > 0.2)
+        return backends[backend].all(x > 0.2) * 1.0
 
     res = sr.owes_ensemble(obs, fct, w_func, backend=backend)
     np.testing.assert_allclose(res, 0.2274243, rtol=1e-6)
 
     def w_func(x):
-        return backends[backend].all(x < 1.0)
+        return backends[backend].all(x < 1.0) * 1.0
 
     res = sr.owes_ensemble(obs, fct, w_func, backend=backend)
     np.testing.assert_allclose(res, 0.3345418, rtol=1e-6)
