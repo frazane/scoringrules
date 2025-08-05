@@ -300,3 +300,6 @@ class TorchBackend(ArrayBackend):
 
     def det(self, x: "Tensor") -> "Tensor":
         return torch.linalg.det(x)
+
+    def reshape(self, x: "Tensor", shape: int | tuple[int, ...]) -> "Tensor":
+        return torch.reshape(x, shape)

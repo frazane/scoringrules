@@ -310,3 +310,7 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def det(self, x: "Array") -> "Array":
         """Return the determinant of a matrix."""
+
+    @abc.abstractmethod
+    def reshape(self, x: "Array", shape: int | tuple[int, ...]) -> "Array":
+        """Reshape an array to a new ``shape``."""

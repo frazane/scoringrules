@@ -321,6 +321,9 @@ class TensorflowBackend(ArrayBackend):
     def det(self, x: "Tensor") -> "Tensor":
         return tf.linalg.det(x)
 
+    def reshape(self, x: "Tensor", shape: int | tuple[int, ...]) -> "Tensor":
+        return tf.reshape(x, shape)
+
 
 if __name__ == "__main__":
     B = TensorflowBackend()

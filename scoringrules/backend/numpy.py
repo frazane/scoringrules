@@ -276,6 +276,9 @@ class NumpyBackend(ArrayBackend):
     def det(self, x: "NDArray") -> "NDArray":
         return np.linalg.det(x)
 
+    def reshape(self, x: "NDArray", shape: int | tuple[int, ...]) -> "NDArray":
+        return np.reshape(x, shape=shape)
+
 
 class NumbaBackend(NumpyBackend):
     """Numba backend."""

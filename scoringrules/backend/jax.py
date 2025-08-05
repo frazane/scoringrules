@@ -280,6 +280,9 @@ class JaxBackend(ArrayBackend):
     def det(self, x: "Array") -> "Array":
         return jnp.linalg.det(x)
 
+    def reshape(self, x: "Array", shape: int | tuple[int, ...]) -> "Array":
+        return jnp.reshape(x, shape)
+
 
 if __name__ == "__main__":
     B = JaxBackend()
