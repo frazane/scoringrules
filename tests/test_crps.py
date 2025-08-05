@@ -20,15 +20,9 @@ def test_crps_ensemble(estimator, backend):
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
     # test exceptions
-    if backend in ["numpy", "jax", "torch", "tensorflow"]:
-        if estimator == "int":
-            with pytest.raises(ValueError):
-                sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
-            return
-    if backend == "numba":
-        with pytest.raises(ValueError):
-            est = "undefined_estimator"
-            sr.crps_ensemble(obs, fct, estimator=est, backend=backend)
+    with pytest.raises(ValueError):
+        est = "undefined_estimator"
+        sr.crps_ensemble(obs, fct, estimator=est, backend=backend)
 
     # test shapes
     res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
@@ -67,13 +61,11 @@ def test_crps_estimators(backend):
     res_fair = sr.crps_ensemble(obs, fct, estimator="fair", backend=backend)
     res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm", backend=backend)
     res_qd = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
+    res_int = sr.crps_ensemble(obs, fct, estimator="int", backend=backend)
 
     assert np.allclose(res_nrg, res_qd)
+    assert np.allclose(res_nrg, res_int)
     assert np.allclose(res_fair, res_pwm)
-
-    if backend == "numba":
-        res_int = sr.crps_ensemble(obs, fct, estimator="int", backend=backend)
-        assert np.allclose(res_nrg, res_int)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

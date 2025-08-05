@@ -26,10 +26,7 @@ def ensemble(
     elif estimator == "akr_circperm":
         out = _crps_ensemble_akr_circperm(obs, fct, backend=backend)
     elif estimator == "int":
-        raise ValueError(
-            "'int' estimator can only be used with `numpy` "
-            "backend and needs `numba` to be installed"
-        )
+        out = _crps_ensemble_int(obs, fct, backend=backend)
     else:
         raise ValueError(
             f"{estimator} not a valid estimator, must be one of 'nrg', 'fair', 'pwm', 'qd', 'akr', 'akr_circperm' and 'int'."
@@ -106,6 +103,24 @@ def _crps_ensemble_qd(obs: "Array", fct: "Array", backend: "Backend" = None) -> 
     above = (fct > obs[..., None]) * (M - alpha) * (fct - obs[..., None])
     out = B.sum(below + above, axis=-1) / (M**2)
     return 2 * out
+
+
+def _crps_ensemble_int(
+    obs: "Array", fct: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS estimator based on the integral representation."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-1]
+    y_pos = B.mean((fct <= obs[..., None]) * 1.0, axis=-1, keepdims=True)
+    fct_cdf = B.zeros(fct.shape) + B.arange(1, M + 1) / M
+    fct_cdf = B.concat((fct_cdf, y_pos), axis=-1)
+    fct_cdf = B.sort(fct_cdf, axis=-1)
+    fct_exp = B.concat((fct, obs[..., None]), axis=-1)
+    fct_exp = B.sort(fct_exp, axis=-1)
+    fct_dif = fct_exp[..., 1:] - fct_exp[..., :M]
+    obs_cdf = (obs[..., None] <= fct_exp) * 1.0
+    out = fct_dif * (fct_cdf[..., :M] - obs_cdf[..., :M]) ** 2
+    return B.sum(out, axis=-1)
 
 
 def quantile_pinball(
