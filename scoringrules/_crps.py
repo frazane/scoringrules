@@ -133,6 +133,7 @@ def crps_ensemble(
         if sort_ensemble:
             ind = B.argsort(fct_uns, axis=-1)
             ens_w = B.gather(ens_w, ind, axis=-1)
+
         if backend == "numba":
             if estimator not in crps.estimator_gufuncs:
                 raise ValueError(
@@ -339,18 +340,8 @@ def owcrps_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if ens_w is None:
-        M = fct.shape[m_axis]
-        ens_w = B.zeros(fct.shape) + 1.0 / M
-    else:
-        ens_w = B.asarray(ens_w)
-        if B.any(ens_w < 0):
-            raise ValueError("`ens_w` contains negative entries")
-        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
-
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
-        ens_w = B.moveaxis(ens_w, m_axis, -1)
 
     if w_func is None:
 
@@ -361,12 +352,28 @@ def owcrps_ensemble(
     if B.any(obs_weights < 0) or B.any(fct_weights < 0):
         raise ValueError("`w_func` returns negative values")
 
-    if backend == "numba":
-        return crps.estimator_gufuncs["ownrg"](
-            obs, fct, obs_weights, fct_weights, ens_w
-        )
+    if ens_w is None:
+        if backend == "numba":
+            return crps.estimator_gufuncs["ownrg"](obs, fct, obs_weights, fct_weights)
 
-    return crps.ow_ensemble(obs, fct, obs_weights, fct_weights, ens_w, backend=backend)
+        return crps.ow_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
+
+    else:
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
+        if m_axis != -1:
+            ens_w = B.moveaxis(ens_w, m_axis, -1)
+
+        if backend == "numba":
+            return crps.estimator_gufuncs_w["ownrg"](
+                obs, fct, obs_weights, fct_weights, ens_w
+            )
+
+        return crps.ow_ensemble_w(
+            obs, fct, obs_weights, fct_weights, ens_w, backend=backend
+        )
 
 
 def vrcrps_ensemble(
@@ -455,18 +462,8 @@ def vrcrps_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if ens_w is None:
-        M = fct.shape[m_axis]
-        ens_w = B.zeros(fct.shape) + 1.0 / M
-    else:
-        ens_w = B.asarray(ens_w)
-        if B.any(ens_w < 0):
-            raise ValueError("`ens_w` contains negative entries")
-        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
-
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
-        ens_w = B.moveaxis(ens_w, m_axis, -1)
 
     if w_func is None:
 
@@ -477,12 +474,28 @@ def vrcrps_ensemble(
     if B.any(obs_weights < 0) or B.any(fct_weights < 0):
         raise ValueError("`w_func` returns negative values")
 
-    if backend == "numba":
-        return crps.estimator_gufuncs["vrnrg"](
-            obs, fct, obs_weights, fct_weights, ens_w
-        )
+    if ens_w is None:
+        if backend == "numba":
+            return crps.estimator_gufuncs["vrnrg"](obs, fct, obs_weights, fct_weights)
 
-    return crps.vr_ensemble(obs, fct, obs_weights, fct_weights, ens_w, backend=backend)
+        return crps.vr_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
+
+    else:
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
+        if m_axis != -1:
+            ens_w = B.moveaxis(ens_w, m_axis, -1)
+
+        if backend == "numba":
+            return crps.estimator_gufuncs_w["vrnrg"](
+                obs, fct, obs_weights, fct_weights, ens_w
+            )
+
+        return crps.vr_ensemble_w(
+            obs, fct, obs_weights, fct_weights, ens_w, backend=backend
+        )
 
 
 def crps_quantile(

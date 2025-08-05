@@ -77,7 +77,7 @@ def test_owcrps_vs_crps(backend):
     sigma = abs(np.random.randn(N)) * 0.5
     fct = np.random.randn(N, M) * sigma[..., None] + mu[..., None]
 
-    res = sr.crps_ensemble(obs, fct, backend=backend)
+    res = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
 
     # no argument given
     resw = sr.owcrps_ensemble(obs, fct, backend=backend)
