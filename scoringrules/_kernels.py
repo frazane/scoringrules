@@ -64,20 +64,14 @@ def gksuv_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if ens_w is None:
-        M = fct.shape[m_axis]
-        ens_w = B.zeros(fct.shape) + 1.0 / M
-    else:
-        ens_w = B.asarray(ens_w)
-        if B.any(ens_w < 0):
-            raise ValueError("`ens_w` contains negative entries")
-        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
+    if m_axis != -1:
+        fct = B.moveaxis(fct, m_axis, -1)
 
     if backend == "numba":
-        if estimator not in kernels.estimator_gufuncs:
+        if estimator not in kernels.estimator_gufuncs_uv:
             raise ValueError(
                 f"{estimator} is not a valid estimator. "
-                f"Must be one of {kernels.estimator_gufuncs.keys()}"
+                f"Must be one of {kernels.estimator_gufuncs_uv.keys()}"
             )
     else:
         if estimator not in ["fair", "nrg"]:
@@ -86,16 +80,26 @@ def gksuv_ensemble(
                 f"Must be one of ['fair', 'nrg']"
             )
 
-    if m_axis != -1:
-        fct = B.moveaxis(fct, m_axis, -1)
-        ens_w = B.moveaxis(ens_w, m_axis, -1)
+    if ens_w is None:
+        if backend == "numba":
+            return kernels.estimator_gufuncs_uv[estimator](obs, fct)
 
-    if backend == "numba":
-        return kernels.estimator_gufuncs[estimator](obs, fct, ens_w)
+        return kernels.ensemble_uv(obs, fct, estimator=estimator, backend=backend)
 
-    return kernels.ensemble_uv(
-        obs, fct, ens_w=ens_w, estimator=estimator, backend=backend
-    )
+    else:
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
+        if m_axis != -1:
+            ens_w = B.moveaxis(ens_w, m_axis, -1)
+
+        if backend == "numba":
+            return kernels.estimator_gufuncs_uv_w[estimator](obs, fct, ens_w)
+
+        return kernels.ensemble_uv_w(
+            obs, fct, ens_w=ens_w, estimator=estimator, backend=backend
+        )
 
 
 def twgksuv_ensemble(
@@ -257,18 +261,8 @@ def owgksuv_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if ens_w is None:
-        M = fct.shape[m_axis]
-        ens_w = B.zeros(fct.shape) + 1.0 / M
-    else:
-        ens_w = B.asarray(ens_w)
-        if B.any(ens_w < 0):
-            raise ValueError("`ens_w` contains negative entries")
-        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
-
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
-        ens_w = B.moveaxis(ens_w, m_axis, -1)
 
     if w_func is None:
 
@@ -277,15 +271,35 @@ def owgksuv_ensemble(
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
     obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
+    if B.any(obs_weights < 0) or B.any(fct_weights < 0):
+        raise ValueError("`w_func` returns negative values")
 
-    if backend == "numba":
-        return kernels.estimator_gufuncs["ow"](
-            obs, fct, obs_weights, fct_weights, ens_w
+    if ens_w is None:
+        if backend == "numba":
+            return kernels.estimator_gufuncs_uv["ow"](
+                obs, fct, obs_weights, fct_weights
+            )
+
+        return kernels.ow_ensemble_uv(
+            obs, fct, obs_weights, fct_weights, backend=backend
         )
 
-    return kernels.ow_ensemble_uv(
-        obs, fct, obs_weights, fct_weights, ens_w=ens_w, backend=backend
-    )
+    else:
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
+        if m_axis != -1:
+            ens_w = B.moveaxis(ens_w, m_axis, -1)
+
+        if backend == "numba":
+            return kernels.estimator_gufuncs_uv_w["ow"](
+                obs, fct, obs_weights, fct_weights, ens_w
+            )
+
+        return kernels.ow_ensemble_uv_w(
+            obs, fct, obs_weights, fct_weights, ens_w, backend=backend
+        )
 
 
 def vrgksuv_ensemble(
@@ -358,18 +372,8 @@ def vrgksuv_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if ens_w is None:
-        M = fct.shape[m_axis]
-        ens_w = B.zeros(fct.shape) + 1.0 / M
-    else:
-        ens_w = B.asarray(ens_w)
-        if B.any(ens_w < 0):
-            raise ValueError("`ens_w` contains negative entries")
-        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
-
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
-        ens_w = B.moveaxis(ens_w, m_axis, -1)
 
     if w_func is None:
 
@@ -378,15 +382,35 @@ def vrgksuv_ensemble(
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
     obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
+    if B.any(obs_weights < 0) or B.any(fct_weights < 0):
+        raise ValueError("`w_func` returns negative values")
 
-    if backend == "numba":
-        return kernels.estimator_gufuncs["vr"](
-            obs, fct, obs_weights, fct_weights, ens_w
+    if ens_w is None:
+        if backend == "numba":
+            return kernels.estimator_gufuncs_uv["vr"](
+                obs, fct, obs_weights, fct_weights
+            )
+
+        return kernels.vr_ensemble_uv(
+            obs, fct, obs_weights, fct_weights, backend=backend
         )
 
-    return kernels.vr_ensemble_uv(
-        obs, fct, obs_weights, fct_weights, ens_w, backend=backend
-    )
+    else:
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
+        if m_axis != -1:
+            ens_w = B.moveaxis(ens_w, m_axis, -1)
+
+        if backend == "numba":
+            return kernels.estimator_gufuncs_uv_w["vr"](
+                obs, fct, obs_weights, fct_weights, ens_w
+            )
+
+        return kernels.vr_ensemble_uv_w(
+            obs, fct, obs_weights, fct_weights, ens_w, backend=backend
+        )
 
 
 def gksmv_ensemble(
@@ -447,24 +471,28 @@ def gksmv_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
-    if ens_w is None:
-        M = fct.shape[-2]
-        ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
-    else:
-        ens_w = B.moveaxis(ens_w, m_axis, -2)
-
     if estimator not in kernels.estimator_gufuncs_mv:
         raise ValueError(
             f"{estimator} is not a valid estimator. "
             f"Must be one of {kernels.estimator_gufuncs_mv.keys()}"
         )
 
-    if backend == "numba":
-        return kernels.estimator_gufuncs_mv[estimator](obs, fct, ens_w)
+    if ens_w is None:
+        if backend == "numba":
+            return kernels.estimator_gufuncs_mv[estimator](obs, fct)
 
-    return kernels.ensemble_mv(
-        obs, fct, ens_w=ens_w, estimator=estimator, backend=backend
-    )
+        return kernels.ensemble_mv(obs, fct, estimator=estimator, backend=backend)
+    else:
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
+        if backend == "numba":
+            return kernels.estimator_gufuncs_mv_w[estimator](obs, fct, ens_w)
+
+        return kernels.ensemble_mv_w(
+            obs, fct, ens_w, estimator=estimator, backend=backend
+        )
 
 
 def twgksmv_ensemble(
@@ -602,23 +630,31 @@ def owgksmv_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
-    if ens_w is None:
-        M = fct.shape[-2]
-        ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
-    else:
-        ens_w = B.moveaxis(ens_w, m_axis, -2)
-
     fct_weights = B.apply_along_axis(w_func, fct, -1)
     obs_weights = B.apply_along_axis(w_func, obs, -1)
 
-    if B.name == "numba":
-        return kernels.estimator_gufuncs_mv["ow"](
-            obs, fct, obs_weights, fct_weights, ens_w
-        )
+    if ens_w is None:
+        if backend == "numba":
+            return kernels.estimator_gufuncs_mv["ow"](
+                obs, fct, obs_weights, fct_weights
+            )
 
-    return kernels.ow_ensemble_mv(
-        obs, fct, obs_weights, fct_weights, ens_w=ens_w, backend=backend
-    )
+        return kernels.ow_ensemble_mv(
+            obs, fct, obs_weights, fct_weights, backend=backend
+        )
+    else:
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
+        if backend == "numba":
+            return kernels.estimator_gufuncs_mv_w["ow"](
+                obs, fct, obs_weights, fct_weights, ens_w
+            )
+
+        return kernels.ow_ensemble_mv_w(
+            obs, fct, obs_weights, fct_weights, ens_w, backend=backend
+        )
 
 
 def vrgksmv_ensemble(
@@ -677,23 +713,31 @@ def vrgksmv_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
-    if ens_w is None:
-        M = fct.shape[-2]
-        ens_w = B.zeros(fct.shape[:-1]) + 1.0 / M
-    else:
-        ens_w = B.moveaxis(ens_w, m_axis, -2)
-
     fct_weights = B.apply_along_axis(w_func, fct, -1)
     obs_weights = B.apply_along_axis(w_func, obs, -1)
 
-    if B.name == "numba":
-        return kernels.estimator_gufuncs_mv["vr"](
-            obs, fct, obs_weights, fct_weights, ens_w
-        )
+    if ens_w is None:
+        if backend == "numba":
+            return kernels.estimator_gufuncs_mv["vr"](
+                obs, fct, obs_weights, fct_weights
+            )
 
-    return kernels.vr_ensemble_mv(
-        obs, fct, obs_weights, fct_weights, ens_w=ens_w, backend=backend
-    )
+        return kernels.vr_ensemble_mv(
+            obs, fct, obs_weights, fct_weights, backend=backend
+        )
+    else:
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
+        if backend == "numba":
+            return kernels.estimator_gufuncs_mv_w["vr"](
+                obs, fct, obs_weights, fct_weights, ens_w
+            )
+
+        return kernels.vr_ensemble_mv_w(
+            obs, fct, obs_weights, fct_weights, ens_w, backend=backend
+        )
 
 
 __all__ = [
