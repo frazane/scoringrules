@@ -12,7 +12,6 @@ def _crps_ensemble_int_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
     """CRPS estimator based on the integral form."""
-    obs = obs[0]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -52,7 +51,6 @@ def _crps_ensemble_qd_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
     """CRPS estimator based on the quantile decomposition form."""
-    obs = obs[0]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -76,7 +74,6 @@ def _crps_ensemble_nrg_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
     """CRPS estimator based on the energy form."""
-    obs = obs[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -99,7 +96,6 @@ def _crps_ensemble_fair_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
     """Fair version of the CRPS estimator based on the energy form."""
-    obs = obs[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -124,7 +120,6 @@ def _crps_ensemble_pwm_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
     """CRPS estimator based on the probability weighted moment (PWM) form."""
-    obs = obs[0]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -150,7 +145,6 @@ def _crps_ensemble_akr_w_gufunc(
 ):
     """CRPS estimaton based on the approximate kernel representation."""
     M = fct.shape[-1]
-    obs = obs[0]
     e_1 = 0
     e_2 = 0
     for i, forecast in enumerate(fct):
@@ -167,7 +161,6 @@ def _crps_ensemble_akr_circperm_w_gufunc(
 ):
     """CRPS estimaton based on the AKR with cyclic permutation."""
     M = fct.shape[-1]
-    obs = obs[0]
     e_1 = 0.0
     e_2 = 0.0
     for i, forecast in enumerate(fct):
@@ -187,8 +180,6 @@ def _owcrps_ensemble_nrg_w_gufunc(
     out: np.ndarray,
 ):
     """Outcome-weighted CRPS estimator based on the energy form."""
-    obs = obs[0]
-    ow = ow[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -218,8 +209,6 @@ def _vrcrps_ensemble_nrg_w_gufunc(
     out: np.ndarray,
 ):
     """Vertically re-scaled CRPS estimator based on the energy form."""
-    obs = obs[0]
-    ow = ow[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):

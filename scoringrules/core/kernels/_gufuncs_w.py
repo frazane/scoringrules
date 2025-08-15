@@ -25,7 +25,6 @@ def _ks_ensemble_uv_w_nrg_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
     """Standard version of the kernel score."""
-    obs = obs[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -49,7 +48,6 @@ def _ks_ensemble_uv_w_fair_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
     """Fair version of the kernel score."""
-    obs = obs[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -78,8 +76,6 @@ def _owks_ensemble_uv_w_gufunc(
     out: np.ndarray,
 ):
     """Outcome-weighted kernel score for univariate ensembles."""
-    obs = obs[0]
-    ow = ow[0]
 
     if np.isnan(obs):
         out[0] = np.nan
@@ -109,8 +105,6 @@ def _vrks_ensemble_uv_w_gufunc(
     out: np.ndarray,
 ):
     """Vertically re-scaled kernel score for univariate ensembles."""
-    obs = obs[0]
-    ow = ow[0]
 
     if np.isnan(obs):
         out[0] = np.nan
