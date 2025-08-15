@@ -1,17 +1,13 @@
 import numpy as np
 from numba import guvectorize
 
+from scoringrules.core.utils import lazy_gufunc_wrapper_uv
+
 INV_SQRT_PI = 1 / np.sqrt(np.pi)
 EPSILON = 1e-6
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(n)->()",
-)
+@guvectorize("(),(n),(n)->()")
 def _crps_ensemble_int_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -51,13 +47,7 @@ def _crps_ensemble_int_w_gufunc(
     out[0] = integral
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(n)->()",
-)
+@guvectorize("(),(n),(n)->()")
 def _crps_ensemble_qd_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -81,13 +71,7 @@ def _crps_ensemble_qd_w_gufunc(
     out[0] = 2 * integral
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(n)->()",
-)
+@guvectorize("(),(n),(n)->()")
 def _crps_ensemble_nrg_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -110,13 +94,7 @@ def _crps_ensemble_nrg_w_gufunc(
     out[0] = e_1 - e_2
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(n)->()",
-)
+@guvectorize("(),(n),(n)->()")
 def _crps_ensemble_fair_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -141,13 +119,7 @@ def _crps_ensemble_fair_w_gufunc(
     out[0] = e_1 - e_2 / fair_c
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(n)->()",
-)
+@guvectorize("(),(n),(n)->()")
 def _crps_ensemble_pwm_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -172,13 +144,7 @@ def _crps_ensemble_pwm_w_gufunc(
     out[0] = expected_diff + β_0 - 2 * β_1
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(n)->()",
-)
+@guvectorize("(),(n),(n)->()")
 def _crps_ensemble_akr_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -195,13 +161,7 @@ def _crps_ensemble_akr_w_gufunc(
     out[0] = e_1 - 0.5 * e_2
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(n)->()",
-)
+@guvectorize("(),(n),(n)->()")
 def _crps_ensemble_akr_circperm_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -217,13 +177,7 @@ def _crps_ensemble_akr_circperm_w_gufunc(
     out[0] = e_1 - 0.5 * e_2
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(),(n),(n)->()",
-)
+@guvectorize("(),(n),(),(n),(n)->()")
 def _owcrps_ensemble_nrg_w_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -254,13 +208,7 @@ def _owcrps_ensemble_nrg_w_gufunc(
     out[0] = e_1 / wbar - 0.5 * e_2 / (wbar**2)
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(),(n),(n)->()",
-)
+@guvectorize("(),(n),(),(n),(n)->()")
 def _vrcrps_ensemble_nrg_w_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -294,15 +242,15 @@ def _vrcrps_ensemble_nrg_w_gufunc(
 
 
 estimator_gufuncs_w = {
-    "akr_circperm": _crps_ensemble_akr_circperm_w_gufunc,
-    "akr": _crps_ensemble_akr_w_gufunc,
-    "fair": _crps_ensemble_fair_w_gufunc,
-    "int": _crps_ensemble_int_w_gufunc,
-    "nrg": _crps_ensemble_nrg_w_gufunc,
-    "pwm": _crps_ensemble_pwm_w_gufunc,
-    "qd": _crps_ensemble_qd_w_gufunc,
-    "ownrg": _owcrps_ensemble_nrg_w_gufunc,
-    "vrnrg": _vrcrps_ensemble_nrg_w_gufunc,
+    "akr_circperm": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_circperm_w_gufunc),
+    "akr": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_w_gufunc),
+    "fair": lazy_gufunc_wrapper_uv(_crps_ensemble_fair_w_gufunc),
+    "int": lazy_gufunc_wrapper_uv(_crps_ensemble_int_w_gufunc),
+    "nrg": lazy_gufunc_wrapper_uv(_crps_ensemble_nrg_w_gufunc),
+    "pwm": lazy_gufunc_wrapper_uv(_crps_ensemble_pwm_w_gufunc),
+    "qd": lazy_gufunc_wrapper_uv(_crps_ensemble_qd_w_gufunc),
+    "ownrg": lazy_gufunc_wrapper_uv(_owcrps_ensemble_nrg_w_gufunc),
+    "vrnrg": lazy_gufunc_wrapper_uv(_vrcrps_ensemble_nrg_w_gufunc),
 }
 
 __all__ = [

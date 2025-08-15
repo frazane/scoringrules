@@ -3,6 +3,8 @@ import math
 import numpy as np
 from numba import njit, guvectorize
 
+from scoringrules.core.utils import lazy_gufunc_wrapper_uv, lazy_gufunc_wrapper_mv
+
 
 @njit(["float32(float32, float32)", "float64(float64, float64)"])
 def _gauss_kern_uv(x1: float, x2: float) -> float:
@@ -18,13 +20,7 @@ def _gauss_kern_mv(x1: float, x2: float) -> float:
     return out
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(n)->()",
-)
+@guvectorize("(),(n),(n)->()")
 def _ks_ensemble_uv_w_nrg_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -48,13 +44,7 @@ def _ks_ensemble_uv_w_nrg_gufunc(
     out[0] = -(e_1 - 0.5 * e_2 - 0.5 * e_3)
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(n)->()",
-)
+@guvectorize("(),(n),(n)->()")
 def _ks_ensemble_uv_w_fair_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -78,13 +68,7 @@ def _ks_ensemble_uv_w_fair_gufunc(
     out[0] = -(e_1 - e_2 / (1 - np.sum(w * w)) - 0.5 * e_3)
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(),(n),(n)->()",
-)
+@guvectorize("(),(n),(),(n),(n)->()")
 def _owks_ensemble_uv_w_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -115,13 +99,7 @@ def _owks_ensemble_uv_w_gufunc(
     out[0] = -(e_1 / wbar - 0.5 * e_2 / (wbar**2) - 0.5 * e_3)
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(),(n),(),(n),(n)->()",
-)
+@guvectorize("(),(n),(),(n),(n)->()")
 def _vrks_ensemble_uv_w_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -150,13 +128,7 @@ def _vrks_ensemble_uv_w_gufunc(
     out[0] = -(e_1 - 0.5 * e_2 - 0.5 * e_3)
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:], float64[:])",
-    ],
-    "(d),(m,d),(m)->()",
-)
+@guvectorize("(d),(m,d),(m)->()")
 def _ks_ensemble_mv_w_nrg_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -174,13 +146,7 @@ def _ks_ensemble_mv_w_nrg_gufunc(
     out[0] = -(e_1 - 0.5 * e_2 - 0.5 * e_3)
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:], float64[:])",
-    ],
-    "(d),(m,d),(m)->()",
-)
+@guvectorize("(d),(m,d),(m)->()")
 def _ks_ensemble_mv_w_fair_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -198,13 +164,7 @@ def _ks_ensemble_mv_w_fair_gufunc(
     out[0] = -(e_1 - e_2 / (1 - np.sum(w * w)) - 0.5 * e_3)
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(d),(m,d),(),(m),(m)->()",
-)
+@guvectorize("(d),(m,d),(),(m),(m)->()")
 def _owks_ensemble_mv_w_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -232,13 +192,6 @@ def _owks_ensemble_mv_w_gufunc(
     out[0] = -(e_1 / wbar - 0.5 * e_2 / (wbar**2) - 0.5 * e_3)
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(d),(m,d),(),(m),(m)->()",
-)
 def _vrks_ensemble_mv_w_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -263,17 +216,17 @@ def _vrks_ensemble_mv_w_gufunc(
 
 
 estimator_gufuncs_uv_w = {
-    "fair": _ks_ensemble_uv_w_fair_gufunc,
-    "nrg": _ks_ensemble_uv_w_nrg_gufunc,
-    "ow": _owks_ensemble_uv_w_gufunc,
-    "vr": _vrks_ensemble_uv_w_gufunc,
+    "fair": lazy_gufunc_wrapper_uv(_ks_ensemble_uv_w_fair_gufunc),
+    "nrg": lazy_gufunc_wrapper_uv(_ks_ensemble_uv_w_nrg_gufunc),
+    "ow": lazy_gufunc_wrapper_uv(_owks_ensemble_uv_w_gufunc),
+    "vr": lazy_gufunc_wrapper_uv(_vrks_ensemble_uv_w_gufunc),
 }
 
 estimator_gufuncs_mv_w = {
-    "fair": _ks_ensemble_mv_w_fair_gufunc,
-    "nrg": _ks_ensemble_mv_w_nrg_gufunc,
-    "ow": _owks_ensemble_mv_w_gufunc,
-    "vr": _vrks_ensemble_mv_w_gufunc,
+    "fair": lazy_gufunc_wrapper_mv(_ks_ensemble_mv_w_fair_gufunc),
+    "nrg": lazy_gufunc_wrapper_mv(_ks_ensemble_mv_w_nrg_gufunc),
+    "ow": lazy_gufunc_wrapper_mv(_owks_ensemble_mv_w_gufunc),
+    "vr": lazy_gufunc_wrapper_mv(_vrks_ensemble_mv_w_gufunc),
 }
 
 __all__ = [

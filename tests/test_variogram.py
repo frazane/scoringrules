@@ -1,4 +1,3 @@
-import jax
 import numpy as np
 import pytest
 
@@ -21,7 +20,7 @@ def test_variogram_score(backend):
     if backend in ["numpy", "numba"]:
         assert isinstance(res, np.ndarray)
     elif backend == "jax":
-        assert isinstance(res, jax.Array)
+        assert "jax" in res.__module__
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -34,7 +33,7 @@ def test_variogram_score_permuted_dims(backend):
     if backend in ["numpy", "numba"]:
         assert isinstance(res, np.ndarray)
     elif backend == "jax":
-        assert isinstance(res, jax.Array)
+        assert "jax" in res.__module__
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

@@ -1,14 +1,11 @@
 import numpy as np
 from numba import guvectorize
 
+from scoringrules.core.utils import lazy_gufunc_wrapper_mv
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:], float64[:])",
-    ],
-    "(d),(m,d),(m)->()",
-)
+
+@lazy_gufunc_wrapper_mv
+@guvectorize("(d),(m,d),(m)->()")
 def _energy_score_gufunc_w(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -28,13 +25,8 @@ def _energy_score_gufunc_w(
     out[0] = e_1 - 0.5 * e_2
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(d),(m,d),(),(m),(m)->()",
-)
+@lazy_gufunc_wrapper_mv
+@guvectorize("(d),(m,d),(),(m),(m)->()")
 def _owenergy_score_gufunc_w(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -64,13 +56,8 @@ def _owenergy_score_gufunc_w(
     out[0] = e_1 / (wbar) - 0.5 * e_2 / (wbar**2)
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:], float64[:], float64[:], float64[:])",
-    ],
-    "(d),(m,d),(),(m),(m)->()",
-)
+@lazy_gufunc_wrapper_mv
+@guvectorize("(d),(m,d),(),(m),(m)->()")
 def _vrenergy_score_gufunc_w(
     obs: np.ndarray,
     fct: np.ndarray,

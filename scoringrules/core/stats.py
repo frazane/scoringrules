@@ -104,14 +104,9 @@ def _t_pdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array
 def _t_cdf(x: "ArrayLike", df: "ArrayLike", backend: "Backend" = None) -> "Array":
     """Cumulative distribution function for the standard Student's t distribution."""
     B = backends.active if backend is None else backends[backend]
-    x_minf = x == float("-inf")
-    x_inf = x == float("inf")
-    x = B.where(x_inf, B.nan, x)
-    s = 1 / 2 + x * B.hypergeometric(1 / 2, (df + 1) / 2, 3 / 2, -(x**2) / df) / (
-        B.sqrt(df) * B.beta(1 / 2, df / 2)
-    )
-    s = B.where(x_minf, 0.0, s)
-    s = B.where(x_inf, 1.0, s)
+    t = df / (x**2 + df)
+    ibeta = B.betainc(df / 2.0, 0.5, t)
+    s = B.where(x >= 0, 1 - 0.5 * ibeta, 0.5 * ibeta)
     return s
 
 

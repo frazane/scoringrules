@@ -1,6 +1,8 @@
 import numpy as np
 from numba import guvectorize
 
+from scoringrules.core.utils import lazy_gufunc_wrapper_mv
+
 
 @guvectorize(
     [
@@ -23,13 +25,8 @@ def _variogram_score_gufunc(obs, fct, w, p, out):
             out[0] += w[i, j] * (vobs - vfct) ** 2
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:,:], float32, float32[:], float32, float32[:])",
-        "void(float64[:], float64[:,:], float64[:,:], float64, float64[:], float64, float64[:])",
-    ],
-    "(d),(m,d),(d,d),(),(m),()->()",
-)
+@lazy_gufunc_wrapper_mv
+@guvectorize("(d),(m,d),(d,d),(),(m),()->()")
 def _owvariogram_score_gufunc(obs, fct, w, ow, fw, p, out):
     M = fct.shape[-2]
     D = fct.shape[-1]
@@ -54,13 +51,8 @@ def _owvariogram_score_gufunc(obs, fct, w, ow, fw, p, out):
     out[0] = e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2)
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:,:], float32, float32[:], float32, float32[:])",
-        "void(float64[:], float64[:,:], float64[:,:], float64, float64[:], float64, float64[:])",
-    ],
-    "(d),(m,d),(d,d),(),(m),()->()",
-)
+@lazy_gufunc_wrapper_mv
+@guvectorize("(d),(m,d),(d,d),(),(m),()->()")
 def _vrvariogram_score_gufunc(obs, fct, w, ow, fw, p, out):
     M = fct.shape[-2]
     D = fct.shape[-1]

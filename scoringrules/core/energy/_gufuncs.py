@@ -1,6 +1,8 @@
 import numpy as np
 from numba import guvectorize
 
+from scoringrules.core.utils import lazy_gufunc_wrapper_mv
+
 
 @guvectorize(
     [
@@ -8,6 +10,7 @@ from numba import guvectorize
         "void(float64[:], float64[:,:], float64[:])",
     ],
     "(d),(m,d)->()",
+    cache=True,
 )
 def _energy_score_gufunc(
     obs: np.ndarray,
@@ -26,13 +29,8 @@ def _energy_score_gufunc(
     out[0] = e_1 / M - 0.5 / (M**2) * e_2
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:], float64[:], float64[:])",
-    ],
-    "(d),(m,d),(),(m)->()",
-)
+@lazy_gufunc_wrapper_mv
+@guvectorize("(d),(m,d),(),(m)->()")
 def _owenergy_score_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -42,7 +40,6 @@ def _owenergy_score_gufunc(
 ):
     """Compute the Outcome-Weighted Energy Score for a finite ensemble."""
     M = fct.shape[0]
-    ow = ow[0]
 
     e_1 = 0.0
     e_2 = 0.0
@@ -56,13 +53,8 @@ def _owenergy_score_gufunc(
     out[0] = e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2)
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:], float64[:], float64[:])",
-    ],
-    "(d),(m,d),(),(m)->()",
-)
+@lazy_gufunc_wrapper_mv
+@guvectorize("(d),(m,d),(),(m)->()")
 def _vrenergy_score_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -72,7 +64,6 @@ def _vrenergy_score_gufunc(
 ):
     """Compute the Vertically Re-scaled Energy Score for a finite ensemble."""
     M = fct.shape[0]
-    ow = ow[0]
 
     e_1 = 0.0
     e_2 = 0.0
