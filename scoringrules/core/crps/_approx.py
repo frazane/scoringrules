@@ -19,6 +19,12 @@ def ensemble(
         out = _crps_ensemble_pwm(obs, fct, backend=backend)
     elif estimator == "fair":
         out = _crps_ensemble_fair(obs, fct, backend=backend)
+    elif estimator == "qd":
+        out = _crps_ensemble_qd(obs, fct, backend=backend)
+    elif estimator == "akr":
+        out = _crps_ensemble_akr(obs, fct, backend=backend)
+    elif estimator == "akr_circperm":
+        out = _crps_ensemble_akr_circperm(obs, fct, backend=backend)
     else:
         raise ValueError(
             f"{estimator} can only be used with `numpy` "
@@ -33,7 +39,7 @@ def _crps_ensemble_fair(
 ) -> "Array":
     """Fair version of the CRPS estimator based on the energy form."""
     B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-1]
+    M = fct.shape[-1]
     e_1 = B.sum(B.abs(obs[..., None] - fct), axis=-1) / M
     e_2 = B.sum(
         B.abs(fct[..., None] - fct[..., None, :]),
@@ -65,6 +71,42 @@ def _crps_ensemble_pwm(
     return expected_diff + β_0 - 2.0 * β_1
 
 
+def _crps_ensemble_qd(obs: "Array", fct: "Array", backend: "Backend" = None) -> "Array":
+    """CRPS estimator based on the quantile decomposition form."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-1]
+    alpha = B.arange(1, M + 1) - 0.5
+    below = (fct <= obs[..., None]) * alpha * (obs[..., None] - fct)
+    above = (fct > obs[..., None]) * (M - alpha) * (fct - obs[..., None])
+    out = B.sum(below + above, axis=-1) / (M**2)
+    return 2 * out
+
+
+def _crps_ensemble_akr(
+    obs: "Array", fct: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS estimator based on the approximate kernel representation."""
+    B = backends.active if backend is None else backends[backend]
+    M = fct.shape[-1]
+    e_1 = B.mean(B.abs(obs[..., None] - fct), axis=-1)
+    ind = [(i + 1) % M for i in range(M)]
+    e_2 = B.mean(B.abs(fct[..., ind] - fct)[..., ind], axis=-1)
+    return e_1 - 0.5 * e_2
+
+
+def _crps_ensemble_akr_circperm(
+    obs: "Array", fct: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS estimator based on the AKR with cyclic permutation."""
+    B = backends.active if backend is None else backends[backend]
+    M = fct.shape[-1]
+    e_1 = B.mean(B.abs(obs[..., None] - fct), axis=-1)
+    shift = int((M - 1) / 2)
+    ind = [(i + shift) % M for i in range(M)]
+    e_2 = B.mean(B.abs(fct[..., ind] - fct), axis=-1)
+    return e_1 - 0.5 * e_2
+
+
 def quantile_pinball(
     obs: "Array", fct: "Array", alpha: "Array", backend: "Backend" = None
 ) -> "Array":
@@ -82,16 +124,15 @@ def ow_ensemble(
     fw: "Array",
     backend: "Backend" = None,
 ) -> "Array":
-    """Outcome-Weighted CRPS estimator based on the energy form."""
+    """Outcome-Weighted CRPS for an ensemble forecast."""
     B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-1]
     wbar = B.mean(fw, axis=-1)
-    e_1 = B.sum(B.abs(obs[..., None] - fct) * fw, axis=-1) * ow / (M * wbar)
-    e_2 = B.sum(
+    e_1 = B.mean(B.abs(obs[..., None] - fct) * fw, axis=-1) * ow / wbar
+    e_2 = B.mean(
         B.abs(fct[..., None] - fct[..., None, :]) * fw[..., None] * fw[..., None, :],
         axis=(-1, -2),
     )
-    e_2 *= ow / (M**2 * wbar**2)
+    e_2 *= ow / (wbar**2)
     return e_1 - 0.5 * e_2
 
 
@@ -102,15 +143,13 @@ def vr_ensemble(
     fw: "Array",
     backend: "Backend" = None,
 ) -> "Array":
-    """Vertically Re-scaled CRPS estimator based on the energy form."""
+    """Vertically Re-scaled CRPS for an ensemble forecast."""
     B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-1]
-    e_1 = B.sum(B.abs(obs[..., None] - fct) * fw, axis=-1) * ow / M
-    e_2 = B.sum(
-        B.abs(B.expand_dims(fct, axis=-1) - B.expand_dims(fct, axis=-2))
-        * (B.expand_dims(fw, axis=-1) * B.expand_dims(fw, axis=-2)),
+    e_1 = B.mean(B.abs(obs[..., None] - fct) * fw, axis=-1) * ow
+    e_2 = B.mean(
+        B.abs(fct[..., None] - fct[..., None, :]) * fw[..., None] * fw[..., None, :],
         axis=(-1, -2),
-    ) / (M**2)
+    )
     e_3 = B.mean(B.abs(fct) * fw, axis=-1) - B.abs(obs) * ow
     e_3 *= B.mean(fw, axis=1) - ow
     return e_1 - 0.5 * e_2 + e_3

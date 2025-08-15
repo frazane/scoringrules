@@ -13,6 +13,7 @@ def crps_ensemble(
     /,
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     sorted_ensemble: bool = False,
     estimator: str = "pwm",
     backend: "Backend" = None,
@@ -50,6 +51,9 @@ def crps_ensemble(
         represented by the last axis.
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array, shape (..., m)
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting.
     sorted_ensemble : bool
         Boolean indicating whether the ensemble members are already in ascending order.
         Default is False.
@@ -102,23 +106,43 @@ def crps_ensemble(
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
 
-    if not sorted_ensemble and estimator not in [
-        "nrg",
-        "akr",
-        "akr_circperm",
-        "fair",
-    ]:
+    sort_ensemble = not sorted_ensemble and estimator in ["qd", "pwm", "int"]
+
+    if sort_ensemble:
+        fct_uns = fct
         fct = B.sort(fct, axis=-1)
 
-    if backend == "numba":
-        if estimator not in crps.estimator_gufuncs:
-            raise ValueError(
-                f"{estimator} is not a valid estimator. "
-                f"Must be one of {crps.estimator_gufuncs.keys()}"
-            )
-        return crps.estimator_gufuncs[estimator](obs, fct)
+    if ens_w is None:
+        if backend == "numba":
+            if estimator not in crps.estimator_gufuncs:
+                raise ValueError(
+                    f"{estimator} is not a valid estimator. "
+                    f"Must be one of {crps.estimator_gufuncs.keys()}"
+                )
+            return crps.estimator_gufuncs[estimator](obs, fct)
 
-    return crps.ensemble(obs, fct, estimator, backend=backend)
+        return crps.ensemble(obs, fct, estimator, backend=backend)
+
+    else:
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
+        if m_axis != -1:
+            ens_w = B.moveaxis(ens_w, m_axis, -1)
+        if sort_ensemble:
+            ind = B.argsort(fct_uns, axis=-1)
+            ens_w = B.gather(ens_w, ind, axis=-1)
+
+        if backend == "numba":
+            if estimator not in crps.estimator_gufuncs:
+                raise ValueError(
+                    f"{estimator} is not a valid estimator. "
+                    f"Must be one of {crps.estimator_gufuncs.keys()}"
+                )
+            return crps.estimator_gufuncs_w[estimator](obs, fct, ens_w)
+
+        return crps.ensemble_w(obs, fct, ens_w, estimator, backend=backend)
 
 
 def twcrps_ensemble(
@@ -129,6 +153,7 @@ def twcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     estimator: str = "pwm",
     sorted_ensemble: bool = False,
@@ -162,6 +187,9 @@ def twcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting.
     v_func : callable, array_like -> array_like
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold :math:`t` by projecting forecasts and observations
@@ -216,6 +244,7 @@ def twcrps_ensemble(
         obs,
         fct,
         m_axis=m_axis,
+        ens_w=ens_w,
         sorted_ensemble=sorted_ensemble,
         estimator=estimator,
         backend=backend,
@@ -230,8 +259,8 @@ def owcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
-    estimator: tp.Literal["nrg"] = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the outcome-weighted CRPS (owCRPS) for a finite ensemble.
@@ -257,7 +286,7 @@ def owcrps_ensemble(
     ----------
     obs : array_like
         The observed values.
-    fct : array_like
+    fct : array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     a : float
@@ -268,6 +297,9 @@ def owcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     backend : str, optional
@@ -308,11 +340,6 @@ def owcrps_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if estimator != "nrg":
-        raise ValueError(
-            "Only the energy form of the estimator is available "
-            "for the outcome-weighted CRPS."
-        )
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
 
@@ -322,14 +349,31 @@ def owcrps_ensemble(
             return ((a <= x) & (x <= b)) * 1.0
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
-    obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
+    if B.any(obs_weights < 0) or B.any(fct_weights < 0):
+        raise ValueError("`w_func` returns negative values")
 
-    if backend == "numba":
-        return crps.estimator_gufuncs["ow" + estimator](
-            obs, fct, obs_weights, fct_weights
+    if ens_w is None:
+        if backend == "numba":
+            return crps.estimator_gufuncs["ownrg"](obs, fct, obs_weights, fct_weights)
+
+        return crps.ow_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
+
+    else:
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
+        if m_axis != -1:
+            ens_w = B.moveaxis(ens_w, m_axis, -1)
+
+        if backend == "numba":
+            return crps.estimator_gufuncs_w["ownrg"](
+                obs, fct, obs_weights, fct_weights, ens_w
+            )
+
+        return crps.ow_ensemble_w(
+            obs, fct, obs_weights, fct_weights, ens_w, backend=backend
         )
-
-    return crps.ow_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
 
 
 def vrcrps_ensemble(
@@ -340,8 +384,8 @@ def vrcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
-    estimator: tp.Literal["nrg"] = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the vertically re-scaled CRPS (vrCRPS) for a finite ensemble.
@@ -365,7 +409,7 @@ def vrcrps_ensemble(
     ----------
     obs : array_like
         The observed values.
-    fct : array_like
+    fct : array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     a : float
@@ -376,6 +420,9 @@ def vrcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     backend : str, optional
@@ -415,11 +462,6 @@ def vrcrps_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if estimator != "nrg":
-        raise ValueError(
-            "Only the energy form of the estimator is available "
-            "for the outcome-weighted CRPS."
-        )
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
 
@@ -429,21 +471,38 @@ def vrcrps_ensemble(
             return ((a <= x) & (x <= b)) * 1.0
 
     obs_weights, fct_weights = map(w_func, (obs, fct))
-    obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
+    if B.any(obs_weights < 0) or B.any(fct_weights < 0):
+        raise ValueError("`w_func` returns negative values")
 
-    if backend == "numba":
-        return crps.estimator_gufuncs["vr" + estimator](
-            obs, fct, obs_weights, fct_weights
+    if ens_w is None:
+        if backend == "numba":
+            return crps.estimator_gufuncs["vrnrg"](obs, fct, obs_weights, fct_weights)
+
+        return crps.vr_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
+
+    else:
+        ens_w = B.asarray(ens_w)
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=m_axis, keepdims=True)
+        if m_axis != -1:
+            ens_w = B.moveaxis(ens_w, m_axis, -1)
+
+        if backend == "numba":
+            return crps.estimator_gufuncs_w["vrnrg"](
+                obs, fct, obs_weights, fct_weights, ens_w
+            )
+
+        return crps.vr_ensemble_w(
+            obs, fct, obs_weights, fct_weights, ens_w, backend=backend
         )
-
-    return crps.vr_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
 
 
 def crps_quantile(
     obs: "ArrayLike",
     fct: "Array",
-    alpha: "Array",
     /,
+    alpha: "Array",
     m_axis: int = -1,
     *,
     backend: "Backend" = None,
@@ -491,10 +550,13 @@ def crps_quantile(
         Journal of Econometrics, 237(2), 105221.
         Available at https://arxiv.org/abs/2102.00968.
 
-    # TODO: add example
+    # TODO: add example, change reference
     """
     B = backends.active if backend is None else backends[backend]
     obs, fct, alpha = map(B.asarray, (obs, fct, alpha))
+
+    if B.any(alpha <= 0) or B.any(alpha >= 1):
+        raise ValueError("`alpha` contains entries that are not between 0 and 1.")
 
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
@@ -510,13 +572,14 @@ def crps_quantile(
 
 def crps_beta(
     obs: "ArrayLike",
+    /,
     a: "ArrayLike",
     b: "ArrayLike",
-    /,
     lower: "ArrayLike" = 0.0,
     upper: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the beta distribution.
 
@@ -550,6 +613,9 @@ def crps_beta(
         Upper bound of the forecast beta distribution.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -569,16 +635,30 @@ def crps_beta(
     >>> sr.crps_beta(0.3, 0.7, 1.1)
     0.08501024366637236
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        a, b, lower, upper = map(B.asarray, (a, b, lower, upper))
+        if B.any(a <= 0):
+            raise ValueError(
+                "`a` contains non-positive entries. The shape parameters of the Beta distribution must be positive."
+            )
+        if B.any(b <= 0):
+            raise ValueError(
+                "`b` contains non-positive entries. The shape parameters of the Beta distribution must be positive."
+            )
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     return crps.beta(obs, a, b, lower, upper, backend=backend)
 
 
 def crps_binomial(
     obs: "ArrayLike",
+    /,
     n: "ArrayLike",
     prob: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the binomial distribution.
 
@@ -601,6 +681,9 @@ def crps_binomial(
         Probability parameter of the forecast binomial distribution as a float or array of floats.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -620,15 +703,21 @@ def crps_binomial(
     >>> sr.crps_binomial(4, 10, 0.5)
     0.5955772399902344
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        prob = B.asarray(prob)
+        if B.any(prob < 0) or B.any(prob > 1):
+            raise ValueError("`prob` contains values outside the range [0, 1].")
     return crps.binomial(obs, n, prob, backend=backend)
 
 
 def crps_exponential(
     obs: "ArrayLike",
-    rate: "ArrayLike",
     /,
+    rate: "ArrayLike",
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the exponential distribution.
 
@@ -647,6 +736,9 @@ def crps_exponential(
         Rate parameter of the forecast exponential distribution.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -669,17 +761,25 @@ def crps_exponential(
     >>> sr.crps_exponential(np.array([0.8, 0.9]), np.array([3.0, 2.0]))
     array([0.36047864, 0.31529889])
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        rate = B.asarray(rate)
+        if B.any(rate <= 0):
+            raise ValueError(
+                "`rate` contains non-positive entries. The rate parameter of the exponential distribution must be positive."
+            )
     return crps.exponential(obs, rate, backend=backend)
 
 
 def crps_exponentialM(
     obs: "ArrayLike",
     /,
-    mass: "ArrayLike" = 0.0,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
+    mass: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the standard exponential distribution with a point mass at the boundary.
 
@@ -713,6 +813,9 @@ def crps_exponentialM(
         Scale parameter of the forecast exponential distribution.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -732,17 +835,27 @@ def crps_exponentialM(
     >>> sr.crps_exponentialM(0.4, 0.2, 0.0, 1.0)
     0.19251207365702294
     """
-    return crps.exponentialM(obs, mass, location, scale, backend=backend)
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, mass = map(B.asarray, (scale, mass))
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter must be positive."
+            )
+        if B.any(mass < 0) or B.any(mass > 1):
+            raise ValueError("`mass` contains entries outside the range [0, 1].")
+    return crps.exponentialM(obs, location, scale, mass, backend=backend)
 
 
 def crps_2pexponential(
     obs: "ArrayLike",
+    /,
     scale1: "ArrayLike",
     scale2: "ArrayLike",
-    location: "ArrayLike",
-    /,
+    location: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the two-piece exponential distribution.
 
@@ -769,6 +882,9 @@ def crps_2pexponential(
         Location parameter of the forecast two-piece exponential distribution.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -788,17 +904,29 @@ def crps_2pexponential(
     >>> sr.crps_2pexponential(0.8, 3.0, 1.4, 0.0)
     array(1.18038524)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale1, scale2 = map(B.asarray, (scale1, scale2))
+        if B.any(scale1 <= 0):
+            raise ValueError(
+                "`scale1` contains non-positive entries. The scale parameters of the two-piece exponential distribution must be positive."
+            )
+        if B.any(scale2 <= 0):
+            raise ValueError(
+                "`scale2` contains non-positive entries. The scale parameters of the two-piece exponential distribution must be positive."
+            )
     return crps.twopexponential(obs, scale1, scale2, location, backend=backend)
 
 
 def crps_gamma(
     obs: "ArrayLike",
-    shape: "ArrayLike",
     /,
+    shape: "ArrayLike",
     rate: "ArrayLike | None" = None,
     *,
     scale: "ArrayLike | None" = None,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the gamma distribution.
 
@@ -827,6 +955,9 @@ def crps_gamma(
         Either ``rate`` or ``scale`` must be provided.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -859,17 +990,30 @@ def crps_gamma(
     if rate is None:
         rate = 1.0 / scale
 
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        shape, rate = map(B.asarray, (shape, rate))
+        if B.any(shape <= 0):
+            raise ValueError(
+                "`shape` contains non-positive entries. The shape parameter of the gamma distribution must be positive."
+            )
+        if B.any(rate <= 0):
+            raise ValueError(
+                "`rate` or `scale` contains non-positive entries. The rate and scale parameters of the gamma distribution must be positive."
+            )
+
     return crps.gamma(obs, shape, rate, backend=backend)
 
 
 def crps_gev(
     obs: "ArrayLike",
-    shape: "ArrayLike",
     /,
+    shape: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the generalised extreme value (GEV) distribution.
 
@@ -893,6 +1037,9 @@ def crps_gev(
         Scale parameter of the forecast GEV distribution.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -954,18 +1101,30 @@ def crps_gev(
     >>> sr.crps_gev(0.3, 0.1)
     0.2924712413052034
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, shape = map(B.asarray, (scale, shape))
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the GEV distribution must be positive."
+            )
+        if B.any(shape >= 1):
+            raise ValueError(
+                "`shape` contains entries larger than 1. The CRPS for the GEV distribution is only valid for shape values less than 1."
+            )
     return crps.gev(obs, shape, location, scale, backend=backend)
 
 
 def crps_gpd(
     obs: "ArrayLike",
-    shape: "ArrayLike",
     /,
+    shape: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     mass: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the generalised pareto distribution (GPD).
 
@@ -998,6 +1157,9 @@ def crps_gpd(
         Mass parameter at the lower boundary of the forecast GPD distribution.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1017,20 +1179,36 @@ def crps_gpd(
     >>> sr.crps_gpd(0.3, 0.9)
     0.6849331901197213
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, shape, mass = map(B.asarray, (scale, shape, mass))
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the GPD distribution must be positive. `nan` is returned in these places."
+            )
+        if B.any(shape >= 1):
+            raise ValueError(
+                "`shape` contains entries larger than 1. The CRPS for the GPD distribution is only valid for shape values less than 1. `nan` is returned in these places."
+            )
+        if B.any(mass < 0) or B.any(mass > 1):
+            raise ValueError(
+                "`mass` contains entries outside the range [0, 1]. `nan` is returned in these places."
+            )
     return crps.gpd(obs, shape, location, scale, mass, backend=backend)
 
 
 def crps_gtclogistic(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     lmass: "ArrayLike" = 0.0,
     umass: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the generalised truncated and censored logistic distribution.
 
@@ -1077,6 +1255,9 @@ def crps_gtclogistic(
         Point mass assigned to the lower boundary of the forecast distribution.
     umass : array_like
         Point mass assigned to the upper boundary of the forecast distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1089,6 +1270,23 @@ def crps_gtclogistic(
     >>> sr.crps_gtclogistic(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     0.1658713056903939
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, lmass, umass, lower, upper = map(
+            B.asarray, (scale, lmass, umass, lower, upper)
+        )
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the generalised logistic distribution must be positive."
+            )
+        if B.any(lmass < 0) or B.any(lmass > 1):
+            raise ValueError("`lmass` contains entries outside the range [0, 1].")
+        if B.any(umass < 0) or B.any(umass > 1):
+            raise ValueError("`umass` contains entries outside the range [0, 1].")
+        if B.any(umass + lmass >= 1):
+            raise ValueError("The sum of `umass` and `lmass` should be smaller than 1.")
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     return crps.gtclogistic(
         obs,
         location,
@@ -1103,13 +1301,14 @@ def crps_gtclogistic(
 
 def crps_tlogistic(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the truncated logistic distribution.
 
@@ -1128,6 +1327,9 @@ def crps_tlogistic(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1140,20 +1342,37 @@ def crps_tlogistic(
     >>> sr.crps_tlogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     0.12714830546327846
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, lower, upper = map(B.asarray, (scale, lower, upper))
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the truncated logistic distribution must be positive."
+            )
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     return crps.gtclogistic(
-        obs, location, scale, lower, upper, 0.0, 0.0, backend=backend
+        obs,
+        location,
+        scale,
+        lower,
+        upper,
+        0.0,
+        0.0,
+        backend=backend,
     )
 
 
 def crps_clogistic(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the censored logistic distribution.
 
@@ -1172,6 +1391,9 @@ def crps_clogistic(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1184,6 +1406,15 @@ def crps_clogistic(
     >>> sr.crps_clogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     0.15805632276434345
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, lower, upper = map(B.asarray, (scale, lower, upper))
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the censored logistic distribution must be positive."
+            )
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     lmass = stats._logis_cdf((lower - location) / scale)
     umass = 1 - stats._logis_cdf((upper - location) / scale)
     return crps.gtclogistic(
@@ -1200,15 +1431,16 @@ def crps_clogistic(
 
 def crps_gtcnormal(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     lmass: "ArrayLike" = 0.0,
     umass: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the generalised truncated and censored normal distribution.
 
@@ -1242,6 +1474,23 @@ def crps_gtcnormal(
     >>> sr.crps_gtcnormal(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     0.1351100832878575
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, lmass, umass, lower, upper = map(
+            B.asarray, (scale, lmass, umass, lower, upper)
+        )
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the generalised normal distribution must be positive."
+            )
+        if B.any(lmass < 0) or B.any(lmass > 1):
+            raise ValueError("`lmass` contains entries outside the range [0, 1].")
+        if B.any(umass < 0) or B.any(umass > 1):
+            raise ValueError("`umass` contains entries outside the range [0, 1].")
+        if B.any(umass + lmass >= 1):
+            raise ValueError("The sum of `umass` and `lmass` should be smaller than 1.")
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     return crps.gtcnormal(
         obs,
         location,
@@ -1256,13 +1505,14 @@ def crps_gtcnormal(
 
 def crps_tnormal(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the truncated normal distribution.
 
@@ -1281,6 +1531,9 @@ def crps_tnormal(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1293,18 +1546,28 @@ def crps_tnormal(
     >>> sr.crps_tnormal(0.0, 0.1, 0.4, -1.0, 1.0)
     0.10070146718008832
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, lower, upper = map(B.asarray, (scale, lower, upper))
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the truncated normal distribution must be positive."
+            )
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     return crps.gtcnormal(obs, location, scale, lower, upper, 0.0, 0.0, backend=backend)
 
 
 def crps_cnormal(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the censored normal distribution.
 
@@ -1323,6 +1586,9 @@ def crps_cnormal(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1335,6 +1601,15 @@ def crps_cnormal(
     >>> sr.crps_cnormal(0.0, 0.1, 0.4, -1.0, 1.0)
     0.10338851213123085
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, lower, upper = map(B.asarray, (scale, lower, upper))
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the censored normal distribution must be positive."
+            )
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     lmass = stats._norm_cdf((lower - location) / scale)
     umass = 1 - stats._norm_cdf((upper - location) / scale)
     return crps.gtcnormal(
@@ -1351,8 +1626,8 @@ def crps_cnormal(
 
 def crps_gtct(
     obs: "ArrayLike",
-    df: "ArrayLike",
     /,
+    df: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
@@ -1361,6 +1636,7 @@ def crps_gtct(
     umass: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the generalised truncated and censored t distribution.
 
@@ -1405,6 +1681,9 @@ def crps_gtct(
         Point mass assigned to the lower boundary of the forecast distribution.
     umass : array_like
         Point mass assigned to the upper boundary of the forecast distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1424,6 +1703,27 @@ def crps_gtct(
     >>> sr.crps_gtct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     0.13997789333289662
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, lmass, umass, lower, upper = map(
+            B.asarray, (scale, lmass, umass, lower, upper)
+        )
+        if B.any(df <= 0):
+            raise ValueError(
+                "`df` contains non-positive entries. The degrees of freedom parameter of the generalised t distribution must be positive."
+            )
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the generalised t distribution must be positive."
+            )
+        if B.any(lmass < 0) or B.any(lmass > 1):
+            raise ValueError("`lmass` contains entries outside the range [0, 1].")
+        if B.any(umass < 0) or B.any(umass > 1):
+            raise ValueError("`umass` contains entries outside the range [0, 1].")
+        if B.any(umass + lmass >= 1):
+            raise ValueError("The sum of `umass` and `lmass` should be smaller than 1.")
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     return crps.gtct(
         obs,
         df,
@@ -1439,14 +1739,15 @@ def crps_gtct(
 
 def crps_tt(
     obs: "ArrayLike",
-    df: "ArrayLike",
     /,
+    df: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the truncated t distribution.
 
@@ -1467,6 +1768,9 @@ def crps_tt(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1479,6 +1783,19 @@ def crps_tt(
     >>> sr.crps_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     0.10323007471747117
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, lower, upper = map(B.asarray, (scale, lower, upper))
+        if B.any(df <= 0):
+            raise ValueError(
+                "`df` contains non-positive entries. The degrees of freedom parameter of the truncated t distribution must be positive."
+            )
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the truncated t distribution must be positive."
+            )
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     return crps.gtct(
         obs,
         df,
@@ -1494,14 +1811,15 @@ def crps_tt(
 
 def crps_ct(
     obs: "ArrayLike",
-    df: "ArrayLike",
     /,
+    df: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the censored t distribution.
 
@@ -1522,6 +1840,9 @@ def crps_ct(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1534,6 +1855,19 @@ def crps_ct(
     >>> sr.crps_ct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     0.12672580744453948
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, lower, upper = map(B.asarray, (scale, lower, upper))
+        if B.any(df <= 0):
+            raise ValueError(
+                "`df` contains non-positive entries. The degrees of freedom parameter of the censored t distribution must be positive."
+            )
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the censored t distribution must be positive."
+            )
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     lmass = stats._t_cdf((lower - location) / scale, df)
     umass = 1 - stats._t_cdf((upper - location) / scale, df)
     return crps.gtct(
@@ -1551,12 +1885,13 @@ def crps_ct(
 
 def crps_hypergeometric(
     obs: "ArrayLike",
+    /,
     m: "ArrayLike",
     n: "ArrayLike",
     k: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the hypergeometric distribution.
 
@@ -1582,6 +1917,9 @@ def crps_hypergeometric(
         Number of draws, without replacement. Must be in 0, 1, ..., m + n.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1601,6 +1939,7 @@ def crps_hypergeometric(
     >>> sr.crps_hypergeometric(5, 7, 13, 12)
     0.44697415547610597
     """
+    # TODO: add check that m,n,k are integers
     return crps.hypergeometric(obs, m, n, k, backend=backend)
 
 
@@ -1611,6 +1950,7 @@ def crps_laplace(
     scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the laplace distribution.
 
@@ -1633,6 +1973,9 @@ def crps_laplace(
         Scale parameter of the forecast laplace distribution.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1652,16 +1995,24 @@ def crps_laplace(
     >>> sr.crps_laplace(0.3, 0.1, 0.2)
     0.12357588823428847
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale = B.asarray(scale)
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the laplace must be positive."
+            )
     return crps.laplace(obs, location, scale, backend=backend)
 
 
 def crps_logistic(
     obs: "ArrayLike",
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
     /,
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the logistic distribution.
 
@@ -1677,15 +2028,18 @@ def crps_logistic(
     ----------
     obs : array_like
         Observed values.
-    mu: array_like
+    location: array_like
         Location parameter of the forecast logistic distribution.
-    sigma: array_like
+    scale: array_like
         Scale parameter of the forecast logistic distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
     crps : array_like
-        The CRPS for the Logistic(mu, sigma) forecasts given the observations.
+        The CRPS for the Logistic(location, scale) forecasts given the observations.
 
     References
     ----------
@@ -1700,15 +2054,24 @@ def crps_logistic(
     >>> sr.crps_logistic(0.0, 0.4, 0.1)
     0.3036299855835619
     """
-    return crps.logistic(obs, mu, sigma, backend=backend)
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale = B.asarray(scale)
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`sigma` contains non-positive entries. The scale parameter of the logistic distribution must be positive."
+            )
+    return crps.logistic(obs, location, scale, backend=backend)
 
 
 def crps_loglaplace(
     obs: "ArrayLike",
-    locationlog: "ArrayLike",
-    scalelog: "ArrayLike",
+    /,
+    locationlog: "ArrayLike" = 0.0,
+    scalelog: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the log-Laplace distribution.
 
@@ -1741,6 +2104,9 @@ def crps_loglaplace(
         Scale parameter of the forecast log-laplace distribution.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1760,14 +2126,24 @@ def crps_loglaplace(
     >>> sr.crps_loglaplace(3.0, 0.1, 0.9)
     1.162020513653791
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scalelog = B.asarray(scalelog)
+        if B.any(scalelog <= 0) or B.any(scalelog >= 1):
+            raise ValueError(
+                "`scalelog` contains entries outside of the range (0, 1). The scale parameter of the log-laplace distribution must be between 0 and 1."
+            )
     return crps.loglaplace(obs, locationlog, scalelog, backend=backend)
 
 
 def crps_loglogistic(
     obs: "ArrayLike",
-    mulog: "ArrayLike",
-    sigmalog: "ArrayLike",
+    /,
+    mulog: "ArrayLike" = 0.0,
+    sigmalog: "ArrayLike" = 1.0,
+    *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the log-logistic distribution.
 
@@ -1800,7 +2176,9 @@ def crps_loglogistic(
         Scale parameter of the log-logistic distribution.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
-
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1820,14 +2198,24 @@ def crps_loglogistic(
     >>> sr.crps_loglogistic(3.0, 0.1, 0.9)
     1.1329527730161177
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        sigmalog = B.asarray(sigmalog)
+        if B.any(sigmalog <= 0) or B.any(sigmalog >= 1):
+            raise ValueError(
+                "`sigmalog` contains entries outside of the range (0, 1). The scale parameter of the log-logistic distribution must be between 0 and 1."
+            )
     return crps.loglogistic(obs, mulog, sigmalog, backend=backend)
 
 
 def crps_lognormal(
     obs: "ArrayLike",
-    mulog: "ArrayLike",
-    sigmalog: "ArrayLike",
+    /,
+    mulog: "ArrayLike" = 0.0,
+    sigmalog: "ArrayLike" = 1.0,
+    *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the lognormal distribution.
 
@@ -1852,6 +2240,9 @@ def crps_lognormal(
         Mean of the normal underlying distribution.
     sigmalog : array_like
         Standard deviation of the underlying normal distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1870,18 +2261,26 @@ def crps_lognormal(
     >>> sr.crps_lognormal(0.1, 0.4, 0.0)
     1.3918246976412703
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        sigmalog = B.asarray(sigmalog)
+        if B.any(sigmalog <= 0):
+            raise ValueError(
+                "`sigmalog` contains non-positive entries. The scale parameter of the log-normal distribution must be positive."
+            )
     return crps.lognormal(obs, mulog, sigmalog, backend=backend)
 
 
 def crps_mixnorm(
     obs: "ArrayLike",
-    m: "ArrayLike",
-    s: "ArrayLike",
     /,
+    m: "ArrayLike" = 0.0,
+    s: "ArrayLike" = 1.0,
     w: "ArrayLike" = None,
     m_axis: "ArrayLike" = -1,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for a mixture of normal distributions.
 
@@ -1907,6 +2306,9 @@ def crps_mixnorm(
         The axis corresponding to the mixture components. Default is the last axis.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1934,6 +2336,15 @@ def crps_mixnorm(
         w = B.zeros(m.shape) + 1 / M
     else:
         w = B.asarray(w)
+        w = w / B.sum(w, axis=m_axis, keepdims=True)
+
+    if check_pars:
+        if B.any(s <= 0):
+            raise ValueError(
+                "`s` contains non-positive entries. The scale parameters of the normal distributions should be positive."
+            )
+        if B.any(w < 0):
+            raise ValueError("`w` contains negative entries")
 
     if m_axis != -1:
         m = B.moveaxis(m, m_axis, -1)
@@ -1945,12 +2356,13 @@ def crps_mixnorm(
 
 def crps_negbinom(
     obs: "ArrayLike",
-    n: "ArrayLike",
     /,
+    n: "ArrayLike",
     prob: "ArrayLike | None" = None,
     *,
     mu: "ArrayLike | None" = None,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the negative binomial distribution.
 
@@ -1973,6 +2385,9 @@ def crps_negbinom(
         Probability parameter of the forecast negative binomial distribution.
     mu: array_like
         Mean of the forecast negative binomial distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -2004,16 +2419,23 @@ def crps_negbinom(
     if prob is None:
         prob = n / (n + mu)
 
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        prob = B.asarray(prob)
+        if B.any(prob < 0) or B.any(prob > 1):
+            raise ValueError("`prob` contains values outside the range [0, 1].")
+
     return crps.negbinom(obs, n, prob, backend=backend)
 
 
 def crps_normal(
     obs: "ArrayLike",
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
     /,
+    mu: "ArrayLike" = 0.0,
+    sigma: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the normal distribution.
 
@@ -2033,6 +2455,9 @@ def crps_normal(
         Mean of the forecast normal distribution.
     sigma: array_like
         Standard deviation of the forecast normal distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -2051,17 +2476,25 @@ def crps_normal(
     >>> sr.crps_normal(0.0, 0.1, 0.4)
     0.10339992515976162
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        sigma = B.asarray(sigma)
+        if B.any(sigma <= 0):
+            raise ValueError(
+                "`sigma` contains non-positive entries. The standard deviation of the normal distribution must be positive."
+            )
     return crps.normal(obs, mu, sigma, backend=backend)
 
 
 def crps_2pnormal(
     obs: "ArrayLike",
-    scale1: "ArrayLike",
-    scale2: "ArrayLike",
-    location: "ArrayLike",
     /,
+    scale1: "ArrayLike" = 1.0,
+    scale2: "ArrayLike" = 1.0,
+    location: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the two-piece normal distribution.
 
@@ -2086,6 +2519,9 @@ def crps_2pnormal(
         Scale parameter of the upper half of the forecast two-piece normal distribution.
     mu: array_like
         Location parameter of the forecast two-piece normal distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -2107,6 +2543,15 @@ def crps_2pnormal(
     """
     B = backends.active if backend is None else backends[backend]
     obs, scale1, scale2, location = map(B.asarray, (obs, scale1, scale2, location))
+    if check_pars:
+        if B.any(scale1 <= 0):
+            raise ValueError(
+                "`scale1` contains non-positive entries. The scale parameters of the two-piece normal distribution must be positive."
+            )
+        if B.any(scale2 <= 0):
+            raise ValueError(
+                "`scale2` contains non-positive entries. The scale parameters of the two-piece normal distribution must be positive."
+            )
     lower = float("-inf")
     upper = 0.0
     lmass = 0.0
@@ -2128,10 +2573,11 @@ def crps_2pnormal(
 
 def crps_poisson(
     obs: "ArrayLike",
-    mean: "ArrayLike",
     /,
+    mean: "ArrayLike",
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the Poisson distribution.
 
@@ -2151,6 +2597,9 @@ def crps_poisson(
         The observed values.
     mean : array_like
         Mean parameter of the forecast poisson distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -2169,17 +2618,25 @@ def crps_poisson(
     >>> sr.crps_poisson(1, 2)
     0.4991650450203817
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        mean = B.asarray(mean)
+        if B.any(mean <= 0):
+            raise ValueError(
+                "`mean` contains non-positive entries. The mean parameter of the Poisson distribution must be positive."
+            )
     return crps.poisson(obs, mean, backend=backend)
 
 
 def crps_t(
     obs: "ArrayLike",
-    df: "ArrayLike",
     /,
+    df: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the student's t distribution.
 
@@ -2204,8 +2661,11 @@ def crps_t(
         Degrees of freedom parameter of the forecast t distribution.
     location : array_like
         Location parameter of the forecast t distribution.
-    sigma : array_like
+    scale : array_like
         Scale parameter of the forecast t distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -2225,18 +2685,30 @@ def crps_t(
     >>> sr.crps_t(0.0, 0.1, 0.4, 0.1)
     0.07687151141732129
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        df, scale = map(B.asarray, (df, scale))
+        if B.any(df <= 0):
+            raise ValueError(
+                "`df` contains non-positive entries. The degrees of freedom parameter of the t distribution must be positive."
+            )
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the t distribution must be positive."
+            )
     return crps.t(obs, df, location, scale, backend=backend)
 
 
 def crps_uniform(
     obs: "ArrayLike",
-    min: "ArrayLike",
-    max: "ArrayLike",
     /,
+    min: "ArrayLike" = 0.0,
+    max: "ArrayLike" = 1.0,
     lmass: "ArrayLike" = 0.0,
     umass: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the uniform distribution.
 
@@ -2264,6 +2736,9 @@ def crps_uniform(
         Point mass on the lower bound of the forecast uniform distribution.
     umass : array_like
         Point mass on the upper bound of the forecast uniform distribution.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -2283,6 +2758,17 @@ def crps_uniform(
     >>> sr.crps_uniform(0.4, 0.0, 1.0, 0.0, 0.0)
     0.09333333333333332
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        lmass, umass, min, max = map(B.asarray, (lmass, umass, min, max))
+        if B.any(lmass < 0) or B.any(lmass > 1):
+            raise ValueError("`lmass` contains entries outside the range [0, 1].")
+        if B.any(umass < 0) or B.any(umass > 1):
+            raise ValueError("`umass` contains entries outside the range [0, 1].")
+        if B.any(umass + lmass >= 1):
+            raise ValueError("The sum of `umass` and `lmass` should be smaller than 1.")
+        if B.any(min >= max):
+            raise ValueError("`min` is not always smaller than `max`.")
     return crps.uniform(obs, min, max, lmass, umass, backend=backend)
 
 

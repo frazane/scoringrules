@@ -202,6 +202,17 @@ class ArrayBackend(abc.ABC):
         """Test whether any input array element evaluates to ``True`` along a specified axis."""
 
     @abc.abstractmethod
+    def argsort(
+        self,
+        x: "Array",
+        /,
+        *,
+        axis: int = -1,
+        descending: bool = False,
+    ) -> "Array":
+        """Return the indices of a sorted copy of an input array ``x``."""
+
+    @abc.abstractmethod
     def sort(
         self,
         x: "Array",
@@ -297,3 +308,7 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def indices(self, x: "Array") -> int:
         """Return an array representing the indices of a grid."""
+
+    @abc.abstractmethod
+    def gather(self, x: "Array", ind: "Array", axis: int) -> "Array":
+        """Reorder an array ``x`` depending on a template ``ind`` across an axis ``axis``."""

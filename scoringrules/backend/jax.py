@@ -194,6 +194,16 @@ class JaxBackend(ArrayBackend):
         out = jnp.sort(x, axis=axis)  # TODO: this is slow! why?
         return -out if descending else out
 
+    def argsort(
+        self,
+        x: "Array",
+        /,
+        *,
+        axis: int = -1,
+        descending: bool = False,
+    ) -> "Array":
+        return jnp.argsort(x, axis=axis, descending=descending)
+
     def norm(self, x: "Array", axis: int | tuple[int, ...] | None = None) -> "Array":
         return jnp.linalg.norm(x, axis=axis)
 
@@ -268,6 +278,9 @@ class JaxBackend(ArrayBackend):
 
     def indices(self, dimensions: tuple) -> "Array":
         return jnp.indices(dimensions)
+
+    def gather(self, x: "Array", ind: "Array", axis: int) -> "Array":
+        return jnp.take_along_axis(x, ind, axis=axis)
 
 
 if __name__ == "__main__":

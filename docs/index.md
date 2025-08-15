@@ -17,7 +17,6 @@ The scoring rules available in `scoringrules` include, but are not limited to, t
 - Logarithmic Score
 - (Discrete) Ranked Probability Score
 - Continuous Ranked Probability Score (CRPS)
-- Dawid-Sebastiani Score
 - Energy Score
 - Variogram Score
 - Gaussian Kernel Score
@@ -25,27 +24,27 @@ The scoring rules available in `scoringrules` include, but are not limited to, t
 - Threshold-Weighted Energy Score
 - Quantile Score
 - Interval Score
+- Weighted Interval Score
 
-
-
+Functionality is available for forecasts in the form of samples (i.e. ensemble forecasts) as well as popular univariate parametric distributions.
 
 ```{toctree}
 :hidden:
 :caption: Background
 
-theory.md
-forecast_dists.md
-crps_estimators.md
-weighted_scores.md
+background/theory.md
+background/forecast_dists.md
+background/crps_estimators.md
+background/weighted_scores.md
 ```
 
 ```{toctree}
 :hidden:
 :caption: Library
 
-user_guide.md
-contributing.md
-reference.md
+library/user_guide.md
+library/contributing.md
+library/reference.md
 ```
 
 

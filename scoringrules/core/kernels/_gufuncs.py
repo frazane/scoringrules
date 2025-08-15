@@ -20,7 +20,6 @@ def _gauss_kern_mv(x1: float, x2: float) -> float:
     return out
 
 
-@lazy_gufunc_wrapper_uv
 @guvectorize("(),(n)->()")
 def _ks_ensemble_uv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Standard version of the kernel score."""
@@ -33,16 +32,15 @@ def _ks_ensemble_uv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
     e_1 = 0
     e_2 = 0
 
-    for x_i in fct:
-        e_1 += _gauss_kern_uv(x_i, obs)
-        for x_j in fct:
-            e_2 += _gauss_kern_uv(x_i, x_j)
+    for i in range(M):
+        e_1 += _gauss_kern_uv(fct[i], obs)
+        for j in range(M):
+            e_2 += _gauss_kern_uv(fct[i], fct[j])
     e_3 = _gauss_kern_uv(obs, obs)
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M**2) - 0.5 * e_3)
+    out[0] = -((e_1 / M) - 0.5 * (e_2 / (M**2)) - 0.5 * e_3)
 
 
-@lazy_gufunc_wrapper_uv
 @guvectorize("(),(n)->()")
 def _ks_ensemble_uv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Fair version of the kernel score."""
@@ -55,16 +53,15 @@ def _ks_ensemble_uv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarra
     e_1 = 0
     e_2 = 0
 
-    for x_i in fct:
-        e_1 += _gauss_kern_uv(x_i, obs)
-        for x_j in fct:
-            e_2 += _gauss_kern_uv(x_i, x_j)
+    for i in range(M):
+        e_1 += _gauss_kern_uv(fct[i], obs)
+        for j in range(i + 1, M):
+            e_2 += _gauss_kern_uv(fct[i], fct[j])
     e_3 = _gauss_kern_uv(obs, obs)
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3)
+    out[0] = -((e_1 / M) - e_2 / (M * (M - 1)) - 0.5 * e_3)
 
 
-@lazy_gufunc_wrapper_uv
 @guvectorize("(),(n),(),(n)->()")
 def _owks_ensemble_uv_gufunc(
     obs: np.ndarray,
@@ -91,10 +88,9 @@ def _owks_ensemble_uv_gufunc(
 
     wbar = np.mean(fw)
 
-    out[0] = -(e_1 / (M * wbar) - 0.5 * e_2 / ((M * wbar) ** 2) - 0.5 * e_3)
+    out[0] = -(e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2) - 0.5 * e_3)
 
 
-@lazy_gufunc_wrapper_uv
 @guvectorize("(),(n),(),(n)->()")
 def _vrks_ensemble_uv_gufunc(
     obs: np.ndarray,
@@ -119,10 +115,9 @@ def _vrks_ensemble_uv_gufunc(
             e_2 += _gauss_kern_uv(x_i, x_j) * fw[i] * fw[j]
     e_3 = _gauss_kern_uv(obs, obs) * ow * ow
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M**2) - 0.5 * e_3)
+    out[0] = -((e_1 / M) - 0.5 * (e_2 / (M**2)) - 0.5 * e_3)
 
 
-@lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d)->()")
 def _ks_ensemble_mv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Standard version of the multivariate kernel score."""
@@ -136,10 +131,9 @@ def _ks_ensemble_mv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
             e_2 += float(_gauss_kern_mv(fct[i], fct[j]))
     e_3 = float(_gauss_kern_mv(obs, obs))
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M**2) - 0.5 * e_3)
+    out[0] = -((e_1 / M) - 0.5 * (e_2 / (M**2)) - 0.5 * e_3)
 
 
-@lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d)->()")
 def _ks_ensemble_mv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Fair version of the multivariate kernel score."""
@@ -149,14 +143,13 @@ def _ks_ensemble_mv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarra
     e_2 = 0.0
     for i in range(M):
         e_1 += float(_gauss_kern_mv(fct[i], obs))
-        for j in range(M):
+        for j in range(i + 1, M):
             e_2 += float(_gauss_kern_mv(fct[i], fct[j]))
     e_3 = float(_gauss_kern_mv(obs, obs))
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3)
+    out[0] = -((e_1 / M) - (e_2 / (M * (M - 1))) - 0.5 * e_3)
 
 
-@lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d),(),(m)->()")
 def _owks_ensemble_mv_gufunc(
     obs: np.ndarray,
@@ -181,7 +174,6 @@ def _owks_ensemble_mv_gufunc(
     out[0] = -(e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2) - 0.5 * e_3)
 
 
-@lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d),(),(m)->()")
 def _vrks_ensemble_mv_gufunc(
     obs: np.ndarray,
@@ -201,21 +193,21 @@ def _vrks_ensemble_mv_gufunc(
             e_2 += float(_gauss_kern_mv(fct[i], fct[j]) * fw[i] * fw[j])
     e_3 = float(_gauss_kern_mv(obs, obs)) * ow * ow
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M**2) - 0.5 * e_3)
+    out[0] = -((e_1 / M) - 0.5 * (e_2 / (M**2)) - 0.5 * e_3)
 
 
-estimator_gufuncs = {
-    "fair": _ks_ensemble_uv_fair_gufunc,
-    "nrg": _ks_ensemble_uv_nrg_gufunc,
-    "ow": _owks_ensemble_uv_gufunc,
-    "vr": _vrks_ensemble_uv_gufunc,
+estimator_gufuncs_uv = {
+    "fair": lazy_gufunc_wrapper_uv(_ks_ensemble_uv_fair_gufunc),
+    "nrg": lazy_gufunc_wrapper_uv(_ks_ensemble_uv_nrg_gufunc),
+    "ow": lazy_gufunc_wrapper_uv(_owks_ensemble_uv_gufunc),
+    "vr": lazy_gufunc_wrapper_uv(_vrks_ensemble_uv_gufunc),
 }
 
 estimator_gufuncs_mv = {
-    "fair": _ks_ensemble_mv_fair_gufunc,
-    "nrg": _ks_ensemble_mv_nrg_gufunc,
-    "ow": _owks_ensemble_mv_gufunc,
-    "vr": _vrks_ensemble_mv_gufunc,
+    "fair": lazy_gufunc_wrapper_mv(_ks_ensemble_mv_fair_gufunc),
+    "nrg": lazy_gufunc_wrapper_mv(_ks_ensemble_mv_nrg_gufunc),
+    "ow": lazy_gufunc_wrapper_mv(_owks_ensemble_mv_gufunc),
+    "vr": lazy_gufunc_wrapper_mv(_vrks_ensemble_mv_gufunc),
 }
 
 __all__ = [

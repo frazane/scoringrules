@@ -225,6 +225,17 @@ class TensorflowBackend(ArrayBackend):
         direction = "DESCENDING" if descending else "ASCENDING"
         return tf.sort(x, axis=axis, direction=direction)
 
+    def argsort(
+        self,
+        x: "Tensor",
+        /,
+        *,
+        axis: int = -1,
+        descending: bool = False,
+    ) -> "Tensor":
+        direction = "DESCENDING" if descending else "ASCENDING"
+        return tf.argsort(x, axis=axis, direction=direction)
+
     def norm(self, x: "Tensor", axis: int | tuple[int, ...] | None = None) -> "Tensor":
         return tf.norm(x, axis=axis)
 
@@ -303,6 +314,10 @@ class TensorflowBackend(ArrayBackend):
         index_grids = tf.meshgrid(*ranges, indexing="ij")
         indices = tf.stack(index_grids)
         return indices
+
+    def gather(self, x: "Tensor", ind: "Tensor", axis: int) -> "Tensor":
+        d = len(x.shape)
+        return tf.gather(x, ind, axis=axis, batch_dims=d)
 
 
 if __name__ == "__main__":

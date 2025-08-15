@@ -19,7 +19,6 @@ def _energy_score_gufunc(
 ):
     """Compute the Energy Score for a finite ensemble."""
     M = fct.shape[0]
-
     e_1 = 0.0
     e_2 = 0.0
     for i in range(M):
