@@ -100,7 +100,6 @@ def dssmv_ensemble(
     score: Array
         The computed Dawid-Sebastiani Score.
     """
-    backend = backend if backend is not None else backends._active
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
     if backend == "numba":
