@@ -68,7 +68,6 @@ def _ks_ensemble_uv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarra
 @guvectorize("(),(n)->()")
 def _ks_ensemble_uv_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Approximate kernel representation estimator of the kernel score."""
-    obs = obs[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -91,7 +90,6 @@ def _ks_ensemble_uv_akr_circperm_gufunc(
     obs: np.ndarray, fct: np.ndarray, out: np.ndarray
 ):
     """AKR estimator of the kernel score with cyclic permutation."""
-    obs = obs[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
