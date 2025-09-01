@@ -53,9 +53,11 @@ class JaxBackend(ArrayBackend):
         /,
         *,
         axis: int | tuple[int, ...] | None = None,
+        bias: bool = False,
         keepdims: bool = False,
     ) -> "Array":
-        return jnp.std(x, ddof=1, axis=axis, keepdims=keepdims)
+        ddof = 0 if bias else 1
+        return jnp.std(x, ddof=ddof, axis=axis, keepdims=keepdims)
 
     def quantile(
         self,
@@ -271,6 +273,18 @@ class JaxBackend(ArrayBackend):
 
     def roll(self, x: "Array", shift: int = 1, axis: int = -1) -> "Array":
         return jnp.roll(x, shift=shift, axis=axis)
+
+    def inv(self, x: "Array") -> "Array":
+        return jnp.linalg.inv(x)
+
+    def cov(self, x: "Array", rowvar: bool = True, bias: bool = False) -> "Array":
+        return jnp.cov(x, rowvar=rowvar, bias=bias)
+
+    def det(self, x: "Array") -> "Array":
+        return jnp.linalg.det(x)
+
+    def reshape(self, x: "Array", shape: int | tuple[int, ...]) -> "Array":
+        return jnp.reshape(x, shape)
 
 
 if __name__ == "__main__":

@@ -51,6 +51,7 @@ from scoringrules._energy import (
     twes_ensemble,
     vres_ensemble,
 )
+from scoringrules._dss import dssuv_ensemble, dssmv_ensemble
 from scoringrules._error_spread import error_spread_score
 from scoringrules._interval import interval_score, weighted_interval_score
 from scoringrules._logs import (
@@ -196,6 +197,8 @@ __all__ = [
     "rps_score",
     "log_score",
     "rls_score",
+    "dssuv_ensemble",
+    "dssmv_ensemble",
     "error_spread_score",
     "es_ensemble",
     "owes_ensemble",
