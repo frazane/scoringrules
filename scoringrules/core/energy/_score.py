@@ -24,7 +24,7 @@ def es_ensemble(
         out = _es_ensemble_akr_circperm(obs, fct, backend=backend)
     else:
         raise ValueError(
-            f"{estimator} must be one of 'nrg' and 'fair' for the energy score."
+            f"For the energy score, {estimator} must be one of 'nrg', 'fair', 'akr', and 'akr_circperm'."
         )
 
     return out

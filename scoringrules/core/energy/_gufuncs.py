@@ -60,7 +60,7 @@ def _energy_score_fair_gufunc(
 @guvectorize("(d),(m,d)->()")
 def _energy_score_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Compute the Energy Score for a finite ensemble using the approximate kernel representation."""
-    M = fct.shape[-1]
+    M = fct.shape[0]
 
     e_1 = 0.0
     e_2 = 0.0
@@ -77,12 +77,12 @@ def _energy_score_akr_circperm_gufunc(
     obs: np.ndarray, fct: np.ndarray, out: np.ndarray
 ):
     """Compute the Energy Score for a finite ensemble using the AKR with cyclic permutation."""
-    M = fct.shape[-1]
+    M = fct.shape[0]
 
     e_1 = 0.0
     e_2 = 0.0
     for i in range(M):
-        sigma_i = int((i + 1 + ((M - 1) / 2)) % M)
+        sigma_i = int((i + (M // 2)) % M)
         e_1 += float(np.linalg.norm(fct[i] - obs))
         e_2 += float(np.linalg.norm(fct[i] - fct[sigma_i]))
 
