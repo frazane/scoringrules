@@ -7,14 +7,11 @@ from .conftest import BACKENDS
 M = 11
 N = 20
 
+ESTIMATORS = ["nrg", "fair", "pwm", "qd", "akr", "akr_circperm"]
+
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_owcrps_ensemble(backend):
-    # test exceptions
-    with pytest.raises(ValueError):
-        est = "not_nrg"
-        sr.owcrps_ensemble(1, 1.1, w_func=lambda x: x, estimator=est, backend=backend)
-
     # test shapes
     obs = np.random.randn(N)
     res = sr.owcrps_ensemble(obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0)
@@ -27,11 +24,6 @@ def test_owcrps_ensemble(backend):
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_vrcrps_ensemble(backend):
-    # test exceptions
-    with pytest.raises(ValueError):
-        est = "not_nrg"
-        sr.vrcrps_ensemble(1, 1.1, w_func=lambda x: x, estimator=est, backend=backend)
-
     # test shapes
     obs = np.random.randn(N)
     res = sr.vrcrps_ensemble(obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0)
@@ -42,28 +34,29 @@ def test_vrcrps_ensemble(backend):
     assert res.shape == (N,)
 
 
+@pytest.mark.parametrize("estimator", ESTIMATORS)
 @pytest.mark.parametrize("backend", BACKENDS)
-def test_twcrps_vs_crps(backend):
+def test_twcrps_vs_crps(estimator, backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, M) * sigma[..., None] + mu[..., None]
 
-    res = sr.crps_ensemble(obs, fct, backend=backend, estimator="nrg")
+    res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
 
     # no argument given
-    resw = sr.twcrps_ensemble(obs, fct, estimator="nrg", backend=backend)
+    resw = sr.twcrps_ensemble(obs, fct, estimator=estimator, backend=backend)
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
     # a and b
     resw = sr.twcrps_ensemble(
-        obs, fct, a=float("-inf"), b=float("inf"), estimator="nrg", backend=backend
+        obs, fct, a=float("-inf"), b=float("inf"), estimator=estimator, backend=backend
     )
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
     # v_func as identity function
     resw = sr.twcrps_ensemble(
-        obs, fct, v_func=lambda x: x, estimator="nrg", backend=backend
+        obs, fct, v_func=lambda x: x, estimator=estimator, backend=backend
     )
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
@@ -78,19 +71,17 @@ def test_owcrps_vs_crps(backend):
     res = sr.crps_ensemble(obs, fct, backend=backend, estimator="nrg")
 
     # no argument given
-    resw = sr.owcrps_ensemble(obs, fct, estimator="nrg", backend=backend)
+    resw = sr.owcrps_ensemble(obs, fct, backend=backend)
     np.testing.assert_allclose(res, resw, rtol=1e-5)
 
     # a and b
     resw = sr.owcrps_ensemble(
-        obs, fct, a=float("-inf"), b=float("inf"), estimator="nrg", backend=backend
+        obs, fct, a=float("-inf"), b=float("inf"), backend=backend
     )
     np.testing.assert_allclose(res, resw, rtol=1e-5)
 
     # w_func as identity function
-    resw = sr.owcrps_ensemble(
-        obs, fct, w_func=lambda x: x * 0.0 + 1.0, estimator="nrg", backend=backend
-    )
+    resw = sr.owcrps_ensemble(obs, fct, w_func=lambda x: x * 0.0 + 1.0, backend=backend)
     np.testing.assert_allclose(res, resw, rtol=1e-5)
 
 
@@ -104,19 +95,17 @@ def test_vrcrps_vs_crps(backend):
     res = sr.crps_ensemble(obs, fct, backend=backend, estimator="nrg")
 
     # no argument given
-    resw = sr.vrcrps_ensemble(obs, fct, estimator="nrg", backend=backend)
+    resw = sr.vrcrps_ensemble(obs, fct, backend=backend)
     np.testing.assert_allclose(res, resw, rtol=1e-5)
 
     # a and b
     resw = sr.vrcrps_ensemble(
-        obs, fct, a=float("-inf"), b=float("inf"), estimator="nrg", backend=backend
+        obs, fct, a=float("-inf"), b=float("inf"), backend=backend
     )
     np.testing.assert_allclose(res, resw, rtol=1e-5)
 
     # w_func as identity function
-    resw = sr.vrcrps_ensemble(
-        obs, fct, w_func=lambda x: x * 0.0 + 1.0, estimator="nrg", backend=backend
-    )
+    resw = sr.vrcrps_ensemble(obs, fct, w_func=lambda x: x * 0.0 + 1.0, backend=backend)
     np.testing.assert_allclose(res, resw, rtol=1e-5)
 
 

@@ -300,6 +300,10 @@ class ArrayBackend(abc.ABC):
         """Return an array representing the indices of a grid."""
 
     @abc.abstractmethod
+    def roll(self, x: "Array", shift: int = 1, axis: int = -1) -> int:
+        """Roll elements of an array along a given axis."""
+
+    @abc.abstractmethod
     def inv(self, x: "Array") -> "Array":
         """Return the inverse of a matrix."""
 

@@ -55,13 +55,56 @@ def _ks_ensemble_uv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarra
     e_1 = 0
     e_2 = 0
 
-    for x_i in fct:
-        e_1 += _gauss_kern_uv(x_i, obs)
-        for x_j in fct:
-            e_2 += _gauss_kern_uv(x_i, x_j)
+    for i in range(M):
+        e_1 += _gauss_kern_uv(fct[i], obs)
+        for j in range(i + 1, M):  # important to start from i + 1 and not i
+            e_2 += 2 * _gauss_kern_uv(fct[j], fct[i])
     e_3 = _gauss_kern_uv(obs, obs)
 
     out[0] = -(e_1 / M - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3)
+
+
+@lazy_gufunc_wrapper_uv
+@guvectorize("(),(n)->()")
+def _ks_ensemble_uv_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
+    """Approximate kernel representation estimator of the kernel score."""
+    M = fct.shape[-1]
+
+    if np.isnan(obs):
+        out[0] = np.nan
+        return
+
+    e_1 = 0
+    e_2 = 0
+    for i in range(M):
+        e_1 += _gauss_kern_uv(fct[i], obs)
+        e_2 += _gauss_kern_uv(fct[i], fct[i - 1])
+    e_3 = _gauss_kern_uv(obs, obs)
+
+    out[0] = -(e_1 / M - 0.5 * e_2 / M - 0.5 * e_3)
+
+
+@lazy_gufunc_wrapper_uv
+@guvectorize("(),(n)->()")
+def _ks_ensemble_uv_akr_circperm_gufunc(
+    obs: np.ndarray, fct: np.ndarray, out: np.ndarray
+):
+    """AKR estimator of the kernel score with cyclic permutation."""
+    M = fct.shape[-1]
+
+    if np.isnan(obs):
+        out[0] = np.nan
+        return
+
+    e_1 = 0
+    e_2 = 0
+    for i in range(M):
+        sigma_i = int((i + 1 + ((M - 1) / 2)) % M)
+        e_1 += _gauss_kern_uv(fct[i], obs)
+        e_2 += _gauss_kern_uv(fct[i], fct[sigma_i])
+    e_3 = _gauss_kern_uv(obs, obs)
+
+    out[0] = -(e_1 / M - 0.5 * e_2 / M - 0.5 * e_3)
 
 
 @lazy_gufunc_wrapper_uv
@@ -149,11 +192,46 @@ def _ks_ensemble_mv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarra
     e_2 = 0.0
     for i in range(M):
         e_1 += float(_gauss_kern_mv(fct[i], obs))
-        for j in range(M):
+        for j in range(i + 1, M):
             e_2 += float(_gauss_kern_mv(fct[i], fct[j]))
     e_3 = float(_gauss_kern_mv(obs, obs))
 
-    out[0] = -(e_1 / M - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3)
+    out[0] = -(e_1 / M - e_2 / (M * (M - 1)) - 0.5 * e_3)
+
+
+@lazy_gufunc_wrapper_mv
+@guvectorize("(d),(m,d)->()")
+def _ks_ensemble_mv_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
+    """Approximate kernel representation estimator of the multivariate kernel score."""
+    M = fct.shape[0]
+
+    e_1 = 0
+    e_2 = 0
+    for i in range(M):
+        e_1 += float(_gauss_kern_mv(fct[i], obs))
+        e_2 += float(_gauss_kern_mv(fct[i], fct[i - 1]))
+    e_3 = float(_gauss_kern_mv(obs, obs))
+
+    out[0] = -(e_1 / M - 0.5 * e_2 / M - 0.5 * e_3)
+
+
+@lazy_gufunc_wrapper_mv
+@guvectorize("(d),(m,d)->()")
+def _ks_ensemble_mv_akr_circperm_gufunc(
+    obs: np.ndarray, fct: np.ndarray, out: np.ndarray
+):
+    """AKR estimator of the multivariate kernel score with cyclic permutation."""
+    M = fct.shape[0]
+
+    e_1 = 0
+    e_2 = 0
+    for i in range(M):
+        sigma_i = int((i + 1 + ((M - 1) / 2)) % M)
+        e_1 += float(_gauss_kern_mv(fct[i], obs))
+        e_2 += float(_gauss_kern_mv(fct[i], fct[sigma_i]))
+    e_3 = float(_gauss_kern_mv(obs, obs))
+
+    out[0] = -(e_1 / M - 0.5 * e_2 / M - 0.5 * e_3)
 
 
 @lazy_gufunc_wrapper_mv
@@ -205,6 +283,8 @@ def _vrks_ensemble_mv_gufunc(
 
 
 estimator_gufuncs = {
+    "akr": _ks_ensemble_uv_akr_gufunc,
+    "akr_circperm": _ks_ensemble_uv_akr_circperm_gufunc,
     "fair": _ks_ensemble_uv_fair_gufunc,
     "nrg": _ks_ensemble_uv_nrg_gufunc,
     "ow": _owks_ensemble_uv_gufunc,
@@ -212,6 +292,8 @@ estimator_gufuncs = {
 }
 
 estimator_gufuncs_mv = {
+    "akr": _ks_ensemble_mv_akr_gufunc,
+    "akr_circperm": _ks_ensemble_mv_akr_circperm_gufunc,
     "fair": _ks_ensemble_mv_fair_gufunc,
     "nrg": _ks_ensemble_mv_nrg_gufunc,
     "ow": _owks_ensemble_mv_gufunc,
@@ -219,10 +301,14 @@ estimator_gufuncs_mv = {
 }
 
 __all__ = [
+    "_ks_ensemble_uv_akr_gufunc",
+    "_ks_ensemble_uv_akr_circperm_gufunc",
     "_ks_ensemble_uv_fair_gufunc",
     "_ks_ensemble_uv_nrg_gufunc",
     "_owks_ensemble_uv_gufunc",
     "_vrks_ensemble_uv_gufunc",
+    "_ks_ensemble_mv_akr_gufunc",
+    "_ks_ensemble_mv_akr_circperm_gufunc",
     "_ks_ensemble_mv_fair_gufunc",
     "_ks_ensemble_mv_nrg_gufunc",
     "_owks_ensemble_mv_gufunc",

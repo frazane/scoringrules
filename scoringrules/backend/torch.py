@@ -289,6 +289,9 @@ class TorchBackend(ArrayBackend):
             indices = torch.stack(index_grids)
         return indices
 
+    def roll(self, x: "Tensor", shift: int = 1, axis: int = -1) -> "Tensor":
+        return torch.roll(x, shifts=shift, dims=axis)
+
     def inv(self, x: "Tensor") -> "Tensor":
         return torch.linalg.inv(x)
 

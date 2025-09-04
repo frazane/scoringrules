@@ -14,7 +14,7 @@ def crps_ensemble(
     m_axis: int = -1,
     *,
     sorted_ensemble: bool = False,
-    estimator: str = "pwm",
+    estimator: str = "qd",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the Continuous Ranked Probability Score (CRPS) for a finite ensemble.
@@ -130,7 +130,7 @@ def twcrps_ensemble(
     m_axis: int = -1,
     *,
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
-    estimator: str = "pwm",
+    estimator: str = "qd",
     sorted_ensemble: bool = False,
     backend: "Backend" = None,
 ) -> "Array":
@@ -231,7 +231,6 @@ def owcrps_ensemble(
     m_axis: int = -1,
     *,
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
-    estimator: tp.Literal["nrg"] = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the outcome-weighted CRPS (owCRPS) for a finite ensemble.
@@ -308,11 +307,6 @@ def owcrps_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if estimator != "nrg":
-        raise ValueError(
-            "Only the energy form of the estimator is available "
-            "for the outcome-weighted CRPS."
-        )
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
 
@@ -325,9 +319,7 @@ def owcrps_ensemble(
     obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
 
     if backend == "numba":
-        return crps.estimator_gufuncs["ow" + estimator](
-            obs, fct, obs_weights, fct_weights
-        )
+        return crps.estimator_gufuncs["ownrg"](obs, fct, obs_weights, fct_weights)
 
     return crps.ow_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
 
@@ -341,7 +333,6 @@ def vrcrps_ensemble(
     m_axis: int = -1,
     *,
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
-    estimator: tp.Literal["nrg"] = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the vertically re-scaled CRPS (vrCRPS) for a finite ensemble.
@@ -415,11 +406,6 @@ def vrcrps_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
 
-    if estimator != "nrg":
-        raise ValueError(
-            "Only the energy form of the estimator is available "
-            "for the outcome-weighted CRPS."
-        )
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
 
@@ -432,9 +418,7 @@ def vrcrps_ensemble(
     obs_weights, fct_weights = map(B.asarray, (obs_weights, fct_weights))
 
     if backend == "numba":
-        return crps.estimator_gufuncs["vr" + estimator](
-            obs, fct, obs_weights, fct_weights
-        )
+        return crps.estimator_gufuncs["vrnrg"](obs, fct, obs_weights, fct_weights)
 
     return crps.vr_ensemble(obs, fct, obs_weights, fct_weights, backend=backend)
 
