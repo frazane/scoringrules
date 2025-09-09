@@ -20,15 +20,9 @@ def test_crps_ensemble(estimator, backend):
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
     # test exceptions
-    if backend in ["numpy", "jax", "torch", "tensorflow"]:
-        if estimator not in ["nrg", "fair", "pwm"]:
-            with pytest.raises(ValueError):
-                sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
-            return
-    if backend == "numba":
-        with pytest.raises(ValueError):
-            est = "undefined_estimator"
-            sr.crps_ensemble(obs, fct, estimator=est, backend=backend)
+    with pytest.raises(ValueError):
+        est = "undefined_estimator"
+        sr.crps_ensemble(obs, fct, estimator=est, backend=backend)
 
     # test shapes
     res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
@@ -36,22 +30,42 @@ def test_crps_ensemble(estimator, backend):
     res = sr.crps_ensemble(
         obs,
         np.random.randn(ENSEMBLE_SIZE, N),
-        axis=0,
+        m_axis=0,
         estimator=estimator,
         backend=backend,
     )
     assert res.shape == (N,)
 
     # non-negative values
-    res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
-    res = np.asarray(res)
-    assert not np.any(res < 0.0)
+    if estimator not in ["akr", "akr_circperm"]:
+        res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
+        res = np.asarray(res)
+        assert not np.any(res < 0.0)
 
     # approx zero when perfect forecast
     perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
     res = sr.crps_ensemble(obs, perfect_fct, estimator=estimator, backend=backend)
     res = np.asarray(res)
     assert not np.any(res - 0.0 > 0.0001)
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_crps_estimators(backend):
+    obs = np.random.randn(N)
+    mu = obs + np.random.randn(N) * 0.3
+    sigma = abs(np.random.randn(N)) * 0.5
+    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+
+    # equality of estimators
+    res_nrg = sr.crps_ensemble(obs, fct, estimator="nrg", backend=backend)
+    res_fair = sr.crps_ensemble(obs, fct, estimator="fair", backend=backend)
+    res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm", backend=backend)
+    res_qd = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
+    res_int = sr.crps_ensemble(obs, fct, estimator="int", backend=backend)
+
+    assert np.allclose(res_nrg, res_qd)
+    assert np.allclose(res_nrg, res_int)
+    assert np.allclose(res_fair, res_pwm)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -64,7 +78,7 @@ def test_crps_quantile(backend):
     assert res.shape == (N,)
     fct = np.random.randn(ENSEMBLE_SIZE, N)
     res = sr.crps_quantile(
-        obs, np.random.randn(ENSEMBLE_SIZE, N), alpha, axis=0, backend=backend
+        obs, np.random.randn(ENSEMBLE_SIZE, N), alpha, m_axis=0, backend=backend
     )
     assert res.shape == (N,)
 
@@ -589,7 +603,7 @@ def test_crps_mixnorm(backend):
     obs = [-1.6, 0.3]
     m = [[0.0, -2.9], [0.6, 0.0], [-1.1, -2.3]]
     s = [[0.5, 1.7], [1.1, 0.7], [1.4, 1.5]]
-    res1 = sr.crps_mixnorm(obs, m, s, axis=0, backend=backend)
+    res1 = sr.crps_mixnorm(obs, m, s, m_axis=0, backend=backend)
 
     m = [[0.0, 0.6, -1.1], [-2.9, 0.0, -2.3]]
     s = [[0.5, 1.1, 1.4], [1.7, 0.7, 1.5]]

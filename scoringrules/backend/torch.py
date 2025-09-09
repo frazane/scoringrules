@@ -54,9 +54,11 @@ class TorchBackend(ArrayBackend):
         /,
         *,
         axis: int | tuple[int, ...] | None = None,
+        bias: bool = False,
         keepdims: bool = False,
     ) -> "Tensor":
-        return torch.std(x, correction=1, axis=axis, keepdim=keepdims)
+        correction = 0 if bias else 1
+        return torch.std(x, correction=correction, axis=axis, keepdim=keepdims)
 
     def quantile(
         self,
@@ -286,3 +288,21 @@ class TorchBackend(ArrayBackend):
             index_grids = torch.meshgrid(*ranges, indexing="ij")
             indices = torch.stack(index_grids)
         return indices
+
+    def roll(self, x: "Tensor", shift: int = 1, axis: int = -1) -> "Tensor":
+        return torch.roll(x, shifts=shift, dims=axis)
+
+    def inv(self, x: "Tensor") -> "Tensor":
+        return torch.linalg.inv(x)
+
+    def cov(self, x: "Tensor", rowvar: bool = True, bias: bool = False) -> "Tensor":
+        correction = 0 if bias else 1
+        if not rowvar:
+            x = torch.transpose(x, -2, -1)
+        return torch.cov(x, correction=correction)
+
+    def det(self, x: "Tensor") -> "Tensor":
+        return torch.linalg.det(x)
+
+    def reshape(self, x: "Tensor", shape: int | tuple[int, ...]) -> "Tensor":
+        return torch.reshape(x, shape)

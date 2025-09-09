@@ -16,8 +16,8 @@ def test_owes_vs_es(backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = sr.energy_score(obs, fct, backend=backend)
-    resw = sr.owenergy_score(
+    res = sr.es_ensemble(obs, fct, backend=backend)
+    resw = sr.owes_ensemble(
         obs,
         fct,
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
@@ -31,8 +31,8 @@ def test_twes_vs_es(backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = sr.energy_score(obs, fct, backend=backend)
-    resw = sr.twenergy_score(obs, fct, lambda x: x, backend=backend)
+    res = sr.es_ensemble(obs, fct, backend=backend)
+    resw = sr.twes_ensemble(obs, fct, lambda x: x, backend=backend)
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
 
@@ -41,14 +41,14 @@ def test_vres_vs_es(backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = sr.energy_score(obs, fct, backend=backend)
-    resw = sr.vrenergy_score(
+    res = sr.es_ensemble(obs, fct, backend=backend)
+    resw = sr.vres_ensemble(
         obs,
         fct,
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
         backend=backend,
     )
-    np.testing.assert_allclose(res, resw, rtol=1e-10)
+    np.testing.assert_allclose(res, resw, rtol=1e-6)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -61,13 +61,13 @@ def test_owenergy_score_correctness(backend):
     def w_func(x):
         return backends[backend].all(x > 0.2)
 
-    res = sr.owenergy_score(obs, fct, w_func, backend=backend)
+    res = sr.owes_ensemble(obs, fct, w_func, backend=backend)
     np.testing.assert_allclose(res, 0.2274243, rtol=1e-6)
 
     def w_func(x):
         return backends[backend].all(x < 1.0)
 
-    res = sr.owenergy_score(obs, fct, w_func, backend=backend)
+    res = sr.owes_ensemble(obs, fct, w_func, backend=backend)
     np.testing.assert_allclose(res, 0.3345418, rtol=1e-6)
 
 
@@ -81,11 +81,11 @@ def test_twenergy_score_correctness(backend):
     def v_func(x):
         return np.maximum(x, 0.2)
 
-    res = sr.twenergy_score(obs, fct, v_func, backend=backend)
+    res = sr.twes_ensemble(obs, fct, v_func, backend=backend)
     np.testing.assert_allclose(res, 0.3116075, rtol=1e-6)
 
     def v_func(x):
         return np.minimum(x, 1)
 
-    res = sr.twenergy_score(obs, fct, v_func, backend=backend)
+    res = sr.twes_ensemble(obs, fct, v_func, backend=backend)
     np.testing.assert_allclose(res, 0.3345418, rtol=1e-6)

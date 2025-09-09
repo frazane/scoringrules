@@ -1,4 +1,3 @@
-import jax
 import numpy as np
 import pytest
 import scoringrules as sr
@@ -10,7 +9,7 @@ ENSEMBLE_SIZE = 11
 N = 10
 N_VARS = 3
 
-ESTIMATORS = ["nrg", "fair"]
+ESTIMATORS = ["nrg", "fair", "akr", "akr_circperm"]
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
@@ -21,46 +20,50 @@ def test_gksuv(estimator, backend):
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    # non-negative values
-    res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
-    res = np.asarray(res)
-    assert not np.any(res < 0.0)
+    # undefined estimator
+    with pytest.raises(ValueError):
+        est = "undefined_estimator"
+        sr.gksuv_ensemble(obs, fct, estimator=est, backend=backend)
 
-    # axis keyword
-    res = sr.gksuv_ensemble(
-        obs,
-        np.random.randn(ENSEMBLE_SIZE, N),
-        axis=0,
-        estimator=estimator,
-        backend=backend,
-    )
-    res = np.asarray(res)
-    assert not np.any(res < 0.0)
+    # m_axis keyword
+    res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+    res2 = sr.gksuv_ensemble(obs, fct.T, m_axis=0, estimator=estimator, backend=backend)
+    assert np.allclose(res, res2)
 
     if estimator == "nrg":
+        # non-negative values
+        res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        res = np.asarray(res)
+        assert not np.any(res < 0.0)
+
         # approx zero when perfect forecast
         perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
         res = sr.gksuv_ensemble(obs, perfect_fct, estimator=estimator, backend=backend)
         res = np.asarray(res)
         assert not np.any(res - 0.0 > 0.0001)
 
-        # test correctness
-        obs, fct = 11.6, np.array([9.8, 8.7, 11.9, 12.1, 13.4])
+    # test correctness
+    obs, fct = 11.6, np.array([9.8, 8.7, 11.9, 12.1, 13.4])
+
+    if estimator == "nrg":
         res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
         expected = 0.2490516
         assert np.isclose(res, expected)
 
     elif estimator == "fair":
-        # test correctness
-        obs, fct = 11.6, np.array([9.8, 8.7, 11.9, 12.1, 13.4])
         res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
-        expected = 0.2987752
+        expected = 0.1737752
         assert np.isclose(res, expected)
 
-    # test exceptions
-    with pytest.raises(ValueError):
-        est = "undefined_estimator"
-        sr.gksuv_ensemble(obs, fct, estimator=est, backend=backend)
+    elif estimator == "akr":
+        res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.2464915
+        assert np.isclose(res, expected)
+
+    elif estimator == "akr_circperm":
+        res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.1010588
+        assert np.isclose(res, expected)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
@@ -69,15 +72,20 @@ def test_gksmv(estimator, backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
+    # undefined estimator
+    with pytest.raises(ValueError):
+        est = "undefined_estimator"
+        sr.gksmv_ensemble(obs, fct, estimator=est, backend=backend)
+
     res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
 
     if backend in ["numpy", "numba"]:
         assert isinstance(res, np.ndarray)
     elif backend == "jax":
-        assert isinstance(res, jax.Array)
+        assert "jax" in res.__module__
 
+    # approx zero when perfect forecast
     if estimator == "nrg":
-        # approx zero when perfect forecast
         perfect_fct = (
             np.expand_dims(obs, axis=-2)
             + np.random.randn(N, ENSEMBLE_SIZE, N_VARS) * 0.00001
@@ -86,29 +94,31 @@ def test_gksmv(estimator, backend):
         res = np.asarray(res)
         assert not np.any(res - 0.0 > 0.0001)
 
-        # test correctness
-        obs = np.array([11.6, -23.1])
-        fct = np.array(
-            [[9.8, 8.7, 11.9, 12.1, 13.4], [-24.8, -18.5, -29.9, -18.3, -21.0]]
-        ).transpose()
+    # test correctness
+    obs = np.array([11.6, -23.1])
+    fct = np.array(
+        [[9.8, 8.7, 11.9, 12.1, 13.4], [-24.8, -18.5, -29.9, -18.3, -21.0]]
+    ).transpose()
+
+    if estimator == "nrg":
         res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
         expected = 0.5868737
         assert np.isclose(res, expected)
 
     elif estimator == "fair":
-        # test correctness
-        obs = np.array([11.6, -23.1])
-        fct = np.array(
-            [[9.8, 8.7, 11.9, 12.1, 13.4], [-24.8, -18.5, -29.9, -18.3, -21.0]]
-        ).transpose()
         res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
-        expected = 0.6120162
+        expected = 0.4870162
         assert np.isclose(res, expected)
 
-    # test exceptions
-    with pytest.raises(ValueError):
-        est = "undefined_estimator"
-        sr.gksmv_ensemble(obs, fct, estimator=est, backend=backend)
+    elif estimator == "akr":
+        res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.4874259
+        assert np.isclose(res, expected)
+
+    elif estimator == "akr_circperm":
+        res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.4866066
+        assert np.isclose(res, expected)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
@@ -121,9 +131,21 @@ def test_twgksuv(estimator, backend):
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+    res = sr.gksuv_ensemble(obs, fct, backend=backend, estimator=estimator)
+
+    # no argument given
+    resw = sr.twgksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+    np.testing.assert_allclose(res, resw, rtol=1e-10)
+
+    # a and b
     resw = sr.twgksuv_ensemble(
-        obs, fct, lambda x: x, estimator=estimator, backend=backend
+        obs, fct, a=float("-inf"), b=float("inf"), estimator=estimator, backend=backend
+    )
+    np.testing.assert_allclose(res, resw, rtol=1e-10)
+
+    # v_func as identity function
+    resw = sr.twgksuv_ensemble(
+        obs, fct, v_func=lambda x: x, estimator=estimator, backend=backend
     )
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
@@ -168,7 +190,7 @@ def test_twgksuv(estimator, backend):
         res = np.mean(
             np.float64(
                 sr.twgksuv_ensemble(
-                    obs, fct, v_func1, estimator=estimator, backend=backend
+                    obs, fct, v_func=v_func1, estimator=estimator, backend=backend
                 )
             )
         )
@@ -177,30 +199,29 @@ def test_twgksuv(estimator, backend):
         res = np.mean(
             np.float64(
                 sr.twgksuv_ensemble(
-                    obs, fct, v_func2, estimator=estimator, backend=backend
+                    obs, fct, a=-1.0, estimator=estimator, backend=backend
+                )
+            )
+        )
+        np.testing.assert_allclose(res, 0.01018774, rtol=1e-6)
+
+        res = np.mean(
+            np.float64(
+                sr.twgksuv_ensemble(
+                    obs, fct, v_func=v_func2, estimator=estimator, backend=backend
                 )
             )
         )
         np.testing.assert_allclose(res, 0.0089314, rtol=1e-6)
 
-    elif estimator == "fair":
         res = np.mean(
             np.float64(
                 sr.twgksuv_ensemble(
-                    obs, fct, v_func1, estimator=estimator, backend=backend
+                    obs, fct, b=1.85, estimator=estimator, backend=backend
                 )
             )
         )
-        np.testing.assert_allclose(res, 0.130842, rtol=1e-6)
-
-        res = np.mean(
-            np.float64(
-                sr.twgksuv_ensemble(
-                    obs, fct, v_func2, estimator=estimator, backend=backend
-                )
-            )
-        )
-        np.testing.assert_allclose(res, 0.1283745, rtol=1e-6)
+        np.testing.assert_allclose(res, 0.0089314, rtol=1e-6)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -241,20 +262,34 @@ def test_owgksuv(backend):
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    # axis keyword
+    # m_axis keyword
     res = sr.owgksuv_ensemble(
         obs,
         np.random.randn(ENSEMBLE_SIZE, N),
-        lambda x: x * 0.0 + 1.0,
-        axis=0,
+        w_func=lambda x: x * 0.0 + 1.0,
+        m_axis=0,
         backend=backend,
     )
     res = np.asarray(res)
     assert not np.any(res < 0.0)
 
-    res = sr.gksuv_ensemble(obs, fct, backend=backend)
-    resw = sr.owgksuv_ensemble(obs, fct, lambda x: x * 0.0 + 1.0, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-9)
+    res = sr.gksuv_ensemble(obs, fct, backend=backend, estimator="nrg")
+
+    # no argument given
+    resw = sr.owgksuv_ensemble(obs, fct, backend=backend)
+    np.testing.assert_allclose(res, resw, atol=1e-6)
+
+    # a and b
+    resw = sr.owgksuv_ensemble(
+        obs, fct, a=float("-inf"), b=float("inf"), backend=backend
+    )
+    np.testing.assert_allclose(res, resw, atol=1e-6)
+
+    # w_func as identity function
+    resw = sr.owgksuv_ensemble(
+        obs, fct, w_func=lambda x: x * 0.0 + 1.0, backend=backend
+    )
+    np.testing.assert_allclose(res, resw, atol=1e-6)
 
     # test correctness
     fct = np.array(
@@ -290,13 +325,23 @@ def test_owgksuv(backend):
     def w_func(x):
         return (x > -1) * 1.0
 
-    res = np.mean(np.float64(sr.owgksuv_ensemble(obs, fct, w_func, backend=backend)))
+    res = np.mean(
+        np.float64(sr.owgksuv_ensemble(obs, fct, w_func=w_func, backend=backend))
+    )
+    np.testing.assert_allclose(res, 0.01036335, rtol=1e-5)
+
+    res = np.mean(np.float64(sr.owgksuv_ensemble(obs, fct, a=-1.0, backend=backend)))
     np.testing.assert_allclose(res, 0.01036335, rtol=1e-5)
 
     def w_func(x):
         return (x < 1.85) * 1.0
 
-    res = np.mean(np.float64(sr.owgksuv_ensemble(obs, fct, w_func, backend=backend)))
+    res = np.mean(
+        np.float64(sr.owgksuv_ensemble(obs, fct, w_func=w_func, backend=backend))
+    )
+    np.testing.assert_allclose(res, 0.008905213, rtol=1e-5)
+
+    res = np.mean(np.float64(sr.owgksuv_ensemble(obs, fct, b=1.85, backend=backend)))
     np.testing.assert_allclose(res, 0.008905213, rtol=1e-5)
 
 
@@ -340,20 +385,34 @@ def test_vrgksuv(backend):
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    # axis keyword
+    # m_axis keyword
     res = sr.vrgksuv_ensemble(
         obs,
         np.random.randn(ENSEMBLE_SIZE, N),
-        lambda x: x * 0.0 + 1.0,
-        axis=0,
+        w_func=lambda x: x * 0.0 + 1.0,
+        m_axis=0,
         backend=backend,
     )
     res = np.asarray(res)
     assert not np.any(res < 0.0)
 
-    res = sr.gksuv_ensemble(obs, fct, backend=backend)
-    resw = sr.vrgksuv_ensemble(obs, fct, lambda x: x * 0.0 + 1.0, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-10)
+    res = sr.gksuv_ensemble(obs, fct, backend=backend, estimator="nrg")
+
+    # no argument given
+    resw = sr.vrgksuv_ensemble(obs, fct, backend=backend)
+    np.testing.assert_allclose(res, resw, rtol=1e-5)
+
+    # a and b
+    resw = sr.vrgksuv_ensemble(
+        obs, fct, a=float("-inf"), b=float("inf"), backend=backend
+    )
+    np.testing.assert_allclose(res, resw, rtol=1e-5)
+
+    # w_func as identity function
+    resw = sr.vrgksuv_ensemble(
+        obs, fct, w_func=lambda x: x * 0.0 + 1.0, backend=backend
+    )
+    np.testing.assert_allclose(res, resw, rtol=1e-5)
 
     # test correctness
     fct = np.array(
@@ -389,13 +448,23 @@ def test_vrgksuv(backend):
     def w_func(x):
         return (x > -1) * 1.0
 
-    res = np.mean(np.float64(sr.vrgksuv_ensemble(obs, fct, w_func, backend=backend)))
+    res = np.mean(
+        np.float64(sr.vrgksuv_ensemble(obs, fct, w_func=w_func, backend=backend))
+    )
+    np.testing.assert_allclose(res, 0.01476682, rtol=1e-6)
+
+    res = np.mean(np.float64(sr.vrgksuv_ensemble(obs, fct, a=-1.0, backend=backend)))
     np.testing.assert_allclose(res, 0.01476682, rtol=1e-6)
 
     def w_func(x):
         return (x < 1.85) * 1.0
 
-    res = np.mean(np.float64(sr.vrgksuv_ensemble(obs, fct, w_func, backend=backend)))
+    res = np.mean(
+        np.float64(sr.vrgksuv_ensemble(obs, fct, w_func=w_func, backend=backend))
+    )
+    np.testing.assert_allclose(res, 0.04011836, rtol=1e-6)
+
+    res = np.mean(np.float64(sr.vrgksuv_ensemble(obs, fct, b=1.85, backend=backend)))
     np.testing.assert_allclose(res, 0.04011836, rtol=1e-6)
 
 
