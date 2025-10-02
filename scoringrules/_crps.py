@@ -847,7 +847,7 @@ def crps_gamma(
 
 
 def crps_csg0(
-    observation: "ArrayLike",
+    obs: "ArrayLike",
     /,
     shape: "ArrayLike",
     rate: "ArrayLike | None" = None,
@@ -858,40 +858,48 @@ def crps_csg0(
 ) -> "ArrayLike":
     r"""Compute the closed form of the CRPS for the censored, shifted gamma distribution.
 
-    It is based on the following formulation from Appendix B of
-    [Scheuerer and Hamill (2015)](https://doi.org/10.1175/MWR-D-15-0061.1):
+    It is based on the following formulation from [1]_:
 
-    $$
-    \mathrm{CRPS}\bigl(F^0_{\alpha,\beta,\delta},\,y\bigr) =
-    (y+\delta)\,\bigl(2F_{\alpha,\beta}(y+\delta)-1\bigr)
-    - \frac{\alpha}{\beta\pi}\,B\!\Bigl(\tfrac12,\alpha+\tfrac12\Bigr)\,\bigl(1 - F_{2\alpha,\beta}(2\delta)\bigr)
-    + \frac{\alpha}{\beta}\,\Bigl(1 + 2\,F_{\alpha,\beta}(\delta)\,F_{\alpha+1,\beta}(\delta) - F_{\alpha,\beta}(\delta)^2 - 2\,F_{\alpha+1,\beta}(y+\delta)\Bigr)
-    - \delta\,\bigl(F_{\alpha,\beta}(\delta)\bigr)^{2}
-    $$
+    .. math::
+        \mathrm{CRPS}\bigl(F^0_{\alpha,\beta,\delta},\,y\bigr) =
+        (y+\delta)\,\bigl(2F_{\alpha,\beta}(y+\delta)-1\bigr)
+        - \frac{\alpha}{\beta\pi}\,B\!\Bigl(\tfrac12,\alpha+\tfrac12\Bigr)\,\bigl(1 - F_{2\alpha,\beta}(2\delta)\bigr)
+        + \frac{\alpha}{\beta}\,\Bigl(1 + 2\,F_{\alpha,\beta}(\delta)\,F_{\alpha+1,\beta}(\delta) - F_{\alpha,\beta}(\delta)^2 - 2\,F_{\alpha+1,\beta}(y+\delta)\Bigr)
+        - \delta\,\bigl(F_{\alpha,\beta}(\delta)\bigr)^{2},
 
-    where $F^0_{\alpha,\beta,\delta}$ is the censored, shifted gamma distribution function with
-    shape parameter $\alpha > 0$, rate parameter $\beta > 0$ (equivalently, with scale parameter $1/\beta$)
-    and shift parameter $\delta > 0$.
+    where :math:`F^0_{\alpha,\beta,\delta}` is the censored, shifted gamma distribution function with
+    shape parameter :math:`\alpha > 0`, rate parameter :math:`\beta > 0` (equivalently, with scale parameter :math:`1/\beta`)
+    and shift parameter :math:`\delta > 0`.
 
     Parameters
     ----------
-    observation:
+    obs : array_like
         The observed values.
-    shape:
+    shape : array_like
         Shape parameter of the forecast CSG distribution.
-    rate:
+    rate : array_like, optional
         Rate parameter of the forecast CSG distribution.
-    scale:
-        Scale parameter of the forecast CSG distribution, where `scale = 1 / rate`.
-    shift:
+        Either ``rate`` or ``scale`` must be provided.
+    scale : array_like, optional
+        Scale parameter of the forecast CSG distribution, where ``scale = 1 / rate``.
+        Either ``rate`` or ``scale`` must be provided.
+    shift : array_like
         Shift parameter of the forecast CSG distribution.
-    backend:
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
     Returns
     -------
-    score:
+    crps : array_like
         The CRPS between obs and CSG(shape, rate, shift).
+
+    References
+    ----------
+    .. [1] Scheuerer, M., & Hamill, T. M. (2015).
+        Statistical postprocessing of ensemble precipitation forecasts
+        by fitting censored, shifted gamma distributions.
+        Monthly Weather Review, 143(11), 4578-4596.
+        https://doi.org/10.1175/MWR-D-15-0061.1
 
     Examples
     --------
@@ -902,17 +910,17 @@ def crps_csg0(
     Raises
     ------
     ValueError
-        If both `rate` and `scale` are provided, or if neither is provided.
+        If both ``rate`` and ``scale`` are provided, or if neither is provided.
     """
     if (scale is None and rate is None) or (scale is not None and rate is not None):
         raise ValueError(
-            "Either `rate` or `scale` must be provided, but not both or neither."
+            "Either ``rate`` or ``scale`` must be provided, but not both or neither."
         )
 
     if rate is None:
         rate = 1.0 / scale
 
-    return crps.csg0(observation, shape, rate, shift, backend=backend)
+    return crps.csg0(obs, shape, rate, shift, backend=backend)
 
 
 def crps_gev(
