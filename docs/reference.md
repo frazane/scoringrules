@@ -58,6 +58,7 @@ Parametric distributions forecasts
     crps_exponentialM
     crps_2pexponential
     crps_gamma
+    crps_csg0
     crps_gev
     crps_gpd
     crps_gtclogistic
