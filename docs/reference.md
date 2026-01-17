@@ -26,6 +26,8 @@ Univariate
     vrgksuv_ensemble
     crps_quantile
 
+    dssuv_ensemble
+
 Multivariate
 --------------------
 
@@ -46,6 +48,8 @@ Multivariate
     twgksmv_ensemble
     owgksmv_ensemble
     vrgksmv_ensemble
+
+    dssmv_ensemble
 
 Parametric distributions forecasts
 ====================================
