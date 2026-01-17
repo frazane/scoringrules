@@ -4,7 +4,6 @@ from importlib.util import find_spec
 from .base import ArrayBackend
 from .jax import JaxBackend
 from .numpy import NumbaBackend, NumpyBackend
-from .tensorflow import TensorflowBackend
 from .torch import TorchBackend
 
 if tp.TYPE_CHECKING:
@@ -14,7 +13,6 @@ _ALL_BACKENDS_MAP = {
     "jax": JaxBackend,
     "numpy": NumpyBackend,
     "torch": TorchBackend,
-    "tensorflow": TensorflowBackend,
     "numba": NumbaBackend,
 }
 
@@ -46,7 +44,7 @@ class BackendsRegistry(dict[str, ArrayBackend]):
         return avail_backends
 
     def register_backend(self, backend_name: "Backend"):
-        """Register a backend. Currently supported backends are numpy, numba, jax, torch and tensorflow."""
+        """Register a backend. Currently supported backends are numpy, numba, jax and torch."""
         if backend_name not in self.available_backends:
             raise BackendNotAvailable(
                 f"The backend '{backend_name}' is not available. "
