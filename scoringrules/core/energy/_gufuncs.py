@@ -4,6 +4,7 @@ from numba import guvectorize
 from scoringrules.core.utils import lazy_gufunc_wrapper_mv
 
 
+@lazy_gufunc_wrapper_mv
 @guvectorize(
     [
         "void(float32[:], float32[:,:], float32[:])",
@@ -30,6 +31,7 @@ def _energy_score_nrg_gufunc(
     out[0] = e_1 / M - 0.5 / (M**2) * e_2
 
 
+@lazy_gufunc_wrapper_mv
 @guvectorize(
     [
         "void(float32[:], float32[:,:], float32[:])",
