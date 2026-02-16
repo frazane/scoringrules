@@ -3,10 +3,7 @@ import pytest
 
 import scoringrules as sr
 
-from .conftest import BACKENDS
 
-
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_quantile_score(backend):
     obs = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
     fct = np.array([0.1, 0.2, 0.3, 0.4, 0.5])

@@ -3,13 +3,11 @@ import pytest
 
 import scoringrules as sr
 
-from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 51
 N = 100
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_ensemble(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -34,7 +32,6 @@ def test_ensemble(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_clogs(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -71,7 +68,6 @@ def test_clogs(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_beta(backend):
     if backend == "torch":
         pytest.skip("Not implemented in torch backend")
@@ -103,7 +99,6 @@ def test_beta(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_binomial(backend):
     # test correctness
     res = sr.logs_binomial(8, 10, 0.9, backend=backend)
@@ -119,7 +114,6 @@ def test_binomial(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_exponential(backend):
     obs, rate = 0.3, 0.1
     res = sr.logs_exponential(obs, rate, backend=backend)
@@ -137,7 +131,6 @@ def test_exponential(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_gamma(backend):
     obs, shape, rate = 0.2, 1.1, 0.7
     expected = 0.6434138
@@ -157,7 +150,6 @@ def test_gamma(backend):
         return
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_gev(backend):
     obs, xi, mu, sigma = 0.3, 0.7, 0.0, 1.0
     res0 = sr.logs_gev(obs, xi, backend=backend)
@@ -188,7 +180,6 @@ def test_gev(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_gpd(backend):
     obs, shape, location, scale = 0.8, 0.9, 0.0, 1.0
     res0 = sr.logs_gpd(obs, shape, backend=backend)
@@ -219,7 +210,6 @@ def test_gpd(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_hypergeometric(backend):
     res = sr.logs_hypergeometric(5, 7, 13, 12)
     expected = 1.251525
@@ -232,7 +222,6 @@ def test_hypergeometric(backend):
     assert res.shape == (2, 2)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_logis(backend):
     obs, mu, sigma = 17.1, 13.8, 3.3
     res = sr.logs_logistic(obs, mu, sigma, backend=backend)
@@ -245,7 +234,6 @@ def test_logis(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_loglogistic(backend):
     obs, mulog, sigmalog = 3.0, 0.1, 0.9
     res = sr.logs_loglogistic(obs, mulog, sigmalog, backend=backend)
@@ -263,7 +251,6 @@ def test_loglogistic(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_lognormal(backend):
     obs, mulog, sigmalog = 3.0, 0.1, 0.9
     res = sr.logs_lognormal(obs, mulog, sigmalog, backend=backend)
@@ -281,7 +268,6 @@ def test_lognormal(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_exponential2(backend):
     obs, location, scale = 8.3, 7.0, 1.2
     res = sr.logs_exponential2(obs, location, scale, backend=backend)
@@ -303,7 +289,6 @@ def test_exponential2(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_2pexponential(backend):
     obs, scale1, scale2, location = 0.3, 0.1, 4.3, 0.0
     res = sr.logs_2pexponential(obs, scale1, scale2, location, backend=backend)
@@ -316,7 +301,6 @@ def test_2pexponential(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_laplace(backend):
     obs, location, scale = -3.0, 0.1, 0.9
     res = sr.logs_laplace(obs, backend=backend)
@@ -332,7 +316,6 @@ def test_laplace(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_loglaplace(backend):
     obs, locationlog, scalelog = 3.0, 0.1, 0.9
     res = sr.logs_loglaplace(obs, locationlog, scalelog, backend=backend)
@@ -350,7 +333,6 @@ def test_loglaplace(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_mixnorm(backend):
     obs, m, s, w = 0.3, [0.0, -2.9, 0.9], [0.5, 1.4, 0.7], [1 / 3, 1 / 3, 1 / 3]
     res = sr.logs_mixnorm(obs, m, s, w, backend=backend)
@@ -376,7 +358,6 @@ def test_mixnorm(backend):
     assert np.allclose(res1, res2)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_negbinom(backend):
     if backend in ["jax", "torch"]:
         pytest.skip("Not implemented in jax or torch backends")
@@ -409,13 +390,11 @@ def test_negbinom(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_normal(backend):
     res = sr.logs_normal(0.0, 0.1, 0.1, backend=backend)
     assert np.isclose(res, -0.8836466, rtol=1e-5)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_2pnormal(backend):
     obs, scale1, scale2, location = 29.1, 4.6, 1.3, 27.9
     res = sr.logs_2pnormal(obs, scale1, scale2, location, backend=backend)
@@ -442,7 +421,6 @@ def test_2pnormal(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_poisson(backend):
     obs, mean = 1.0, 3.0
     res = sr.logs_poisson(obs, mean, backend=backend)
@@ -460,7 +438,6 @@ def test_poisson(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_t(backend):
     if backend in ["jax", "torch", "tensorflow"]:
         pytest.skip("Not implemented in jax, torch or tensorflow backends")
@@ -476,7 +453,6 @@ def test_t(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_tlogis(backend):
     obs, location, scale, lower, upper = 4.9, 3.5, 2.3, 0.0, 20.0
     res = sr.logs_tlogistic(obs, location, scale, lower, upper, backend=backend)
@@ -489,7 +465,6 @@ def test_tlogis(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_tnormal(backend):
     obs, location, scale, lower, upper = 4.2, 2.9, 2.2, 1.5, 17.3
     res = sr.logs_tnormal(obs, location, scale, lower, upper, backend=backend)
@@ -507,7 +482,6 @@ def test_tnormal(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_tt(backend):
     if backend in ["jax", "torch", "tensorflow"]:
         pytest.skip("Not implemented in jax, torch or tensorflow backends")
@@ -528,7 +502,6 @@ def test_tt(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_uniform(backend):
     obs, min, max = 0.3, -1.0, 2.1
     res = sr.logs_uniform(obs, min, max, backend=backend)

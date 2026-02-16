@@ -6,8 +6,6 @@ import pytest
 from scoringrules.backend import backends
 
 DATA_DIR = Path(__file__).parent / "data"
-RUN_TESTS = ["numpy", "numba", "jax", "torch"]
-BACKENDS = [b for b in backends.available_backends if b in RUN_TESTS]
 
 if os.getenv("SR_TEST_OUTPUT", "False").lower() in ("true", "1", "t"):
     OUT_DIR = Path(__file__).parent / "output"
@@ -15,8 +13,46 @@ if os.getenv("SR_TEST_OUTPUT", "False").lower() in ("true", "1", "t"):
 else:
     OUT_DIR = None
 
-for backend in RUN_TESTS:
-    backends.register_backend(backend)
+
+def pytest_addoption(parser):
+    """Add custom command-line options for pytest."""
+    parser.addoption(
+        "--backend",
+        action="store",
+        default=None,
+        help="Specify backend to test",
+    )
+
+
+def get_test_backends(config):
+    """Determine which backends to test."""
+    backend_option = config.getoption("--backend")
+
+    if backend_option:
+        requested = backend_option.split(",")
+    else:
+        requested = ["numpy", "numba", "jax", "torch"]
+
+    available = backends.available_backends
+    test_backends = [b for b in requested if b in available]
+
+    # Register backends
+    for b in test_backends:
+        try:
+            backends.register_backend(b)
+        except Exception as e:
+            print(f"Warning: Could not register backend '{b}': {e}")
+
+    return test_backends
+
+
+# This generates the parametrization
+def pytest_generate_tests(metafunc):
+    if "backend" in metafunc.fixturenames:
+        backends_to_test = get_test_backends(metafunc.config)
+        if not backends_to_test:
+            pytest.fail("No backends available for testing")
+        metafunc.parametrize("backend", backends_to_test)
 
 
 @pytest.fixture()
@@ -27,5 +63,4 @@ def probability_forecasts():
         skip_header=1,
         usecols=(1, -1),
     )
-
     return data

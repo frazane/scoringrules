@@ -2,14 +2,12 @@ import numpy as np
 import pytest
 import scoringrules as sr
 
-from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 11
 N = 20
 N_VARS = 3
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_ds_score_uv(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -33,7 +31,6 @@ def test_ds_score_uv(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_ds_score_mv(backend):
     with pytest.raises(ValueError):
         obs = np.random.randn(N, N_VARS)

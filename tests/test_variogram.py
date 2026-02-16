@@ -3,7 +3,6 @@ import pytest
 
 import scoringrules as sr
 
-from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 51
 N = 100
@@ -13,7 +12,6 @@ ESTIMATORS = ["nrg", "fair"]
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_variogram_score(estimator, backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
@@ -27,7 +25,6 @@ def test_variogram_score(estimator, backend):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_variogram_score_permuted_dims(estimator, backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
@@ -42,7 +39,6 @@ def test_variogram_score_permuted_dims(estimator, backend):
         assert "jax" in res.__module__
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_variogram_score_correctness(backend):
     fct = np.array(
         [

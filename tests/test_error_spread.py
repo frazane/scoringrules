@@ -1,14 +1,11 @@
 import numpy as np
-import pytest
 import scoringrules as sr
 
-from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 11
 N = 5
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_error_spread_score(backend):
     # test shape
     obs = np.random.randn(N)

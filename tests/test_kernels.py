@@ -3,7 +3,6 @@ import pytest
 import scoringrules as sr
 from scoringrules.backend import backends
 
-from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 11
 N = 10
@@ -13,7 +12,6 @@ ESTIMATORS = ["nrg", "fair", "akr", "akr_circperm"]
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_gksuv(estimator, backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -67,7 +65,6 @@ def test_gksuv(estimator, backend):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_gksmv(estimator, backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
@@ -122,7 +119,6 @@ def test_gksmv(estimator, backend):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_twgksuv(estimator, backend):
     if backend == "jax":
         pytest.skip("Not implemented in jax backend")
@@ -224,7 +220,6 @@ def test_twgksuv(estimator, backend):
         np.testing.assert_allclose(res, 0.0089314, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_twgksmv(backend):
     if backend == "jax":
         pytest.skip("Not implemented in jax backend")
@@ -253,7 +248,6 @@ def test_twgksmv(backend):
     np.testing.assert_allclose(res, 0.1016436, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_owgksuv(backend):
     if backend == "jax":
         pytest.skip("Not implemented in jax backend")
@@ -345,7 +339,6 @@ def test_owgksuv(backend):
     np.testing.assert_allclose(res, 0.008905213, rtol=1e-5)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_owgksmv(backend):
     if backend == "jax":
         pytest.skip("Not implemented in jax backend")
@@ -376,7 +369,6 @@ def test_owgksmv(backend):
     np.testing.assert_allclose(res, 0.1016436, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_vrgksuv(backend):
     if backend == "jax":
         pytest.skip("Not implemented in jax backend")
@@ -468,7 +460,6 @@ def test_vrgksuv(backend):
     np.testing.assert_allclose(res, 0.04011836, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_vrgksmv(backend):
     if backend == "jax":
         pytest.skip("Not implemented in jax backend")
