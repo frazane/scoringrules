@@ -33,7 +33,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install the project
-        run: uv sync --extra ${{ matrix.backend }}
+        run: |
+          if [ "${{ matrix.backend }}" = "numpy" ]; then
+            uv sync
+          else
+            uv sync --extra ${{ matrix.backend }}
+          fi
 
       - name: Run tests
         run: uv run pytest tests/ --backend ${{matrix.backend }}
