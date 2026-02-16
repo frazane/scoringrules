@@ -37,7 +37,7 @@ The scoring rules available in `scoringrules` include, but are not limited to, t
 - **Didactic approach** to probabilistic forecast evaluation through clear code and documentation
 
 ## Installation
-Requires python `>=3.10`!
+Requires python `>=3.11`!
 
 ```
 pip install scoringrules
