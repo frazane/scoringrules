@@ -57,7 +57,7 @@ reference.md
 - **Didactic approach** to probabilistic forecast evaluation through clear code and documentation
 
 ## Installation
-Requires python `>=3.10`!
+Requires python `>=3.11`!
 
 ```
 pip install scoringrules
