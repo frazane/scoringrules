@@ -3,10 +3,7 @@ import pytest
 
 import scoringrules as sr
 
-from .conftest import BACKENDS
 
-
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_brier(backend):
     # test exceptions
     with pytest.raises(ValueError):
@@ -25,7 +22,6 @@ def test_brier(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_rps(backend):
     # test exceptions
     with pytest.raises(ValueError):
@@ -54,7 +50,6 @@ def test_rps(backend):
     assert np.allclose(res1, res2)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_logs(backend):
     # test exceptions
     with pytest.raises(ValueError):
@@ -73,7 +68,6 @@ def test_logs(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_rls(backend):
     # test exceptions
     with pytest.raises(ValueError):

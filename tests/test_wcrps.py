@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 import scoringrules as sr
 
-from .conftest import BACKENDS
 
 M = 11
 N = 20
@@ -10,7 +9,6 @@ N = 20
 ESTIMATORS = ["nrg", "fair", "pwm", "qd", "akr", "akr_circperm"]
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_owcrps_ensemble(backend):
     # test shapes
     obs = np.random.randn(N)
@@ -22,7 +20,6 @@ def test_owcrps_ensemble(backend):
     assert res.shape == (N,)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_vrcrps_ensemble(backend):
     # test shapes
     obs = np.random.randn(N)
@@ -35,7 +32,6 @@ def test_vrcrps_ensemble(backend):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_twcrps_vs_crps(estimator, backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -61,7 +57,6 @@ def test_twcrps_vs_crps(estimator, backend):
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_owcrps_vs_crps(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -85,7 +80,6 @@ def test_owcrps_vs_crps(backend):
     np.testing.assert_allclose(res, resw, rtol=1e-5)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_vrcrps_vs_crps(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -109,7 +103,6 @@ def test_vrcrps_vs_crps(backend):
     np.testing.assert_allclose(res, resw, rtol=1e-5)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_owcrps_score_correctness(backend):
     fct = np.array(
         [
@@ -164,7 +157,6 @@ def test_owcrps_score_correctness(backend):
     np.testing.assert_allclose(res, 0.09933139, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_twcrps_score_correctness(backend):
     fct = np.array(
         [
@@ -235,7 +227,6 @@ def test_twcrps_score_correctness(backend):
     np.testing.assert_allclose(res, 0.0994809, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_vrcrps_score_correctness(backend):
     fct = np.array(
         [

@@ -3,12 +3,10 @@ import pytest
 import scipy.stats as st
 import scoringrules as sr
 
-from .conftest import BACKENDS
 
 N = 100
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_interval_score(backend):
     # basic functionality
     _ = sr.interval_score(0.1, 0.0, 0.4, 0.5)
@@ -57,7 +55,6 @@ def test_interval_score(backend):
 
 
 ## We use Bracher et al (2021) Eq. (3) to test the WIS
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_weighted_interval_score(backend):
     obs = np.zeros(N)
     alpha = np.linspace(0.01, 0.99, 99)

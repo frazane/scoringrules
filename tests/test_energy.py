@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 import scoringrules as sr
 
-from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 11
 N = 20
@@ -12,7 +11,6 @@ ESTIMATORS = ["nrg", "fair", "akr", "akr_circperm"]
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_energy_score(estimator, backend):
     # test exceptions
 
