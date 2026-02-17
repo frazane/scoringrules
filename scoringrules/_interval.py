@@ -113,7 +113,6 @@ def weighted_interval_score(
     lower: "Array",
     upper: "Array",
     alpha: "Array",
-    /,
     w_median: Optional[float] = None,
     w_alpha: Optional["Array"] = None,
     *,
