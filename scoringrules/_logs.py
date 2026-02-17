@@ -158,7 +158,6 @@ def logs_beta(
     obs: "ArrayLike",
     a: "ArrayLike",
     b: "ArrayLike",
-    /,
     lower: "ArrayLike" = 0.0,
     upper: "ArrayLike" = 1.0,
     *,
@@ -200,7 +199,6 @@ def logs_binomial(
     obs: "ArrayLike",
     n: "ArrayLike",
     prob: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -235,7 +233,6 @@ def logs_binomial(
 def logs_exponential(
     obs: "ArrayLike",
     rate: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -267,7 +264,6 @@ def logs_exponential(
 
 def logs_exponential2(
     obs: "ArrayLike",
-    /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     *,
@@ -306,7 +302,6 @@ def logs_2pexponential(
     scale1: "ArrayLike",
     scale2: "ArrayLike",
     location: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -343,7 +338,6 @@ def logs_2pexponential(
 def logs_gamma(
     obs: "ArrayLike",
     shape: "ArrayLike",
-    /,
     rate: "ArrayLike | None" = None,
     *,
     scale: "ArrayLike | None" = None,
@@ -393,7 +387,6 @@ def logs_gamma(
 def logs_gev(
     obs: "ArrayLike",
     shape: "ArrayLike",
-    /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     *,
@@ -432,7 +425,6 @@ def logs_gev(
 def logs_gpd(
     obs: "ArrayLike",
     shape: "ArrayLike",
-    /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     *,
@@ -474,7 +466,6 @@ def logs_hypergeometric(
     m: "ArrayLike",
     n: "ArrayLike",
     k: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -512,7 +503,6 @@ def logs_laplace(
     obs: "ArrayLike",
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -581,7 +571,6 @@ def logs_logistic(
     obs: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -681,7 +670,6 @@ def logs_mixnorm(
     obs: "ArrayLike",
     m: "ArrayLike",
     s: "ArrayLike",
-    /,
     w: "ArrayLike" = None,
     mc_axis: "ArrayLike" = -1,
     *,
@@ -736,7 +724,6 @@ def logs_mixnorm(
 def logs_negbinom(
     obs: "ArrayLike",
     n: "ArrayLike",
-    /,
     prob: "ArrayLike | None" = None,
     *,
     mu: "ArrayLike | None" = None,
@@ -787,7 +774,6 @@ def logs_normal(
     obs: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
-    /,
     *,
     negative: bool = True,
     backend: "Backend" = None,
@@ -825,7 +811,6 @@ def logs_2pnormal(
     scale1: "ArrayLike",
     scale2: "ArrayLike",
     location: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -861,7 +846,6 @@ def logs_2pnormal(
 def logs_poisson(
     obs: "ArrayLike",
     mean: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -894,7 +878,6 @@ def logs_poisson(
 def logs_t(
     obs: "ArrayLike",
     df: "ArrayLike",
-    /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     *,
@@ -932,7 +915,6 @@ def logs_tlogistic(
     obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
-    /,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
@@ -972,7 +954,6 @@ def logs_tnormal(
     obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
-    /,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
@@ -1011,7 +992,6 @@ def logs_tnormal(
 def logs_tt(
     obs: "ArrayLike",
     df: "ArrayLike",
-    /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
@@ -1055,7 +1035,6 @@ def logs_uniform(
     obs: "ArrayLike",
     min: "ArrayLike",
     max: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":

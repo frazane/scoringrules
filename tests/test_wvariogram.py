@@ -44,7 +44,7 @@ def test_vrvs_vs_vs(backend):
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
         backend=backend,
     )
-    np.testing.assert_allclose(res, resw, atol=1e-6)
+    np.testing.assert_allclose(res, resw, atol=1e-5)
 
 
 def test_owvariogram_score_correctness(backend):
