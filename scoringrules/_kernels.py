@@ -463,14 +463,13 @@ def gksmv_ensemble(
     B = backends.active if backend is None else backends[backend]
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
-    if estimator not in kernels.estimator_gufuncs_mv:
-        raise ValueError(
-            f"{estimator} is not a valid estimator. "
-            f"Must be one of {kernels.estimator_gufuncs_mv.keys()}"
-        )
-
     if ens_w is None:
         if backend == "numba":
+            if estimator not in kernels.estimator_gufuncs_mv:
+                raise ValueError(
+                    f"{estimator} is not a valid estimator. "
+                    f"Must be one of {kernels.estimator_gufuncs_mv.keys()}"
+                )
             return kernels.estimator_gufuncs_mv[estimator](obs, fct)
 
         return kernels.ensemble_mv(obs, fct, estimator=estimator, backend=backend)
