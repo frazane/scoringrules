@@ -17,15 +17,9 @@ def test_crps_ensemble(estimator, backend):
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
     # test exceptions
-    if backend in ["numpy", "jax", "torch", "tensorflow"]:
-        if estimator == "int":
-            with pytest.raises(ValueError):
-                sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
-            return
-    if backend == "numba":
-        with pytest.raises(ValueError):
-            est = "undefined_estimator"
-            sr.crps_ensemble(obs, fct, estimator=est, backend=backend)
+    with pytest.raises(ValueError):
+        est = "undefined_estimator"
+        sr.crps_ensemble(obs, fct, estimator=est, backend=backend)
 
     # test shapes
     res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)

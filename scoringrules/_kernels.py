@@ -67,21 +67,13 @@ def gksuv_ensemble(
     if m_axis != -1:
         fct = B.moveaxis(fct, m_axis, -1)
 
-    if backend == "numba":
-        if estimator not in kernels.estimator_gufuncs_uv:
-            raise ValueError(
-                f"{estimator} is not a valid estimator. "
-                f"Must be one of {kernels.estimator_gufuncs_uv.keys()}"
-            )
-    else:
-        if estimator not in ["fair", "nrg"]:
-            raise ValueError(
-                f"{estimator} is not a valid estimator. "
-                f"Must be one of ['fair', 'nrg']"
-            )
-
     if ens_w is None:
         if backend == "numba":
+            if estimator not in kernels.estimator_gufuncs_uv:
+                raise ValueError(
+                    f"{estimator} is not a valid estimator. "
+                    f"Must be one of {kernels.estimator_gufuncs_uv.keys()}"
+                )
             return kernels.estimator_gufuncs_uv[estimator](obs, fct)
 
         return kernels.ensemble_uv(obs, fct, estimator=estimator, backend=backend)

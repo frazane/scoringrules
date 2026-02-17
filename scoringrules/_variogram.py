@@ -86,9 +86,12 @@ def vs_ensemble(
 
     if ens_w is None:
         if backend == "numba":
-            return variogram._variogram_score_gufunc(obs, fct, w, p)
+            if estimator == "nrg":
+                return variogram._variogram_score_nrg_gufunc(obs, fct, w, p)
+            elif estimator == "fair":
+                return variogram._variogram_score_fair_gufunc(obs, fct, w, p)
 
-        return variogram.vs(obs, fct, w, p, backend=backend)
+        return variogram.vs(obs, fct, w, p, estimator=estimator, backend=backend)
 
     else:
         ens_w = B.asarray(ens_w)
@@ -97,16 +100,14 @@ def vs_ensemble(
         ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
 
         if backend == "numba":
-            return variogram._variogram_score_gufunc_w(obs, fct, w, ens_w, p)
+            if estimator == "nrg":
+                return variogram._variogram_score_nrg_gufunc_w(obs, fct, w, ens_w, p)
+            elif estimator == "fair":
+                return variogram._variogram_score_fair_gufunc_w(obs, fct, w, ens_w, p)
 
-        return variogram.vs_w(obs, fct, w, ens_w, p, backend=backend)
-    if backend == "numba":
-        if estimator == "nrg":
-            return variogram._variogram_score_nrg_gufunc(obs, fct, p)
-        elif estimator == "fair":
-            return variogram._variogram_score_fair_gufunc(obs, fct, p)
-
-    return variogram.vs(obs, fct, p, estimator=estimator, backend=backend)
+        return variogram.vs_w(
+            obs, fct, w, ens_w, p, estimator=estimator, backend=backend
+        )
 
 
 def twvs_ensemble(

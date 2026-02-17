@@ -13,13 +13,15 @@ except ImportError:
 
 try:
     from ._gufuncs_w import (
+        _variogram_score_nrg_gufunc_w,
+        _variogram_score_fair_gufunc_w,
         _owvariogram_score_gufunc_w,
-        _variogram_score_gufunc_w,
         _vrvariogram_score_gufunc_w,
     )
 except ImportError:
+    _variogram_score_nrg_gufunc_w = None
+    _variogram_score_fair_gufunc_w = None
     _owvariogram_score_gufunc_w = None
-    _variogram_score_gufunc_w = None
     _vrvariogram_score_gufunc_w = None
 
 from ._score import owvs_ensemble as owvs
@@ -37,10 +39,10 @@ __all__ = [
     "owvs_w",
     "vrvs",
     "vrvs_w",
-    "_variogram_score_gufunc",
-    "_variogram_score_gufunc_w",
     "_variogram_score_nrg_gufunc",
     "_variogram_score_fair_gufunc",
+    "_variogram_score_nrg_gufunc_w",
+    "_variogram_score_fair_gufunc_w",
     "_owvariogram_score_gufunc",
     "_owvariogram_score_gufunc_w",
     "_vrvariogram_score_gufunc",

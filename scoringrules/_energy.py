@@ -78,16 +78,21 @@ def es_ensemble(
                 )
             return energy.estimator_gufuncs[estimator](obs, fct)
 
-        return energy.nrg(obs, fct, backend=backend)
+        return energy.es(obs, fct, estimator=estimator, backend=backend)
     else:
         ens_w = B.asarray(ens_w)
         if B.any(ens_w < 0):
             raise ValueError("`ens_w` contains negative entries")
         ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
         if backend == "numba":
-            return energy._energy_score_gufunc_w(obs, fct, ens_w)
+            if estimator not in energy.estimator_gufuncs_w:
+                raise ValueError(
+                    f"{estimator} is not a valid estimator. "
+                    f"Must be one of {energy.estimator_gufuncs_w.keys()}"
+                )
+            return energy.estimator_gufuncs_w[estimator](obs, fct, ens_w)
 
-        return energy.nrg_w(obs, fct, ens_w, backend=backend)
+        return energy.es_w(obs, fct, ens_w, estimator=estimator, backend=backend)
 
 
 def twes_ensemble(
@@ -214,20 +219,20 @@ def owes_ensemble(
 
     if ens_w is None:
         if B.name == "numba":
-            return energy._owenergy_score_gufunc(obs, fct, obs_weights, fct_weights)
+            return energy.estimator_gufuncs["ownrg"](obs, fct, obs_weights, fct_weights)
 
-        return energy.ownrg(obs, fct, obs_weights, fct_weights, backend=backend)
+        return energy.owes(obs, fct, obs_weights, fct_weights, backend=backend)
     else:
         ens_w = B.asarray(ens_w)
         if B.any(ens_w < 0):
             raise ValueError("`ens_w` contains negative entries")
         ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
         if B.name == "numba":
-            return energy._owenergy_score_gufunc_w(
+            return energy.estimator_gufuncs_w["ownrg"](
                 obs, fct, obs_weights, fct_weights, ens_w
             )
 
-        return energy.ownrg_w(
+        return energy.owes_w(
             obs, fct, obs_weights, fct_weights, ens_w=ens_w, backend=backend
         )
 
@@ -293,19 +298,19 @@ def vres_ensemble(
 
     if ens_w is None:
         if backend == "numba":
-            return energy._vrenergy_score_gufunc(obs, fct, obs_weights, fct_weights)
+            return energy.estimator_gufuncs["vrnrg"](obs, fct, obs_weights, fct_weights)
 
-        return energy.vrnrg(obs, fct, obs_weights, fct_weights, backend=backend)
+        return energy.vres(obs, fct, obs_weights, fct_weights, backend=backend)
     else:
         ens_w = B.asarray(ens_w)
         if B.any(ens_w < 0):
             raise ValueError("`ens_w` contains negative entries")
         ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
         if backend == "numba":
-            return energy._vrenergy_score_gufunc_w(
+            return energy.estimator_gufuncs_w["vrnrg"](
                 obs, fct, obs_weights, fct_weights, ens_w
             )
 
-        return energy.vrnrg_w(
+        return energy.vres_w(
             obs, fct, obs_weights, fct_weights, ens_w=ens_w, backend=backend
         )

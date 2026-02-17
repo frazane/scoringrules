@@ -39,6 +39,10 @@ def vs_ensemble(
         E_2 = B.sum(E_2, axis=(-2, -1)) / (M * (M - 1))  # (...)
 
         out = E_1 - 0.5 * E_2
+    else:
+        raise ValueError(
+            f"For the variogram score, {estimator} must be one of 'nrg', and 'fair'."
+        )
 
     return out
 

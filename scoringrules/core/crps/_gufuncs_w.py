@@ -250,4 +250,6 @@ __all__ = [
     "_crps_ensemble_nrg_w_gufunc",
     "_crps_ensemble_pwm_w_gufunc",
     "_crps_ensemble_qd_w_gufunc",
+    "_owcrps_ensemble_nrg_w_gufunc",
+    "_vrcrps_ensemble_nrg_w_gufunc",
 ]

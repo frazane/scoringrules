@@ -6,7 +6,7 @@ from scoringrules.core.utils import lazy_gufunc_wrapper_mv
 
 @lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d),(m)->()")
-def _energy_score_gufunc_w(
+def _energy_score_nrg_gufunc_w(
     obs: np.ndarray,
     fct: np.ndarray,
     ens_w: np.ndarray,
@@ -88,3 +88,22 @@ def _vrenergy_score_gufunc_w(
     wabs_y = np.linalg.norm(obs) * ow
 
     out[0] = e_1 - 0.5 * e_2 + (wabs_x - wabs_y) * (wbar - ow)
+
+
+estimator_gufuncs_w = {
+    # "akr_circperm": lazy_gufunc_wrapper_mv(_energy_score_akr_circperm_gufunc_w),
+    # "akr": lazy_gufunc_wrapper_mv(_energy_score_akr_gufunc_w),
+    # "fair": lazy_gufunc_wrapper_mv(_energy_score_fair_gufunc_w),
+    "nrg": lazy_gufunc_wrapper_mv(_energy_score_nrg_gufunc_w),
+    "ownrg": lazy_gufunc_wrapper_mv(_owenergy_score_gufunc_w),
+    "vrnrg": lazy_gufunc_wrapper_mv(_vrenergy_score_gufunc_w),
+}
+
+__all__ = [
+    # "_energy_score_akr_circperm_gufunc_w",
+    # "_energy_score_akr_gufunc_w",
+    # "_energy_score_fair_gufunc_w",
+    "_energy_score_nrg_gufunc_w",
+    "_owenergy_score_gufunc_w",
+    "_vrenergy_score_gufunc_w",
+]

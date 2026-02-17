@@ -248,7 +248,7 @@ estimator_gufuncs = {
     "akr": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_gufunc),
     "fair": _crps_ensemble_fair_gufunc,
     "int": lazy_gufunc_wrapper_uv(_crps_ensemble_int_gufunc),
-    "nrg": lazy_gufunc_wrapper_uv(_crps_ensemble_nrg_gufunc),
+    "nrg": _crps_ensemble_nrg_gufunc,
     "pwm": lazy_gufunc_wrapper_uv(_crps_ensemble_pwm_gufunc),
     "qd": _crps_ensemble_qd_gufunc,
     "ownrg": lazy_gufunc_wrapper_uv(_owcrps_ensemble_nrg_gufunc),
