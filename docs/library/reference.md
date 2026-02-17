@@ -40,6 +40,8 @@ Univariate
     logs_ensemble
     gksuv_ensemble
 
+    dssuv_ensemble
+
 Multivariate
 --------------------
 
@@ -94,6 +96,7 @@ CRPS
     crps_exponentialM
     crps_2pexponential
     crps_gamma
+    crps_csg0
     crps_gev
     crps_gpd
     crps_gtclogistic

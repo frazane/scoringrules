@@ -15,7 +15,7 @@ def crps_ensemble(
     *,
     ens_w: "Array" = None,
     sorted_ensemble: bool = False,
-    estimator: str = "pwm",
+    estimator: str = "qd",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the Continuous Ranked Probability Score (CRPS) for a finite ensemble.
@@ -155,7 +155,7 @@ def twcrps_ensemble(
     *,
     ens_w: "Array" = None,
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
-    estimator: str = "pwm",
+    estimator: str = "qd",
     sorted_ensemble: bool = False,
     backend: "Backend" = None,
 ) -> "Array":
@@ -1003,6 +1003,83 @@ def crps_gamma(
             )
 
     return crps.gamma(obs, shape, rate, backend=backend)
+
+
+def crps_csg0(
+    obs: "ArrayLike",
+    /,
+    shape: "ArrayLike",
+    rate: "ArrayLike | None" = None,
+    *,
+    scale: "ArrayLike | None" = None,
+    shift: "ArrayLike" = 0.0,
+    backend: "Backend" = None,
+) -> "ArrayLike":
+    r"""Compute the closed form of the CRPS for the censored, shifted gamma distribution.
+
+    It is based on the following formulation from [1]_:
+
+    .. math::
+        \mathrm{CRPS}\bigl(F^0_{\alpha,\beta,\delta},\,y\bigr) =
+        (y+\delta)\,\bigl(2F_{\alpha,\beta}(y+\delta)-1\bigr)
+        - \frac{\alpha}{\beta\pi}\,B\!\Bigl(\tfrac12,\alpha+\tfrac12\Bigr)\,\bigl(1 - F_{2\alpha,\beta}(2\delta)\bigr)
+        + \frac{\alpha}{\beta}\,\Bigl(1 + 2\,F_{\alpha,\beta}(\delta)\,F_{\alpha+1,\beta}(\delta) - F_{\alpha,\beta}(\delta)^2 - 2\,F_{\alpha+1,\beta}(y+\delta)\Bigr)
+        - \delta\,\bigl(F_{\alpha,\beta}(\delta)\bigr)^{2},
+
+    where :math:`F^0_{\alpha,\beta,\delta}` is the censored, shifted gamma distribution function with
+    shape parameter :math:`\alpha > 0`, rate parameter :math:`\beta > 0` (equivalently, with scale parameter :math:`1/\beta`)
+    and shift parameter :math:`\delta > 0`.
+
+    Parameters
+    ----------
+    obs : array_like
+        The observed values.
+    shape : array_like
+        Shape parameter of the forecast CSG distribution.
+    rate : array_like, optional
+        Rate parameter of the forecast CSG distribution.
+        Either ``rate`` or ``scale`` must be provided.
+    scale : array_like, optional
+        Scale parameter of the forecast CSG distribution, where ``scale = 1 / rate``.
+        Either ``rate`` or ``scale`` must be provided.
+    shift : array_like
+        Shift parameter of the forecast CSG distribution.
+    backend : str, optional
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+
+    Returns
+    -------
+    crps : array_like
+        The CRPS between obs and CSG(shape, rate, shift).
+
+    References
+    ----------
+    .. [1] Scheuerer, M., & Hamill, T. M. (2015).
+        Statistical postprocessing of ensemble precipitation forecasts
+        by fitting censored, shifted gamma distributions.
+        Monthly Weather Review, 143(11), 4578-4596.
+        https://doi.org/10.1175/MWR-D-15-0061.1
+
+    Examples
+    --------
+    >>> import scoringrules as sr
+    >>> sr.crps_csg0(0.7, shape=0.5, rate=2.0, shift=0.3)
+    0.5411044348806484
+
+    Raises
+    ------
+    ValueError
+        If both ``rate`` and ``scale`` are provided, or if neither is provided.
+    """
+    if (scale is None and rate is None) or (scale is not None and rate is not None):
+        raise ValueError(
+            "Either ``rate`` or ``scale`` must be provided, but not both or neither."
+        )
+
+    if rate is None:
+        rate = 1.0 / scale
+
+    return crps.csg0(obs, shape, rate, shift, backend=backend)
 
 
 def crps_gev(
@@ -2784,6 +2861,7 @@ __all__ = [
     "crps_exponentialM",
     "crps_2pexponential",
     "crps_gamma",
+    "crps_csg0",
     "crps_gev",
     "crps_gpd",
     "crps_gtclogistic",

@@ -53,9 +53,11 @@ class NumpyBackend(ArrayBackend):
         /,
         *,
         axis: int | tuple[int, ...] | None = None,
+        bias: bool = False,
         keepdims: bool = False,
     ) -> "NDArray":
-        return np.std(x, ddof=1, axis=axis, keepdims=keepdims)
+        ddof = 0 if bias else 1
+        return np.std(x, ddof=ddof, axis=axis, keepdims=keepdims)
 
     def quantile(
         self,
@@ -278,6 +280,21 @@ class NumpyBackend(ArrayBackend):
 
     def gather(self, x: "NDArray", ind: "NDArray", axis: int) -> "NDArray":
         return np.take_along_axis(x, ind, axis=axis)
+
+    def roll(self, x: "NDArray", shift: int = 1, axis: int = -1) -> "NDArray":
+        return np.roll(x, shift=shift, axis=axis)
+
+    def inv(self, x: "NDArray") -> "NDArray":
+        return np.linalg.inv(x)
+
+    def cov(self, x: "NDArray", rowvar: bool = True, bias: bool = False) -> "NDArray":
+        return np.cov(x, rowvar=rowvar, bias=bias)
+
+    def det(self, x: "NDArray") -> "NDArray":
+        return np.linalg.det(x)
+
+    def reshape(self, x: "NDArray", shape: int | tuple[int, ...]) -> "NDArray":
+        return np.reshape(x, shape)
 
 
 class NumbaBackend(NumpyBackend):

@@ -1,17 +1,15 @@
 import numpy as np
-import pytest
+
 
 import scoringrules as sr
 from scoringrules.backend import backends
 
-from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 51
 N = 100
 N_VARS = 3
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_owvs_vs_vs(backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
@@ -26,7 +24,6 @@ def test_owvs_vs_vs(backend):
     np.testing.assert_allclose(res, resw, rtol=1e-3)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_twvs_vs_vs(backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
@@ -36,7 +33,6 @@ def test_twvs_vs_vs(backend):
     np.testing.assert_allclose(res, resw, rtol=5e-4)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_vrvs_vs_vs(backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
@@ -48,10 +44,9 @@ def test_vrvs_vs_vs(backend):
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
         backend=backend,
     )
-    np.testing.assert_allclose(res, resw, rtol=5e-4)
+    np.testing.assert_allclose(res, resw, atol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_owvariogram_score_correctness(backend):
     fct = np.array(
         [[0.79546742, 0.4777960, 0.2164079], [0.02461368, 0.7584595, 0.3181810]]
@@ -73,7 +68,6 @@ def test_owvariogram_score_correctness(backend):
     np.testing.assert_allclose(res, 0.04856366, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_twvariogram_score_correctness(backend):
     fct = np.array(
         [[0.79546742, 0.4777960, 0.2164079], [0.02461368, 0.7584595, 0.3181810]]

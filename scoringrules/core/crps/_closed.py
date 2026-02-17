@@ -179,6 +179,31 @@ def gamma(
     return s
 
 
+def csg0(
+    obs: "ArrayLike",
+    shape: "ArrayLike",
+    rate: "ArrayLike",
+    shift: "ArrayLike",
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the CRPS for the censored, shifted gamma distribution."""
+    B = backends.active if backend is None else backends[backend]
+    obs, shape, rate, shift = map(B.asarray, (obs, shape, rate, shift))
+    obs_shifted = obs + shift
+    F_ab_shifted = _gamma_cdf(obs_shifted, shape, rate, backend=backend)
+    F_2ab_2d = _gamma_cdf(2 * shift, 2 * shape, rate, backend=backend)
+    F_ab_d = _gamma_cdf(shift, shape, rate, backend=backend)
+    F_ab1_d = _gamma_cdf(shift, shape + 1, rate, backend=backend)
+    F_ab1_shifted = _gamma_cdf(obs_shifted, shape + 1, rate, backend=backend)
+    s = (
+        obs_shifted * (2 * F_ab_shifted - 1)
+        - (shape / (rate * B.pi)) * B.beta(B.asarray(0.5), shape + 0.5) * (1 - F_2ab_2d)
+        + shape / rate * (1 + 2 * F_ab_d * F_ab1_d - F_ab_d**2 - 2 * F_ab1_shifted)
+        - shift * F_ab_d**2
+    )
+    return s
+
+
 EULERMASCHERONI = 0.57721566490153286060651209008240243
 
 

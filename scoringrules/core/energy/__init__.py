@@ -1,15 +1,4 @@
 try:
-    from ._gufuncs import (
-        _energy_score_gufunc,
-        _owenergy_score_gufunc,
-        _vrenergy_score_gufunc,
-    )
-except ImportError:
-    _energy_score_gufunc = None
-    _owenergy_score_gufunc = None
-    _vrenergy_score_gufunc = None
-
-try:
     from ._gufuncs_w import (
         _energy_score_gufunc_w,
         _owenergy_score_gufunc_w,

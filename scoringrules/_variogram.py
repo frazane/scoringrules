@@ -18,6 +18,7 @@ def vs_ensemble(
     *,
     ens_w: "Array" = None,
     p: float = 1.0,
+    estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Variogram Score for a finite multivariate ensemble.
@@ -50,6 +51,8 @@ def vs_ensemble(
         Default is equal weighting.
     p : float
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
+    estimator : str
+        The variogram score estimator to be used.
     backend: str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -97,6 +100,13 @@ def vs_ensemble(
             return variogram._variogram_score_gufunc_w(obs, fct, w, ens_w, p)
 
         return variogram.vs_w(obs, fct, w, ens_w, p, backend=backend)
+    if backend == "numba":
+        if estimator == "nrg":
+            return variogram._variogram_score_nrg_gufunc(obs, fct, p)
+        elif estimator == "fair":
+            return variogram._variogram_score_fair_gufunc(obs, fct, p)
+
+    return variogram.vs(obs, fct, p, estimator=estimator, backend=backend)
 
 
 def twvs_ensemble(
@@ -110,6 +120,7 @@ def twvs_ensemble(
     *,
     ens_w: "Array" = None,
     p: float = 1.0,
+    estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Threshold-Weighted Variogram Score (twVS) for a finite multivariate ensemble.
@@ -144,6 +155,8 @@ def twvs_ensemble(
         Default is equal weighting.
     p : float
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
+    estimator : str
+        The variogram score estimator to be used.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -170,7 +183,17 @@ def twvs_ensemble(
     array([5.94996894, 4.72029765, 6.08947229])
     """
     obs, fct = map(v_func, (obs, fct))
-    return vs_ensemble(obs, fct, w, m_axis, v_axis, ens_w=ens_w, p=p, backend=backend)
+    return vs_ensemble(
+        obs,
+        fct,
+        w,
+        m_axis,
+        v_axis,
+        ens_w=ens_w,
+        p=p,
+        estimator=estimator,
+        backend=backend,
+    )
 
 
 def owvs_ensemble(

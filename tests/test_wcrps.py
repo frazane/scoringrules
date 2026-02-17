@@ -2,13 +2,13 @@ import numpy as np
 import pytest
 import scoringrules as sr
 
-from .conftest import BACKENDS
 
 M = 11
 N = 20
 
+ESTIMATORS = ["nrg", "fair", "pwm", "qd", "akr", "akr_circperm"]
 
-@pytest.mark.parametrize("backend", BACKENDS)
+
 def test_owcrps_ensemble(backend):
     # test shapes
     obs = np.random.randn(N)
@@ -26,7 +26,6 @@ def test_owcrps_ensemble(backend):
     assert res.shape == (N,)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_vrcrps_ensemble(backend):
     # test shapes
     obs = np.random.randn(N)
@@ -44,33 +43,32 @@ def test_vrcrps_ensemble(backend):
     assert res.shape == (N,)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
-def test_twcrps_vs_crps(backend):
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+def test_twcrps_vs_crps(estimator, backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, M) * sigma[..., None] + mu[..., None]
 
-    res = sr.crps_ensemble(obs, fct, backend=backend, estimator="nrg")
+    res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
 
     # no argument given
-    resw = sr.twcrps_ensemble(obs, fct, estimator="nrg", backend=backend)
+    resw = sr.twcrps_ensemble(obs, fct, estimator=estimator, backend=backend)
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
     # a and b
     resw = sr.twcrps_ensemble(
-        obs, fct, a=float("-inf"), b=float("inf"), estimator="nrg", backend=backend
+        obs, fct, a=float("-inf"), b=float("inf"), estimator=estimator, backend=backend
     )
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
     # v_func as identity function
     resw = sr.twcrps_ensemble(
-        obs, fct, v_func=lambda x: x, estimator="nrg", backend=backend
+        obs, fct, v_func=lambda x: x, estimator=estimator, backend=backend
     )
     np.testing.assert_allclose(res, resw, rtol=1e-10)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_owcrps_vs_crps(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -94,7 +92,6 @@ def test_owcrps_vs_crps(backend):
     np.testing.assert_allclose(res, resw, rtol=1e-4)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_vrcrps_vs_crps(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -118,7 +115,6 @@ def test_vrcrps_vs_crps(backend):
     np.testing.assert_allclose(res, resw, rtol=1e-5)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_owcrps_score_correctness(backend):
     fct = np.array(
         [
@@ -173,7 +169,6 @@ def test_owcrps_score_correctness(backend):
     np.testing.assert_allclose(res, 0.09933139, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_twcrps_score_correctness(backend):
     fct = np.array(
         [
@@ -244,7 +239,6 @@ def test_twcrps_score_correctness(backend):
     np.testing.assert_allclose(res, 0.0994809, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_vrcrps_score_correctness(backend):
     fct = np.array(
         [

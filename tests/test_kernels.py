@@ -3,22 +3,30 @@ import pytest
 import scoringrules as sr
 from scoringrules.backend import backends
 
-from .conftest import BACKENDS
 
 ENSEMBLE_SIZE = 11
 N = 10
 N_VARS = 3
 
-ESTIMATORS = ["nrg", "fair"]
+ESTIMATORS = ["nrg", "fair", "akr", "akr_circperm"]
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_gksuv(estimator, backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N)) * 0.3
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+
+    # undefined estimator
+    with pytest.raises(ValueError):
+        est = "undefined_estimator"
+        sr.gksuv_ensemble(obs, fct, estimator=est, backend=backend)
+
+    # m_axis keyword
+    res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+    res2 = sr.gksuv_ensemble(obs, fct.T, m_axis=0, estimator=estimator, backend=backend)
+    assert np.allclose(res, res2)
 
     if estimator == "nrg":
         # non-negative values
@@ -43,23 +51,39 @@ def test_gksuv(estimator, backend):
         res = np.asarray(res)
         assert not np.any(res - 0.0 > 0.0001)
 
-        # test correctness
-        obs, fct = 11.6, np.array([9.8, 8.7, 11.9, 12.1, 13.4])
+    # test correctness
+    obs, fct = 11.6, np.array([9.8, 8.7, 11.9, 12.1, 13.4])
+
+    if estimator == "nrg":
         res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
         expected = 0.2490516
         assert np.isclose(res, expected)
 
-    # test exceptions
-    with pytest.raises(ValueError):
-        est = "undefined_estimator"
-        sr.gksuv_ensemble(obs, fct, estimator=est, backend=backend)
+    elif estimator == "fair":
+        res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.1737752
+        assert np.isclose(res, expected)
+
+    elif estimator == "akr":
+        res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.2464915
+        assert np.isclose(res, expected)
+
+    elif estimator == "akr_circperm":
+        res = sr.gksuv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.1010588
+        assert np.isclose(res, expected)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_gksmv(estimator, backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
+
+    # undefined estimator
+    with pytest.raises(ValueError):
+        est = "undefined_estimator"
+        sr.gksmv_ensemble(obs, fct, estimator=est, backend=backend)
 
     res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
 
@@ -68,8 +92,8 @@ def test_gksmv(estimator, backend):
     elif backend == "jax":
         assert "jax" in res.__module__
 
+    # approx zero when perfect forecast
     if estimator == "nrg":
-        # approx zero when perfect forecast
         perfect_fct = (
             np.expand_dims(obs, axis=-2)
             + np.random.randn(N, ENSEMBLE_SIZE, N_VARS) * 0.00001
@@ -78,23 +102,38 @@ def test_gksmv(estimator, backend):
         res = np.asarray(res)
         assert not np.any(res - 0.0 > 0.0001)
 
-        # test correctness
-        obs = np.array([11.6, -23.1])
-        fct = np.array(
-            [[9.8, 8.7, 11.9, 12.1, 13.4], [-24.8, -18.5, -29.9, -18.3, -21.0]]
-        ).transpose()
-        res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
-        expected = 0.5868737
-        assert np.isclose(res, expected)
+    # test correctness
+    obs = np.array([11.6, -23.1])
+    fct = np.array(
+        [[9.8, 8.7, 11.9, 12.1, 13.4], [-24.8, -18.5, -29.9, -18.3, -21.0]]
+    ).transpose()
 
     # test exceptions
     with pytest.raises(ValueError):
         est = "undefined_estimator"
         sr.gksmv_ensemble(obs, fct, estimator=est, backend=backend)
 
+    if estimator == "nrg":
+        res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.5868737
+        assert np.isclose(res, expected)
+    elif estimator == "fair":
+        res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.4870162
+        assert np.isclose(res, expected)
+
+    elif estimator == "akr":
+        res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.4874259
+        assert np.isclose(res, expected)
+
+    elif estimator == "akr_circperm":
+        res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
+        expected = 0.4866066
+        assert np.isclose(res, expected)
+
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_twgksuv(estimator, backend):
     if backend == "jax":
         pytest.skip("Not implemented in jax backend")
@@ -196,7 +235,6 @@ def test_twgksuv(estimator, backend):
         np.testing.assert_allclose(res, 0.0089314, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_twgksmv(backend):
     if backend == "jax":
         pytest.skip("Not implemented in jax backend")
@@ -225,7 +263,6 @@ def test_twgksmv(backend):
     np.testing.assert_allclose(res, 0.1016436, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_owgksuv(backend):
     if backend == "jax":
         pytest.skip("Not implemented in jax backend")
@@ -249,19 +286,19 @@ def test_owgksuv(backend):
 
     # no argument given
     resw = sr.owgksuv_ensemble(obs, fct, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-2)
+    np.testing.assert_allclose(res, resw, atol=1e-6)
 
     # a and b
     resw = sr.owgksuv_ensemble(
         obs, fct, a=float("-inf"), b=float("inf"), backend=backend
     )
-    np.testing.assert_allclose(res, resw, rtol=1e-2)
+    np.testing.assert_allclose(res, resw, atol=1e-6)
 
     # w_func as identity function
     resw = sr.owgksuv_ensemble(
         obs, fct, w_func=lambda x: x * 0.0 + 1.0, backend=backend
     )
-    np.testing.assert_allclose(res, resw, rtol=1e-2)
+    np.testing.assert_allclose(res, resw, atol=1e-6)
 
     # test correctness
     fct = np.array(
@@ -317,7 +354,6 @@ def test_owgksuv(backend):
     np.testing.assert_allclose(res, 0.008905213, rtol=1e-5)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_owgksmv(backend):
     if backend == "jax":
         pytest.skip("Not implemented in jax backend")
@@ -348,7 +384,6 @@ def test_owgksmv(backend):
     np.testing.assert_allclose(res, 0.1016436, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_vrgksuv(backend):
     if backend in ["jax", "torch"]:
         pytest.skip("Not implemented in torch and jax backends")
@@ -440,7 +475,6 @@ def test_vrgksuv(backend):
     np.testing.assert_allclose(res, 0.04011836, rtol=1e-6)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_vrgksmv(backend):
     if backend == "jax":
         pytest.skip("Not implemented in jax backend")

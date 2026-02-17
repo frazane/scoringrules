@@ -58,10 +58,12 @@ class TensorflowBackend(ArrayBackend):
         /,
         *,
         axis: int | tuple[int, ...] | None = None,
+        bias: bool = False,
         keepdims: bool = False,
     ) -> "Tensor":
         n = x.shape.num_elements() if axis is None else x.shape[axis]
-        resc = self.sqrt(n / (n - 1))
+        if not bias:
+            resc = self.sqrt(n / (n - 1))
         return tf.math.reduce_std(x, axis=axis, keepdims=keepdims) * resc
 
     def quantile(
@@ -318,6 +320,27 @@ class TensorflowBackend(ArrayBackend):
     def gather(self, x: "Tensor", ind: "Tensor", axis: int) -> "Tensor":
         d = len(x.shape)
         return tf.gather(x, ind, axis=axis, batch_dims=d)
+
+    def roll(self, x: "Tensor", shift: int = 1, axis: int = -1) -> "Tensor":
+        return tf.roll(x, shift=shift, axis=axis)
+
+    def inv(self, x: "Tensor") -> "Tensor":
+        return tf.linalg.inv(x)
+
+    def cov(self, x: "Tensor", rowvar: bool = True, bias: bool = False) -> "Tensor":
+        if not rowvar:
+            x = tf.transpose(x)
+        x = x - tf.reduce_mean(x, axis=1, keepdims=True)
+        correction = tf.cast(tf.shape(x)[1], x.dtype) - 1.0
+        if bias:
+            correction += 1.0
+        return tf.matmul(x, x, transpose_b=True) / correction
+
+    def det(self, x: "Tensor") -> "Tensor":
+        return tf.linalg.det(x)
+
+    def reshape(self, x: "Tensor", shape: int | tuple[int, ...]) -> "Tensor":
+        return tf.reshape(x, shape)
 
 
 if __name__ == "__main__":

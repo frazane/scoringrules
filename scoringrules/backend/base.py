@@ -50,6 +50,7 @@ class ArrayBackend(abc.ABC):
         /,
         *,
         axis: int | tuple[int, ...] | None = None,
+        bias: bool = False,
         keepdims: bool = False,
     ) -> "Array":
         """Calculate the standard deviation of the input array ``x``."""
@@ -312,3 +313,23 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def gather(self, x: "Array", ind: "Array", axis: int) -> "Array":
         """Reorder an array ``x`` depending on a template ``ind`` across an axis ``axis``."""
+
+    @abc.abstractmethod
+    def roll(self, x: "Array", shift: int = 1, axis: int = -1) -> int:
+        """Roll elements of an array along a given axis."""
+
+    @abc.abstractmethod
+    def inv(self, x: "Array") -> "Array":
+        """Return the inverse of a matrix."""
+
+    @abc.abstractmethod
+    def cov(self, x: "Array", rowvar: bool, bias: bool) -> "Array":
+        """Return the covariance matrix from a sample."""
+
+    @abc.abstractmethod
+    def det(self, x: "Array") -> "Array":
+        """Return the determinant of a matrix."""
+
+    @abc.abstractmethod
+    def reshape(self, x: "Array", shape: int | tuple[int, ...]) -> "Array":
+        """Reshape an array to a new ``shape``."""

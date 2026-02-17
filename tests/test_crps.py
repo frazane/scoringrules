@@ -3,8 +3,6 @@ import pytest
 import scipy.stats as st
 import scoringrules as sr
 
-from .conftest import BACKENDS
-
 ENSEMBLE_SIZE = 11
 N = 20
 
@@ -12,7 +10,6 @@ ESTIMATORS = ["nrg", "fair", "pwm", "int", "qd", "akr", "akr_circperm"]
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_ensemble(estimator, backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.3
@@ -55,7 +52,6 @@ def test_crps_ensemble(estimator, backend):
     assert not np.any(res - 0.0 > 0.0001)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_ensemble_corr(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.3
@@ -106,7 +102,6 @@ def test_crps_ensemble_corr(backend):
     assert np.isclose(res, 0.4923673)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_quantile(backend):
     # test shapes
     obs = np.random.randn(N)
@@ -146,7 +141,6 @@ def test_crps_quantile(backend):
         return
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_beta(backend):
     if backend == "torch":
         pytest.skip("Not implemented in torch backend")
@@ -196,7 +190,6 @@ def test_crps_beta(backend):
     assert np.allclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_binomial(backend):
     if backend == "torch":
         pytest.skip("Not implemented in torch backend")
@@ -229,7 +222,6 @@ def test_crps_binomial(backend):
     assert np.isclose(s, np.array([0.6685115, 0.6685115])).all()
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_exponential(backend):
     # TODO: add and test exception handling
 
@@ -240,7 +232,6 @@ def test_crps_exponential(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_exponentialM(backend):
     obs, mass, location, scale = 0.3, 0.1, 0.0, 1.0
     res = sr.crps_exponentialM(obs, location, scale, mass, backend=backend)
@@ -258,7 +249,6 @@ def test_crps_exponentialM(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_2pexponential(backend):
     obs, scale1, scale2, location = 0.3, 0.1, 4.3, 0.0
     res = sr.crps_2pexponential(obs, scale1, scale2, location, backend=backend)
@@ -271,7 +261,6 @@ def test_crps_2pexponential(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_gamma(backend):
     obs, shape, rate = 0.2, 1.1, 0.7
     expected = 0.6343718
@@ -291,7 +280,31 @@ def test_crps_gamma(backend):
         return
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
+def test_crps_csg0(backend):
+    obs, shape, rate, shift = 0.7, 0.5, 2.0, 0.3
+    expected = 0.5411044
+
+    expected_gamma = sr.crps_gamma(obs, shape, rate, backend=backend)
+    res_gamma = sr.crps_csg0(obs, shape=shape, rate=rate, shift=0.0, backend=backend)
+    assert np.isclose(res_gamma, expected_gamma)
+
+    res = sr.crps_csg0(obs, shape=shape, rate=rate, shift=shift, backend=backend)
+    assert np.isclose(res, expected)
+
+    res = sr.crps_csg0(obs, shape=shape, scale=1.0 / rate, shift=shift, backend=backend)
+    assert np.isclose(res, expected)
+
+    with pytest.raises(ValueError):
+        sr.crps_csg0(
+            obs, shape=shape, rate=rate, scale=1.0 / rate, shift=shift, backend=backend
+        )
+        return
+
+    with pytest.raises(ValueError):
+        sr.crps_csg0(obs, shape=shape, shift=shift, backend=backend)
+        return
+
+
 def test_crps_gev(backend):
     if backend == "torch":
         pytest.skip("`expi` not implemented in torch backend")
@@ -336,7 +349,6 @@ def test_crps_gev(backend):
     )
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_gpd(backend):
     assert np.isclose(sr.crps_gpd(0.3, 0.9, backend=backend), 0.6849332)
     assert np.isclose(sr.crps_gpd(-0.3, 0.9, backend=backend), 1.209091)
@@ -355,7 +367,6 @@ def test_crps_gpd(backend):
     )
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_gtclogis(backend):
     obs, location, scale, lower, upper, lmass, umass = (
         1.8,
@@ -383,7 +394,6 @@ def test_crps_gtclogis(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_tlogis(backend):
     obs, location, scale, lower, upper = 4.9, 3.5, 2.3, 0.0, 20.0
     expected = 0.7658979
@@ -396,7 +406,6 @@ def test_crps_tlogis(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_clogis(backend):
     obs, location, scale, lower, upper = -0.9, 0.4, 1.1, 0.0, 1.0
     expected = 1.13237
@@ -409,7 +418,6 @@ def test_crps_clogis(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_gtcnormal(backend):
     obs, location, scale, lower, upper, lmass, umass = (
         0.9,
@@ -437,7 +445,6 @@ def test_crps_gtcnormal(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_tnormal(backend):
     obs, location, scale, lower, upper = -1.0, 2.9, 2.2, 1.5, 17.3
     expected = 3.982434
@@ -450,7 +457,6 @@ def test_crps_tnormal(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_cnormal(backend):
     obs, location, scale, lower, upper = 1.8, 0.4, 1.1, 0.0, 2.0
     expected = 0.8296078
@@ -463,7 +469,6 @@ def test_crps_cnormal(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_gtct(backend):
     if backend in ["jax", "torch", "tensorflow"]:
         pytest.skip("Not implemented in jax, torch or tensorflow backends")
@@ -494,7 +499,6 @@ def test_crps_gtct(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_tt(backend):
     if backend in ["jax", "torch", "tensorflow"]:
         pytest.skip("Not implemented in jax, torch or tensorflow backends")
@@ -510,7 +514,6 @@ def test_crps_tt(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_ct(backend):
     if backend in ["jax", "torch", "tensorflow"]:
         pytest.skip("Not implemented in jax, torch or tensorflow backends")
@@ -526,7 +529,6 @@ def test_crps_ct(backend):
     assert np.isclose(res, res0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_hypergeometric(backend):
     if backend == "torch":
         pytest.skip("Currently not working in torch backend")
@@ -545,7 +547,6 @@ def test_crps_hypergeometric(backend):
     assert np.isclose(sr.crps_hypergeometric(5, 7, 13, 12), 0.4469742)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_laplace(backend):
     assert np.isclose(sr.crps_laplace(-3, backend=backend), 2.29978707)
     assert np.isclose(
@@ -556,7 +557,6 @@ def test_crps_laplace(backend):
     )
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_logis(backend):
     obs, mu, sigma = 17.1, 13.8, 3.3
     expected = 2.067527
@@ -569,12 +569,10 @@ def test_crps_logis(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_loglaplace(backend):
     assert np.isclose(sr.crps_loglaplace(3.0, 0.1, 0.9, backend=backend), 1.16202051)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_loglogistic(backend):
     if backend == "torch":
         pytest.skip("Not implemented in torch backend")
@@ -586,7 +584,6 @@ def test_crps_loglogistic(backend):
     )
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_lognormal(backend):
     obs = np.exp(np.random.randn(N))
     mulog = np.log(obs) + np.random.randn(N) * 0.1
@@ -607,7 +604,6 @@ def test_crps_lognormal(backend):
     assert not np.any(res - 0.0 > 0.0001)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_mixnorm(backend):
     obs, m, s, w = 0.3, [0.0, -2.9, 0.9], [0.5, 1.4, 0.7], [1 / 3, 1 / 3, 1 / 3]
     res = sr.crps_mixnorm(obs, m, s, w, backend=backend)
@@ -633,7 +629,6 @@ def test_crps_mixnorm(backend):
     assert np.allclose(res1, res2)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_negbinom(backend):
     if backend in ["jax", "torch", "tensorflow"]:
         pytest.skip("Not implemented in jax, torch or tensorflow backends")
@@ -664,7 +659,6 @@ def test_crps_negbinom(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_normal(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -686,7 +680,6 @@ def test_crps_normal(backend):
     assert not np.any(res - 0.0 > 0.0001)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_2pnormal(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
@@ -699,7 +692,6 @@ def test_crps_2pnormal(backend):
     assert not np.any(res < 0.0)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_poisson(backend):
     obs, mean = 1.0, 3.0
     res = sr.crps_poisson(obs, mean, backend=backend)
@@ -717,7 +709,6 @@ def test_crps_poisson(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_t(backend):
     if backend in ["jax", "torch", "tensorflow"]:
         pytest.skip("Not implemented in jax, torch or tensorflow backends")
@@ -733,7 +724,6 @@ def test_crps_t(backend):
     assert np.isclose(res, expected)
 
 
-@pytest.mark.parametrize("backend", BACKENDS)
 def test_crps_uniform(backend):
     obs, min, max, lmass, umass = 0.3, -1.0, 2.1, 0.3, 0.1
     res = sr.crps_uniform(obs, min, max, lmass, umass, backend=backend)

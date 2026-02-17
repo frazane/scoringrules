@@ -45,7 +45,10 @@ def lazy_gufunc_wrapper_uv(func):
     def wrapper(*args):
         out = np.empty_like(args[0])
         func(*args, out)
-        return out
+        if out.shape == ():
+            return out.item()
+        else:
+            return out
 
     return wrapper
 
@@ -62,6 +65,9 @@ def lazy_gufunc_wrapper_mv(func):
     def wrapper(*args):
         out = np.empty_like(args[0][..., 0])
         func(*args, out)
-        return out
+        if out.shape == ():
+            return out.item()
+        else:
+            return out
 
     return wrapper
