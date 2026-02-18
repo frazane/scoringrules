@@ -26,10 +26,11 @@ def ensemble_w(
         out = _crps_ensemble_akr_w(obs, fct, ens_w, backend=backend)
     elif estimator == "akr_circperm":
         out = _crps_ensemble_akr_circperm_w(obs, fct, ens_w, backend=backend)
+    elif estimator == "int":
+        out = _crps_ensemble_int_w(obs, fct, ens_w, backend=backend)
     else:
         raise ValueError(
-            f"{estimator} can only be used with `numpy` "
-            "backend and needs `numba` to be installed"
+            f"{estimator} not a valid estimator, must be one of 'nrg', 'fair', 'pwm', 'qd', 'akr', 'akr_circperm' and 'int'."
         )
 
     return out
@@ -109,6 +110,24 @@ def _crps_ensemble_akr_circperm_w(
     ind = [(i + shift) % M for i in range(M)]
     e_2 = B.sum(B.abs(fct[..., ind] - fct) * w[..., ind], axis=-1)
     return e_1 - 0.5 * e_2
+
+
+def _crps_ensemble_int_w(
+    obs: "Array", fct: "Array", w: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS estimator based on the integral representation."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-1]
+    y_pos = B.sum((fct <= obs[..., None]) * w, axis=-1, keepdims=True)
+    fct_cdf = B.cumsum(w, axis=-1)
+    fct_cdf = B.concat((fct_cdf, y_pos), axis=-1)
+    fct_cdf = B.sort(fct_cdf, axis=-1)
+    fct_exp = B.concat((fct, obs[..., None]), axis=-1)
+    fct_exp = B.sort(fct_exp, axis=-1)
+    fct_dif = fct_exp[..., 1:] - fct_exp[..., :M]
+    obs_cdf = (obs[..., None] <= fct_exp) * 1.0
+    out = fct_dif * (fct_cdf[..., :M] - obs_cdf[..., :M]) ** 2
+    return B.sum(out, axis=-1)
 
 
 def ow_ensemble_w(

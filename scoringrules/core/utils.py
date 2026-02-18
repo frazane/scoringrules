@@ -4,9 +4,10 @@ from scoringrules.backend import backends
 
 _V_AXIS = -1
 _M_AXIS = -2
+_M_AXIS_UV = -1
 
 
-def _multivariate_shape_compatibility(obs, fct, m_axis) -> None:
+def _shape_compatibility_check(obs, fct, m_axis) -> None:
     f_shape = fct.shape
     o_shape = obs.shape
     o_shape_broadcast = o_shape[:m_axis] + (f_shape[m_axis],) + o_shape[m_axis:]
@@ -24,14 +25,133 @@ def _multivariate_shape_permute(obs, fct, m_axis, v_axis, backend=None):
     return obs, fct
 
 
+def univariate_array_check(obs, fct, m_axis, backend=None):
+    """Check and adapt the shapes of univariate forecasts and observations arrays."""
+    B = backends.active if backend is None else backends[backend]
+    obs, fct = map(B.asarray, (obs, fct))
+    m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
+    _shape_compatibility_check(obs, fct, m_axis)
+    if m_axis != _M_AXIS_UV:
+        fct = B.moveaxis(fct, m_axis, _M_AXIS_UV)
+    return obs, fct
+
+
 def multivariate_array_check(obs, fct, m_axis, v_axis, backend=None):
     """Check and adapt the shapes of multivariate forecasts and observations arrays."""
     B = backends.active if backend is None else backends[backend]
     obs, fct = map(B.asarray, (obs, fct))
     m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
     v_axis = v_axis if v_axis >= 0 else fct.ndim + v_axis
-    _multivariate_shape_compatibility(obs, fct, m_axis)
+    _shape_compatibility_check(obs, fct, m_axis)
     return _multivariate_shape_permute(obs, fct, m_axis, v_axis, backend=backend)
+
+
+def univariate_weight_check(ens_w, fct, m_axis, backend=None):
+    """Check that ensemble weights are non-negative and compatible with the (permuted) forecast array."""
+    B = backends.active if backend is None else backends[backend]
+    if ens_w is not None:
+        ens_w = B.asarray(ens_w)
+        m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
+        ens_w = B.moveaxis(ens_w, m_axis, _M_AXIS_UV)
+        if ens_w.shape != fct.shape:
+            raise ValueError(
+                f"Shape of weights {ens_w.shape} is not compatible with forecast shape {fct.shape}"
+            )
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
+    return ens_w
+
+
+def multivariate_weight_check(ens_w, fct, m_axis, backend=None):
+    """Check that ensemble weights are non-negative and compatible with the (permuted) forecast array."""
+    B = backends.active if backend is None else backends[backend]
+    if ens_w is not None:
+        ens_w = B.asarray(ens_w)
+        m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
+        ens_w = B.moveaxis(ens_w, m_axis, -1)
+        if ens_w.shape != fct.shape[:-_V_AXIS] + fct.shape[-_V_AXIS + 1 :]:
+            raise ValueError(
+                f"Shape of weights {ens_w.shape} is not compatible with forecast shape {fct.shape}"
+            )
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
+    return ens_w
+
+
+def estimator_check(estimator, gufuncs):
+    """Check that the estimator is valid for the given score."""
+    if estimator not in gufuncs:
+        raise ValueError(
+            f"{estimator} is not a valid estimator. " f"Must be one of {gufuncs.keys()}"
+        )
+
+
+def uv_weighted_score_weights(
+    obs, fct, a=float("-inf"), b=float("inf"), w_func=None, backend=None
+):
+    """Calculate weights for a weighted scoring rule corresponding to the observations
+    and ensemble members given a weight function."""
+    B = backends.active if backend is None else backends[backend]
+    if w_func is None:
+
+        def w_func(x):
+            return ((a <= x) & (x <= b)) * 1.0
+
+    obs_w, fct_w = map(w_func, (obs, fct))
+    obs_w, fct_w = map(B.asarray, (obs_w, fct_w))
+    if B.any(obs_w < 0) or B.any(fct_w < 0):
+        raise ValueError("`w_func` returns negative values")
+    return obs_w, fct_w
+
+
+def uv_weighted_score_chain(
+    obs, fct, a=float("-inf"), b=float("inf"), v_func=None, backend=None
+):
+    """Calculate transformed observations and ensemble members for threshold-weighted scoring rules given a chaining function."""
+    B = backends.active if backend is None else backends[backend]
+    if v_func is None:
+        a, b, obs, fct = map(B.asarray, (a, b, obs, fct))
+
+        def v_func(x):
+            return B.minimum(B.maximum(x, a), b)
+
+    obs, fct = map(v_func, (obs, fct))
+    return obs, fct
+
+
+def mv_weighted_score_weights(obs, fct, w_func=None, backend=None):
+    """Calculate weights for a weighted scoring rule corresponding to the observations
+    and ensemble members given a weight function."""
+    B = backends.active if backend is None else backends[backend]
+    obs_w = B.apply_along_axis(w_func, obs, -1)
+    fct_w = B.apply_along_axis(w_func, fct, -1)
+    if B.any(obs_w < 0) or B.any(fct_w < 0):
+        raise ValueError("`w_func` returns negative values")
+    return obs_w, fct_w
+
+
+def mv_weighted_score_chain(obs, fct, v_func=None):
+    """Calculate transformed observations and ensemble members for threshold-weighted scoring rules given a chaining function."""
+    obs, fct = map(v_func, (obs, fct))
+    return obs, fct
+
+
+def univariate_sort_ens(
+    fct, ens_w=None, m_axis=-1, estimator=None, sorted_ensemble=False, backend=None
+):
+    """Sort ensemble members and weights if not already sorted."""
+    B = backends.active if backend is None else backends[backend]
+    sort_ensemble = not sorted_ensemble and estimator in ["qd", "pwm", "int"]
+    if sort_ensemble:
+        ind = B.argsort(fct, axis=-1)
+        fct = B.gather(fct, ind, axis=-1)
+    if ens_w is not None:
+        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
+        if sort_ensemble:
+            ens_w = B.gather(ens_w, ind, axis=-1)
+    return fct, ens_w
 
 
 def lazy_gufunc_wrapper_uv(func):

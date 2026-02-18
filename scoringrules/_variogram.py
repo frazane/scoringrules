@@ -2,7 +2,13 @@ import typing as tp
 
 from scoringrules.backend import backends
 from scoringrules.core import variogram
-from scoringrules.core.utils import multivariate_array_check
+from scoringrules.core.utils import (
+    multivariate_array_check,
+    multivariate_weight_check,
+    estimator_check,
+    mv_weighted_score_chain,
+    mv_weighted_score_weights,
+)
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, Backend
@@ -82,35 +88,23 @@ def vs_ensemble(
 
     if w is None:
         D = fct.shape[-1]
-        w = B.zeros(obs.shape + (D,)) + 1.0
+        w = B.ones(obs.shape + (D,))
 
     if ens_w is None:
         if backend == "numba":
-            if estimator not in variogram.estimator_gufuncs:
-                raise ValueError(
-                    f"{estimator} is not a valid estimator. "
-                    f"Must be one of {variogram.estimator_gufuncs.keys()}"
-                )
+            estimator_check(estimator, variogram.estimator_gufuncs)
             return variogram.estimator_gufuncs[estimator](obs, fct, w, p)
-
-        return variogram.vs(obs, fct, w, p, estimator=estimator, backend=backend)
-
+        else:
+            return variogram.vs(obs, fct, w, p, estimator=estimator, backend=backend)
     else:
-        ens_w = B.asarray(ens_w)
-        if B.any(ens_w < 0):
-            raise ValueError("`ens_w` contains negative entries")
-        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
+        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
         if backend == "numba":
-            if estimator not in variogram.estimator_gufuncs_w:
-                raise ValueError(
-                    f"{estimator} is not a valid estimator. "
-                    f"Must be one of {variogram.estimator_gufuncs_w.keys()}"
-                )
+            estimator_check(estimator, variogram.estimator_gufuncs_w)
             return variogram.estimator_gufuncs_w[estimator](obs, fct, w, p, ens_w)
-
-        return variogram.vs_w(
-            obs, fct, w, ens_w, p, estimator=estimator, backend=backend
-        )
+        else:
+            return variogram.vs_w(
+                obs, fct, w, ens_w, p, estimator=estimator, backend=backend
+            )
 
 
 def twvs_ensemble(
@@ -186,7 +180,7 @@ def twvs_ensemble(
     >>> sr.twvs_ensemble(obs, fct, lambda x: np.maximum(x, -0.2))
     array([5.94996894, 4.72029765, 6.08947229])
     """
-    obs, fct = map(v_func, (obs, fct))
+    obs, fct = mv_weighted_score_chain(obs, fct, v_func)
     return vs_ensemble(
         obs,
         fct,
@@ -270,38 +264,27 @@ def owvs_ensemble(
     """
     B = backends.active if backend is None else backends[backend]
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-
-    obs_weights = B.apply_along_axis(w_func, obs, -1)
-    fct_weights = B.apply_along_axis(w_func, fct, -1)
+    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
 
     if w is None:
         D = fct.shape[-1]
-        w = B.zeros(obs.shape + (D,)) + 1.0
+        w = B.ones(obs.shape + (D,))
 
     if ens_w is None:
         if backend == "numba":
-            return variogram.estimator_gufuncs["ownrg"](
-                obs, fct, w, obs_weights, fct_weights, p
-            )
-
-        return variogram.owvs(
-            obs, fct, w, obs_weights, fct_weights, p=p, backend=backend
-        )
-
+            return variogram.estimator_gufuncs["ownrg"](obs, fct, w, obs_w, fct_w, p)
+        else:
+            return variogram.owvs(obs, fct, w, obs_w, fct_w, p=p, backend=backend)
     else:
-        ens_w = B.asarray(ens_w)
-        if B.any(ens_w < 0):
-            raise ValueError("`ens_w` contains negative entries")
-        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
-
+        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
         if backend == "numba":
             return variogram.estimator_gufuncs_w["ownrg"](
-                obs, fct, w, obs_weights, fct_weights, ens_w, p
+                obs, fct, w, obs_w, fct_w, ens_w, p
             )
-
-        return variogram.owvs_w(
-            obs, fct, w, obs_weights, fct_weights, ens_w=ens_w, p=p, backend=backend
-        )
+        else:
+            return variogram.owvs_w(
+                obs, fct, w, obs_w, fct_w, ens_w=ens_w, p=p, backend=backend
+            )
 
 
 def vrvs_ensemble(
@@ -376,35 +359,24 @@ def vrvs_ensemble(
     """
     B = backends.active if backend is None else backends[backend]
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-
-    obs_weights = B.apply_along_axis(w_func, obs, -1)
-    fct_weights = B.apply_along_axis(w_func, fct, -1)
+    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
 
     if w is None:
         D = fct.shape[-1]
-        w = B.zeros(obs.shape + (D,)) + 1.0
+        w = B.ones(obs.shape + (D,))
 
     if ens_w is None:
         if backend == "numba":
-            return variogram.estimator_gufuncs["vrnrg"](
-                obs, fct, w, obs_weights, fct_weights, p
-            )
-
-        return variogram.vrvs(
-            obs, fct, w, obs_weights, fct_weights, p=p, backend=backend
-        )
-
+            return variogram.estimator_gufuncs["vrnrg"](obs, fct, w, obs_w, fct_w, p)
+        else:
+            return variogram.vrvs(obs, fct, w, obs_w, fct_w, p=p, backend=backend)
     else:
-        ens_w = B.asarray(ens_w)
-        if B.any(ens_w < 0):
-            raise ValueError("`ens_w` contains negative entries")
-        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
-
+        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
         if backend == "numba":
             return variogram.estimator_gufuncs_w["vrnrg"](
-                obs, fct, w, obs_weights, fct_weights, ens_w, p
+                obs, fct, w, obs_w, fct_w, ens_w, p
             )
-
-        return variogram.vrvs_w(
-            obs, fct, w, obs_weights, fct_weights, ens_w=ens_w, p=p, backend=backend
-        )
+        else:
+            return variogram.vrvs_w(
+                obs, fct, w, obs_w, fct_w, ens_w=ens_w, p=p, backend=backend
+            )

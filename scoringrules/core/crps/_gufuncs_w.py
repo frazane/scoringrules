@@ -133,10 +133,12 @@ def _crps_ensemble_pwm_w_gufunc(
 
     for i, forecast in enumerate(fct):
         expected_diff += np.abs(forecast - obs) * w[i]
-        β_0 += forecast * w[i] * (1.0 - w[i])
+        β_0 += forecast * w[i]
         β_1 += forecast * w[i] * (w_sum[i] - w[i])
 
-    out[0] = expected_diff + β_0 - 2 * β_1
+    fair_c = 1 - np.sum(w**2)
+
+    out[0] = expected_diff + β_0 - 2 * β_1 / fair_c
 
 
 @guvectorize("(),(n),(n)->()")

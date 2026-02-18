@@ -24,11 +24,8 @@ def vs_ensemble(
     obs_diff = B.abs(B.expand_dims(obs, -2) - B.expand_dims(obs, -1)) ** p  # (... D D)
 
     if estimator == "nrg":
-        fct_diff = B.expand_dims(fct, -2) - B.expand_dims(fct, -1)  # (... M D D)
-        vfct = B.mean(B.abs(fct_diff) ** p, axis=-3)  # (... D D)
-        obs_diff = B.expand_dims(obs, -2) - B.expand_dims(obs, -1)  # (... D D)
-        vobs = B.abs(obs_diff) ** p  # (... D D)
-        out = B.sum(w * (vobs - vfct) ** 2, axis=(-2, -1))  # (...)
+        fct_diff = B.sum(fct_diff, axis=-3) / M  # (... D D)
+        out = B.sum(w * (obs_diff - fct_diff) ** 2, axis=(-2, -1))  # (...)
 
     elif estimator == "fair":
         E_1 = (fct_diff - B.expand_dims(obs_diff, axis=-3)) ** 2  # (... M D D)
