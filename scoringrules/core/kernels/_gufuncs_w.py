@@ -66,6 +66,49 @@ def _ks_ensemble_uv_w_fair_gufunc(
     out[0] = -(e_1 - e_2 / (1 - np.sum(w * w)) - 0.5 * e_3)
 
 
+@guvectorize("(),(n),(n)->()")
+def _ks_ensemble_uv_w_akr_gufunc(
+    obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
+):
+    """Approximate kernel representation estimator of the kernel score."""
+    M = fct.shape[-1]
+
+    if np.isnan(obs):
+        out[0] = np.nan
+        return
+
+    e_1 = 0
+    e_2 = 0
+    for i in range(M):
+        e_1 += _gauss_kern_uv(fct[i], obs) * w[i]
+        e_2 += _gauss_kern_uv(fct[i], fct[i - 1]) * w[i]
+    e_3 = _gauss_kern_uv(obs, obs)
+
+    out[0] = -(e_1 - 0.5 * e_2 - 0.5 * e_3)
+
+
+@guvectorize("(),(n),(n)->()")
+def _ks_ensemble_uv_w_akr_circperm_gufunc(
+    obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
+):
+    """AKR estimator of the kernel score with cyclic permutation."""
+    M = fct.shape[-1]
+
+    if np.isnan(obs):
+        out[0] = np.nan
+        return
+
+    e_1 = 0
+    e_2 = 0
+    for i in range(M):
+        sigma_i = int((i + 1 + ((M - 1) / 2)) % M)
+        e_1 += _gauss_kern_uv(fct[i], obs) * w[i]
+        e_2 += _gauss_kern_uv(fct[i], fct[sigma_i]) * w[i]
+    e_3 = _gauss_kern_uv(obs, obs)
+
+    out[0] = -(e_1 - 0.5 * e_2 - 0.5 * e_3)
+
+
 @guvectorize("(),(n),(),(n),(n)->()")
 def _owks_ensemble_uv_w_gufunc(
     obs: np.ndarray,
@@ -158,6 +201,41 @@ def _ks_ensemble_mv_w_fair_gufunc(
     out[0] = -(e_1 - e_2 / (1 - np.sum(w * w)) - 0.5 * e_3)
 
 
+@guvectorize("(d),(m,d),(m)->()")
+def _ks_ensemble_mv_w_akr_gufunc(
+    obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
+):
+    """Approximate kernel representation estimator of the multivariate kernel score."""
+    M = fct.shape[0]
+
+    e_1 = 0
+    e_2 = 0
+    for i in range(M):
+        e_1 += float(_gauss_kern_mv(fct[i], obs) * w[i])
+        e_2 += float(_gauss_kern_mv(fct[i], fct[i - 1]) * w[i])
+    e_3 = float(_gauss_kern_mv(obs, obs))
+
+    out[0] = -(e_1 - 0.5 * e_2 - 0.5 * e_3)
+
+
+@guvectorize("(d),(m,d),(m)->()")
+def _ks_ensemble_mv_w_akr_circperm_gufunc(
+    obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
+):
+    """AKR estimator of the multivariate kernel score with cyclic permutation."""
+    M = fct.shape[0]
+
+    e_1 = 0
+    e_2 = 0
+    for i in range(M):
+        sigma_i = int((i + 1 + ((M - 1) / 2)) % M)
+        e_1 += float(_gauss_kern_mv(fct[i], obs) * w[i])
+        e_2 += float(_gauss_kern_mv(fct[i], fct[sigma_i]) * w[i])
+    e_3 = float(_gauss_kern_mv(obs, obs))
+
+    out[0] = -(e_1 - 0.5 * e_2 - 0.5 * e_3)
+
+
 @guvectorize("(d),(m,d),(),(m),(m)->()")
 def _owks_ensemble_mv_w_gufunc(
     obs: np.ndarray,
@@ -212,6 +290,8 @@ def _vrks_ensemble_mv_w_gufunc(
 estimator_gufuncs_uv_w = {
     "fair": lazy_gufunc_wrapper_uv(_ks_ensemble_uv_w_fair_gufunc),
     "nrg": lazy_gufunc_wrapper_uv(_ks_ensemble_uv_w_nrg_gufunc),
+    "akr": lazy_gufunc_wrapper_uv(_ks_ensemble_uv_w_akr_gufunc),
+    "akr_circperm": lazy_gufunc_wrapper_uv(_ks_ensemble_uv_w_akr_circperm_gufunc),
     "ow": lazy_gufunc_wrapper_uv(_owks_ensemble_uv_w_gufunc),
     "vr": lazy_gufunc_wrapper_uv(_vrks_ensemble_uv_w_gufunc),
 }
@@ -219,6 +299,8 @@ estimator_gufuncs_uv_w = {
 estimator_gufuncs_mv_w = {
     "fair": lazy_gufunc_wrapper_mv(_ks_ensemble_mv_w_fair_gufunc),
     "nrg": lazy_gufunc_wrapper_mv(_ks_ensemble_mv_w_nrg_gufunc),
+    "akr": lazy_gufunc_wrapper_mv(_ks_ensemble_mv_w_akr_gufunc),
+    "akr_circperm": lazy_gufunc_wrapper_mv(_ks_ensemble_mv_w_akr_circperm_gufunc),
     "ow": lazy_gufunc_wrapper_mv(_owks_ensemble_mv_w_gufunc),
     "vr": lazy_gufunc_wrapper_mv(_vrks_ensemble_mv_w_gufunc),
 }
@@ -226,10 +308,14 @@ estimator_gufuncs_mv_w = {
 __all__ = [
     "_ks_ensemble_uv_w_fair_gufunc",
     "_ks_ensemble_uv_w_nrg_gufunc",
+    "_ks_ensemble_uv_w_akr_gufunc",
+    "_ks_ensemble_uv_w_akr_circperm_gufunc",
     "_owks_ensemble_uv_w_gufunc",
     "_vrks_ensemble_uv_w_gufunc",
     "_ks_ensemble_mv_w_fair_gufunc",
     "_ks_ensemble_mv_w_nrg_gufunc",
+    "_ks_ensemble_mv_w_akr_gufunc",
+    "_ks_ensemble_mv_w_akr_circperm_gufunc",
     "_owks_ensemble_mv_w_gufunc",
     "_vrks_ensemble_mv_w_gufunc",
 ]

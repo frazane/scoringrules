@@ -87,6 +87,11 @@ def gksuv_ensemble(
             ens_w = B.moveaxis(ens_w, m_axis, -1)
 
         if backend == "numba":
+            if estimator not in kernels.estimator_gufuncs_uv_w:
+                raise ValueError(
+                    f"{estimator} is not a valid estimator. "
+                    f"Must be one of {kernels.estimator_gufuncs_uv_w.keys()}"
+                )
             return kernels.estimator_gufuncs_uv_w[estimator](obs, fct, ens_w)
 
         return kernels.ensemble_uv_w(
@@ -479,6 +484,11 @@ def gksmv_ensemble(
             raise ValueError("`ens_w` contains negative entries")
         ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
         if backend == "numba":
+            if estimator not in kernels.estimator_gufuncs_mv_w:
+                raise ValueError(
+                    f"{estimator} is not a valid estimator. "
+                    f"Must be one of {kernels.estimator_gufuncs_mv_w.keys()}"
+                )
             return kernels.estimator_gufuncs_mv_w[estimator](obs, fct, ens_w)
 
         return kernels.ensemble_mv_w(
