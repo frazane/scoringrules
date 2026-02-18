@@ -1,28 +1,9 @@
 try:
-    from ._gufuncs import (
-        _variogram_score_nrg_gufunc,
-        _variogram_score_fair_gufunc,
-        _owvariogram_score_gufunc,
-        _vrvariogram_score_gufunc,
-    )
+    from ._gufuncs import estimator_gufuncs
+    from ._gufuncs_w import estimator_gufuncs_w
 except ImportError:
-    _variogram_score_nrg_gufunc = None
-    _variogram_score_fair_gufunc = None
-    _owvariogram_score_gufunc = None
-    _vrvariogram_score_gufunc = None
-
-try:
-    from ._gufuncs_w import (
-        _variogram_score_nrg_gufunc_w,
-        _variogram_score_fair_gufunc_w,
-        _owvariogram_score_gufunc_w,
-        _vrvariogram_score_gufunc_w,
-    )
-except ImportError:
-    _variogram_score_nrg_gufunc_w = None
-    _variogram_score_fair_gufunc_w = None
-    _owvariogram_score_gufunc_w = None
-    _vrvariogram_score_gufunc_w = None
+    estimator_gufuncs = None
+    estimator_gufuncs_w = None
 
 from ._score import owvs_ensemble as owvs
 from ._score import vs_ensemble as vs
@@ -39,12 +20,6 @@ __all__ = [
     "owvs_w",
     "vrvs",
     "vrvs_w",
-    "_variogram_score_nrg_gufunc",
-    "_variogram_score_fair_gufunc",
-    "_variogram_score_nrg_gufunc_w",
-    "_variogram_score_fair_gufunc_w",
-    "_owvariogram_score_gufunc",
-    "_owvariogram_score_gufunc_w",
-    "_vrvariogram_score_gufunc",
-    "_vrvariogram_score_gufunc_w",
+    "estimator_gufuncs",
+    "estimator_gufuncs_w",
 ]

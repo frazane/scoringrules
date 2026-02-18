@@ -12,17 +12,49 @@ def vs_ensemble_w(
     w: "Array",  # (..., D D)
     ens_w: "Array",  # (... M)
     p: float = 1,
+    estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the Variogram Score for a multivariate finite ensemble."""
     B = backends.active if backend is None else backends[backend]
-    fct_diff = B.expand_dims(fct, -2) - B.expand_dims(fct, -1)  # (... M D D)
-    vfct = B.sum(
-        B.expand_dims(ens_w, (-1, -2)) * B.abs(fct_diff) ** p, axis=-3
-    )  # (... D D)
-    obs_diff = B.expand_dims(obs, -2) - B.expand_dims(obs, -1)  # (... D D)
-    vobs = B.abs(obs_diff) ** p  # (... D D)
-    return B.sum(w * (vobs - vfct) ** 2, axis=(-2, -1))  # (...)
+
+    fct_diff = (
+        B.abs(B.expand_dims(fct, -2) - B.expand_dims(fct, -1)) ** p
+    )  # (... M D D)
+    obs_diff = B.abs(B.expand_dims(obs, -2) - B.expand_dims(obs, -1)) ** p  # (... D D)
+
+    if estimator == "nrg":
+        fct_diff = B.expand_dims(fct, -2) - B.expand_dims(fct, -1)  # (... M D D)
+        vfct = B.sum(
+            B.expand_dims(ens_w, (-1, -2)) * B.abs(fct_diff) ** p, axis=-3
+        )  # (... D D)
+        obs_diff = B.expand_dims(obs, -2) - B.expand_dims(obs, -1)  # (... D D)
+        vobs = B.abs(obs_diff) ** p  # (... D D)
+        out = B.sum(w * (vobs - vfct) ** 2, axis=(-2, -1))  # (...)
+
+    elif estimator == "fair":
+        E_1 = (fct_diff - B.expand_dims(obs_diff, axis=-3)) ** 2  # (... M D D)
+        E_1 = B.sum(E_1, axis=(-2, -1))  # (... M)
+        E_1 = B.sum(E_1 * ens_w, axis=-1)  # (...)
+
+        E_2 = (
+            B.expand_dims(fct_diff, -3) - B.expand_dims(fct_diff, -4)
+        ) ** 2  # (... M M D D)
+        E_2 = B.sum(E_2, axis=(-2, -1))  # (... M M)
+        E_2 = B.sum(
+            E_2 * B.expand_dims(ens_w, -2) * B.expand_dims(ens_w, -1), axis=(-2, -1)
+        )  # (...)
+
+        fair_c = 1 - B.sum(ens_w * ens_w, axis=-1)
+
+        out = E_1 - 0.5 * E_2 / fair_c
+
+    else:
+        raise ValueError(
+            f"For the variogram score, {estimator} must be one of 'nrg', and 'fair'."
+        )
+
+    return out
 
 
 def owvs_ensemble_w(

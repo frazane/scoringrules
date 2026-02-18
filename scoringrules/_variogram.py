@@ -86,10 +86,12 @@ def vs_ensemble(
 
     if ens_w is None:
         if backend == "numba":
-            if estimator == "nrg":
-                return variogram._variogram_score_nrg_gufunc(obs, fct, w, p)
-            elif estimator == "fair":
-                return variogram._variogram_score_fair_gufunc(obs, fct, w, p)
+            if estimator not in variogram.estimator_gufuncs:
+                raise ValueError(
+                    f"{estimator} is not a valid estimator. "
+                    f"Must be one of {variogram.estimator_gufuncs.keys()}"
+                )
+            return variogram.estimator_gufuncs[estimator](obs, fct, w, p)
 
         return variogram.vs(obs, fct, w, p, estimator=estimator, backend=backend)
 
@@ -98,12 +100,13 @@ def vs_ensemble(
         if B.any(ens_w < 0):
             raise ValueError("`ens_w` contains negative entries")
         ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
-
         if backend == "numba":
-            if estimator == "nrg":
-                return variogram._variogram_score_nrg_gufunc_w(obs, fct, w, ens_w, p)
-            elif estimator == "fair":
-                return variogram._variogram_score_fair_gufunc_w(obs, fct, w, ens_w, p)
+            if estimator not in variogram.estimator_gufuncs_w:
+                raise ValueError(
+                    f"{estimator} is not a valid estimator. "
+                    f"Must be one of {variogram.estimator_gufuncs_w.keys()}"
+                )
+            return variogram.estimator_gufuncs_w[estimator](obs, fct, w, p, ens_w)
 
         return variogram.vs_w(
             obs, fct, w, ens_w, p, estimator=estimator, backend=backend
@@ -277,7 +280,7 @@ def owvs_ensemble(
 
     if ens_w is None:
         if backend == "numba":
-            return variogram._owvariogram_score_gufunc(
+            return variogram.estimator_gufuncs["ownrg"](
                 obs, fct, w, obs_weights, fct_weights, p
             )
 
@@ -292,7 +295,7 @@ def owvs_ensemble(
         ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
 
         if backend == "numba":
-            return variogram._owvariogram_score_gufunc_w(
+            return variogram.estimator_gufuncs_w["ownrg"](
                 obs, fct, w, obs_weights, fct_weights, ens_w, p
             )
 
@@ -383,7 +386,7 @@ def vrvs_ensemble(
 
     if ens_w is None:
         if backend == "numba":
-            return variogram._vrvariogram_score_gufunc(
+            return variogram.estimator_gufuncs["vrnrg"](
                 obs, fct, w, obs_weights, fct_weights, p
             )
 
@@ -398,7 +401,7 @@ def vrvs_ensemble(
         ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
 
         if backend == "numba":
-            return variogram._vrvariogram_score_gufunc_w(
+            return variogram.estimator_gufuncs_w["vrnrg"](
                 obs, fct, w, obs_weights, fct_weights, ens_w, p
             )
 

@@ -4,7 +4,6 @@ from numba import guvectorize
 from scoringrules.core.utils import lazy_gufunc_wrapper_mv
 
 
-@lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d),(d,d),(m),()->()")
 def _variogram_score_nrg_gufunc_w(obs, fct, w, ens_w, p, out):
     M = fct.shape[-2]
@@ -19,7 +18,6 @@ def _variogram_score_nrg_gufunc_w(obs, fct, w, ens_w, p, out):
             out[0] += w[i, j] * (vobs - vfct) ** 2
 
 
-@lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d),(d,d),(m),()->()")
 def _variogram_score_fair_gufunc_w(obs, fct, w, ens_w, p, out):
     M = fct.shape[-2]
@@ -45,7 +43,6 @@ def _variogram_score_fair_gufunc_w(obs, fct, w, ens_w, p, out):
     out[0] = e_1 - 0.5 * e_2 / fair_c
 
 
-@lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d),(d,d),(),(m),(m),()->()")
 def _owvariogram_score_gufunc_w(obs, fct, w, ow, fw, ens_w, p, out):
     M = fct.shape[-2]
@@ -79,7 +76,6 @@ def _owvariogram_score_gufunc_w(obs, fct, w, ow, fw, ens_w, p, out):
     out[0] = e_1 / wbar - 0.5 * e_2 / (wbar**2)
 
 
-@lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d),(d,d),(),(m),(m),()->()")
 def _vrvariogram_score_gufunc_w(obs, fct, w, ow, fw, ens_w, p, out):
     M = fct.shape[-2]
@@ -112,3 +108,18 @@ def _vrvariogram_score_gufunc_w(obs, fct, w, ow, fw, ens_w, p, out):
             e_3_y += w[i, j] * (rho1) ** 2 * ow
 
     out[0] = e_1 - 0.5 * e_2 + (e_3_x - e_3_y) * (wbar - ow)
+
+
+estimator_gufuncs_w = {
+    "fair": lazy_gufunc_wrapper_mv(_variogram_score_fair_gufunc_w),
+    "nrg": lazy_gufunc_wrapper_mv(_variogram_score_nrg_gufunc_w),
+    "ownrg": lazy_gufunc_wrapper_mv(_owvariogram_score_gufunc_w),
+    "vrnrg": lazy_gufunc_wrapper_mv(_vrvariogram_score_gufunc_w),
+}
+
+__all__ = [
+    "_variogram_score_fair_gufunc_w",
+    "_variogram_score_nrg_gufunc_w",
+    "_owvariogram_score_gufunc_w",
+    "_vrvariogram_score_gufunc_w",
+]
