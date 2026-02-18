@@ -149,6 +149,11 @@ class JaxBackend(ArrayBackend):
     ) -> "Array":
         return jnp.zeros(shape, dtype=dtype)
 
+    def ones(
+        self, shape: int | tuple[int, ...], *, dtype: Dtype | None = None
+    ) -> "Array":
+        return jnp.ones(shape, dtype=dtype)
+
     def abs(self, x: "Array") -> "Array":
         return jnp.abs(x)
 

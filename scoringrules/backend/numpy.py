@@ -153,6 +153,11 @@ class NumpyBackend(ArrayBackend):
     ) -> "NDArray":
         return np.zeros(shape, dtype=dtype)
 
+    def ones(
+        self, shape: int | tuple[int, ...], *, dtype: Dtype | None = None
+    ) -> "NDArray":
+        return np.ones(shape, dtype=dtype)
+
     def abs(self, x: "NDArray") -> "NDArray":
         return np.abs(x)
 

@@ -168,6 +168,16 @@ class TensorflowBackend(ArrayBackend):
             dtype = DTYPE
         return tf.zeros(shape, dtype=dtype)
 
+    def ones(
+        self,
+        shape: int | tuple[int, ...],
+        *,
+        dtype: Dtype | None = None,
+    ) -> "Tensor":
+        if dtype is None:
+            dtype = DTYPE
+        return tf.ones(shape, dtype=dtype)
+
     def abs(self, x: "Tensor") -> "Tensor":
         return tf.math.abs(x)
 

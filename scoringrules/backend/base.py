@@ -161,6 +161,15 @@ class ArrayBackend(abc.ABC):
         """Return a new array having a specified ``shape`` and filled with zeros."""
 
     @abc.abstractmethod
+    def ones(
+        self,
+        shape: int | tuple[int, ...],
+        *,
+        dtype: Dtype | None = None,
+    ) -> "Array":
+        """Return a new array having a specified ``shape`` and filled with ones."""
+
+    @abc.abstractmethod
     def abs(self, x: "Array", /) -> "Array":
         """Calculate the absolute value for each element ``x_i`` of the input array ``x``."""
 

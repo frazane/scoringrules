@@ -157,6 +157,14 @@ class TorchBackend(ArrayBackend):
     ) -> "Tensor":
         return torch.zeros(shape, dtype=dtype)
 
+    def ones(
+        self,
+        shape: int | tuple[int, ...],
+        *,
+        dtype: Dtype | None = None,
+    ) -> "Tensor":
+        return torch.ones(shape, dtype=dtype)
+
     def abs(self, x: "Tensor") -> "Tensor":
         return torch.abs(x)
 
