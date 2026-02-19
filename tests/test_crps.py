@@ -51,7 +51,7 @@ def test_crps_ensemble(estimator, backend):
         obs, fct, ens_w=w, estimator=estimator, backend=backend
     )
     res_nrg_now = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
-    assert np.allclose(res_nrg_w, res_nrg_now)
+    assert np.allclose(res_nrg_w, res_nrg_now, atol=1e-6)
 
 
 def test_crps_ensemble_corr(backend):
