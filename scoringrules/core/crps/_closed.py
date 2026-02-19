@@ -35,28 +35,19 @@ def beta(
     """Compute the CRPS for the beta distribution."""
     B = backends.active if backend is None else backends[backend]
     obs, a, b, lower, upper = map(B.asarray, (obs, a, b, lower, upper))
+    a = B.where(a > 0.0, a, B.nan)
+    b = B.where(b > 0.0, b, B.nan)
+    lower = B.where(lower < upper, lower, B.nan)
 
-    if _is_scalar_value(lower, 0.0) and _is_scalar_value(upper, 1.0):
-        special_limits = False
-    else:
-        if B.any(lower >= upper):
-            raise ValueError("lower must be less than upper")
-        special_limits = True
+    obs = (obs - lower) / (upper - lower)
+    obs_std = B.minimum(B.maximum(obs, 0.0), 1.0)
 
-    if special_limits:
-        obs = (obs - lower) / (upper - lower)
-
-    I_ab = B.betainc(a, b, obs)
-    I_a1b = B.betainc(a + 1, b, obs)
-    F_ab = B.minimum(B.maximum(I_ab, 0), 1)
-    F_a1b = B.minimum(B.maximum(I_a1b, 0), 1)
+    F_ab = B.betainc(a, b, obs_std)
+    F_a1b = B.betainc(a + 1, b, obs_std)
     bet_rat = 2 * B.beta(2 * a, 2 * b) / (a * B.beta(a, b) ** 2)
     s = obs * (2 * F_ab - 1) + (a / (a + b)) * (1 - 2 * F_a1b - bet_rat)
 
-    if special_limits:
-        s = s * (upper - lower)
-
-    return s
+    return s * (upper - lower)
 
 
 def binomial(
@@ -133,26 +124,18 @@ def exponential(
 
 def exponentialM(
     obs: "ArrayLike",
-    mass: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
+    mass: "ArrayLike",
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for the standard exponential distribution with a point mass at the boundary."""
     B = backends.active if backend is None else backends[backend]
     obs, location, scale, mass = map(B.asarray, (obs, location, scale, mass))
-
-    if not _is_scalar_value(location, 0.0):
-        obs -= location
-
-    a = 1.0 if _is_scalar_value(mass, 0.0) else 1 - mass
+    obs -= location
+    a = 1.0 - mass
     s = B.abs(obs)
-
-    if _is_scalar_value(scale, 1.0):
-        s -= a * (2 * _exp_cdf(obs, 1.0, backend=backend) - 0.5 * a)
-    else:
-        s -= scale * a * (2 * _exp_cdf(obs, 1 / scale, backend=backend) - 0.5 * a)
-
+    s -= scale * a * (2 * _exp_cdf(obs, 1 / scale, backend=backend) - 0.5 * a)
     return s
 
 
@@ -291,6 +274,7 @@ def gpd(
     )
     shape = B.where(shape < 1.0, shape, B.nan)
     mass = B.where((mass >= 0.0) & (mass <= 1.0), mass, B.nan)
+    scale = B.where(scale > 0.0, scale, B.nan)
     ω = (obs - location) / scale
     F_xi = _gpd_cdf(ω, shape, backend=backend)
     s = (
@@ -561,7 +545,7 @@ def logistic(
     sigma: "ArrayLike",
     backend: "Backend" = None,
 ) -> "Array":
-    """Compute the CRPS for the normal distribution."""
+    """Compute the CRPS for the logistic distribution."""
     B = backends.active if backend is None else backends[backend]
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma
@@ -690,7 +674,7 @@ def normal(
     sigma: "ArrayLike",
     backend: "Backend" = None,
 ) -> "Array":
-    """Compute the CRPS for the logistic distribution."""
+    """Compute the CRPS for the normal distribution."""
     B = backends.active if backend is None else backends[backend]
     mu, sigma, obs = map(B.asarray, (mu, sigma, obs))
     ω = (obs - mu) / sigma

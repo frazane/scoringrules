@@ -19,7 +19,6 @@ def _energy_score_nrg_gufunc(
 ):
     """Compute the Energy Score for a finite ensemble."""
     M = fct.shape[0]
-
     e_1 = 0.0
     e_2 = 0.0
     for i in range(M):
@@ -56,7 +55,6 @@ def _energy_score_fair_gufunc(
     out[0] = e_1 / M - 0.5 / (M * (M - 1)) * e_2
 
 
-@lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d)->()")
 def _energy_score_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Compute the Energy Score for a finite ensemble using the approximate kernel representation."""
@@ -71,7 +69,6 @@ def _energy_score_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
-@lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d)->()")
 def _energy_score_akr_circperm_gufunc(
     obs: np.ndarray, fct: np.ndarray, out: np.ndarray
@@ -89,7 +86,6 @@ def _energy_score_akr_circperm_gufunc(
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
-@lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d),(),(m)->()")
 def _owenergy_score_gufunc(
     obs: np.ndarray,
@@ -113,7 +109,6 @@ def _owenergy_score_gufunc(
     out[0] = e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2)
 
 
-@lazy_gufunc_wrapper_mv
 @guvectorize("(d),(m,d),(),(m)->()")
 def _vrenergy_score_gufunc(
     obs: np.ndarray,
@@ -142,12 +137,12 @@ def _vrenergy_score_gufunc(
 
 
 estimator_gufuncs = {
-    "akr_circperm": _energy_score_akr_circperm_gufunc,
-    "akr": _energy_score_akr_gufunc,
-    "fair": _energy_score_fair_gufunc,
-    "nrg": _energy_score_nrg_gufunc,
-    "ownrg": _owenergy_score_gufunc,
-    "vrnrg": _vrenergy_score_gufunc,
+    "akr_circperm": lazy_gufunc_wrapper_mv(_energy_score_akr_circperm_gufunc),
+    "akr": lazy_gufunc_wrapper_mv(_energy_score_akr_gufunc),
+    "fair": lazy_gufunc_wrapper_mv(_energy_score_fair_gufunc),
+    "nrg": lazy_gufunc_wrapper_mv(_energy_score_nrg_gufunc),
+    "ownrg": lazy_gufunc_wrapper_mv(_owenergy_score_gufunc),
+    "vrnrg": lazy_gufunc_wrapper_mv(_vrenergy_score_gufunc),
 }
 
 __all__ = [

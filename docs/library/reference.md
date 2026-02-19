@@ -1,13 +1,33 @@
 # API reference
 
 This page provides a summary of scoringrules' API. All functions are
-available in the top-level namespace of the package and are here
-organized by category.
+available in the top-level namespace of the package and are organised here by category.
 
 ```{eval-rst}
 .. currentmodule:: scoringrules
 
-Ensemble forecasts
+Categorical forecasts
+=====================
+.. autosummary::
+    :toctree: generated
+
+    brier_score
+    rps_score
+    log_score
+    rls_score
+
+
+Consistent scoring functions
+============================
+.. autosummary::
+    :toctree: generated
+
+    quantile_score
+    interval_score
+    weighted_interval_score
+
+
+Scoring rules for ensemble (sample) forecasts
 ==================
 
 Univariate
@@ -17,14 +37,8 @@ Univariate
     :toctree: generated
 
     crps_ensemble
-    twcrps_ensemble
-    owcrps_ensemble
-    vrcrps_ensemble
+    logs_ensemble
     gksuv_ensemble
-    twgksuv_ensemble
-    owgksuv_ensemble
-    vrgksuv_ensemble
-    crps_quantile
 
     dssuv_ensemble
 
@@ -35,24 +49,44 @@ Multivariate
     :toctree: generated
 
     es_ensemble
+    vs_ensemble
+    gksmv_ensemble
+
+Weighted scoring rules
+--------------------
+
+.. autosummary::
+    :toctree: generated
+
+    twcrps_ensemble
+    owcrps_ensemble
+    vrcrps_ensemble
+
+    clogs_ensemble
+
+    twgksuv_ensemble
+    owgksuv_ensemble
+    vrgksuv_ensemble
+
     owes_ensemble
     twes_ensemble
     vres_ensemble
 
-    vs_ensemble
     owvs_ensemble
     twvs_ensemble
     vrvs_ensemble
 
-    gksmv_ensemble
     twgksmv_ensemble
     owgksmv_ensemble
     vrgksmv_ensemble
 
-    dssmv_ensemble
 
-Parametric distributions forecasts
+Scoring rules for parametric forecast distributions
 ====================================
+
+CRPS
+--------------------
+
 .. autosummary::
     :toctree: generated
 
@@ -88,6 +122,14 @@ Parametric distributions forecasts
     crps_quantile
     crps_t
     crps_uniform
+
+
+Log score
+--------------------
+
+.. autosummary::
+    :toctree: generated
+
     logs_beta
     logs_binomial
     logs_ensemble
@@ -113,25 +155,6 @@ Parametric distributions forecasts
     logs_tnormal
     logs_tt
     logs_uniform
-
-Consistent scoring functions
-============================
-.. autosummary::
-    :toctree: generated
-
-    interval_score
-    weighted_interval_score
-
-
-Categorical forecasts
-=====================
-.. autosummary::
-    :toctree: generated
-
-    brier_score
-    rps_score
-    log_score
-    rls_score
 
 
 Backends

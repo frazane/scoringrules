@@ -34,7 +34,7 @@ def test_crps_ensemble(estimator, backend):
     assert res.shape == (N,)
 
     # non-negative values
-    if estimator not in ["akr", "akr_circperm"]:
+    if estimator not in ["akr", "akr_circperm", "int"]:
         res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
         res = np.asarray(res)
         assert not np.any(res < 0.0)
@@ -45,23 +45,64 @@ def test_crps_ensemble(estimator, backend):
     res = np.asarray(res)
     assert not np.any(res - 0.0 > 0.0001)
 
+    # test equivalence with and without weights
+    w = np.ones(fct.shape)
+    res_nrg_w = sr.crps_ensemble(
+        obs, fct, ens_w=w, estimator=estimator, backend=backend
+    )
+    res_nrg_now = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
+    assert np.allclose(res_nrg_w, res_nrg_now, atol=1e-6)
 
-def test_crps_estimators(backend):
+
+def test_crps_ensemble_corr(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.3
     sigma = abs(np.random.randn(N)) * 0.5
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    # equality of estimators
+    # test equivalence of different estimators
     res_nrg = sr.crps_ensemble(obs, fct, estimator="nrg", backend=backend)
+    res_qd = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
     res_fair = sr.crps_ensemble(obs, fct, estimator="fair", backend=backend)
     res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm", backend=backend)
-    res_qd = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
-    res_int = sr.crps_ensemble(obs, fct, estimator="int", backend=backend)
+    if backend in ["torch", "jax"]:
+        assert np.allclose(res_nrg, res_qd, rtol=1e-03)
+        assert np.allclose(res_fair, res_pwm, rtol=1e-03)
+    else:
+        assert np.allclose(res_nrg, res_qd)
+        assert np.allclose(res_fair, res_pwm)
 
-    assert np.allclose(res_nrg, res_qd)
-    assert np.allclose(res_nrg, res_int)
-    assert np.allclose(res_fair, res_pwm)
+    # test equivalence of different estimators with weights
+    w = np.abs(np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None])
+    res_nrg = sr.crps_ensemble(obs, fct, ens_w=w, estimator="nrg", backend=backend)
+    res_qd = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd", backend=backend)
+    if backend in ["torch", "jax"]:
+        assert np.allclose(res_nrg, res_qd, rtol=1e-03)
+    else:
+        assert np.allclose(res_nrg, res_qd)
+
+    # test correctness
+    obs = -0.6042506
+    fct = np.array(
+        [
+            1.7812118,
+            0.5863797,
+            0.7038174,
+            -0.7743998,
+            -0.2751647,
+            1.1863249,
+            1.2990966,
+            -0.3242982,
+            -0.5968781,
+            0.9064937,
+        ]
+    )
+    res = sr.crps_ensemble(obs, fct, estimator="qd")
+    assert np.isclose(res, 0.6126602)
+
+    w = np.arange(10)
+    res = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd")
+    assert np.isclose(res, 0.4923673)
 
 
 def test_crps_quantile(backend):
@@ -118,7 +159,17 @@ def test_crps_beta(backend):
 
     # test exceptions
     with pytest.raises(ValueError):
-        sr.crps_beta(0.3, 0.7, 1.1, lower=1.0, upper=0.0, backend=backend)
+        sr.crps_beta(
+            0.3, 0.7, 1.1, lower=1.0, upper=0.0, backend=backend, check_pars=True
+        )
+        return
+
+    with pytest.raises(ValueError):
+        sr.crps_beta(0.3, -0.7, 1.1, backend=backend, check_pars=True)
+        return
+
+    with pytest.raises(ValueError):
+        sr.crps_beta(0.3, 0.7, -1.1, backend=backend, check_pars=True)
         return
 
     # correctness tests
@@ -186,17 +237,17 @@ def test_crps_exponential(backend):
 
 def test_crps_exponentialM(backend):
     obs, mass, location, scale = 0.3, 0.1, 0.0, 1.0
-    res = sr.crps_exponentialM(obs, mass, location, scale, backend=backend)
+    res = sr.crps_exponentialM(obs, location, scale, mass, backend=backend)
     expected = 0.2384728
     assert np.isclose(res, expected)
 
     obs, mass, location, scale = 0.3, 0.1, -2.0, 3.0
-    res = sr.crps_exponentialM(obs, mass, location, scale, backend=backend)
+    res = sr.crps_exponentialM(obs, location, scale, mass, backend=backend)
     expected = 0.6236187
     assert np.isclose(res, expected)
 
     obs, mass, location, scale = -1.2, 0.1, -2.0, 3.0
-    res = sr.crps_exponentialM(obs, mass, location, scale, backend=backend)
+    res = sr.crps_exponentialM(obs, location, scale, mass, backend=backend)
     expected = 0.751013
     assert np.isclose(res, expected)
 

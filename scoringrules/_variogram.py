@@ -2,7 +2,13 @@ import typing as tp
 
 from scoringrules.backend import backends
 from scoringrules.core import variogram
-from scoringrules.core.utils import multivariate_array_check
+from scoringrules.core.utils import (
+    multivariate_array_check,
+    multivariate_weight_check,
+    estimator_check,
+    mv_weighted_score_chain,
+    mv_weighted_score_weights,
+)
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, Backend
@@ -12,10 +18,12 @@ def vs_ensemble(
     obs: "Array",
     fct: "Array",
     /,
+    w: "Array" = None,
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    p: float = 0.5,
+    ens_w: "Array" = None,
+    p: float = 1.0,
     estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
@@ -24,7 +32,7 @@ def vs_ensemble(
     For a :math:`D`-variate ensemble the Variogram Score [1]_ is defined as:
 
     .. math::
-        \text{VS}_{p}(F_{ens}, \mathbf{y})= \sum_{i=1}^{d} \sum_{j=1}^{d}
+        \text{VS}_{p}(F_{ens}, \mathbf{y})= \sum_{i=1}^{d} \sum_{j=1}^{d} w_{i,j}
         \left( \frac{1}{M} \sum_{m=1}^{M} | x_{m,i} - x_{m,j} |^{p} - | y_{i} - y_{j} |^{p} \right)^{2},
 
     where :math:`\mathbf{X}` and :math:`\mathbf{X'}` are independently sampled ensembles from from :math:`F`.
@@ -37,12 +45,18 @@ def vs_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
-    p : float
-        The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
+    w : array_like
+        The weights assigned to pairs of dimensions. Must be of shape (..., D, D), where
+        D is the dimension, so that the weights are in the last two axes.
     m_axis : int
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int
         The axis corresponding to the variables dimension. Defaults to -1.
+    ens_w : array_like
+        Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
+        Default is equal weighting.
+    p : float
+        The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
     estimator : str
         The variogram score estimator to be used.
     backend: str
@@ -69,15 +83,30 @@ def vs_ensemble(
     >>> sr.vs_ensemble(obs, fct)
     array([ 8.65630139,  6.84693866, 19.52993307])
     """
+    B = backends.active if backend is None else backends[backend]
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
 
-    if backend == "numba":
-        if estimator == "nrg":
-            return variogram._variogram_score_nrg_gufunc(obs, fct, p)
-        elif estimator == "fair":
-            return variogram._variogram_score_fair_gufunc(obs, fct, p)
+    if w is None:
+        D = fct.shape[-1]
+        w = B.ones(obs.shape + (D,))
+    else:
+        w = B.asarray(w)
 
-    return variogram.vs(obs, fct, p, estimator=estimator, backend=backend)
+    if ens_w is None:
+        if backend == "numba":
+            estimator_check(estimator, variogram.estimator_gufuncs)
+            return variogram.estimator_gufuncs[estimator](obs, fct, w, p)
+        else:
+            return variogram.vs(obs, fct, w, p, estimator=estimator, backend=backend)
+    else:
+        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
+        if backend == "numba":
+            estimator_check(estimator, variogram.estimator_gufuncs_w)
+            return variogram.estimator_gufuncs_w[estimator](obs, fct, w, ens_w, p)
+        else:
+            return variogram.vs_w(
+                obs, fct, w, ens_w, p, estimator=estimator, backend=backend
+            )
 
 
 def twvs_ensemble(
@@ -85,10 +114,12 @@ def twvs_ensemble(
     fct: "Array",
     v_func: tp.Callable,
     /,
+    w: "Array" = None,
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    p: float = 0.5,
+    ens_w: "Array" = None,
+    p: float = 1.0,
     estimator: str = "nrg",
     backend: "Backend" = None,
 ) -> "Array":
@@ -110,14 +141,20 @@ def twvs_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
-    p : float
-        The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
+    w : array_like
+        The weights assigned to pairs of dimensions. Must be of shape (..., D, D), where
+        D is the dimension, so that the weights are in the last two axes.
     v_func : callable, array_like -> array_like
         Chaining function used to emphasise particular outcomes.
     m_axis : int
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int
         The axis corresponding to the variables dimension. Defaults to -1.
+    ens_w : array_like
+        Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
+        Default is equal weighting.
+    p : float
+        The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
     estimator : str
         The variogram score estimator to be used.
     backend : str
@@ -145,9 +182,17 @@ def twvs_ensemble(
     >>> sr.twvs_ensemble(obs, fct, lambda x: np.maximum(x, -0.2))
     array([5.94996894, 4.72029765, 6.08947229])
     """
-    obs, fct = map(v_func, (obs, fct))
+    obs, fct = mv_weighted_score_chain(obs, fct, v_func)
     return vs_ensemble(
-        obs, fct, m_axis, v_axis, p=p, estimator=estimator, backend=backend
+        obs,
+        fct,
+        w,
+        m_axis,
+        v_axis,
+        ens_w=ens_w,
+        p=p,
+        estimator=estimator,
+        backend=backend,
     )
 
 
@@ -156,10 +201,12 @@ def owvs_ensemble(
     fct: "Array",
     w_func: tp.Callable,
     /,
+    w: "Array" = None,
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    p: float = 0.5,
+    ens_w: "Array" = None,
+    p: float = 1.0,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Outcome-Weighted Variogram Score (owVS) for a finite multivariate ensemble.
@@ -185,14 +232,20 @@ def owvs_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
-    p : float
-        The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
+    w : array_like
+        The weights assigned to pairs of dimensions. Must be of shape (..., D, D), where
+        D is the dimension, so that the weights are in the last two axes.
     m_axis : int
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int
         The axis corresponding to the variables dimension. Defaults to -1.
+    ens_w : array_like
+        Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
+        Default is equal weighting.
+    p : float
+        The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -212,18 +265,28 @@ def owvs_ensemble(
     array([ 9.86816636,  6.75532522, 19.59353723])
     """
     B = backends.active if backend is None else backends[backend]
-
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
+    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
 
-    obs_weights = B.apply_along_axis(w_func, obs, -1)
-    fct_weights = B.apply_along_axis(w_func, fct, -1)
+    if w is None:
+        D = fct.shape[-1]
+        w = B.ones(obs.shape + (D,))
 
-    if backend == "numba":
-        return variogram._owvariogram_score_gufunc(
-            obs, fct, p, obs_weights, fct_weights
-        )
-
-    return variogram.owvs(obs, fct, obs_weights, fct_weights, p=p, backend=backend)
+    if ens_w is None:
+        if backend == "numba":
+            return variogram.estimator_gufuncs["ownrg"](obs, fct, w, obs_w, fct_w, p)
+        else:
+            return variogram.owvs(obs, fct, w, obs_w, fct_w, p=p, backend=backend)
+    else:
+        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
+        if backend == "numba":
+            return variogram.estimator_gufuncs_w["ownrg"](
+                obs, fct, w, obs_w, fct_w, ens_w, p
+            )
+        else:
+            return variogram.owvs_w(
+                obs, fct, w, obs_w, fct_w, ens_w=ens_w, p=p, backend=backend
+            )
 
 
 def vrvs_ensemble(
@@ -231,10 +294,12 @@ def vrvs_ensemble(
     fct: "Array",
     w_func: tp.Callable,
     /,
+    w: "Array" = None,
     m_axis: int = -2,
     v_axis: int = -1,
     *,
-    p: float = 0.5,
+    ens_w: "Array" = None,
+    p: float = 1.0,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Vertically Re-scaled Variogram Score (vrVS) for a finite multivariate ensemble.
@@ -262,14 +327,20 @@ def vrvs_ensemble(
     fct : array_like
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the second last axis and the variables dimension by the last axis.
-    p : float
-        The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
+    w : array_like
+        The weights assigned to pairs of dimensions. Must be of shape (..., D, D), where
+        D is the dimension, so that the weights are in the last two axes.
     m_axis : int
         The axis corresponding to the ensemble dimension. Defaults to -2.
     v_axis : int
         The axis corresponding to the variables dimension. Defaults to -1.
+    ens_w : array_like
+        Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
+        Default is equal weighting.
+    p : float
+        The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 1.0.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -289,15 +360,25 @@ def vrvs_ensemble(
     array([46.48256493, 57.90759816, 92.37153472])
     """
     B = backends.active if backend is None else backends[backend]
-
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
+    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
 
-    obs_weights = B.apply_along_axis(w_func, obs, -1)
-    fct_weights = B.apply_along_axis(w_func, fct, -1)
+    if w is None:
+        D = fct.shape[-1]
+        w = B.ones(obs.shape + (D,))
 
-    if backend == "numba":
-        return variogram._vrvariogram_score_gufunc(
-            obs, fct, p, obs_weights, fct_weights
-        )
-
-    return variogram.vrvs(obs, fct, obs_weights, fct_weights, p=p, backend=backend)
+    if ens_w is None:
+        if backend == "numba":
+            return variogram.estimator_gufuncs["vrnrg"](obs, fct, w, obs_w, fct_w, p)
+        else:
+            return variogram.vrvs(obs, fct, w, obs_w, fct_w, p=p, backend=backend)
+    else:
+        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
+        if backend == "numba":
+            return variogram.estimator_gufuncs_w["vrnrg"](
+                obs, fct, w, obs_w, fct_w, ens_w, p
+            )
+        else:
+            return variogram.vrvs_w(
+                obs, fct, w, obs_w, fct_w, ens_w=ens_w, p=p, backend=backend
+            )

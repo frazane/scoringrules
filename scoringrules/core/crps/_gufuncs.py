@@ -1,7 +1,5 @@
-import math
-
 import numpy as np
-from numba import guvectorize, njit, vectorize
+from numba import guvectorize
 
 from scoringrules.core.utils import lazy_gufunc_wrapper_uv
 
@@ -99,11 +97,9 @@ def _crps_ensemble_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
     """CRPS estimator based on the energy form."""
     obs = obs[0]
     M = fct.shape[-1]
-
     if np.isnan(obs):
         out[0] = np.nan
         return
-
     e_1 = 0
     e_2 = 0
 
@@ -137,9 +133,9 @@ def _crps_ensemble_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
     for i in range(M):
         e_1 += abs(fct[i] - obs)
         for j in range(i + 1, M):
-            e_2 += 2 * abs(fct[j] - fct[i])
+            e_2 += abs(fct[j] - fct[i])
 
-    out[0] = e_1 / M - 0.5 * e_2 / (M * (M - 1))
+    out[0] = e_1 / M - e_2 / (M * (M - 1))
 
 
 @guvectorize("(),(n)->()")
@@ -174,6 +170,7 @@ def _crps_ensemble_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
             i = M - 1
         e_1 += abs(forecast - obs)
         e_2 += abs(forecast - fct[i - 1])
+
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
@@ -202,11 +199,9 @@ def _owcrps_ensemble_nrg_gufunc(
 ):
     """Outcome-weighted CRPS estimator based on the energy form."""
     M = fct.shape[-1]
-
     if np.isnan(obs):
         out[0] = np.nan
         return
-
     e_1 = 0.0
     e_2 = 0.0
 
@@ -230,11 +225,9 @@ def _vrcrps_ensemble_nrg_gufunc(
 ):
     """Vertically re-scaled CRPS estimator based on the energy form."""
     M = fct.shape[-1]
-
     if np.isnan(obs):
         out[0] = np.nan
         return
-
     e_1 = 0.0
     e_2 = 0.0
 
@@ -250,57 +243,12 @@ def _vrcrps_ensemble_nrg_gufunc(
     out[0] = e_1 / M - 0.5 * e_2 / (M**2) + (wabs_x - wabs_y) * (wbar - ow)
 
 
-@njit(["float32(float32)", "float64(float64)"])
-def _norm_cdf(x: float) -> float:
-    """Cumulative distribution function for the standard normal distribution."""
-    out: float = (1.0 + math.erf(x / math.sqrt(2.0))) / 2.0
-    return out
-
-
-@njit(["float32(float32)", "float64(float64)"])
-def _norm_pdf(x: float) -> float:
-    """Probability density function for the standard normal distribution."""
-    out: float = (1 / math.sqrt(2 * math.pi)) * math.exp(-(x**2) / 2)
-    return out
-
-
-@njit(["float32(float32)", "float64(float64)"])
-def _logis_cdf(x: float) -> float:
-    """Cumulative distribution function for the standard logistic distribution."""
-    out: float = 1.0 / (1.0 + math.exp(-x))
-    return out
-
-
-@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
-def _crps_normal_ufunc(obs: float, mu: float, sigma: float) -> float:
-    ω = (obs - mu) / sigma
-    out: float = sigma * (ω * (2 * _norm_cdf(ω) - 1) + 2 * _norm_pdf(ω) - INV_SQRT_PI)
-    return out
-
-
-@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
-def _crps_lognormal_ufunc(obs: float, mulog: float, sigmalog: float) -> float:
-    ω = (np.log(obs) - mulog) / sigmalog
-    ex = 2 * np.exp(mulog + sigmalog**2 / 2)
-    out: float = obs * (2 * _norm_cdf(ω) - 1) - ex * (
-        _norm_cdf(ω - sigmalog) + _norm_cdf(sigmalog / np.sqrt(2)) - 1
-    )
-    return out
-
-
-@vectorize(["float32(float32, float32, float32)", "float64(float64, float64, float64)"])
-def _crps_logistic_ufunc(obs: float, mu: float, sigma: float) -> float:
-    ω = (obs - mu) / sigma
-    out: float = sigma * (ω - 2 * np.log(_logis_cdf(ω)) - 1)
-    return out
-
-
 estimator_gufuncs = {
     "akr_circperm": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_circperm_gufunc),
     "akr": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_gufunc),
     "fair": _crps_ensemble_fair_gufunc,
     "int": lazy_gufunc_wrapper_uv(_crps_ensemble_int_gufunc),
-    "nrg": lazy_gufunc_wrapper_uv(_crps_ensemble_nrg_gufunc),
+    "nrg": _crps_ensemble_nrg_gufunc,
     "pwm": lazy_gufunc_wrapper_uv(_crps_ensemble_pwm_gufunc),
     "qd": _crps_ensemble_qd_gufunc,
     "ownrg": lazy_gufunc_wrapper_uv(_owcrps_ensemble_nrg_gufunc),
@@ -315,8 +263,5 @@ __all__ = [
     "_crps_ensemble_nrg_gufunc",
     "_crps_ensemble_pwm_gufunc",
     "_crps_ensemble_qd_gufunc",
-    "_crps_normal_ufunc",
-    "_crps_lognormal_ufunc",
-    "_crps_logistic_ufunc",
     "quantile_pinball_gufunc",
 ]

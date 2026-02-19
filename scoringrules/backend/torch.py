@@ -157,6 +157,14 @@ class TorchBackend(ArrayBackend):
     ) -> "Tensor":
         return torch.zeros(shape, dtype=dtype)
 
+    def ones(
+        self,
+        shape: int | tuple[int, ...],
+        *,
+        dtype: Dtype | None = None,
+    ) -> "Tensor":
+        return torch.ones(shape, dtype=dtype)
+
     def abs(self, x: "Tensor") -> "Tensor":
         return torch.abs(x)
 
@@ -205,6 +213,17 @@ class TorchBackend(ArrayBackend):
         stable: bool = True,
     ) -> "Tensor":
         return torch.sort(x, stable=stable, dim=axis, descending=descending)[0]
+
+    def argsort(
+        self,
+        x: "Tensor",
+        /,
+        *,
+        axis: int = -1,
+        descending: bool = False,
+        stable: bool = True,
+    ) -> "Tensor":
+        return torch.argsort(x, stable=stable, dim=axis, descending=descending)
 
     def norm(self, x: "Tensor", axis: int | tuple[int, ...] | None = None) -> "Tensor":
         return torch.norm(x, dim=axis)
@@ -288,6 +307,9 @@ class TorchBackend(ArrayBackend):
             index_grids = torch.meshgrid(*ranges, indexing="ij")
             indices = torch.stack(index_grids)
         return indices
+
+    def gather(self, x: "Tensor", ind: "Tensor", axis: int) -> "Tensor":
+        return torch.gather(x, index=ind, dim=axis)
 
     def roll(self, x: "Tensor", shift: int = 1, axis: int = -1) -> "Tensor":
         return torch.roll(x, shifts=shift, dims=axis)

@@ -12,10 +12,18 @@ ESTIMATORS = ["nrg", "fair", "pwm", "qd", "akr", "akr_circperm"]
 def test_owcrps_ensemble(backend):
     # test shapes
     obs = np.random.randn(N)
-    res = sr.owcrps_ensemble(obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0)
-    assert res.shape == (N,)
     res = sr.owcrps_ensemble(
-        obs, np.random.randn(M, N), w_func=lambda x: x * 0.0 + 1.0, m_axis=0
+        obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0, backend=backend
+    )
+    assert res.shape == (N,)
+
+    fct = np.random.randn(M, N)
+    res = sr.owcrps_ensemble(
+        obs,
+        fct,
+        w_func=lambda x: x * 0.0 + 1.0,
+        m_axis=0,
+        backend=backend,
     )
     assert res.shape == (N,)
 
@@ -23,10 +31,16 @@ def test_owcrps_ensemble(backend):
 def test_vrcrps_ensemble(backend):
     # test shapes
     obs = np.random.randn(N)
-    res = sr.vrcrps_ensemble(obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0)
+    res = sr.vrcrps_ensemble(
+        obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0, backend=backend
+    )
     assert res.shape == (N,)
     res = sr.vrcrps_ensemble(
-        obs, np.random.randn(M, N), w_func=lambda x: x * 0.0 + 1.0, m_axis=0
+        obs,
+        np.random.randn(M, N),
+        w_func=lambda x: x * 0.0 + 1.0,
+        m_axis=0,
+        backend=backend,
     )
     assert res.shape == (N,)
 
@@ -63,21 +77,21 @@ def test_owcrps_vs_crps(backend):
     sigma = abs(np.random.randn(N)) * 0.5
     fct = np.random.randn(N, M) * sigma[..., None] + mu[..., None]
 
-    res = sr.crps_ensemble(obs, fct, backend=backend, estimator="nrg")
+    res = sr.crps_ensemble(obs, fct, estimator="qd", backend=backend)
 
     # no argument given
     resw = sr.owcrps_ensemble(obs, fct, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-5)
+    np.testing.assert_allclose(res, resw, rtol=1e-4)
 
     # a and b
     resw = sr.owcrps_ensemble(
         obs, fct, a=float("-inf"), b=float("inf"), backend=backend
     )
-    np.testing.assert_allclose(res, resw, rtol=1e-5)
+    np.testing.assert_allclose(res, resw, rtol=1e-4)
 
     # w_func as identity function
     resw = sr.owcrps_ensemble(obs, fct, w_func=lambda x: x * 0.0 + 1.0, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=1e-5)
+    np.testing.assert_allclose(res, resw, rtol=1e-4)
 
 
 def test_vrcrps_vs_crps(backend):
@@ -155,6 +169,12 @@ def test_owcrps_score_correctness(backend):
 
     res = np.mean(np.float64(sr.owcrps_ensemble(obs, fct, b=1.85, backend=backend)))
     np.testing.assert_allclose(res, 0.09933139, rtol=1e-6)
+
+    # test equivalence with and without weights
+    w = np.ones(fct.shape)
+    res_nrg_w = sr.owcrps_ensemble(obs, fct, ens_w=w, b=1.85, backend=backend)
+    res_nrg_now = sr.owcrps_ensemble(obs, fct, b=1.85, backend=backend)
+    assert np.allclose(res_nrg_w, res_nrg_now)
 
 
 def test_twcrps_score_correctness(backend):

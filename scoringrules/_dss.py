@@ -1,8 +1,7 @@
 import typing as tp
 
-from scoringrules.backend import backends
 from scoringrules.core import dss
-from scoringrules.core.utils import multivariate_array_check
+from scoringrules.core.utils import multivariate_array_check, univariate_array_check
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, Backend
@@ -46,16 +45,12 @@ def dssuv_ensemble(
     score: Array
         The computed Dawid-Sebastiani Score.
     """
-    B = backends.active if backend is None else backends[backend]
-    obs, fct = map(B.asarray, (obs, fct))
-
-    if m_axis != -1:
-        fct = B.moveaxis(fct, m_axis, -1)
+    obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
 
     if backend == "numba":
         return dss._dss_uv_gufunc(obs, fct, bias)
-
-    return dss.ds_score_uv(obs, fct, bias, backend=backend)
+    else:
+        return dss.ds_score_uv(obs, fct, bias, backend=backend)
 
 
 def dssmv_ensemble(
@@ -104,5 +99,5 @@ def dssmv_ensemble(
 
     if backend == "numba":
         return dss._dss_mv_gufunc(obs, fct, bias)
-
-    return dss.ds_score_mv(obs, fct, bias, backend=backend)
+    else:
+        return dss.ds_score_mv(obs, fct, bias, backend=backend)

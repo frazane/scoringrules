@@ -1,15 +1,15 @@
 import typing as tp
 
-from scoringrules.backend import backends
 from scoringrules.core import error_spread
+from scoringrules.core.utils import univariate_array_check
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
 
 
 def error_spread_score(
-    observations: "ArrayLike",
-    forecasts: "Array",
+    obs: "ArrayLike",
+    fct: "Array",
     /,
     m_axis: int = -1,
     *,
@@ -19,9 +19,9 @@ def error_spread_score(
 
     Parameters
     ----------
-    observations: ArrayLike
+    obs: ArrayLike
         The observed values.
-    forecasts: Array
+    fct: Array
         The predicted forecast ensemble, where the ensemble dimension is by default
         represented by the last axis.
     m_axis: int
@@ -34,13 +34,9 @@ def error_spread_score(
     - Array
         An array of error spread scores for each ensemble forecast, which should be averaged to get meaningful values.
     """
-    B = backends.active if backend is None else backends[backend]
-    observations, forecasts = map(B.asarray, (observations, forecasts))
+    obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
 
-    if m_axis != -1:
-        forecasts = B.moveaxis(forecasts, m_axis, -1)
-
-    if B.name == "numba":
-        return error_spread._ess_gufunc(observations, forecasts)
-
-    return error_spread.ess(observations, forecasts, backend=backend)
+    if backend == "numba":
+        return error_spread._ess_gufunc(obs, fct)
+    else:
+        return error_spread.ess(obs, fct, backend=backend)
