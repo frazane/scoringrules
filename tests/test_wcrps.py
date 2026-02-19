@@ -16,9 +16,11 @@ def test_owcrps_ensemble(backend):
         obs, np.random.randn(N, M), w_func=lambda x: x * 0.0 + 1.0, backend=backend
     )
     assert res.shape == (N,)
+
+    fct = np.random.randn(M, N)
     res = sr.owcrps_ensemble(
         obs,
-        np.random.randn(M, N),
+        fct,
         w_func=lambda x: x * 0.0 + 1.0,
         m_axis=0,
         backend=backend,
@@ -167,6 +169,12 @@ def test_owcrps_score_correctness(backend):
 
     res = np.mean(np.float64(sr.owcrps_ensemble(obs, fct, b=1.85, backend=backend)))
     np.testing.assert_allclose(res, 0.09933139, rtol=1e-6)
+
+    # test equivalence with and without weights
+    w = np.ones(fct.shape)
+    res_nrg_w = sr.owcrps_ensemble(obs, fct, ens_w=w, b=1.85, backend=backend)
+    res_nrg_now = sr.owcrps_ensemble(obs, fct, b=1.85, backend=backend)
+    assert np.allclose(res_nrg_w, res_nrg_now)
 
 
 def test_twcrps_score_correctness(backend):

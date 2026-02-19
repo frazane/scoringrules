@@ -58,6 +58,8 @@ def categorical_array_check(obs, fct, k_axis, onehot, backend=None):
             raise ValueError(
                 f"Forecasts shape {fct.shape} and observations shape {obs.shape} are not compatible for broadcasting!"
             )
+        categories = B.arange(1, fct.shape[-1] + 1)
+        obs = B.where(B.expand_dims(obs, -1) == categories, 1, 0)
     return obs, fct
 
 
@@ -105,8 +107,9 @@ def multivariate_weight_check(ens_w, fct, m_axis, backend=None):
     if ens_w is not None:
         ens_w = B.asarray(ens_w)
         m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
+        v_axis_pos = _V_AXIS if _V_AXIS > 0 else _V_AXIS + fct.ndim
         ens_w = B.moveaxis(ens_w, m_axis, -1)
-        if ens_w.shape != fct.shape[:-_V_AXIS] + fct.shape[-_V_AXIS + 1 :]:
+        if ens_w.shape != fct.shape[:v_axis_pos] + fct.shape[(v_axis_pos + 1) :]:
             raise ValueError(
                 f"Shape of weights {ens_w.shape} is not compatible with forecast shape {fct.shape}"
             )

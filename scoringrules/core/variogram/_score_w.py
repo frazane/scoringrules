@@ -31,13 +31,13 @@ def vs_ensemble_w(
 
     elif estimator == "fair":
         E_1 = (fct_diff - B.expand_dims(obs_diff, axis=-3)) ** 2  # (... M D D)
-        E_1 = B.sum(E_1, axis=(-2, -1))  # (... M)
+        E_1 = B.sum(B.expand_dims(w, axis=-3) * E_1, axis=(-2, -1))  # (... M)
         E_1 = B.sum(E_1 * ens_w, axis=-1)  # (...)
 
         E_2 = (
             B.expand_dims(fct_diff, -3) - B.expand_dims(fct_diff, -4)
         ) ** 2  # (... M M D D)
-        E_2 = B.sum(E_2, axis=(-2, -1))  # (... M M)
+        E_2 = B.sum(B.expand_dims(w, (-3, -4)) * E_2, axis=(-2, -1))  # (... M M)
         E_2 = B.sum(
             E_2 * B.expand_dims(ens_w, -2) * B.expand_dims(ens_w, -1), axis=(-2, -1)
         )  # (...)

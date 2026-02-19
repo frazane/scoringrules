@@ -89,6 +89,8 @@ def vs_ensemble(
     if w is None:
         D = fct.shape[-1]
         w = B.ones(obs.shape + (D,))
+    else:
+        w = B.asarray(w)
 
     if ens_w is None:
         if backend == "numba":
@@ -100,7 +102,7 @@ def vs_ensemble(
         ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
         if backend == "numba":
             estimator_check(estimator, variogram.estimator_gufuncs_w)
-            return variogram.estimator_gufuncs_w[estimator](obs, fct, w, p, ens_w)
+            return variogram.estimator_gufuncs_w[estimator](obs, fct, w, ens_w, p)
         else:
             return variogram.vs_w(
                 obs, fct, w, ens_w, p, estimator=estimator, backend=backend

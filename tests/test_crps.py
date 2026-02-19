@@ -45,6 +45,14 @@ def test_crps_ensemble(estimator, backend):
     res = np.asarray(res)
     assert not np.any(res - 0.0 > 0.0001)
 
+    # test equivalence with and without weights
+    w = np.ones(fct.shape)
+    res_nrg_w = sr.crps_ensemble(
+        obs, fct, ens_w=w, estimator=estimator, backend=backend
+    )
+    res_nrg_now = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
+    assert np.allclose(res_nrg_w, res_nrg_now)
+
 
 def test_crps_ensemble_corr(backend):
     obs = np.random.randn(N)
@@ -64,6 +72,7 @@ def test_crps_ensemble_corr(backend):
         assert np.allclose(res_nrg, res_qd)
         assert np.allclose(res_fair, res_pwm)
 
+    # test equivalence of different estimators with weights
     w = np.abs(np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None])
     res_nrg = sr.crps_ensemble(obs, fct, ens_w=w, estimator="nrg", backend=backend)
     res_qd = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd", backend=backend)
