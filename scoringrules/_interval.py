@@ -178,5 +178,5 @@ def weighted_interval_score(
 
     if B.name == "numba":
         return interval._weighted_interval_score_gufunc(*args)
-
-    return interval.weighted_interval_score(*args, backend=backend)
+    else:
+        return interval.weighted_interval_score(*args, backend=backend)

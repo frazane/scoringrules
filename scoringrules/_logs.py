@@ -2,6 +2,7 @@ import typing as tp
 
 from scoringrules.backend import backends
 from scoringrules.core import logarithmic
+from scoringrules.core.utils import univariate_array_check
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
@@ -51,12 +52,9 @@ def logs_ensemble(
     >>> sr.logs_ensemble(obs, pred)
     """
     B = backends.active if backend is None else backends[backend]
-    obs, fct = map(B.asarray, (obs, fct))
+    obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
 
-    if m_axis != -1:
-        fct = B.moveaxis(fct, m_axis, -1)
-
-    M = fct.shape[-1]
+    M = fct.shape[-1]  # number of ensemble members
 
     # Silverman's rule of thumb for estimating the bandwidth parameter
     if bw is None:
@@ -67,7 +65,7 @@ def logs_ensemble(
         bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
     bw = B.stack([bw] * M, axis=-1)
 
-    w = B.zeros(fct.shape) + 1 / M
+    w = B.ones(fct.shape) / M
 
     return logarithmic.mixnorm(obs, fct, bw, w, backend=backend)
 
@@ -127,12 +125,9 @@ def clogs_ensemble(
     >>> sr.clogs_ensemble(obs, pred, -1.0, 1.0)
     """
     B = backends.active if backend is None else backends[backend]
-    fct = B.asarray(fct)
+    obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
 
-    if m_axis != -1:
-        fct = B.moveaxis(fct, m_axis, -1)
-
-    M = fct.shape[-1]
+    M = fct.shape[-1]  # number of ensemble members
 
     # Silverman's rule of thumb for estimating the bandwidth parameter
     if bw is None:

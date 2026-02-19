@@ -1,7 +1,7 @@
 import typing as tp
 
-from scoringrules.backend import backends
 from scoringrules.core import brier
+from scoringrules.core.utils import binary_array_check, categorical_array_check
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
@@ -51,6 +51,7 @@ def brier_score(
     >>> sr.brier_score(1, 0.2)
     0.64000
     """
+    obs, fct = binary_array_check(obs, fct, backend=backend)
     return brier.brier_score(obs=obs, fct=fct, backend=backend)
 
 
@@ -121,15 +122,8 @@ def rps_score(
     >>> sr.rps_score(obs, fct, onehot=True)
     0.25999999999999995
     """
-    B = backends.active if backend is None else backends[backend]
-    fct = B.asarray(fct)
-
-    if k_axis != -1:
-        fct = B.moveaxis(fct, k_axis, -1)
-        if onehot:
-            obs = B.moveaxis(obs, k_axis, -1)
-
-    return brier.rps_score(obs=obs, fct=fct, onehot=onehot, backend=backend)
+    obs, fct = categorical_array_check(obs, fct, k_axis, onehot, backend=backend)
+    return brier.rps_score(obs=obs, fct=fct, backend=backend)
 
 
 def log_score(
@@ -164,6 +158,7 @@ def log_score(
         The computed Log Score.
 
     """
+    obs, fct = binary_array_check(obs, fct, backend=backend)
     return brier.log_score(obs=obs, fct=fct, backend=backend)
 
 
@@ -173,6 +168,7 @@ def rls_score(
     /,
     k_axis: int = -1,
     *,
+    onehot: bool = False,
     backend: "Backend" = None,
 ) -> "Array":
     r"""
@@ -197,6 +193,9 @@ def rls_score(
         Forecasted probabilities between 0 and 1.
     k_axis: int
         The axis corresponding to the categories. Default is the last axis.
+    onehot: bool
+        Boolean indicating whether the observation is the category that occurs or a onehot
+        encoded vector of 0's and 1's. Default is False.
     backend : str
         The name of the backend used for computations. Defaults to 'numpy'.
 
@@ -206,12 +205,7 @@ def rls_score(
         The computed Ranked Logarithmic Score.
 
     """
-    B = backends.active if backend is None else backends[backend]
-    fct = B.asarray(fct)
-
-    if k_axis != -1:
-        fct = B.moveaxis(fct, k_axis, -1)
-
+    obs, fct = categorical_array_check(obs, fct, k_axis, onehot, backend=backend)
     return brier.rls_score(obs=obs, fct=fct, backend=backend)
 
 

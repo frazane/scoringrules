@@ -2,9 +2,11 @@ import numpy as np
 
 from scoringrules.backend import backends
 
-_V_AXIS = -1
-_M_AXIS = -2
-_M_AXIS_UV = -1
+_V_AXIS = -1  # variable index for multivariate forecasts
+_M_AXIS = -2  # ensemble index for multivariate forecasts
+_M_AXIS_UV = -1  # ensemble index for univariate forecasts
+_K_AXIS = -1  # categories index for categorical forecasts
+EPSILON = 1e-5
 
 
 def _shape_compatibility_check(obs, fct, m_axis) -> None:
@@ -22,6 +24,40 @@ def _multivariate_shape_permute(obs, fct, m_axis, v_axis, backend=None):
     v_axis_obs = v_axis - 1 if m_axis < v_axis else v_axis
     fct = B.moveaxis(fct, (m_axis, v_axis), (_M_AXIS, _V_AXIS))
     obs = B.moveaxis(obs, v_axis_obs, _V_AXIS)
+    return obs, fct
+
+
+def binary_array_check(obs, fct, backend=None):
+    """Check and adapt the shapes of binary forecasts and observations arrays."""
+    B = backends.active if backend is None else backends[backend]
+    obs, fct = map(B.asarray, (obs, fct))
+    if B.any(fct < 0.0) or B.any(fct > 1.0 + EPSILON):
+        raise ValueError("Forecasted probabilities must be within 0 and 1.")
+    if not set(v.item() for v in B.unique_values(obs)) <= {0, 1}:
+        raise ValueError("Observations must be 0, 1, or NaN.")
+    return obs, fct
+
+
+def categorical_array_check(obs, fct, k_axis, onehot, backend=None):
+    """Check and adapt the shapes of categorical forecasts and observations arrays."""
+    B = backends.active if backend is None else backends[backend]
+    obs, fct = map(B.asarray, (obs, fct))
+    if B.any(fct < 0.0) or B.any(fct > 1.0 + EPSILON):
+        raise ValueError("Forecasted probabilities must be within 0 and 1.")
+    if k_axis != -1:
+        fct = B.moveaxis(fct, k_axis, _K_AXIS)
+        if onehot:
+            obs = B.moveaxis(obs, k_axis, _K_AXIS)
+    if onehot:
+        if obs.shape != fct.shape:
+            raise ValueError(
+                f"Forecasts shape {fct.shape} and observations shape {obs.shape} are not compatible for broadcasting!"
+            )
+    else:
+        if obs.shape != fct.shape[:-1]:
+            raise ValueError(
+                f"Forecasts shape {fct.shape} and observations shape {obs.shape} are not compatible for broadcasting!"
+            )
     return obs, fct
 
 
