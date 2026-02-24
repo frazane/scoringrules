@@ -10,7 +10,6 @@ if tp.TYPE_CHECKING:
 def error_spread_score(
     observations: "ArrayLike",
     forecasts: "Array",
-    /,
     m_axis: int = -1,
     *,
     backend: "Backend" = None,

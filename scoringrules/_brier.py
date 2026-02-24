@@ -10,7 +10,6 @@ if tp.TYPE_CHECKING:
 def brier_score(
     obs: "ArrayLike",
     fct: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "Array":
@@ -45,7 +44,6 @@ def brier_score(
 def rps_score(
     obs: "ArrayLike",
     fct: "ArrayLike",
-    /,
     k_axis: int = -1,
     *,
     backend: "Backend" = None,
@@ -93,7 +91,6 @@ def rps_score(
 def log_score(
     obs: "ArrayLike",
     fct: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "Array":
@@ -128,7 +125,6 @@ def log_score(
 def rls_score(
     obs: "ArrayLike",
     fct: "ArrayLike",
-    /,
     k_axis: int = -1,
     *,
     backend: "Backend" = None,
