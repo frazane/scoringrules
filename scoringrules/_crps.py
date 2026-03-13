@@ -10,7 +10,6 @@ if tp.TYPE_CHECKING:
 def crps_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     m_axis: int = -1,
     *,
     sorted_ensemble: bool = False,
@@ -124,7 +123,6 @@ def crps_ensemble(
 def twcrps_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     a: float = float("-inf"),
     b: float = float("inf"),
     m_axis: int = -1,
@@ -225,7 +223,6 @@ def twcrps_ensemble(
 def owcrps_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     a: float = float("-inf"),
     b: float = float("inf"),
     m_axis: int = -1,
@@ -327,7 +324,6 @@ def owcrps_ensemble(
 def vrcrps_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     a: float = float("-inf"),
     b: float = float("inf"),
     m_axis: int = -1,
@@ -427,7 +423,6 @@ def crps_quantile(
     obs: "ArrayLike",
     fct: "Array",
     alpha: "Array",
-    /,
     m_axis: int = -1,
     *,
     backend: "Backend" = None,

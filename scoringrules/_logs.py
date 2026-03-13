@@ -10,7 +10,6 @@ if tp.TYPE_CHECKING:
 def logs_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     m_axis: int = -1,
     *,
     bw: "ArrayLike" = None,
@@ -75,7 +74,6 @@ def logs_ensemble(
 def clogs_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     a: "ArrayLike" = float("-inf"),
     b: "ArrayLike" = float("inf"),
     m_axis: int = -1,
