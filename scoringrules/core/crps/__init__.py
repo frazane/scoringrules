@@ -1,4 +1,4 @@
-from ._approx import ensemble, ow_ensemble, quantile_pinball, vr_ensemble
+from ._approx import ensemble, ow_ensemble, vr_ensemble, quantile_pinball
 from ._closed import (
     beta,
     binomial,

@@ -161,6 +161,15 @@ class ArrayBackend(abc.ABC):
         """Return a new array having a specified ``shape`` and filled with zeros."""
 
     @abc.abstractmethod
+    def ones(
+        self,
+        shape: int | tuple[int, ...],
+        *,
+        dtype: Dtype | None = None,
+    ) -> "Array":
+        """Return a new array having a specified ``shape`` and filled with ones."""
+
+    @abc.abstractmethod
     def abs(self, x: "Array", /) -> "Array":
         """Calculate the absolute value for each element ``x_i`` of the input array ``x``."""
 
@@ -201,6 +210,17 @@ class ArrayBackend(abc.ABC):
         keepdims: bool = False,
     ) -> "Array":
         """Test whether any input array element evaluates to ``True`` along a specified axis."""
+
+    @abc.abstractmethod
+    def argsort(
+        self,
+        x: "Array",
+        /,
+        *,
+        axis: int = -1,
+        descending: bool = False,
+    ) -> "Array":
+        """Return the indices of a sorted copy of an input array ``x``."""
 
     @abc.abstractmethod
     def sort(
@@ -298,6 +318,10 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def indices(self, x: "Array") -> int:
         """Return an array representing the indices of a grid."""
+
+    @abc.abstractmethod
+    def gather(self, x: "Array", ind: "Array", axis: int) -> "Array":
+        """Reorder an array ``x`` depending on a template ``ind`` across an axis ``axis``."""
 
     @abc.abstractmethod
     def roll(self, x: "Array", shift: int = 1, axis: int = -1) -> int:

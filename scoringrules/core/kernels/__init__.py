@@ -8,14 +8,11 @@ from ._approx import (
 )
 
 try:
-    from ._gufuncs import estimator_gufuncs
+    from ._gufuncs import estimator_gufuncs_uv, estimator_gufuncs_mv
 except ImportError:
-    estimator_gufuncs = None
-
-try:
-    from ._gufuncs import estimator_gufuncs_mv
-except ImportError:
+    estimator_gufuncs_uv = None
     estimator_gufuncs_mv = None
+
 
 __all__ = [
     "ensemble_uv",

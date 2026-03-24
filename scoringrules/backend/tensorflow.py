@@ -168,6 +168,16 @@ class TensorflowBackend(ArrayBackend):
             dtype = DTYPE
         return tf.zeros(shape, dtype=dtype)
 
+    def ones(
+        self,
+        shape: int | tuple[int, ...],
+        *,
+        dtype: Dtype | None = None,
+    ) -> "Tensor":
+        if dtype is None:
+            dtype = DTYPE
+        return tf.ones(shape, dtype=dtype)
+
     def abs(self, x: "Tensor") -> "Tensor":
         return tf.math.abs(x)
 
@@ -215,6 +225,17 @@ class TensorflowBackend(ArrayBackend):
         if dtype is None:
             dtype = DTYPE
         return tf.cast(tf.math.reduce_all(x, axis=axis, keepdims=keepdims), dtype=dtype)
+
+    def argsort(
+        self,
+        x: "Tensor",
+        /,
+        *,
+        axis: int = -1,
+        descending: bool = False,
+    ) -> "Tensor":
+        direction = "DESCENDING" if descending else "ASCENDING"
+        return tf.argsort(x, axis=axis, direction=direction)
 
     def sort(
         self,
@@ -305,6 +326,10 @@ class TensorflowBackend(ArrayBackend):
         index_grids = tf.meshgrid(*ranges, indexing="ij")
         indices = tf.stack(index_grids)
         return indices
+
+    def gather(self, x: "Tensor", ind: "Tensor", axis: int) -> "Tensor":
+        d = len(x.shape)
+        return tf.gather(x, ind, axis=axis, batch_dims=d)
 
     def roll(self, x: "Tensor", shift: int = 1, axis: int = -1) -> "Tensor":
         return tf.roll(x, shift=shift, axis=axis)

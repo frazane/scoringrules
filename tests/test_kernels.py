@@ -97,6 +97,11 @@ def test_gksmv(estimator, backend):
         [[9.8, 8.7, 11.9, 12.1, 13.4], [-24.8, -18.5, -29.9, -18.3, -21.0]]
     ).transpose()
 
+    # test exceptions
+    with pytest.raises(ValueError):
+        est = "undefined_estimator"
+        sr.gksmv_ensemble(obs, fct, estimator=est, backend=backend)
+
     if estimator == "nrg":
         res = sr.gksmv_ensemble(obs, fct, estimator=estimator, backend=backend)
         expected = 0.5868737
