@@ -10,7 +10,6 @@ if tp.TYPE_CHECKING:
 def dssuv_ensemble(
     obs: "Array",
     fct: "Array",
-    /,
     m_axis: int = -1,
     *,
     bias: bool = False,
@@ -55,7 +54,6 @@ def dssuv_ensemble(
 def dssmv_ensemble(
     obs: "Array",
     fct: "Array",
-    /,
     m_axis: int = -2,
     v_axis: int = -1,
     *,

@@ -17,7 +17,6 @@ if tp.TYPE_CHECKING:
 def crps_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     m_axis: int = -1,
     *,
     sorted_ensemble: bool = False,
@@ -115,7 +114,6 @@ def crps_ensemble(
 def twcrps_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     a: float = float("-inf"),
     b: float = float("inf"),
     m_axis: int = -1,
@@ -211,7 +209,6 @@ def twcrps_ensemble(
 def owcrps_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     a: float = float("-inf"),
     b: float = float("inf"),
     m_axis: int = -1,
@@ -300,7 +297,6 @@ def owcrps_ensemble(
 def vrcrps_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     a: float = float("-inf"),
     b: float = float("inf"),
     m_axis: int = -1,
@@ -387,7 +383,6 @@ def vrcrps_ensemble(
 def crps_quantile(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     alpha: "Array",
     m_axis: int = -1,
     *,
@@ -458,7 +453,6 @@ def crps_beta(
     obs: "ArrayLike",
     a: "ArrayLike",
     b: "ArrayLike",
-    /,
     lower: "ArrayLike" = 0.0,
     upper: "ArrayLike" = 1.0,
     *,
@@ -522,7 +516,6 @@ def crps_binomial(
     obs: "ArrayLike",
     n: "ArrayLike",
     prob: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -572,7 +565,6 @@ def crps_binomial(
 def crps_exponential(
     obs: "ArrayLike",
     rate: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -620,7 +612,6 @@ def crps_exponential(
 
 def crps_exponentialM(
     obs: "ArrayLike",
-    /,
     mass: "ArrayLike" = 0.0,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
@@ -686,7 +677,6 @@ def crps_2pexponential(
     scale1: "ArrayLike",
     scale2: "ArrayLike",
     location: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -740,7 +730,6 @@ def crps_2pexponential(
 def crps_gamma(
     obs: "ArrayLike",
     shape: "ArrayLike",
-    /,
     rate: "ArrayLike | None" = None,
     *,
     scale: "ArrayLike | None" = None,
@@ -810,7 +799,6 @@ def crps_gamma(
 
 def crps_csg0(
     obs: "ArrayLike",
-    /,
     shape: "ArrayLike",
     rate: "ArrayLike | None" = None,
     *,
@@ -888,7 +876,6 @@ def crps_csg0(
 def crps_gev(
     obs: "ArrayLike",
     shape: "ArrayLike",
-    /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     *,
@@ -983,7 +970,6 @@ def crps_gev(
 def crps_gpd(
     obs: "ArrayLike",
     shape: "ArrayLike",
-    /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     mass: "ArrayLike" = 0.0,
@@ -1047,7 +1033,6 @@ def crps_gtclogistic(
     obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
-    /,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     lmass: "ArrayLike" = 0.0,
@@ -1128,7 +1113,6 @@ def crps_tlogistic(
     obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
-    /,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
@@ -1172,7 +1156,6 @@ def crps_clogistic(
     obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
-    /,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
@@ -1225,7 +1208,6 @@ def crps_gtcnormal(
     obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
-    /,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     lmass: "ArrayLike" = 0.0,
@@ -1281,7 +1263,6 @@ def crps_tnormal(
     obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
-    /,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
@@ -1323,7 +1304,6 @@ def crps_cnormal(
     obs: "ArrayLike",
     location: "ArrayLike",
     scale: "ArrayLike",
-    /,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
@@ -1375,7 +1355,6 @@ def crps_cnormal(
 def crps_gtct(
     obs: "ArrayLike",
     df: "ArrayLike",
-    /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
@@ -1463,7 +1442,6 @@ def crps_gtct(
 def crps_tt(
     obs: "ArrayLike",
     df: "ArrayLike",
-    /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
@@ -1518,7 +1496,6 @@ def crps_tt(
 def crps_ct(
     obs: "ArrayLike",
     df: "ArrayLike",
-    /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
@@ -1577,7 +1554,6 @@ def crps_hypergeometric(
     m: "ArrayLike",
     n: "ArrayLike",
     k: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -1629,7 +1605,6 @@ def crps_hypergeometric(
 
 def crps_laplace(
     obs: "ArrayLike",
-    /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     *,
@@ -1682,7 +1657,6 @@ def crps_logistic(
     obs: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -1900,7 +1874,6 @@ def crps_mixnorm(
     obs: "ArrayLike",
     m: "ArrayLike",
     s: "ArrayLike",
-    /,
     w: "ArrayLike" = None,
     m_axis: "ArrayLike" = -1,
     *,
@@ -1969,7 +1942,6 @@ def crps_mixnorm(
 def crps_negbinom(
     obs: "ArrayLike",
     n: "ArrayLike",
-    /,
     prob: "ArrayLike | None" = None,
     *,
     mu: "ArrayLike | None" = None,
@@ -2034,7 +2006,6 @@ def crps_normal(
     obs: "ArrayLike",
     mu: "ArrayLike",
     sigma: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -2082,7 +2053,6 @@ def crps_2pnormal(
     scale1: "ArrayLike",
     scale2: "ArrayLike",
     location: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -2152,7 +2122,6 @@ def crps_2pnormal(
 def crps_poisson(
     obs: "ArrayLike",
     mean: "ArrayLike",
-    /,
     *,
     backend: "Backend" = None,
 ) -> "ArrayLike":
@@ -2198,7 +2167,6 @@ def crps_poisson(
 def crps_t(
     obs: "ArrayLike",
     df: "ArrayLike",
-    /,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
     *,
@@ -2255,7 +2223,6 @@ def crps_uniform(
     obs: "ArrayLike",
     min: "ArrayLike",
     max: "ArrayLike",
-    /,
     lmass: "ArrayLike" = 0.0,
     umass: "ArrayLike" = 0.0,
     *,

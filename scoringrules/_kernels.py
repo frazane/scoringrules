@@ -17,7 +17,6 @@ if tp.TYPE_CHECKING:
 def gksuv_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     m_axis: int = -1,
     *,
     estimator: str = "nrg",
@@ -74,7 +73,6 @@ def gksuv_ensemble(
 def twgksuv_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     a: float = float("-inf"),
     b: float = float("inf"),
     m_axis: int = -1,
@@ -150,7 +148,6 @@ def twgksuv_ensemble(
 def owgksuv_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     a: float = float("-inf"),
     b: float = float("inf"),
     m_axis: int = -1,
@@ -222,7 +219,6 @@ def owgksuv_ensemble(
 def vrgksuv_ensemble(
     obs: "ArrayLike",
     fct: "Array",
-    /,
     a: float = float("-inf"),
     b: float = float("inf"),
     m_axis: int = -1,
@@ -293,7 +289,6 @@ def vrgksuv_ensemble(
 def gksmv_ensemble(
     obs: "Array",
     fct: "Array",
-    /,
     m_axis: int = -2,
     v_axis: int = -1,
     *,
@@ -353,7 +348,6 @@ def twgksmv_ensemble(
     obs: "Array",
     fct: "Array",
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"],
-    /,
     m_axis: int = -2,
     v_axis: int = -1,
     *,
@@ -410,7 +404,6 @@ def owgksmv_ensemble(
     obs: "Array",
     fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
-    /,
     m_axis: int = -2,
     v_axis: int = -1,
     *,
@@ -481,7 +474,6 @@ def vrgksmv_ensemble(
     obs: "Array",
     fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
-    /,
     *,
     m_axis: int = -2,
     v_axis: int = -1,

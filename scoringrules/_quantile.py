@@ -10,6 +10,7 @@ def quantile_score(
     obs: "ArrayLike",
     fct: "ArrayLike",
     alpha: "ArrayLike",
+    *,
     backend: "Backend | None" = None,
 ) -> "Array":
     r"""Compute the quantile score for a given quantile level.
