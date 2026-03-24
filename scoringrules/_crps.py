@@ -657,9 +657,9 @@ def crps_exponential(
 
 def crps_exponentialM(
     obs: "ArrayLike",
-    mass: "ArrayLike" = 0.0,
     location: "ArrayLike" = 0.0,
     scale: "ArrayLike" = 1.0,
+    mass: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -715,7 +715,7 @@ def crps_exponentialM(
     Examples
     --------
     >>> import scoringrules as sr
-    >>> sr.crps_exponentialM(0.4, 0.2, 0.0, 1.0)
+    >>> sr.crps_exponentialM(0.4, 0.0, 1.0, 0.2)
     0.19251207365702294
     """
     if check_pars:
