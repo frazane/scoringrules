@@ -222,7 +222,7 @@ def logs_binomial(
     obs : array_like
         The observed values.
     n : array_like
-        Size parameter of the forecast binomial distribution as an integer or array of integers.
+        Size parameter of the forecast binomial distribution as an integer or array of positive integers.
     prob : array_like
         Probability parameter of the forecast binomial distribution as a float or array of floats.
     backend : str
@@ -246,6 +246,14 @@ def logs_binomial(
         prob = B.asarray(prob)
         if B.any(prob < 0) or B.any(prob > 1):
             raise ValueError("`prob` contains values outside the range [0, 1].")
+        if B.any(n <= 0):
+            raise ValueError(
+                "`n` contains non-positive entries. The size parameter of the binomial distribution must be positive."
+            )
+        if not B.all_integer(n):
+            raise ValueError(
+                "`n` contains non-integer entries. The size parameter of the binomial distribution must be an integer."
+            )
     return logarithmic.binomial(obs, n, prob, backend=backend)
 
 
@@ -596,7 +604,36 @@ def logs_hypergeometric(
     >>> import scoringrules as sr
     >>> sr.logs_hypergeometric(5, 7, 13, 12)
     """
-    # TODO: add check that m,n,k are integers
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        if B.any(m < 0):
+            raise ValueError(
+                "`m` contains negative entries. The number of successes in the hypergeometric distribution must be non-negative."
+            )
+        if B.any(n < 0):
+            raise ValueError(
+                "`n` contains negative entries. The number of failures in the hypergeometric distribution must be non-negative."
+            )
+        if B.any(k < 0):
+            raise ValueError(
+                "`k` contains negative entries. The number of draws in the hypergeometric distribution must be non-negative."
+            )
+        if B.any(k > m + n):
+            raise ValueError(
+                "`k` contains values larger than `m + n`. The number of draws in the hypergeometric distribution must be between the number of successes and failures."
+            )
+        if not B.all_integer(m):
+            raise ValueError(
+                "`m` contains non-integer entries. The number of successes in the hypergeometric distribution must be an integer."
+            )
+        if not B.all_integer(n):
+            raise ValueError(
+                "`n` contains non-integer entries. The number of failures in the hypergeometric distribution must be an integer."
+            )
+        if not B.all_integer(k):
+            raise ValueError(
+                "`k` contains non-integer entries. The number of draws in the hypergeometric distribution must be an integer."
+            )
     return logarithmic.hypergeometric(obs, m, n, k, backend=backend)
 
 
@@ -949,14 +986,29 @@ def logs_negbinom(
             "Either `prob` or `mu` must be provided, but not both or neither."
         )
 
-    if prob is None:
-        prob = n / (n + mu)
-
     if check_pars:
         B = backends.active if backend is None else backends[backend]
-        prob = B.asarray(prob)
-        if B.any(prob < 0) or B.any(prob > 1):
-            raise ValueError("`prob` contains values outside the range [0, 1].")
+        if prob is not None:
+            prob = B.asarray(prob)
+            if B.any(prob < 0) or B.any(prob > 1):
+                raise ValueError("`prob` contains values outside the range [0, 1].")
+        else:
+            mu = B.asarray(mu)
+            if B.any(mu < 0):
+                raise ValueError(
+                    "`mu` contains negative values. The mean of the negative binomial distribution must be non-negative."
+                )
+        if B.any(n <= 0):
+            raise ValueError(
+                "`n` contains non-positive entries. The size parameter of the negative binomial distribution must be positive."
+            )
+        if not B.all_integer(n):
+            raise ValueError(
+                "`n` contains non-integer entries. The size parameter of the negative binomial distribution must be an integer."
+            )
+
+    if prob is None:
+        prob = n / (n + mu)
 
     return logarithmic.negbinom(obs, n, prob, backend=backend)
 

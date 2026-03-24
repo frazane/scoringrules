@@ -352,6 +352,9 @@ class TensorflowBackend(ArrayBackend):
     def reshape(self, x: "Tensor", shape: int | tuple[int, ...]) -> "Tensor":
         return tf.reshape(x, shape)
 
+    def all_integer(self, x: "Tensor") -> bool:
+        return tf.reduce_all(tf.math.mod(x, 1) == 0).numpy().item()
+
 
 if __name__ == "__main__":
     B = TensorflowBackend()

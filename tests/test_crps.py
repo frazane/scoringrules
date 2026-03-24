@@ -583,12 +583,12 @@ def test_crps_mixnorm(backend):
 
 
 def test_crps_negbinom(backend):
-    if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in jax, torch or tensorflow backends")
-
     # test exceptions
     with pytest.raises(ValueError):
         sr.crps_negbinom(0.3, 7.0, 0.8, mu=7.3, backend=backend)
+
+    if backend in ["jax", "torch", "tensorflow"]:
+        pytest.skip("Not implemented in jax, torch or tensorflow backends")
 
     # test correctness
     obs, n, prob = 2.0, 7.0, 0.8
