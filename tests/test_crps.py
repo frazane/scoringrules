@@ -122,6 +122,14 @@ def test_crps_beta(backend):
             0.3, 0.7, 1.1, lower=1.0, upper=0.0, backend=backend, check_pars=True
         )
 
+    with pytest.raises(ValueError):
+        sr.crps_beta(0.3, -0.7, 1.1, backend=backend, check_pars=True)
+        return
+
+    with pytest.raises(ValueError):
+        sr.crps_beta(0.3, 0.7, -1.1, backend=backend, check_pars=True)
+        return
+
     # correctness tests
     res = sr.crps_beta(0.3, 0.7, 1.1, backend=backend)
     expected = 0.0850102437
@@ -187,17 +195,17 @@ def test_crps_exponential(backend):
 
 def test_crps_exponentialM(backend):
     obs, mass, location, scale = 0.3, 0.1, 0.0, 1.0
-    res = sr.crps_exponentialM(obs, mass, location, scale, backend=backend)
+    res = sr.crps_exponentialM(obs, location, scale, mass, backend=backend)
     expected = 0.2384728
     assert np.isclose(res, expected)
 
     obs, mass, location, scale = 0.3, 0.1, -2.0, 3.0
-    res = sr.crps_exponentialM(obs, mass, location, scale, backend=backend)
+    res = sr.crps_exponentialM(obs, location, scale, mass, backend=backend)
     expected = 0.6236187
     assert np.isclose(res, expected)
 
     obs, mass, location, scale = -1.2, 0.1, -2.0, 3.0
-    res = sr.crps_exponentialM(obs, mass, location, scale, backend=backend)
+    res = sr.crps_exponentialM(obs, location, scale, mass, backend=backend)
     expected = 0.751013
     assert np.isclose(res, expected)
 
