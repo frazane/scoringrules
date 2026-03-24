@@ -118,8 +118,9 @@ def test_crps_beta(backend):
 
     # test exceptions
     with pytest.raises(ValueError):
-        sr.crps_beta(0.3, 0.7, 1.1, lower=1.0, upper=0.0, backend=backend)
-        return
+        sr.crps_beta(
+            0.3, 0.7, 1.1, lower=1.0, upper=0.0, backend=backend, check_pars=True
+        )
 
     # correctness tests
     res = sr.crps_beta(0.3, 0.7, 1.1, backend=backend)

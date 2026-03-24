@@ -34,6 +34,47 @@ def ensemble(
     return out
 
 
+def _crps_ensemble_akr(
+    obs: "Array", fct: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS estimator based on the approximate kernel representation."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-1]
+    e_1 = B.sum(B.abs(obs[..., None] - fct), axis=-1) / M
+    e_2 = B.sum(B.abs(fct - B.roll(fct, shift=1, axis=-1)), -1) / M
+    return e_1 - 0.5 * e_2
+
+
+def _crps_ensemble_akr_circperm(
+    obs: "Array", fct: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS estimator based on the AKR with cyclic permutation."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-1]
+    e_1 = B.sum(B.abs(obs[..., None] - fct), axis=-1) / M
+    shift = M // 2
+    e_2 = B.sum(B.abs(fct - B.roll(fct, shift=shift, axis=-1)), -1) / M
+    return e_1 - 0.5 * e_2
+
+
+def _crps_ensemble_int(
+    obs: "Array", fct: "Array", backend: "Backend" = None
+) -> "Array":
+    """CRPS estimator based on the integral representation."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-1]
+    y_pos = B.mean((fct <= obs[..., None]) * 1.0, axis=-1, keepdims=True)
+    fct_cdf = B.zeros(fct.shape) + B.arange(1, M + 1) / M
+    fct_cdf = B.concat((fct_cdf, y_pos), axis=-1)
+    fct_cdf = B.sort(fct_cdf, axis=-1)
+    fct_exp = B.concat((fct, obs[..., None]), axis=-1)
+    fct_exp = B.sort(fct_exp, axis=-1)
+    fct_dif = fct_exp[..., 1:] - fct_exp[..., :M]
+    obs_cdf = (obs[..., None] <= fct_exp) * 1.0
+    out = fct_dif * (fct_cdf[..., :M] - obs_cdf[..., :M]) ** 2
+    return B.sum(out, axis=-1)
+
+
 def _crps_ensemble_fair(
     obs: "Array", fct: "Array", backend: "Backend" = None
 ) -> "Array":
@@ -71,29 +112,6 @@ def _crps_ensemble_pwm(
     return expected_diff + β_0 - 2.0 * β_1
 
 
-def _crps_ensemble_akr(
-    obs: "Array", fct: "Array", backend: "Backend" = None
-) -> "Array":
-    """CRPS estimator based on the approximate kernel representation."""
-    B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-1]
-    e_1 = B.sum(B.abs(obs[..., None] - fct), axis=-1) / M
-    e_2 = B.sum(B.abs(fct - B.roll(fct, shift=1, axis=-1)), -1) / M
-    return e_1 - 0.5 * e_2
-
-
-def _crps_ensemble_akr_circperm(
-    obs: "Array", fct: "Array", backend: "Backend" = None
-) -> "Array":
-    """CRPS estimator based on the AKR with cyclic permutation."""
-    B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-1]
-    e_1 = B.sum(B.abs(obs[..., None] - fct), axis=-1) / M
-    shift = M // 2
-    e_2 = B.sum(B.abs(fct - B.roll(fct, shift=shift, axis=-1)), -1) / M
-    return e_1 - 0.5 * e_2
-
-
 def _crps_ensemble_qd(obs: "Array", fct: "Array", backend: "Backend" = None) -> "Array":
     """CRPS estimator based on the quantile decomposition form."""
     B = backends.active if backend is None else backends[backend]
@@ -105,28 +123,10 @@ def _crps_ensemble_qd(obs: "Array", fct: "Array", backend: "Backend" = None) -> 
     return 2 * out
 
 
-def _crps_ensemble_int(
-    obs: "Array", fct: "Array", backend: "Backend" = None
-) -> "Array":
-    """CRPS estimator based on the integral representation."""
-    B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-1]
-    y_pos = B.mean((fct <= obs[..., None]) * 1.0, axis=-1, keepdims=True)
-    fct_cdf = B.zeros(fct.shape) + B.arange(1, M + 1) / M
-    fct_cdf = B.concat((fct_cdf, y_pos), axis=-1)
-    fct_cdf = B.sort(fct_cdf, axis=-1)
-    fct_exp = B.concat((fct, obs[..., None]), axis=-1)
-    fct_exp = B.sort(fct_exp, axis=-1)
-    fct_dif = fct_exp[..., 1:] - fct_exp[..., :M]
-    obs_cdf = (obs[..., None] <= fct_exp) * 1.0
-    out = fct_dif * (fct_cdf[..., :M] - obs_cdf[..., :M]) ** 2
-    return B.sum(out, axis=-1)
-
-
 def quantile_pinball(
     obs: "Array", fct: "Array", alpha: "Array", backend: "Backend" = None
 ) -> "Array":
-    """CRPS approximation via Pinball Loss."""
+    """CRPS estimator based on a sample of quantiles and the quantile/pinball loss."""
     B = backends.active if backend is None else backends[backend]
     below = (fct <= obs[..., None]) * alpha * (obs[..., None] - fct)
     above = (fct > obs[..., None]) * (1 - alpha) * (fct - obs[..., None])
@@ -140,16 +140,15 @@ def ow_ensemble(
     fw: "Array",
     backend: "Backend" = None,
 ) -> "Array":
-    """Outcome-Weighted CRPS estimator based on the energy form."""
+    """Outcome-weighted CRPS for an ensemble forecast."""
     B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-1]
     wbar = B.mean(fw, axis=-1)
-    e_1 = B.sum(B.abs(obs[..., None] - fct) * fw, axis=-1) * ow / (M * wbar)
-    e_2 = B.sum(
+    e_1 = B.mean(B.abs(obs[..., None] - fct) * fw, axis=-1) * ow / wbar
+    e_2 = B.mean(
         B.abs(fct[..., None] - fct[..., None, :]) * fw[..., None] * fw[..., None, :],
         axis=(-1, -2),
     )
-    e_2 *= ow / (M**2 * wbar**2)
+    e_2 *= ow / (wbar**2)
     return e_1 - 0.5 * e_2
 
 
@@ -160,15 +159,14 @@ def vr_ensemble(
     fw: "Array",
     backend: "Backend" = None,
 ) -> "Array":
-    """Vertically Re-scaled CRPS estimator based on the energy form."""
+    """Vertically re-scaled CRPS for an ensemble forecast."""
     B = backends.active if backend is None else backends[backend]
-    M: int = fct.shape[-1]
-    e_1 = B.sum(B.abs(obs[..., None] - fct) * fw, axis=-1) * ow / M
-    e_2 = B.sum(
+    e_1 = B.mean(B.abs(obs[..., None] - fct) * fw, axis=-1) * ow
+    e_2 = B.mean(
         B.abs(B.expand_dims(fct, axis=-1) - B.expand_dims(fct, axis=-2))
         * (B.expand_dims(fw, axis=-1) * B.expand_dims(fw, axis=-2)),
         axis=(-1, -2),
-    ) / (M**2)
+    )
     e_3 = B.mean(B.abs(fct) * fw, axis=-1) - B.abs(obs) * ow
     e_3 *= B.mean(fw, axis=1) - ow
     return e_1 - 0.5 * e_2 + e_3
