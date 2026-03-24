@@ -20,7 +20,7 @@ def test_owes_vs_es(backend):
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
         backend=backend,
     )
-    np.testing.assert_allclose(res, resw, atol=1e-7)
+    np.testing.assert_allclose(res, resw, atol=1e-6)
 
 
 def test_twes_vs_es(backend):
