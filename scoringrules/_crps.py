@@ -920,11 +920,11 @@ def crps_csg0(
     rate : array_like, optional
         Rate parameter of the forecast CSG distribution.
         Either ``rate`` or ``scale`` must be provided.
+    shift : array_like
+        Shift parameter of the forecast CSG distribution.
     scale : array_like, optional
         Scale parameter of the forecast CSG distribution, where ``scale = 1 / rate``.
         Either ``rate`` or ``scale`` must be provided.
-    shift : array_like
-        Shift parameter of the forecast CSG distribution.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
     check_pars: bool
@@ -1255,10 +1255,13 @@ def crps_gtclogistic(
             raise ValueError("`lmass` contains entries outside the range [0, 1].")
         if B.any(umass < 0) or B.any(umass > 1):
             raise ValueError("`umass` contains entries outside the range [0, 1].")
-        if B.any(umass + lmass >= 1):
-            raise ValueError("The sum of `umass` and `lmass` should be smaller than 1.")
+        if B.any(umass + lmass > 1):
+            raise ValueError(
+                "The sum of `umass` and `lmass` should be no larger than 1."
+            )
         if B.any(lower >= upper):
             raise ValueError("`lower` is not always smaller than `upper`.")
+
     return crps.gtclogistic(
         obs,
         location,
@@ -1925,7 +1928,7 @@ def crps_hypergeometric(
             )
         if B.any(k > m + n):
             raise ValueError(
-                "`k` contains values larger than `m + n`. The number of draws in the hypergeometric distribution must be between the number of successes and failures."
+                "`k` contains values larger than `m + n`. The number of draws in the hypergeometric distribution must be larger than the total number of successes and failures."
             )
         if not B.all_integer(m):
             raise ValueError(
@@ -2005,8 +2008,8 @@ def crps_laplace(
 
 def crps_logistic(
     obs: "ArrayLike",
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -2025,9 +2028,9 @@ def crps_logistic(
     ----------
     obs : array_like
         Observed values.
-    mu: array_like
+    location: array_like
         Location parameter of the forecast logistic distribution.
-    sigma: array_like
+    scale: array_like
         Scale parameter of the forecast logistic distribution.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
@@ -2055,12 +2058,12 @@ def crps_logistic(
     """
     if check_pars:
         B = backends.active if backend is None else backends[backend]
-        sigma = B.asarray(sigma)
-        if B.any(sigma <= 0):
+        scale = B.asarray(scale)
+        if B.any(scale <= 0):
             raise ValueError(
-                "`sigma` contains non-positive entries. The scale parameter of the logistic distribution must be positive."
+                "`scale` contains non-positive entries. The scale parameter of the logistic distribution must be positive."
             )
-    return crps.logistic(obs, mu, sigma, backend=backend)
+    return crps.logistic(obs, location, scale, backend=backend)
 
 
 def crps_loglaplace(
@@ -2136,8 +2139,8 @@ def crps_loglaplace(
 
 def crps_loglogistic(
     obs: "ArrayLike",
-    mulog: "ArrayLike",
-    sigmalog: "ArrayLike",
+    locationlog: "ArrayLike",
+    scalelog: "ArrayLike",
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -2167,9 +2170,9 @@ def crps_loglogistic(
     ----------
     obs : array_like
         The observed values.
-    mulog : array_like
+    locationlog : array_like
         Location parameter of the log-logistic distribution.
-    sigmalog : array_like
+    scalelog : array_like
         Scale parameter of the log-logistic distribution.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
@@ -2197,12 +2200,12 @@ def crps_loglogistic(
     """
     if check_pars:
         B = backends.active if backend is None else backends[backend]
-        sigmalog = B.asarray(sigmalog)
-        if B.any(sigmalog <= 0) or B.any(sigmalog >= 1):
+        scalelog = B.asarray(scalelog)
+        if B.any(scalelog <= 0) or B.any(scalelog >= 1):
             raise ValueError(
-                "`sigmalog` contains entries outside of the range (0, 1). The scale parameter of the log-logistic distribution must be between 0 and 1."
+                "`scalelog` contains entries outside of the range (0, 1). The scale parameter of the log-logistic distribution must be between 0 and 1."
             )
-    return crps.loglogistic(obs, mulog, sigmalog, backend=backend)
+    return crps.loglogistic(obs, locationlog, scalelog, backend=backend)
 
 
 def crps_lognormal(
@@ -2330,7 +2333,7 @@ def crps_mixnorm(
 
     if w is None:
         M: int = m.shape[m_axis]
-        w = B.zeros(m.shape) + 1 / M
+        w = B.ones(m.shape) / M
     else:
         w = B.asarray(w)
         w = w / B.sum(w, axis=m_axis, keepdims=True)
@@ -2338,10 +2341,12 @@ def crps_mixnorm(
     if check_pars:
         if B.any(s <= 0):
             raise ValueError(
-                "`s` contains non-positive entries. The scale parameters of the normal distributions should be positive."
+                "`s` contains non-positive entries. The scale parameters of the normal distributions must be positive."
             )
         if B.any(w < 0):
-            raise ValueError("`w` contains negative entries")
+            raise ValueError(
+                "`w` contains negative entries. The weights of the component distributions must be non-negative."
+            )
 
     if m_axis != -1:
         m = B.moveaxis(m, m_axis, -1)
@@ -2430,10 +2435,6 @@ def crps_negbinom(
             raise ValueError(
                 "`n` contains non-positive entries. The size parameter of the negative binomial distribution must be positive."
             )
-        if not B.all_integer(n):
-            raise ValueError(
-                "`n` contains non-integer entries. The size parameter of the negative binomial distribution must be an integer."
-            )
 
     if prob is None:
         prob = n / (n + mu)
@@ -2443,8 +2444,8 @@ def crps_negbinom(
 
 def crps_normal(
     obs: "ArrayLike",
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
+    mu: "ArrayLike" = 0.0,
+    sigma: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -2502,9 +2503,9 @@ def crps_normal(
 
 def crps_2pnormal(
     obs: "ArrayLike",
-    scale1: "ArrayLike",
-    scale2: "ArrayLike",
-    location: "ArrayLike",
+    scale1: "ArrayLike" = 1.0,
+    scale2: "ArrayLike" = 1.0,
+    location: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -2719,8 +2720,8 @@ def crps_t(
 
 def crps_uniform(
     obs: "ArrayLike",
-    min: "ArrayLike",
-    max: "ArrayLike",
+    min: "ArrayLike" = 0.0,
+    max: "ArrayLike" = 1.0,
     lmass: "ArrayLike" = 0.0,
     umass: "ArrayLike" = 0.0,
     *,

@@ -302,38 +302,40 @@ def gtclogistic(
         B.asarray, (obs, location, scale, lower, upper, lmass, umass)
     )
     ω = (obs - mu) / sigma
-    u = (upper - mu) / sigma
     l = (lower - mu) / sigma
+    u = (upper - mu) / sigma
     z = B.minimum(B.maximum(ω, l), u)
+
+    u_inf = upper == float("inf")
+    l_inf = lower == float("-inf")
+    U_pos = umass > 0.0
+    L_pos = lmass > 0.0
+
     F_u = _logis_cdf(u, backend=backend)
     F_l = _logis_cdf(l, backend=backend)
     F_mu = _logis_cdf(-u, backend=backend)
     F_ml = _logis_cdf(-l, backend=backend)
     F_mz = _logis_cdf(-z, backend=backend)
 
-    u_inf = u == float("inf")
-    l_inf = l == float("-inf")
-
-    F_mu = B.where(u_inf | l_inf, B.nan, F_mu)
-    F_ml = B.where(u_inf | l_inf, B.nan, F_ml)
     u = B.where(u_inf, B.nan, u)
     l = B.where(l_inf, B.nan, l)
 
-    G_u = B.where(u_inf, 0.0, u * F_u + B.log(F_mu))
-    G_l = B.where(l_inf, 0.0, l * F_l + B.log(F_ml))
-    H_u = B.where(u_inf, 1.0, F_u - u * F_u**2 + (1 - 2 * F_u) * B.log(F_mu))
-    H_l = B.where(l_inf, 0.0, F_l - l * F_l**2 + (1 - 2 * F_l) * B.log(F_ml))
+    uU2 = B.where(~u_inf | U_pos, u * umass**2, 0.0)
+    lL2 = B.where(~l_inf | L_pos, l * lmass**2, 0.0)
+    GuU = B.where(~u_inf, (u * F_u + B.log(F_mu)) * umass, 0.0)
+    GlL = B.where(~l_inf, (l * F_l + B.log(F_ml)) * lmass, 0.0)
+    Hu = B.where(~u_inf, F_u - u * F_u**2 + (1 - 2 * F_u) * B.log(F_mu), 1.0)
+    Hl = B.where(~l_inf, F_l - l * F_l**2 + (1 - 2 * F_l) * B.log(F_ml), 0.0)
 
-    c = (1 - lmass - umass) / (F_u - F_l)
+    a1 = F_u - F_l
+    a2 = 1 - lmass - umass
 
-    s1_u = B.where(u_inf & (umass == 0.0), 0.0, u * umass**2)
-    s1_l = B.where(l_inf & (lmass == 0.0), 0.0, l * lmass**2)
-
-    s1 = B.abs(ω - z) + s1_u - s1_l
-    s2 = c * z * ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass)
-    s3 = c * (2 * B.log(F_mz) - 2 * G_u * umass - 2 * G_l * lmass)
-    s4 = c**2 * (H_u - H_l)
-    return sigma * (s1 - s2 - s3 - s4)
+    s1 = B.abs(ω - z) + uU2 - lL2
+    s2 = z * ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l)
+    s3 = 2 * (B.log(F_mz) - GuU - GlL)
+    s4 = Hu - Hl
+    s = s1 - (s2 / a1) - (s3 * a2 / a1) - (s4 * (a2 / a1) ** 2)
+    return sigma * s
 
 
 def gtcnormal(
@@ -375,17 +377,11 @@ def gtcnormal(
     c = (1 - lmass - umass) / (F_u - F_l)
 
     s1 = B.abs(ω - z) + s1_u - s1_l
-    s2 = (
-        c
-        * z
-        * (
-            2 * F_z
-            - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass)
-        )
-    )
-    s3 = c * (2 * f_z - 2 * f_u * umass - 2 * f_l * lmass)
-    s4 = c**2 * (F_u2 - F_l2) / B.sqrt(B.pi)
-    return sigma * (s1 + s2 + s3 - s4)
+    s2 = c * z * 2 * F_z
+    s3 = z * ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (F_u - F_l)
+    s4 = c * (2 * f_z - 2 * f_u * umass - 2 * f_l * lmass)
+    s5 = c**2 * (F_u2 - F_l2) / B.sqrt(B.pi)
+    return sigma * (s1 + s2 - s3 + s4 - s5)
 
 
 def gtct(
@@ -443,17 +439,11 @@ def gtct(
     c = (1 - lmass - umass) / (F_u - F_l)
 
     s1 = B.abs(ω - z) + s1_u - s1_l
-    s2 = (
-        c
-        * z
-        * (
-            2 * F_z
-            - ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (1 - lmass - umass)
-        )
-    )
-    s3 = 2 * c * (G_z - G_u * umass - G_l * lmass)
-    s4 = c**2 * Bbar * (H_u - H_l)
-    return sigma * (s1 + s2 - s3 - s4)
+    s2 = c * z * 2 * F_z
+    s3 = z * ((1 - 2 * lmass) * F_u + (1 - 2 * umass) * F_l) / (F_u - F_l)
+    s4 = 2 * c * (G_z - G_u * umass - G_l * lmass)
+    s5 = c**2 * Bbar * (H_u - H_l)
+    return sigma * (s1 + s2 - s3 - s4 - s5)
 
 
 def hypergeometric(
@@ -564,25 +554,25 @@ def loglaplace(
     obs, mulog, sigmalog = map(B.asarray, (obs, locationlog, scalelog))
     obs, mulog, sigmalog = B.broadcast_arrays(obs, mulog, sigmalog)
 
-    logx_norm = (B.log(obs) - mulog) / sigmalog
-
     cond_0 = obs <= 0.0
     cond_1 = obs < B.exp(mulog)
 
-    F_case_0 = B.asarray(cond_0, dtype=int)
-    F_case_1 = B.asarray(~cond_0 & cond_1, dtype=int)
+    obs_pos = B.where(cond_0, B.nan, obs)
+    logx_norm = (B.log(obs_pos) - mulog) / sigmalog
+
+    F_case_1 = B.asarray(cond_1 & ~cond_0, dtype=int)
     F_case_2 = B.asarray(~cond_1, dtype=int)
-    F = (
-        F_case_0 * 0.0
-        + F_case_1 * (0.5 * B.exp(logx_norm))
-        + F_case_2 * (1 - 0.5 * B.exp(-logx_norm))
+    F = B.where(
+        obs <= 0.0,
+        0.0,
+        F_case_1 * (0.5 * B.exp(logx_norm)) + F_case_2 * (1 - 0.5 * B.exp(-logx_norm)),
     )
 
-    A_case_0 = B.asarray(cond_1, dtype=int)
-    A_case_1 = B.asarray(~cond_1, dtype=int)
-    A = A_case_0 * 1 / (1 + sigmalog) * (
-        1 - (2 * F) ** (1 + sigmalog)
-    ) + A_case_1 * -1 / (1 - sigmalog) * (1 - (2 * (1 - F)) ** (1 - sigmalog))
+    A = B.where(
+        cond_1,
+        1 / (1 + sigmalog) * (1 - (2 * F) ** (1 + sigmalog)),
+        -1 / (1 - sigmalog) * (1 - (2 * (1 - F)) ** (1 - sigmalog)),
+    )
 
     s = obs * (2 * F - 1) + B.exp(mulog) * (A + sigmalog / (4 - sigmalog**2))
     return s
@@ -597,7 +587,9 @@ def loglogistic(
     """Compute the CRPS for the log-logistic distribution."""
     B = backends.active if backend is None else backends[backend]
     mulog, sigmalog, obs = map(B.asarray, (mulog, sigmalog, obs))
-    F_ms = 1 / (1 + B.exp(-(B.log(obs) - mulog) / sigmalog))
+    cond_0 = obs <= 0.0
+    obs_pos = B.where(cond_0, B.nan, obs)
+    F_ms = B.where(cond_0, 0, 1 / (1 + B.exp(-(B.log(obs_pos) - mulog) / sigmalog)))
     b = B.beta(1 + sigmalog, 1 - sigmalog)
     I_B = B.betainc(1 + sigmalog, 1 - sigmalog, F_ms)
     s = obs * (2 * F_ms - 1) - B.exp(mulog) * b * (2 * I_B + sigmalog - 1)
@@ -613,13 +605,15 @@ def lognormal(
     """Compute the CRPS for the lognormal distribution."""
     B = backends.active if backend is None else backends[backend]
     mulog, sigmalog, obs = map(B.asarray, (mulog, sigmalog, obs))
-    ω = (B.log(obs) - mulog) / sigmalog
+    cond_0 = obs <= 0.0
+    obs_pos = B.where(cond_0, B.nan, obs)
+    F_s = _norm_cdf(sigmalog / B.sqrt(B.asarray(2.0)), backend=backend)
+    w_ms = (B.log(obs_pos) - mulog) / sigmalog
+    F_ms = B.where(cond_0, 0, _norm_cdf(w_ms, backend=backend))
+    w_mss = (B.log(obs_pos) - mulog - sigmalog**2) / sigmalog
+    F_mss = B.where(cond_0, 0, _norm_cdf(w_mss, backend=backend))
     ex = 2 * B.exp(mulog + sigmalog**2 / 2)
-    return obs * (2.0 * _norm_cdf(ω, backend=backend) - 1) - ex * (
-        _norm_cdf(ω - sigmalog, backend=backend)
-        + _norm_cdf(sigmalog / B.sqrt(B.asarray(2.0)), backend=backend)
-        - 1
-    )
+    return obs * (2.0 * F_ms - 1) - ex * (F_mss + F_s - 1)
 
 
 def mixnorm(
