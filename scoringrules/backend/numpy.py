@@ -153,6 +153,11 @@ class NumpyBackend(ArrayBackend):
     ) -> "NDArray":
         return np.zeros(shape, dtype=dtype)
 
+    def ones(
+        self, shape: int | tuple[int, ...], *, dtype: Dtype | None = None
+    ) -> "NDArray":
+        return np.ones(shape, dtype=dtype)
+
     def abs(self, x: "NDArray") -> "NDArray":
         return np.abs(x)
 
@@ -187,6 +192,17 @@ class NumpyBackend(ArrayBackend):
         keepdims: bool = False,
     ) -> "NDArray":
         return np.all(x, axis=axis, keepdims=keepdims)
+
+    def argsort(
+        self,
+        x: "NDArray",
+        /,
+        *,
+        axis: int = -1,
+        descending: bool = False,
+    ) -> "NDArray":
+        x = -x if descending else x
+        return np.argsort(x, axis=axis)
 
     def sort(
         self,
@@ -266,6 +282,9 @@ class NumpyBackend(ArrayBackend):
 
     def indices(self, dimensions: tuple) -> "NDArray":
         return np.indices(dimensions)
+
+    def gather(self, x: "NDArray", ind: "NDArray", axis: int) -> "NDArray":
+        return np.take_along_axis(x, ind, axis=axis)
 
     def roll(self, x: "NDArray", shift: int = 1, axis: int = -1) -> "NDArray":
         return np.roll(x, shift=shift, axis=axis)

@@ -2,11 +2,14 @@ import numpy as np
 
 from scoringrules.backend import backends
 
-_V_AXIS = -1
-_M_AXIS = -2
+_V_AXIS = -1  # variable index for multivariate forecasts
+_M_AXIS = -2  # ensemble index for multivariate forecasts
+_M_AXIS_UV = -1  # ensemble index for univariate forecasts
+_K_AXIS = -1  # categories index for categorical forecasts
+EPSILON = 1e-5
 
 
-def _multivariate_shape_compatibility(obs, fct, m_axis) -> None:
+def _shape_compatibility_check(obs, fct, m_axis) -> None:
     f_shape = fct.shape
     o_shape = obs.shape
     o_shape_broadcast = o_shape[:m_axis] + (f_shape[m_axis],) + o_shape[m_axis:]
@@ -14,6 +17,53 @@ def _multivariate_shape_compatibility(obs, fct, m_axis) -> None:
         raise ValueError(
             f"Forecasts shape {f_shape} and observations shape {o_shape} are not compatible for broadcasting!"
         )
+
+
+def binary_array_check(obs, fct, backend=None):
+    """Check and adapt the shapes of binary forecasts and observations arrays."""
+    B = backends.active if backend is None else backends[backend]
+    obs, fct = map(B.asarray, (obs, fct))
+    if B.any(fct < 0.0) or B.any(fct > 1.0 + EPSILON):
+        raise ValueError("Forecasted probabilities must be within 0 and 1.")
+    if not set(v.item() for v in B.unique_values(obs)) <= {0, 1}:
+        raise ValueError("Observations must be 0, 1, or NaN.")
+    return obs, fct
+
+
+def categorical_array_check(obs, fct, k_axis, onehot, backend=None):
+    """Check and adapt the shapes of categorical forecasts and observations arrays."""
+    B = backends.active if backend is None else backends[backend]
+    obs, fct = map(B.asarray, (obs, fct))
+    if B.any(fct < 0.0) or B.any(fct > 1.0 + EPSILON):
+        raise ValueError("Forecasted probabilities must be within 0 and 1.")
+    if k_axis != -1:
+        fct = B.moveaxis(fct, k_axis, _K_AXIS)
+        if onehot:
+            obs = B.moveaxis(obs, k_axis, _K_AXIS)
+    if onehot:
+        if obs.shape != fct.shape:
+            raise ValueError(
+                f"Forecasts shape {fct.shape} and observations shape {obs.shape} are not compatible for broadcasting!"
+            )
+    else:
+        if obs.shape != fct.shape[:-1]:
+            raise ValueError(
+                f"Forecasts shape {fct.shape} and observations shape {obs.shape} are not compatible for broadcasting!"
+            )
+        categories = B.arange(1, fct.shape[-1] + 1)
+        obs = B.where(B.expand_dims(obs, -1) == categories, 1, 0)
+    return obs, fct
+
+
+def univariate_array_check(obs, fct, m_axis, backend=None):
+    """Check and adapt the shapes of univariate forecasts and observations arrays."""
+    B = backends.active if backend is None else backends[backend]
+    obs, fct = map(B.asarray, (obs, fct))
+    m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
+    _shape_compatibility_check(obs, fct, m_axis)
+    if m_axis != _M_AXIS_UV:
+        fct = B.moveaxis(fct, m_axis, _M_AXIS_UV)
+    return obs, fct
 
 
 def _multivariate_shape_permute(obs, fct, m_axis, v_axis, backend=None):
@@ -30,8 +80,79 @@ def multivariate_array_check(obs, fct, m_axis, v_axis, backend=None):
     obs, fct = map(B.asarray, (obs, fct))
     m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
     v_axis = v_axis if v_axis >= 0 else fct.ndim + v_axis
-    _multivariate_shape_compatibility(obs, fct, m_axis)
+    _shape_compatibility_check(obs, fct, m_axis)
     return _multivariate_shape_permute(obs, fct, m_axis, v_axis, backend=backend)
+
+
+def estimator_check(estimator, gufuncs):
+    """Check that the estimator is valid for the given score."""
+    if estimator not in gufuncs:
+        raise ValueError(
+            f"{estimator} is not a valid estimator. " f"Must be one of {gufuncs.keys()}"
+        )
+
+
+def uv_weighted_score_weights(
+    obs, fct, a=float("-inf"), b=float("inf"), w_func=None, backend=None
+):
+    """Calculate weights for a weighted scoring rule corresponding to the observations
+    and ensemble members given a weight function."""
+    B = backends.active if backend is None else backends[backend]
+    if w_func is None:
+
+        def w_func(x):
+            return ((a <= x) & (x <= b)) * 1.0
+
+    obs_w, fct_w = map(w_func, (obs, fct))
+    obs_w, fct_w = map(B.asarray, (obs_w, fct_w))
+    if B.any(obs_w < 0) or B.any(fct_w < 0):
+        raise ValueError("`w_func` returns negative values")
+    return obs_w, fct_w
+
+
+def uv_weighted_score_chain(
+    obs, fct, a=float("-inf"), b=float("inf"), v_func=None, backend=None
+):
+    """Calculate transformed observations and ensemble members for threshold-weighted scoring rules given a chaining function."""
+    B = backends.active if backend is None else backends[backend]
+    if v_func is None:
+        a, b, obs, fct = map(B.asarray, (a, b, obs, fct))
+
+        def v_func(x):
+            return B.minimum(B.maximum(x, a), b)
+
+    obs, fct = map(v_func, (obs, fct))
+    return obs, fct
+
+
+def mv_weighted_score_weights(obs, fct, w_func=None, backend=None):
+    """Calculate weights for a weighted scoring rule corresponding to the observations
+    and ensemble members given a weight function."""
+    B = backends.active if backend is None else backends[backend]
+    obs_w = B.apply_along_axis(w_func, obs, -1)
+    fct_w = B.apply_along_axis(w_func, fct, -1)
+    if backend == "torch":
+        obs_w = obs_w * 1.0
+        fct_w = fct_w * 1.0
+    if B.any(obs_w < 0) or B.any(fct_w < 0):
+        raise ValueError("`w_func` returns negative values")
+    return obs_w, fct_w
+
+
+def mv_weighted_score_chain(obs, fct, v_func=None):
+    """Calculate transformed observations and ensemble members for threshold-weighted scoring rules given a chaining function."""
+    obs, fct = map(v_func, (obs, fct))
+    return obs, fct
+
+
+def univariate_sort_ens(fct, estimator=None, sorted_ensemble=False, backend=None):
+    """Sort ensemble members if not already sorted."""
+    B = backends.active if backend is None else backends[backend]
+    sort_ensemble = not sorted_ensemble and estimator in ["qd", "pwm", "int"]
+    if sort_ensemble:
+        ind = B.argsort(fct, axis=-1)
+        fct = B.gather(fct, ind, axis=-1)
+    return fct
 
 
 def lazy_gufunc_wrapper_uv(func):

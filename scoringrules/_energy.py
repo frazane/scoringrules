@@ -1,8 +1,12 @@
 import typing as tp
 
-from scoringrules.backend import backends
 from scoringrules.core import energy
-from scoringrules.core.utils import multivariate_array_check
+from scoringrules.core.utils import (
+    multivariate_array_check,
+    estimator_check,
+    mv_weighted_score_chain,
+    mv_weighted_score_weights,
+)
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
@@ -61,18 +65,12 @@ def es_ensemble(
     :ref:`theory.multivariate`
         Some theoretical background on scoring rules for multivariate forecasts.
     """
-    backend = backend if backend is not None else backends._active
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-
     if backend == "numba":
-        if estimator not in energy.estimator_gufuncs:
-            raise ValueError(
-                f"{estimator} is not a valid estimator. "
-                f"Must be one of {energy.estimator_gufuncs.keys()}"
-            )
+        estimator_check(estimator, energy.estimator_gufuncs)
         return energy.estimator_gufuncs[estimator](obs, fct)
-
-    return energy.es(obs, fct, estimator=estimator, backend=backend)
+    else:
+        return energy.es(obs, fct, estimator=estimator, backend=backend)
 
 
 def twes_ensemble(
@@ -122,7 +120,7 @@ def twes_ensemble(
     twes_ensemble : array_like
         The computed Threshold-Weighted Energy Score.
     """
-    obs, fct = map(v_func, (obs, fct))
+    obs, fct = mv_weighted_score_chain(obs, fct, v_func)
     return es_ensemble(
         obs, fct, m_axis=m_axis, v_axis=v_axis, estimator=estimator, backend=backend
     )
@@ -175,17 +173,12 @@ def owes_ensemble(
     owes_ensemble : array_like
         The computed Outcome-Weighted Energy Score.
     """
-    B = backends.active if backend is None else backends[backend]
-
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-
-    fct_weights = B.apply_along_axis(w_func, fct, -1)
-    obs_weights = B.apply_along_axis(w_func, obs, -1)
-
-    if B.name == "numba":
-        return energy.estimator_gufuncs["ownrg"](obs, fct, obs_weights, fct_weights)
-
-    return energy.owes(obs, fct, obs_weights, fct_weights, backend=backend)
+    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
+    if backend == "numba":
+        return energy.estimator_gufuncs["ownrg"](obs, fct, obs_w, fct_w)
+    else:
+        return energy.owes(obs, fct, obs_w, fct_w, backend=backend)
 
 
 def vres_ensemble(
@@ -236,14 +229,9 @@ def vres_ensemble(
     vres_ensemble : array_like
         The computed Vertically Re-scaled Energy Score.
     """
-    B = backends.active if backend is None else backends[backend]
-
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-
-    fct_weights = B.apply_along_axis(w_func, fct, -1)
-    obs_weights = B.apply_along_axis(w_func, obs, -1)
-
+    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
     if backend == "numba":
-        return energy.estimator_gufuncs["vrnrg"](obs, fct, obs_weights, fct_weights)
-
-    return energy.vres(obs, fct, obs_weights, fct_weights, backend=backend)
+        return energy.estimator_gufuncs["vrnrg"](obs, fct, obs_w, fct_w)
+    else:
+        return energy.vres(obs, fct, obs_w, fct_w, backend=backend)
