@@ -269,7 +269,6 @@ def vres_ensemble(
     """
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
-
     if ens_w is None:
         if backend == "numba":
             return energy.estimator_gufuncs["vrnrg"](obs, fct, obs_w, fct_w)

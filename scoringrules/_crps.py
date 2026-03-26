@@ -316,7 +316,6 @@ def owcrps_ensemble(
     """
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, backend=backend)
-
     if ens_w is None:
         if backend == "numba":
             return crps.estimator_gufuncs["ownrg"](obs, fct, obs_w, fct_w)
@@ -414,7 +413,6 @@ def vrcrps_ensemble(
     """
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, backend=backend)
-
     if ens_w is None:
         if backend == "numba":
             return crps.estimator_gufuncs["vrnrg"](obs, fct, obs_w, fct_w)
