@@ -115,25 +115,26 @@ def crps_ensemble(
     array([0.69605316, 0.32865417, 0.39048665])
     """
     nan_policy_check(nan_policy)
-    if nan_policy == "omit" and estimator in ("int", "akr", "akr_circperm"):
-        raise NotImplementedError(
-            f"nan_policy='omit' is not supported with estimator='{estimator}'. "
-            "Use a different estimator such as 'nrg', 'fair', 'pwm', or 'qd'."
-        )
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
-    # Sort before zeroing NaN so that NaN members end up at the tail of sorted arrays,
-    # which is required for rank-based estimators ('pwm', 'qd').
+    # Sort before NaN handling so that NaN members end up at the tail of sorted arrays,
+    # which is required for rank-based estimators ('pwm', 'qd', 'int').
     fct = univariate_sort_ens(fct, estimator, sorted_ensemble, backend=backend)
-    obs, fct, nan_mask = apply_nan_policy_ens_uv(obs, fct, nan_policy, backend=backend)
     if backend == "numba":
         estimator_check(estimator, crps.estimator_gufuncs)
+        if nan_policy == "raise":
+            # Validate only — raises if NaN found; NaN values are left in-place.
+            apply_nan_policy_ens_uv(obs, fct, "raise", backend=backend)
         if nan_policy == "omit":
-            raise NotImplementedError(
-                "nan_policy='omit' is not yet supported for the numba backend."
-            )
+            # NaN values are left in-place; the nanomit gufuncs skip them internally.
+            return crps.estimator_gufuncs_nanomit[estimator](obs, fct)
         return crps.estimator_gufuncs[estimator](obs, fct)
-    else:
-        return crps.ensemble(obs, fct, estimator, nan_mask=nan_mask, backend=backend)
+    obs, fct, nan_mask = apply_nan_policy_ens_uv(obs, fct, nan_policy, backend=backend)
+    if nan_policy == "omit" and estimator == "int":
+        raise NotImplementedError(
+            "nan_policy='omit' is not supported with estimator='int' on non-numba backends. "
+            "Use a different estimator such as 'nrg', 'fair', 'pwm', or 'qd'."
+        )
+    return crps.ensemble(obs, fct, estimator, nan_mask=nan_mask, backend=backend)
 
 
 def twcrps_ensemble(
@@ -323,18 +324,20 @@ def owcrps_ensemble(
     """
     nan_policy_check(nan_policy)
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
+    if backend == "numba":
+        if nan_policy == "raise":
+            apply_nan_policy_ens_uv(obs, fct, "raise", backend=backend)
+        obs_w, fct_w = uv_weighted_score_weights(
+            obs, fct, a, b, w_func, backend=backend
+        )
+        if nan_policy == "omit":
+            # NaN values are left in-place; the nanomit gufunc skips them and
+            # recomputes wbar from valid members only.
+            return crps.estimator_gufuncs_nanomit["ownrg"](obs, fct, obs_w, fct_w)
+        return crps.estimator_gufuncs["ownrg"](obs, fct, obs_w, fct_w)
     obs, fct, nan_mask = apply_nan_policy_ens_uv(obs, fct, nan_policy, backend=backend)
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, backend=backend)
-    if backend == "numba":
-        if nan_policy == "omit":
-            raise NotImplementedError(
-                "nan_policy='omit' is not yet supported for the numba backend."
-            )
-        return crps.estimator_gufuncs["ownrg"](obs, fct, obs_w, fct_w)
-    else:
-        return crps.ow_ensemble(
-            obs, fct, obs_w, fct_w, nan_mask=nan_mask, backend=backend
-        )
+    return crps.ow_ensemble(obs, fct, obs_w, fct_w, nan_mask=nan_mask, backend=backend)
 
 
 def vrcrps_ensemble(
@@ -422,18 +425,18 @@ def vrcrps_ensemble(
     """
     nan_policy_check(nan_policy)
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
+    if backend == "numba":
+        if nan_policy == "raise":
+            apply_nan_policy_ens_uv(obs, fct, "raise", backend=backend)
+        obs_w, fct_w = uv_weighted_score_weights(
+            obs, fct, a, b, w_func, backend=backend
+        )
+        if nan_policy == "omit":
+            return crps.estimator_gufuncs_nanomit["vrnrg"](obs, fct, obs_w, fct_w)
+        return crps.estimator_gufuncs["vrnrg"](obs, fct, obs_w, fct_w)
     obs, fct, nan_mask = apply_nan_policy_ens_uv(obs, fct, nan_policy, backend=backend)
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, backend=backend)
-    if backend == "numba":
-        if nan_policy == "omit":
-            raise NotImplementedError(
-                "nan_policy='omit' is not yet supported for the numba backend."
-            )
-        return crps.estimator_gufuncs["vrnrg"](obs, fct, obs_w, fct_w)
-    else:
-        return crps.vr_ensemble(
-            obs, fct, obs_w, fct_w, nan_mask=nan_mask, backend=backend
-        )
+    return crps.vr_ensemble(obs, fct, obs_w, fct_w, nan_mask=nan_mask, backend=backend)
 
 
 def crps_quantile(
