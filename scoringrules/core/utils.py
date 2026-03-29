@@ -155,6 +155,69 @@ def univariate_sort_ens(fct, estimator=None, sorted_ensemble=False, backend=None
     return fct
 
 
+def nan_policy_check(nan_policy: str) -> None:
+    """Validate the nan_policy argument."""
+    valid = ("propagate", "omit", "raise")
+    if nan_policy not in valid:
+        raise ValueError(f"Invalid nan_policy '{nan_policy}'. Must be one of {valid}.")
+
+
+def apply_nan_policy_ens_uv(obs, fct, nan_policy="propagate", backend=None):
+    """Apply NaN policy to univariate ensemble forecasts (fct shape: ..., M).
+
+    For 'propagate': no-op, returns (obs, fct, None).
+    For 'raise': raises ValueError if any NaN in fct or obs.
+    For 'omit': returns (obs, fct_zeroed, nan_mask) where nan_mask is a boolean
+    array (True where fct member is NaN) and NaN members are replaced with 0.0.
+    """
+    B = backends.active if backend is None else backends[backend]
+
+    if nan_policy == "raise":
+        if B.any(B.isnan(fct)) or B.any(B.isnan(obs)):
+            raise ValueError(
+                "NaN values encountered in input. "
+                "Use nan_policy='propagate' or nan_policy='omit' to handle NaN values."
+            )
+        return obs, fct, None
+
+    if nan_policy == "omit":
+        nan_mask = B.isnan(fct)
+        fct = B.where(nan_mask, B.asarray(0.0), fct)
+        return obs, fct, nan_mask
+
+    # propagate
+    return obs, fct, None
+
+
+def apply_nan_policy_ens_mv(obs, fct, nan_policy="propagate", backend=None):
+    """Apply NaN policy to multivariate ensemble forecasts (fct shape: ..., M, D).
+
+    A NaN in any variable of an ensemble member marks the entire member as invalid.
+
+    For 'propagate': no-op, returns (obs, fct, None).
+    For 'raise': raises ValueError if any NaN in fct or obs.
+    For 'omit': returns (obs, fct_zeroed, nan_mask) where nan_mask has shape
+    (..., M) — True for invalid members — and NaN members are replaced with 0.0.
+    """
+    B = backends.active if backend is None else backends[backend]
+
+    if nan_policy == "raise":
+        if B.any(B.isnan(fct)) or B.any(B.isnan(obs)):
+            raise ValueError(
+                "NaN values encountered in input. "
+                "Use nan_policy='propagate' or nan_policy='omit' to handle NaN values."
+            )
+        return obs, fct, None
+
+    if nan_policy == "omit":
+        nan_mask = B.any(B.isnan(fct), axis=-1)  # shape (..., M)
+        fct = B.where(nan_mask[..., None], B.asarray(0.0), fct)
+        return obs, fct, nan_mask
+
+    # propagate
+    return obs, fct, None
+
+
 def lazy_gufunc_wrapper_uv(func):
     """
     Wrapper for lazy/dynamic generalized universal functions so

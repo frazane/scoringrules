@@ -11,3 +11,4 @@ if tp.TYPE_CHECKING:
     ArrayLike = tp.TypeVar("ArrayLike", bound=_array | float | int)
 
     Backend = tp.Literal["numpy", "numba", "jax", "torch", "tensorflow"] | None
+    NanPolicy = tp.Literal["propagate", "omit", "raise"]
