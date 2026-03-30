@@ -4,6 +4,7 @@ from scoringrules.backend import backends
 from scoringrules.core import crps, stats
 from scoringrules.core.utils import (
     univariate_array_check,
+    univariate_weight_check,
     estimator_check,
     uv_weighted_score_weights,
     uv_weighted_score_chain,
@@ -19,8 +20,9 @@ def crps_ensemble(
     fct: "Array",
     m_axis: int = -1,
     *,
-    sorted_ensemble: bool = False,
+    ens_w: "Array" = None,
     estimator: str = "qd",
+    sorted_ensemble: bool = False,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Estimate the Continuous Ranked Probability Score (CRPS) for a finite ensemble.
@@ -56,11 +58,15 @@ def crps_ensemble(
         represented by the last axis.
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array, shape (..., m)
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting. Weights are normalised so that they sum to one
+        across the ensemble members.
+    estimator : str
+        Indicates the CRPS estimator to be used.
     sorted_ensemble : bool
         Boolean indicating whether the ensemble members are already in ascending order.
         Default is False.
-    estimator : str
-        Indicates the CRPS estimator to be used.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
@@ -103,12 +109,21 @@ def crps_ensemble(
     array([0.69605316, 0.32865417, 0.39048665])
     """
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
-    fct = univariate_sort_ens(fct, estimator, sorted_ensemble, backend=backend)
-    if backend == "numba":
-        estimator_check(estimator, crps.estimator_gufuncs)
-        return crps.estimator_gufuncs[estimator](obs, fct)
+    fct, ens_w = univariate_sort_ens(
+        fct, ens_w, m_axis, estimator, sorted_ensemble, backend=backend
+    )
+    if ens_w is None:
+        if backend == "numba":
+            estimator_check(estimator, crps.estimator_gufuncs)
+            return crps.estimator_gufuncs[estimator](obs, fct)
+        else:
+            return crps.ensemble(obs, fct, estimator, backend=backend)
     else:
-        return crps.ensemble(obs, fct, estimator, backend=backend)
+        if backend == "numba":
+            estimator_check(estimator, crps.estimator_gufuncs_w)
+            return crps.estimator_gufuncs_w[estimator](obs, fct, ens_w)
+        else:
+            return crps.ensemble_w(obs, fct, ens_w, estimator, backend=backend)
 
 
 def twcrps_ensemble(
@@ -118,6 +133,7 @@ def twcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     estimator: str = "qd",
     sorted_ensemble: bool = False,
@@ -151,10 +167,19 @@ def twcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array, shape (..., m)
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting. Weights are normalised so that they sum to one
+        across the ensemble members.
     v_func : callable, array_like -> array_like
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold :math:`t` by projecting forecasts and observations
         to :math:`[t, \inf)`.
+    estimator : str
+        Indicates the CRPS estimator to be used.
+    sorted_ensemble : bool
+        Boolean indicating whether the ensemble members are already in ascending order.
+        Default is False.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
@@ -200,8 +225,9 @@ def twcrps_ensemble(
         obs,
         fct,
         m_axis=m_axis,
-        sorted_ensemble=sorted_ensemble,
+        ens_w=ens_w,
         estimator=estimator,
+        sorted_ensemble=sorted_ensemble,
         backend=backend,
     )
 
@@ -213,6 +239,7 @@ def owcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     backend: "Backend" = None,
 ) -> "Array":
@@ -250,6 +277,10 @@ def owcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array, shape (..., m)
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting. Weights are normalised so that they sum to one
+        across the ensemble members.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     backend : str, optional
@@ -288,10 +319,17 @@ def owcrps_ensemble(
     """
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, backend=backend)
-    if backend == "numba":
-        return crps.estimator_gufuncs["ownrg"](obs, fct, obs_w, fct_w)
+    if ens_w is None:
+        if backend == "numba":
+            return crps.estimator_gufuncs["ownrg"](obs, fct, obs_w, fct_w)
+        else:
+            return crps.ow_ensemble(obs, fct, obs_w, fct_w, backend=backend)
     else:
-        return crps.ow_ensemble(obs, fct, obs_w, fct_w, backend=backend)
+        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
+        if backend == "numba":
+            return crps.estimator_gufuncs_w["ownrg"](obs, fct, obs_w, fct_w, ens_w)
+        else:
+            return crps.ow_ensemble_w(obs, fct, obs_w, fct_w, ens_w, backend=backend)
 
 
 def vrcrps_ensemble(
@@ -301,6 +339,7 @@ def vrcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     backend: "Backend" = None,
 ) -> "Array":
@@ -336,6 +375,10 @@ def vrcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array, shape (..., m)
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting. Weights are normalised so that they sum to one
+        across the ensemble members.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     backend : str, optional
@@ -374,10 +417,17 @@ def vrcrps_ensemble(
     """
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, backend=backend)
-    if backend == "numba":
-        return crps.estimator_gufuncs["vrnrg"](obs, fct, obs_w, fct_w)
+    if ens_w is None:
+        if backend == "numba":
+            return crps.estimator_gufuncs["vrnrg"](obs, fct, obs_w, fct_w)
+        else:
+            return crps.vr_ensemble(obs, fct, obs_w, fct_w, backend=backend)
     else:
-        return crps.vr_ensemble(obs, fct, obs_w, fct_w, backend=backend)
+        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
+        if backend == "numba":
+            return crps.estimator_gufuncs_w["vrnrg"](obs, fct, obs_w, fct_w, ens_w)
+        else:
+            return crps.vr_ensemble_w(obs, fct, obs_w, fct_w, ens_w, backend=backend)
 
 
 def crps_quantile(
