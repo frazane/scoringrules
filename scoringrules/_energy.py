@@ -47,7 +47,7 @@ def es_ensemble(
         array with an extra dimension on `m_axis`). Defaults to -1.
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     estimator : str
         The energy score estimator to be used.
     backend : str
@@ -126,7 +126,7 @@ def twes_ensemble(
         The axis corresponding to the variables dimension. Defaults to -1.
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     estimator : str
         The energy score estimator to be used.
     backend : str
@@ -191,7 +191,7 @@ def owes_ensemble(
         The axis corresponding to the variables dimension. Defaults to -1.
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -258,7 +258,7 @@ def vres_ensemble(
         The axis corresponding to the variables dimension. Defaults to -1.
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 

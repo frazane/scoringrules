@@ -53,7 +53,7 @@ def vs_ensemble(
         The axis corresponding to the variables dimension. Defaults to -1.
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     p : float
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 0.5.
     estimator : str
@@ -150,7 +150,7 @@ def twvs_ensemble(
         The axis corresponding to the variables dimension. Defaults to -1.
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     p : float
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 0.5.
     estimator : str
@@ -240,7 +240,7 @@ def owvs_ensemble(
         The axis corresponding to the variables dimension. Defaults to -1.
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     p : float
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 0.5.
     backend : str
@@ -334,7 +334,7 @@ def vrvs_ensemble(
         The axis corresponding to the variables dimension. Defaults to -1.
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     p : float
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 0.5.
     backend : str

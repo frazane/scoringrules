@@ -97,6 +97,7 @@ def univariate_weight_check(ens_w, fct, m_axis, backend=None):
             )
         if B.any(ens_w < 0):
             raise ValueError("`ens_w` contains negative entries")
+        # renormalise weights so that they sum to one across the ensemble members
         ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
     return ens_w
 
@@ -115,6 +116,7 @@ def multivariate_weight_check(ens_w, fct, m_axis, backend=None):
             )
         if B.any(ens_w < 0):
             raise ValueError("`ens_w` contains negative entries")
+        # renormalise weights so that they sum to one across the ensemble members
         ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
     return ens_w
 

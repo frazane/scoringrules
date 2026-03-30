@@ -174,5 +174,5 @@ def vr_ensemble_w(
         axis=(-1, -2),
     )
     e_3 = B.sum(ens_w * B.abs(fct) * fw, axis=-1) - B.abs(obs) * ow
-    e_3 *= B.sum(ens_w * fw, axis=1) - ow
+    e_3 *= B.sum(ens_w * fw, axis=-1) - ow
     return e_1 - 0.5 * e_2 + e_3

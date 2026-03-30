@@ -60,7 +60,8 @@ def crps_ensemble(
         The axis corresponding to the ensemble. Default is the last axis.
     ens_w : array, shape (..., m)
         Weights assigned to the ensemble members. Array with the same shape as fct.
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one
+        across the ensemble members.
     estimator : str
         Indicates the CRPS estimator to be used.
     sorted_ensemble : bool
@@ -168,7 +169,8 @@ def twcrps_ensemble(
         The axis corresponding to the ensemble. Default is the last axis.
     ens_w : array, shape (..., m)
         Weights assigned to the ensemble members. Array with the same shape as fct.
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one
+        across the ensemble members.
     v_func : callable, array_like -> array_like
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold :math:`t` by projecting forecasts and observations
@@ -277,7 +279,8 @@ def owcrps_ensemble(
         The axis corresponding to the ensemble. Default is the last axis.
     ens_w : array, shape (..., m)
         Weights assigned to the ensemble members. Array with the same shape as fct.
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one
+        across the ensemble members.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     backend : str, optional
@@ -372,9 +375,10 @@ def vrcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
-    ens_w : array
+    ens_w : array, shape (..., m)
         Weights assigned to the ensemble members. Array with the same shape as fct.
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one
+        across the ensemble members.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     backend : str, optional

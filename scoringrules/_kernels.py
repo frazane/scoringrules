@@ -53,7 +53,7 @@ def gksuv_ensemble(
         The axis corresponding to the ensemble. Default is the last axis.
     ens_w : array
         Weights assigned to the ensemble members. Array with the same shape as fct.
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     estimator : str
         Indicates the estimator to be used.
     backend : str
@@ -133,7 +133,7 @@ def twgksuv_ensemble(
         The axis corresponding to the ensemble. Default is the last axis.
     ens_w : array
         Weights assigned to the ensemble members. Array with the same shape as fct.
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     v_func : callable, array_like -> array_like
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold :math:`t` by projecting forecasts and observations
@@ -213,7 +213,7 @@ def owgksuv_ensemble(
         The axis corresponding to the ensemble. Default is the last axis.
     ens_w : array
         Weights assigned to the ensemble members. Array with the same shape as fct.
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     backend : str
@@ -296,7 +296,7 @@ def vrgksuv_ensemble(
         The axis corresponding to the ensemble. Default is the last axis.
     ens_w : array
         Weights assigned to the ensemble members. Array with the same shape as fct.
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     backend : str
@@ -377,7 +377,7 @@ def gksmv_ensemble(
         array with an extra dimension on `m_axis`). Defaults to -1.
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     estimator : str
         Indicates the estimator to be used.
     backend : str
@@ -449,7 +449,7 @@ def twgksmv_ensemble(
         The axis corresponding to the variables dimension. Defaults to -1.
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     estimator : str
         Indicates the estimator to be used.
     backend : str
@@ -527,7 +527,7 @@ def owgksmv_ensemble(
         The axis corresponding to the variables dimension. Defaults to -1.
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -596,7 +596,7 @@ def vrgksmv_ensemble(
         The axis corresponding to the variables dimension. Defaults to -1.
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
-        Default is equal weighting.
+        Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     backend: str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
