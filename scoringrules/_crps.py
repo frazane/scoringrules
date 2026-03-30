@@ -513,6 +513,8 @@ def crps_beta(
     >>> sr.crps_beta(0.3, 0.7, 1.1)
     0.08501024366637236
     """
+    if backend == "torch":
+        raise TypeError("Torch backend is not supported for the Beta distribution.")
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         a, b, lower, upper = map(B.asarray, (a, b, lower, upper))
@@ -580,6 +582,8 @@ def crps_binomial(
     >>> sr.crps_binomial(4, 10, 0.5)
     0.5955772399902344
     """
+    if backend == "torch":
+        raise TypeError("Torch backend is not supported for the Binomial distribution.")
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         prob = B.asarray(prob)
@@ -1073,6 +1077,8 @@ def crps_gev(
     >>> sr.crps_gev(0.3, 0.1)
     0.2924712413052034
     """
+    if backend == "torch":
+        raise TypeError("Torch backend is not supported for the GEV distribution.")
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         scale, shape = map(B.asarray, (scale, shape))
@@ -1675,6 +1681,10 @@ def crps_gtct(
     >>> sr.crps_gtct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     0.13997789333289662
     """
+    if backend in ["torch", "tensorflow", "jax"]:
+        raise TypeError(
+            "Torch, Tensorflow, and JAX backends are not supported for the Generalised t distribution."
+        )
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         scale, lmass, umass, lower, upper = map(
@@ -1756,6 +1766,10 @@ def crps_tt(
     >>> sr.crps_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     0.10323007471747117
     """
+    if backend in ["torch", "tensorflow", "jax"]:
+        raise TypeError(
+            "Torch, Tensorflow, and JAX backends are not supported for the Truncated t distribution."
+        )
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         scale, lower, upper = map(B.asarray, (scale, lower, upper))
@@ -1829,6 +1843,10 @@ def crps_ct(
     >>> sr.crps_ct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     0.12672580744453948
     """
+    if backend in ["torch", "tensorflow", "jax"]:
+        raise TypeError(
+            "Torch, Tensorflow, and JAX backends are not supported for the Censored t distribution."
+        )
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         scale, lower, upper = map(B.asarray, (scale, lower, upper))
@@ -2198,6 +2216,10 @@ def crps_loglogistic(
     >>> sr.crps_loglogistic(3.0, 0.1, 0.9)
     1.1329527730161177
     """
+    if backend == "torch":
+        raise TypeError(
+            "Torch backend is not supported for the log-logistic distribution."
+        )
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         scalelog = B.asarray(scalelog)
@@ -2414,11 +2436,14 @@ def crps_negbinom(
     ValueError
         If both `prob` and `mu` are provided, or if neither is provided.
     """
+    if backend in ["torch", "tensorflow", "jax"]:
+        raise TypeError(
+            "Torch, Tensorflow, and JAX backends are not supported for the Negative Binomial distribution."
+        )
     if (prob is None and mu is None) or (prob is not None and mu is not None):
         raise ValueError(
             "Either `prob` or `mu` must be provided, but not both or neither."
         )
-
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         if prob is not None:
@@ -2704,6 +2729,8 @@ def crps_t(
     >>> sr.crps_t(0.0, 0.1, 0.4, 0.1)
     0.07687151141732129
     """
+    if backend == "torch":
+        raise TypeError("Torch backend is not supported for the t distribution.")
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         df, scale = map(B.asarray, (df, scale))

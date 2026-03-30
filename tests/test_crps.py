@@ -109,10 +109,29 @@ def test_crps_beta(backend):
 
     ## test shape
 
+    # one observation, multiple forecasts
+    res = sr.crps_beta(
+        0.1,
+        np.random.uniform(0, 3, (4, 3)),
+        np.random.uniform(0, 3, (4, 3)),
+        backend=backend,
+    )
+    assert res.shape == (4, 3)
+
+    # multiple observations, one forecast
+    res = sr.crps_beta(
+        np.random.uniform(0, 1, (4, 3)),
+        2.4,
+        0.5,
+        backend=backend,
+    )
+    assert res.shape == (4, 3)
+
+    # multiple observations, multiple forecasts
     res = sr.crps_beta(
         np.random.uniform(0, 1, (4, 3)),
         np.random.uniform(0, 3, (4, 3)),
-        1.1,
+        np.random.uniform(0, 3, (4, 3)),
         backend=backend,
     )
     assert res.shape == (4, 3)
@@ -662,7 +681,7 @@ def test_crps_csg0(backend):
 
 def test_crps_gev(backend):
     if backend == "torch":
-        pytest.skip("`expi` not implemented in torch backend")
+        pytest.skip("Not implemented in torch backend")
 
     ## test shape
 
@@ -2750,8 +2769,8 @@ def test_crps_poisson(backend):
 
 
 def test_crps_t(backend):
-    if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in jax, torch or tensorflow backends")
+    if backend == "torch":
+        pytest.skip("Not implemented in torch backend")
 
     ## test shape
 
