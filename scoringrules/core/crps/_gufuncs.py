@@ -169,7 +169,7 @@ def _crps_ensemble_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
     e_2 = 0.0
     for i, forecast in enumerate(fct):
         if i == 0:
-            i = M - 1
+            i = M
         e_1 += abs(forecast - obs)
         e_2 += abs(forecast - fct[i - 1])
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
