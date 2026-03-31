@@ -181,12 +181,12 @@ def test_crps_beta(backend):
     # multiple forecasts
     res = sr.crps_beta(
         -3.0,
-        0.7,
-        1.1,
+        np.array([0.7, 2.0]),
+        np.array([1.1, 4.8]),
         lower=np.array([-5.0, -5.0]),
         upper=np.array([4.0, 4.0]),
     )
-    expected = np.array([0.883206751, 0.883206751])
+    expected = np.array([0.8832068, 0.4149867])
     assert np.allclose(res, expected)
 
 
@@ -1963,17 +1963,22 @@ def test_crps_hypergeometric(backend):
     ## test correctness
 
     # single observation
-    res = sr.crps_hypergeometric(5, 7, 13, 12)
+    res = sr.crps_hypergeometric(5, 7, 13, 12, backend=backend)
     expected = 0.4469742
     assert np.isclose(res, expected)
 
     # negative observation
-    res = sr.crps_hypergeometric(-5, 7, 13, 12)
+    res = sr.crps_hypergeometric(-5, 7, 13, 12, backend=backend)
     expected = 8.615395
     assert np.isclose(res, expected)
 
+    # non-integer observation
+    res = sr.crps_hypergeometric(5.6, 7, 13, 12, backend=backend)
+    expected = 0.9202868
+    assert np.isclose(res, expected)
+
     # multiple observations
-    res = sr.crps_hypergeometric(np.array([2, 7.6, -2.1]), 7, 13, 3)
+    res = sr.crps_hypergeometric(np.array([2, 7.6, -2.1]), 7, 13, 3, backend=backend)
     expected = np.array([0.5965259, 6.1351223, 2.7351223])
     assert np.allclose(res, expected)
 
@@ -2639,7 +2644,6 @@ def test_crps_2pnormal(backend):
     res = sr.crps_2pnormal(
         np.random.uniform(-10, 10, (4, 3)),
         np.random.uniform(-10, 10, (4, 3)),
-        np.random.uniform(0, 5, (4, 3)),
         np.random.uniform(0, 5, (4, 3)),
         backend=backend,
     )

@@ -95,6 +95,8 @@ def binomial(
     obs = B.where(zind, B.nan, obs)
     prob = _binom_pdf(obs, n, prob, backend=backend)
     s = B.where(zind, float("inf"), -B.log(prob))
+    ints = obs % 1 == 0
+    s = B.where(ints, s, float("inf"))
     return s
 
 
@@ -209,8 +211,13 @@ def hypergeometric(
     obs, m, n, k = map(B.asarray, (obs, m, n, k))
     M = m + n
     N = k
+    zind = obs < 0.0
+    obs = B.where(zind, B.nan, obs)
     prob = _hypergeo_pdf(obs, M, m, N, backend=backend)
-    return -B.log(prob)
+    s = B.where(zind, float("inf"), -B.log(prob))
+    ints = obs % 1 == 0
+    s = B.where(ints, s, float("inf"))
+    return s
 
 
 def laplace(

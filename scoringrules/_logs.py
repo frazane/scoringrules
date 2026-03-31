@@ -733,8 +733,8 @@ def logs_loglaplace(
 
 def logs_logistic(
     obs: "ArrayLike",
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -747,9 +747,9 @@ def logs_logistic(
     ----------
     obs : array_like
         Observed values.
-    mu : array_like
+    location : array_like
         Location parameter of the forecast logistic distribution.
-    sigma : array_like
+    scale : array_like
         Scale parameter of the forecast logistic distribution.
     backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
@@ -760,7 +760,7 @@ def logs_logistic(
     Returns
     -------
     score : array_like
-        The LS for the Logistic(mu, sigma) forecasts given the observations.
+        The LS for the Logistic(location, scale) forecasts given the observations.
 
     Examples
     --------
@@ -769,18 +769,18 @@ def logs_logistic(
     """
     if check_pars:
         B = backends.active if backend is None else backends[backend]
-        sigma = B.asarray(sigma)
-        if B.any(sigma <= 0):
+        scale = B.asarray(scale)
+        if B.any(scale <= 0):
             raise ValueError(
-                "`sigma` contains non-positive entries. The scale parameter of the logistic distribution must be positive."
+                "`scale` contains non-positive entries. The scale parameter of the logistic distribution must be positive."
             )
-    return logarithmic.logistic(obs, mu, sigma, backend=backend)
+    return logarithmic.logistic(obs, location, scale, backend=backend)
 
 
 def logs_loglogistic(
     obs: "ArrayLike",
-    mulog: "ArrayLike",
-    sigmalog: "ArrayLike",
+    locationlog: "ArrayLike",
+    scalelog: "ArrayLike",
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -793,9 +793,9 @@ def logs_loglogistic(
     ----------
     obs : array_like
         The observed values.
-    mulog : array_like
+    locationlog : array_like
         Location parameter of the log-logistic distribution.
-    sigmalog : array_like
+    scalelog : array_like
         Scale parameter of the log-logistic distribution.
     backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
@@ -806,7 +806,7 @@ def logs_loglogistic(
     Returns
     -------
     score : array_like
-        The LS between obs and Loglogis(mulog, sigmalog).
+        The LS between obs and Loglogis(locationlog, scalelog).
 
     Examples
     --------
@@ -815,12 +815,12 @@ def logs_loglogistic(
     """
     if check_pars:
         B = backends.active if backend is None else backends[backend]
-        sigmalog = B.asarray(sigmalog)
-        if B.any(sigmalog <= 0) or B.any(sigmalog >= 1):
+        scalelog = B.asarray(scalelog)
+        if B.any(scalelog <= 0) or B.any(scalelog >= 1):
             raise ValueError(
-                "`sigmalog` contains entries outside of the range (0, 1). The scale parameter of the log-logistic distribution must be between 0 and 1."
+                "`scalelog` contains entries outside of the range (0, 1). The scale parameter of the log-logistic distribution must be between 0 and 1."
             )
-    return logarithmic.loglogistic(obs, mulog, sigmalog, backend=backend)
+    return logarithmic.loglogistic(obs, locationlog, scalelog, backend=backend)
 
 
 def logs_lognormal(
@@ -874,7 +874,7 @@ def logs_mixnorm(
     m: "ArrayLike",
     s: "ArrayLike",
     w: "ArrayLike" = None,
-    mc_axis: "ArrayLike" = -1,
+    m_axis: "ArrayLike" = -1,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -893,7 +893,7 @@ def logs_mixnorm(
         Standard deviations of the component normal distributions.
     w : array_like
         Non-negative weights assigned to each component.
-    mc_axis : int
+    m_axis : int
         The axis corresponding to the mixture components. Default is the last axis.
     backend : str
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
@@ -915,11 +915,11 @@ def logs_mixnorm(
     obs, m, s = map(B.asarray, (obs, m, s))
 
     if w is None:
-        M: int = m.shape[mc_axis]
+        M: int = m.shape[m_axis]
         w = B.ones(m.shape) / M
     else:
         w = B.asarray(w)
-        w = w / B.sum(w, axis=mc_axis, keepdims=True)
+        w = w / B.sum(w, axis=m_axis, keepdims=True)
 
     if check_pars:
         if B.any(s <= 0):
@@ -929,10 +929,10 @@ def logs_mixnorm(
         if B.any(w < 0):
             raise ValueError("`w` contains negative entries")
 
-    if mc_axis != -1:
-        m = B.moveaxis(m, mc_axis, -1)
-        s = B.moveaxis(s, mc_axis, -1)
-        w = B.moveaxis(w, mc_axis, -1)
+    if m_axis != -1:
+        m = B.moveaxis(m, m_axis, -1)
+        s = B.moveaxis(s, m_axis, -1)
+        w = B.moveaxis(w, m_axis, -1)
 
     return logarithmic.mixnorm(obs, m, s, w, backend=backend)
 
@@ -981,11 +981,14 @@ def logs_negbinom(
     ValueError
         If both `prob` and `mu` are provided, or if neither is provided.
     """
+    if backend in ["torch", "tensorflow", "jax"]:
+        raise TypeError(
+            "Torch, Tensorflow, and JAX backends are not supported for the Negative Binomial distribution."
+        )
     if (prob is None and mu is None) or (prob is not None and mu is not None):
         raise ValueError(
             "Either `prob` or `mu` must be provided, but not both or neither."
         )
-
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         if prob is not None:
@@ -1015,8 +1018,8 @@ def logs_negbinom(
 
 def logs_normal(
     obs: "ArrayLike",
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
+    mu: "ArrayLike" = 0.0,
+    sigma: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -1061,9 +1064,9 @@ def logs_normal(
 
 def logs_2pnormal(
     obs: "ArrayLike",
-    scale1: "ArrayLike",
-    scale2: "ArrayLike",
-    location: "ArrayLike",
+    scale1: "ArrayLike" = 1.0,
+    scale2: "ArrayLike" = 1.0,
+    location: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
@@ -1193,6 +1196,10 @@ def logs_t(
     >>> import scoringrules as sr
     >>> sr.logs_t(0.0, 0.1, 0.4, 0.1)
     """
+    if backend in ["torch", "tensorflow", "jax"]:
+        raise TypeError(
+            "Torch, Tensorflow, and JAX backends are not supported for the t distribution."
+        )
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         df, scale = map(B.asarray, (df, scale))
@@ -1209,8 +1216,8 @@ def logs_t(
 
 def logs_tlogistic(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
@@ -1263,8 +1270,8 @@ def logs_tlogistic(
 
 def logs_tnormal(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
@@ -1360,6 +1367,10 @@ def logs_tt(
     >>> import scoringrules as sr
     >>> sr.logs_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     """
+    if backend in ["torch", "tensorflow", "jax"]:
+        raise TypeError(
+            "Torch, Tensorflow, and JAX backends are not supported for the Truncated t distribution."
+        )
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         scale, lower, upper = map(B.asarray, (scale, lower, upper))
@@ -1378,8 +1389,8 @@ def logs_tt(
 
 def logs_uniform(
     obs: "ArrayLike",
-    min: "ArrayLike",
-    max: "ArrayLike",
+    min: "ArrayLike" = 0.0,
+    max: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
     check_pars: bool = False,
