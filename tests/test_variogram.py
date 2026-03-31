@@ -41,6 +41,7 @@ def test_variogram_score_permuted_dims(estimator, backend):
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
 def test_variogram_score_correctness(estimator, backend):
+    # correctness
     fct = np.array(
         [
             [0.79546742, 0.4777960, 0.2164079, 0.5409873],
@@ -81,4 +82,36 @@ def test_variogram_score_correctness(estimator, backend):
     w = np.array([[1.1, 0.2], [0.2, 100]])
     res = sr.vs_ensemble(obs, fct, w=w, p=0.5, estimator=estimator, backend=backend)
     if estimator == "nrg":
+        np.testing.assert_allclose(res, expected, atol=1e-6)
+
+    # with ensemble weights
+    ens_w = np.array([0.1, 0.8, 0.3, 0.4])
+    res = sr.vs_ensemble(obs, fct, ens_w=ens_w, p=0.5, estimator="nrg", backend=backend)
+    if estimator == "nrg":
+        expected = 0.07648068
+        np.testing.assert_allclose(res, expected, atol=1e-6)
+
+    ens_w = np.array([0.9, 0.2, 0.5, 0.5])
+    res = sr.vs_ensemble(
+        obs, fct, ens_w=ens_w, p=0.75, estimator=estimator, backend=backend
+    )
+    if estimator == "nrg":
+        expected = 0.01160571
+        np.testing.assert_allclose(res, expected, atol=1e-6)
+
+    # check invariance to scaling of the weights
+    ens_w_scaled = ens_w * 10
+    res_scaled = sr.vs_ensemble(
+        obs, fct, ens_w=ens_w_scaled, p=0.75, estimator=estimator, backend=backend
+    )
+    assert np.allclose(res_scaled, res)
+
+    # with dimension and ensemble weights
+    w = np.array([[0.1, 0.2], [0.2, 0.4]])
+    ens_w = np.array([0.1, 0.8, 0.3, 0.4])
+    res = sr.vs_ensemble(
+        obs, fct, w=w, ens_w=ens_w, p=0.5, estimator=estimator, backend=backend
+    )
+    if estimator == "nrg":
+        expected = 0.01529614
         np.testing.assert_allclose(res, expected, atol=1e-6)

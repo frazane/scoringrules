@@ -84,6 +84,43 @@ def multivariate_array_check(obs, fct, m_axis, v_axis, backend=None):
     return _multivariate_shape_permute(obs, fct, m_axis, v_axis, backend=backend)
 
 
+def univariate_weight_check(ens_w, fct, m_axis, backend=None):
+    """Check that ensemble weights are non-negative and compatible with the (permuted) forecast array."""
+    B = backends.active if backend is None else backends[backend]
+    if ens_w is not None:
+        ens_w = B.asarray(ens_w)
+        m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
+        ens_w = B.moveaxis(ens_w, m_axis, _M_AXIS_UV)
+        if ens_w.shape != fct.shape:
+            raise ValueError(
+                f"Shape of weights {ens_w.shape} is not compatible with forecast shape {fct.shape}"
+            )
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        # renormalise weights so that they sum to one across the ensemble members
+        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
+    return ens_w
+
+
+def multivariate_weight_check(ens_w, fct, m_axis, backend=None):
+    """Check that ensemble weights are non-negative and compatible with the (permuted) forecast array."""
+    B = backends.active if backend is None else backends[backend]
+    if ens_w is not None:
+        ens_w = B.asarray(ens_w)
+        m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
+        v_axis_pos = _V_AXIS if _V_AXIS > 0 else _V_AXIS + fct.ndim
+        ens_w = B.moveaxis(ens_w, m_axis, -1)
+        if ens_w.shape != fct.shape[:v_axis_pos] + fct.shape[(v_axis_pos + 1) :]:
+            raise ValueError(
+                f"Shape of weights {ens_w.shape} is not compatible with forecast shape {fct.shape}"
+            )
+        if B.any(ens_w < 0):
+            raise ValueError("`ens_w` contains negative entries")
+        # renormalise weights so that they sum to one across the ensemble members
+        ens_w = ens_w / B.sum(ens_w, axis=-1, keepdims=True)
+    return ens_w
+
+
 def estimator_check(estimator, gufuncs):
     """Check that the estimator is valid for the given score."""
     if estimator not in gufuncs:
@@ -145,14 +182,20 @@ def mv_weighted_score_chain(obs, fct, v_func=None):
     return obs, fct
 
 
-def univariate_sort_ens(fct, estimator=None, sorted_ensemble=False, backend=None):
-    """Sort ensemble members if not already sorted."""
+def univariate_sort_ens(
+    fct, ens_w=None, m_axis=-1, estimator=None, sorted_ensemble=False, backend=None
+):
+    """Sort ensemble members and weights if not already sorted."""
     B = backends.active if backend is None else backends[backend]
     sort_ensemble = not sorted_ensemble and estimator in ["qd", "pwm", "int"]
     if sort_ensemble:
         ind = B.argsort(fct, axis=-1)
         fct = B.gather(fct, ind, axis=-1)
-    return fct
+    if ens_w is not None:
+        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
+        if sort_ensemble:
+            ens_w = B.gather(ens_w, ind, axis=-1)
+    return fct, ens_w
 
 
 def lazy_gufunc_wrapper_uv(func):
