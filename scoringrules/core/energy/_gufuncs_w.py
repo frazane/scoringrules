@@ -92,8 +92,7 @@ def _energy_score_akr_kband_gufunc_w(
         e_1 += float(np.linalg.norm(fct[i] - obs)) * ens_w[i]
         for j in range(1, k + 1):
             e_2 += (
-                2
-                * float(np.linalg.norm(fct[i] - fct[(i + j) % M]))
+                float(np.linalg.norm(fct[i] - fct[(i + j) % M]))
                 * ens_w[i]
                 * ens_w[(i + j) % M]
             )
