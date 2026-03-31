@@ -219,10 +219,10 @@ def vres_ensemble(
     obs: "Array",
     fct: "Array",
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"],
-    *,
-    ens_w: "Array" = None,
     m_axis: int = -2,
     v_axis: int = -1,
+    *,
+    ens_w: "Array" = None,
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Vertically Re-scaled Energy Score (vrES) for a finite multivariate ensemble.
