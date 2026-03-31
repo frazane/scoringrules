@@ -7,7 +7,7 @@ ENSEMBLE_SIZE = 11
 N = 20
 N_VARS = 3
 
-ESTIMATORS = ["nrg", "fair", "akr", "akr_circperm"]
+ESTIMATORS = ["nrg", "fair", "akr", "akr_circperm", "akr_kband"]
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
@@ -18,13 +18,19 @@ def test_energy_score(estimator, backend):
     with pytest.raises(ValueError):
         obs = np.random.randn(N, N_VARS)
         fct = np.random.randn(N, ENSEMBLE_SIZE, N_VARS - 1)
-        sr.es_ensemble(obs, fct, estimator=estimator, backend=backend)
+        if estimator == "akr_kband":
+            sr.es_ensemble(obs, fct, estimator=estimator, backend=backend, k=2)
+        else:
+            sr.es_ensemble(obs, fct, estimator=estimator, backend=backend)
 
     # undefined estimator
     with pytest.raises(ValueError):
         fct = np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
         est = "undefined_estimator"
-        sr.es_ensemble(obs, fct, estimator=est, backend=backend)
+        if estimator == "akr_kband":
+            sr.es_ensemble(obs, fct, estimator=est, backend=backend, k=2)
+        else:
+            sr.es_ensemble(obs, fct, estimator=est, backend=backend)
 
     # test output
 
