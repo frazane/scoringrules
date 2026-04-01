@@ -1196,10 +1196,8 @@ def logs_t(
     >>> import scoringrules as sr
     >>> sr.logs_t(0.0, 0.1, 0.4, 0.1)
     """
-    if backend in ["torch", "tensorflow", "jax"]:
-        raise TypeError(
-            "Torch, Tensorflow, and JAX backends are not supported for the t distribution."
-        )
+    if backend == "torch":
+        raise TypeError("Torch backend is not supported for the t distribution.")
     if check_pars:
         B = backends.active if backend is None else backends[backend]
         df, scale = map(B.asarray, (df, scale))
