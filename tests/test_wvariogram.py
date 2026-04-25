@@ -21,7 +21,7 @@ def test_owvs_vs_vs(backend):
         lambda x: backends[backend].mean(x) * 0.0 + 1.0,
         backend=backend,
     )
-    np.testing.assert_allclose(res, resw, rtol=1e-3)
+    np.testing.assert_allclose(res, resw, atol=1e-5)
 
 
 def test_twvs_vs_vs(backend):
@@ -30,7 +30,7 @@ def test_twvs_vs_vs(backend):
 
     res = sr.vs_ensemble(obs, fct, backend=backend)
     resw = sr.twvs_ensemble(obs, fct, lambda x: x, backend=backend)
-    np.testing.assert_allclose(res, resw, rtol=5e-4)
+    np.testing.assert_allclose(res, resw, atol=1e-5)
 
 
 def test_vrvs_vs_vs(backend):

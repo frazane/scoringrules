@@ -34,6 +34,17 @@ def test_gksuv(estimator, backend):
         res = np.asarray(res)
         assert not np.any(res < 0.0)
 
+        # m_axis keyword
+        res = sr.gksuv_ensemble(
+            obs,
+            np.random.randn(ENSEMBLE_SIZE, N),
+            m_axis=0,
+            estimator=estimator,
+            backend=backend,
+        )
+        res = np.asarray(res)
+        assert not np.any(res < 0.0)
+
         # approx zero when perfect forecast
         perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
         res = sr.gksuv_ensemble(obs, perfect_fct, estimator=estimator, backend=backend)
@@ -98,6 +109,10 @@ def test_gksmv(estimator, backend):
     ).transpose()
 
     # test exceptions
+    with pytest.raises(ValueError):
+        est = "undefined_estimator"
+        sr.gksmv_ensemble(obs, fct, estimator=est, backend=backend)
+
     with pytest.raises(ValueError):
         est = "undefined_estimator"
         sr.gksmv_ensemble(obs, fct, estimator=est, backend=backend)

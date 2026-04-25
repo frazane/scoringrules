@@ -4,6 +4,7 @@ from scoringrules.backend import backends
 from scoringrules.core import crps, stats
 from scoringrules.core.utils import (
     univariate_array_check,
+    univariate_weight_check,
     estimator_check,
     uv_weighted_score_weights,
     uv_weighted_score_chain,
@@ -21,8 +22,9 @@ def crps_ensemble(
     fct: "Array",
     m_axis: int = -1,
     *,
-    sorted_ensemble: bool = False,
+    ens_w: "Array" = None,
     estimator: str = "qd",
+    sorted_ensemble: bool = False,
     nan_policy: "NanPolicy" = "propagate",
     backend: "Backend" = None,
 ) -> "Array":
@@ -59,11 +61,15 @@ def crps_ensemble(
         represented by the last axis.
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array, shape (..., m)
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting. Weights are normalised so that they sum to one
+        across the ensemble members.
+    estimator : str
+        Indicates the CRPS estimator to be used.
     sorted_ensemble : bool
         Boolean indicating whether the ensemble members are already in ascending order.
         Default is False.
-    estimator : str
-        Indicates the CRPS estimator to be used.
     nan_policy : {'propagate', 'omit', 'raise'}, default 'propagate'
         Defines how to handle NaN values in the ensemble members:
 
@@ -72,7 +78,8 @@ def crps_ensemble(
         - ``'raise'``: raise a ValueError if NaN values are encountered.
 
         Note: this applies to ensemble members (fct) only. NaN values in
-        observations (obs) always result in NaN output.
+        observations (obs) always result in NaN output. Not supported when
+        ``ens_w`` is provided.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
@@ -118,7 +125,18 @@ def crps_ensemble(
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
     # Sort before NaN handling so that NaN members end up at the tail of sorted arrays,
     # which is required for rank-based estimators ('pwm', 'qd', 'int').
-    fct = univariate_sort_ens(fct, estimator, sorted_ensemble, backend=backend)
+    fct, ens_w = univariate_sort_ens(
+        fct, ens_w, m_axis, estimator, sorted_ensemble, backend=backend
+    )
+    if ens_w is not None:
+        if nan_policy != "propagate":
+            raise NotImplementedError(
+                "nan_policy other than 'propagate' is not supported when `ens_w` is provided."
+            )
+        if backend == "numba":
+            estimator_check(estimator, crps.estimator_gufuncs_w)
+            return crps.estimator_gufuncs_w[estimator](obs, fct, ens_w)
+        return crps.ensemble_w(obs, fct, ens_w, estimator, backend=backend)
     if backend == "numba":
         estimator_check(estimator, crps.estimator_gufuncs)
         if nan_policy == "raise":
@@ -144,6 +162,7 @@ def twcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     v_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     estimator: str = "qd",
     sorted_ensemble: bool = False,
@@ -178,10 +197,19 @@ def twcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array, shape (..., m)
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting. Weights are normalised so that they sum to one
+        across the ensemble members.
     v_func : callable, array_like -> array_like
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold :math:`t` by projecting forecasts and observations
         to :math:`[t, \inf)`.
+    estimator : str
+        Indicates the CRPS estimator to be used.
+    sorted_ensemble : bool
+        Boolean indicating whether the ensemble members are already in ascending order.
+        Default is False.
     nan_policy : {'propagate', 'omit', 'raise'}, default 'propagate'
         Defines how to handle NaN values in the ensemble members. Forwarded to
         :func:`crps_ensemble`. See its documentation for details.
@@ -230,8 +258,9 @@ def twcrps_ensemble(
         obs,
         fct,
         m_axis=m_axis,
-        sorted_ensemble=sorted_ensemble,
+        ens_w=ens_w,
         estimator=estimator,
+        sorted_ensemble=sorted_ensemble,
         nan_policy=nan_policy,
         backend=backend,
     )
@@ -244,6 +273,7 @@ def owcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     nan_policy: "NanPolicy" = "propagate",
     backend: "Backend" = None,
@@ -282,6 +312,10 @@ def owcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array, shape (..., m)
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting. Weights are normalised so that they sum to one
+        across the ensemble members.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     nan_policy : {'propagate', 'omit', 'raise'}, default 'propagate'
@@ -324,6 +358,18 @@ def owcrps_ensemble(
     """
     nan_policy_check(nan_policy)
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
+    if ens_w is not None:
+        if nan_policy != "propagate":
+            raise NotImplementedError(
+                "nan_policy other than 'propagate' is not supported when `ens_w` is provided."
+            )
+        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
+        obs_w, fct_w = uv_weighted_score_weights(
+            obs, fct, a, b, w_func, backend=backend
+        )
+        if backend == "numba":
+            return crps.estimator_gufuncs_w["ownrg"](obs, fct, obs_w, fct_w, ens_w)
+        return crps.ow_ensemble_w(obs, fct, obs_w, fct_w, ens_w, backend=backend)
     if backend == "numba":
         if nan_policy == "raise":
             apply_nan_policy_ens_uv(obs, fct, "raise", backend=backend)
@@ -347,6 +393,7 @@ def vrcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
+    ens_w: "Array" = None,
     w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
     nan_policy: "NanPolicy" = "propagate",
     backend: "Backend" = None,
@@ -383,6 +430,10 @@ def vrcrps_ensemble(
         to values in the range [a, b].
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
+    ens_w : array, shape (..., m)
+        Weights assigned to the ensemble members. Array with the same shape as fct.
+        Default is equal weighting. Weights are normalised so that they sum to one
+        across the ensemble members.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     nan_policy : {'propagate', 'omit', 'raise'}, default 'propagate'
@@ -425,6 +476,18 @@ def vrcrps_ensemble(
     """
     nan_policy_check(nan_policy)
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
+    if ens_w is not None:
+        if nan_policy != "propagate":
+            raise NotImplementedError(
+                "nan_policy other than 'propagate' is not supported when `ens_w` is provided."
+            )
+        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
+        obs_w, fct_w = uv_weighted_score_weights(
+            obs, fct, a, b, w_func, backend=backend
+        )
+        if backend == "numba":
+            return crps.estimator_gufuncs_w["vrnrg"](obs, fct, obs_w, fct_w, ens_w)
+        return crps.vr_ensemble_w(obs, fct, obs_w, fct_w, ens_w, backend=backend)
     if backend == "numba":
         if nan_policy == "raise":
             apply_nan_policy_ens_uv(obs, fct, "raise", backend=backend)

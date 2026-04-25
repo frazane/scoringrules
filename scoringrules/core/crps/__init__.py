@@ -1,4 +1,5 @@
 from ._approx import ensemble, ow_ensemble, vr_ensemble, quantile_pinball
+from ._approx_w import ensemble_w, ow_ensemble_w, vr_ensemble_w
 from ._closed import (
     beta,
     binomial,
@@ -32,15 +33,20 @@ try:
         estimator_gufuncs_nanomit,
         quantile_pinball_gufunc,
     )
+    from ._gufuncs_w import estimator_gufuncs_w
 except ImportError:
     estimator_gufuncs = None
     estimator_gufuncs_nanomit = None
+    estimator_gufuncs_w = None
     quantile_pinball_gufunc = None
 
 __all__ = [
     "ensemble",
+    "ensemble_w",
     "ow_ensemble",
+    "ow_ensemble_w",
     "vr_ensemble",
+    "vr_ensemble_w",
     "beta",
     "binomial",
     "exponential",
@@ -67,6 +73,7 @@ __all__ = [
     "uniform",
     "estimator_gufuncs",
     "estimator_gufuncs_nanomit",
+    "estimator_gufuncs_w",
     "quantile_pinball",
     "quantile_pinball_gufunc",
 ]
