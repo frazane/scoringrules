@@ -205,7 +205,7 @@ def nan_policy_check(nan_policy: str) -> None:
         raise ValueError(f"Invalid nan_policy '{nan_policy}'. Must be one of {valid}.")
 
 
-def apply_nan_policy_ens_uv(obs, fct, nan_policy="propagate", backend=None):
+def apply_nan_policy_ens_uv(obs, fct, nan_policy="propagate", ens_w=None, backend=None):
     """Apply NaN policy to univariate ensemble forecasts (fct shape: ..., M).
 
     For 'propagate': no-op, returns (obs, fct, None).
@@ -215,21 +215,30 @@ def apply_nan_policy_ens_uv(obs, fct, nan_policy="propagate", backend=None):
     """
     B = backends.active if backend is None else backends[backend]
 
+    if nan_policy == "propagate":
+        return obs, fct, ens_w
+
+    nan_mask = B.isnan(fct)
+
     if nan_policy == "raise":
-        if B.any(B.isnan(fct)) or B.any(B.isnan(obs)):
+        if B.any(nan_mask) or B.any(B.isnan(obs)):
             raise ValueError(
                 "NaN values encountered in input. "
                 "Use nan_policy='propagate' or nan_policy='omit' to handle NaN values."
             )
-        return obs, fct, None
+        return obs, fct, ens_w
 
     if nan_policy == "omit":
-        nan_mask = B.isnan(fct)
         fct = B.where(nan_mask, B.asarray(0.0), fct)
-        return obs, fct, nan_mask
+        if ens_w is None:
+            ens_w = B.asarray(~nan_mask, dtype=fct.dtype)
+        else:
+            ens_w = B.where(nan_mask, B.asarray(0.0), ens_w)
+        return obs, fct, ens_w
 
-    # propagate
-    return obs, fct, None
+    raise ValueError(
+        f"Invalid nan_policy '{nan_policy}'. Must be one of 'propagate', 'omit', 'raise'."
+    )
 
 
 def apply_nan_policy_ens_mv(obs, fct, nan_policy="propagate", backend=None):

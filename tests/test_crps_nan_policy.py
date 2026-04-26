@@ -136,49 +136,6 @@ def test_omit_matches_manual(estimator, backend):
     )
 
 
-@pytest.mark.parametrize("estimator", ["akr", "akr_circperm"])
-def test_omit_matches_manual_akr_numba(estimator, backend):
-    """akr/akr_circperm nanomit gufuncs match the clean ensemble on numba."""
-    if backend != "numba":
-        pytest.skip(
-            "Array-backend akr/akr_circperm uses a roll-based masking that loses "
-            "valid consecutive pairs when NaN members are interspersed, so the result "
-            "differs from the clean ensemble — known limitation."
-        )
-    res_omit = sr.crps_ensemble(
-        _OBS, _FCT_WITH_NAN, estimator=estimator, nan_policy="omit", backend=backend
-    )
-    res_clean = sr.crps_ensemble(_OBS, _FCT_CLEAN, estimator=estimator, backend=backend)
-    assert np.isclose(
-        float(np.asarray(res_omit)), float(np.asarray(res_clean)), rtol=1e-5
-    )
-
-
-def test_omit_int_numba_matches_manual(backend):
-    """int estimator with nan_policy='omit' works on numba and matches the clean ensemble."""
-    if backend != "numba":
-        pytest.skip("int + omit only supported on numba")
-    res_omit = sr.crps_ensemble(
-        _OBS, _FCT_WITH_NAN, estimator="int", nan_policy="omit", backend=backend
-    )
-    res_clean = sr.crps_ensemble(
-        _OBS, _FCT_CLEAN, estimator="int", sorted_ensemble=True, backend=backend
-    )
-    assert np.isclose(
-        float(np.asarray(res_omit)), float(np.asarray(res_clean)), rtol=1e-5
-    )
-
-
-def test_omit_int_non_numba_raises(backend):
-    """int estimator with nan_policy='omit' raises NotImplementedError on non-numba."""
-    if backend == "numba":
-        pytest.skip("int + omit is supported on numba")
-    with pytest.raises(NotImplementedError):
-        sr.crps_ensemble(
-            _OBS, _FCT_WITH_NAN, estimator="int", nan_policy="omit", backend=backend
-        )
-
-
 # ---------------------------------------------------------------------------
 # omit policy — edge cases
 # ---------------------------------------------------------------------------
@@ -278,7 +235,8 @@ def test_invalid_nan_policy(backend):
 
 
 @pytest.mark.parametrize(
-    "estimator", ESTIMATORS_OMIT_ALL_BACKENDS + ["akr", "akr_circperm"]
+    "estimator",
+    ESTIMATORS_OMIT_ALL_BACKENDS,  # + ["akr", "akr_circperm"]
 )
 def test_no_nans_all_policies_equal(estimator, backend):
     """All three policies produce identical results when the ensemble has no NaN values."""

@@ -5,11 +5,9 @@ from scoringrules.core import crps, stats
 from scoringrules.core.utils import (
     univariate_array_check,
     univariate_weight_check,
-    estimator_check,
     uv_weighted_score_weights,
     uv_weighted_score_chain,
     univariate_sort_ens,
-    nan_policy_check,
     apply_nan_policy_ens_uv,
 )
 
@@ -22,7 +20,7 @@ def crps_ensemble(
     fct: "Array",
     m_axis: int = -1,
     *,
-    ens_w: "Array" = None,
+    ens_w: "Array | None" = None,
     estimator: str = "qd",
     sorted_ensemble: bool = False,
     nan_policy: "NanPolicy" = "propagate",
@@ -121,38 +119,35 @@ def crps_ensemble(
     >>> sr.crps_ensemble(obs, pred)
     array([0.69605316, 0.32865417, 0.39048665])
     """
-    nan_policy_check(nan_policy)
+
+    # check required input values
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
-    # Sort before NaN handling so that NaN members end up at the tail of sorted arrays,
-    # which is required for rank-based estimators ('pwm', 'qd', 'int').
+
+    # sort ensemble (for "qd", "pwm", "int" estimators)
     fct, ens_w = univariate_sort_ens(
         fct, ens_w, m_axis, estimator, sorted_ensemble, backend=backend
     )
+
+    # apply nan policy
+    obs, fct, ens_w = apply_nan_policy_ens_uv(
+        obs, fct, nan_policy, ens_w, backend=backend
+    )
+
+    # check and normalize ensemble weights (optional)
     if ens_w is not None:
-        if nan_policy != "propagate":
-            raise NotImplementedError(
-                "nan_policy other than 'propagate' is not supported when `ens_w` is provided."
-            )
-        if backend == "numba":
-            estimator_check(estimator, crps.estimator_gufuncs_w)
-            return crps.estimator_gufuncs_w[estimator](obs, fct, ens_w)
-        return crps.ensemble_w(obs, fct, ens_w, estimator, backend=backend)
+        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
+
+    # dispatch implementation
     if backend == "numba":
-        estimator_check(estimator, crps.estimator_gufuncs)
-        if nan_policy == "raise":
-            # Validate only — raises if NaN found; NaN values are left in-place.
-            apply_nan_policy_ens_uv(obs, fct, "raise", backend=backend)
-        if nan_policy == "omit":
-            # NaN values are left in-place; the nanomit gufuncs skip them internally.
-            return crps.estimator_gufuncs_nanomit[estimator](obs, fct)
-        return crps.estimator_gufuncs[estimator](obs, fct)
-    obs, fct, nan_mask = apply_nan_policy_ens_uv(obs, fct, nan_policy, backend=backend)
-    if nan_policy == "omit" and estimator == "int":
-        raise NotImplementedError(
-            "nan_policy='omit' is not supported with estimator='int' on non-numba backends. "
-            "Use a different estimator such as 'nrg', 'fair', 'pwm', or 'qd'."
-        )
-    return crps.ensemble(obs, fct, estimator, nan_mask=nan_mask, backend=backend)
+        if ens_w is None:
+            return crps.estimator_gufuncs(estimator)(obs, fct)
+        else:
+            return crps.estimator_gufuncs_w(estimator)(obs, fct, ens_w)
+
+    if ens_w is None:
+        return crps.ensemble(obs, fct, estimator, backend=backend)
+    else:
+        return crps.ensemble_w(obs, fct, ens_w, estimator, backend=backend)
 
 
 def twcrps_ensemble(
@@ -162,8 +157,8 @@ def twcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
-    ens_w: "Array" = None,
-    v_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
+    ens_w: "Array | None" = None,
+    v_func: tp.Callable[["ArrayLike"], "ArrayLike"] | None = None,
     estimator: str = "qd",
     sorted_ensemble: bool = False,
     nan_policy: "NanPolicy" = "propagate",
@@ -273,8 +268,8 @@ def owcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
-    ens_w: "Array" = None,
-    w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
+    ens_w: "Array | None" = None,
+    w_func: tp.Callable[["ArrayLike"], "ArrayLike"] | None = None,
     nan_policy: "NanPolicy" = "propagate",
     backend: "Backend" = None,
 ) -> "Array":
@@ -356,34 +351,33 @@ def owcrps_ensemble(
     >>> sr.owcrps_ensemble(obs, fct, w_func=w_func)
     array([0.91103733, 0.45212402, 0.35686667])
     """
-    nan_policy_check(nan_policy)
+
+    # check input values
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
-    if ens_w is not None:
-        if nan_policy != "propagate":
-            raise NotImplementedError(
-                "nan_policy other than 'propagate' is not supported when `ens_w` is provided."
-            )
-        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
-        obs_w, fct_w = uv_weighted_score_weights(
-            obs, fct, a, b, w_func, backend=backend
-        )
-        if backend == "numba":
-            return crps.estimator_gufuncs_w["ownrg"](obs, fct, obs_w, fct_w, ens_w)
-        return crps.ow_ensemble_w(obs, fct, obs_w, fct_w, ens_w, backend=backend)
-    if backend == "numba":
-        if nan_policy == "raise":
-            apply_nan_policy_ens_uv(obs, fct, "raise", backend=backend)
-        obs_w, fct_w = uv_weighted_score_weights(
-            obs, fct, a, b, w_func, backend=backend
-        )
-        if nan_policy == "omit":
-            # NaN values are left in-place; the nanomit gufunc skips them and
-            # recomputes wbar from valid members only.
-            return crps.estimator_gufuncs_nanomit["ownrg"](obs, fct, obs_w, fct_w)
-        return crps.estimator_gufuncs["ownrg"](obs, fct, obs_w, fct_w)
-    obs, fct, nan_mask = apply_nan_policy_ens_uv(obs, fct, nan_policy, backend=backend)
+
+    # compute outcome weights
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, backend=backend)
-    return crps.ow_ensemble(obs, fct, obs_w, fct_w, nan_mask=nan_mask, backend=backend)
+
+    # apply nan policy
+    obs, fct, ens_w = apply_nan_policy_ens_uv(
+        obs, fct, nan_policy, ens_w, backend=backend
+    )
+
+    # check and normalize ensemble weights (optional)
+    if ens_w is not None:
+        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
+
+    # dispatch to implementation
+    if backend == "numba":
+        if ens_w is None:
+            return crps.estimator_gufuncs("ownrg")(obs, fct, obs_w, fct_w)
+        else:
+            return crps.estimator_gufuncs_w("ownrg")(obs, fct, obs_w, fct_w, ens_w)
+
+    if ens_w is None:
+        return crps.ow_ensemble(obs, fct, obs_w, fct_w, backend=backend)
+    else:
+        return crps.ow_ensemble_w(obs, fct, obs_w, fct_w, ens_w, backend=backend)
 
 
 def vrcrps_ensemble(
@@ -393,8 +387,8 @@ def vrcrps_ensemble(
     b: float = float("inf"),
     m_axis: int = -1,
     *,
-    ens_w: "Array" = None,
-    w_func: tp.Callable[["ArrayLike"], "ArrayLike"] = None,
+    ens_w: "Array | None" = None,
+    w_func: tp.Callable[["ArrayLike"], "ArrayLike"] | None = None,
     nan_policy: "NanPolicy" = "propagate",
     backend: "Backend" = None,
 ) -> "Array":
@@ -474,32 +468,33 @@ def vrcrps_ensemble(
     >>> sr.vrcrps_ensemble(obs, fct, w_func)
     array([0.90036433, 0.41515255, 0.41653833])
     """
-    nan_policy_check(nan_policy)
+
+    # check input values
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
-    if ens_w is not None:
-        if nan_policy != "propagate":
-            raise NotImplementedError(
-                "nan_policy other than 'propagate' is not supported when `ens_w` is provided."
-            )
-        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
-        obs_w, fct_w = uv_weighted_score_weights(
-            obs, fct, a, b, w_func, backend=backend
-        )
-        if backend == "numba":
-            return crps.estimator_gufuncs_w["vrnrg"](obs, fct, obs_w, fct_w, ens_w)
-        return crps.vr_ensemble_w(obs, fct, obs_w, fct_w, ens_w, backend=backend)
-    if backend == "numba":
-        if nan_policy == "raise":
-            apply_nan_policy_ens_uv(obs, fct, "raise", backend=backend)
-        obs_w, fct_w = uv_weighted_score_weights(
-            obs, fct, a, b, w_func, backend=backend
-        )
-        if nan_policy == "omit":
-            return crps.estimator_gufuncs_nanomit["vrnrg"](obs, fct, obs_w, fct_w)
-        return crps.estimator_gufuncs["vrnrg"](obs, fct, obs_w, fct_w)
-    obs, fct, nan_mask = apply_nan_policy_ens_uv(obs, fct, nan_policy, backend=backend)
+
+    # compute outcome weights
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, backend=backend)
-    return crps.vr_ensemble(obs, fct, obs_w, fct_w, nan_mask=nan_mask, backend=backend)
+
+    # apply nan policy
+    obs, fct, ens_w = apply_nan_policy_ens_uv(
+        obs, fct, nan_policy, ens_w, backend=backend
+    )
+
+    # check and normalize ensemble weights (optional)
+    if ens_w is not None:
+        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
+
+    # dispatch to implementation
+    if backend == "numba":
+        if ens_w is None:
+            return crps.estimator_gufuncs("vrnrg")(obs, fct, obs_w, fct_w)
+        else:
+            return crps.estimator_gufuncs_w("vrnrg")(obs, fct, obs_w, fct_w, ens_w)
+
+    if ens_w is None:
+        return crps.vr_ensemble(obs, fct, obs_w, fct_w, backend=backend)
+    else:
+        return crps.vr_ensemble_w(obs, fct, obs_w, fct_w, ens_w, backend=backend)
 
 
 def crps_quantile(

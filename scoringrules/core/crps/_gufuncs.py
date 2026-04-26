@@ -248,7 +248,7 @@ def _vrcrps_ensemble_nrg_gufunc(
     out[0] = e_1 / M - 0.5 * e_2 / (M**2) + (wabs_x - wabs_y) * (wbar - ow)
 
 
-estimator_gufuncs = {
+_estimator_gufuncs = {
     "akr_circperm": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_circperm_gufunc),
     "akr": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_gufunc),
     "fair": _crps_ensemble_fair_gufunc,
@@ -259,6 +259,12 @@ estimator_gufuncs = {
     "ownrg": lazy_gufunc_wrapper_uv(_owcrps_ensemble_nrg_gufunc),
     "vrnrg": lazy_gufunc_wrapper_uv(_vrcrps_ensemble_nrg_gufunc),
 }
+
+
+def estimator_gufuncs(estimator):
+    if estimator not in _estimator_gufuncs:
+        raise ValueError(f"Unknown estimator: {estimator}")
+    return _estimator_gufuncs[estimator]
 
 
 # --- NaN-omit variants ---
@@ -272,215 +278,6 @@ estimator_gufuncs = {
 # behaviour).  Those gufuncs exploit this with an early-exit loop.
 # All other estimators (nrg, fair, akr, akr_circperm, ownrg, vrnrg) make no
 # assumption about member order and scan the full array.
-
-
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:])",
-    ],
-    "(),(n)->()",
-)
-def _crps_ensemble_nrg_nanomit_gufunc(
-    obs: np.ndarray, fct: np.ndarray, out: np.ndarray
-):
-    """NaN-omit CRPS estimator based on the energy form."""
-    obs = obs[0]
-    M = fct.shape[-1]
-
-    if np.isnan(obs):
-        out[0] = np.nan
-        return
-
-    e_1 = 0.0
-    e_2 = 0.0
-    M_eff = 0
-
-    for i in range(M):
-        if np.isnan(fct[i]):
-            continue
-        M_eff += 1
-        e_1 += abs(fct[i] - obs)
-        for j in range(i + 1, M):
-            if np.isnan(fct[j]):
-                continue
-            e_2 += 2 * abs(fct[j] - fct[i])
-
-    if M_eff == 0:
-        out[0] = np.nan
-    else:
-        out[0] = e_1 / M_eff - 0.5 * e_2 / (M_eff**2)
-
-
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:])",
-    ],
-    "(),(n)->()",
-)
-def _crps_ensemble_fair_nanomit_gufunc(
-    obs: np.ndarray, fct: np.ndarray, out: np.ndarray
-):
-    """NaN-omit fair CRPS estimator based on the energy form."""
-    obs = obs[0]
-    M = fct.shape[-1]
-
-    if np.isnan(obs):
-        out[0] = np.nan
-        return
-
-    e_1 = 0.0
-    e_2 = 0.0
-    M_eff = 0
-
-    for i in range(M):
-        if np.isnan(fct[i]):
-            continue
-        M_eff += 1
-        e_1 += abs(fct[i] - obs)
-        for j in range(i + 1, M):
-            if np.isnan(fct[j]):
-                continue
-            e_2 += 2 * abs(fct[j] - fct[i])
-
-    if M_eff <= 1:
-        out[0] = np.nan
-    else:
-        out[0] = e_1 / M_eff - 0.5 * e_2 / (M_eff * (M_eff - 1))
-
-
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:])",
-    ],
-    "(),(n)->()",
-)
-def _crps_ensemble_qd_nanomit_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
-    """NaN-omit CRPS estimator based on the quantile decomposition form.
-
-    Assumes the ensemble is pre-sorted with NaN members at the tail.
-    """
-    obs = obs[0]
-    M = fct.shape[-1]
-
-    if np.isnan(obs):
-        out[0] = np.nan
-        return
-
-    # Count valid members — NaNs are at the tail after sorting.
-    M_eff = 0
-    for i in range(M):
-        if np.isnan(fct[i]):
-            break
-        M_eff += 1
-
-    if M_eff == 0:
-        out[0] = np.nan
-        return
-
-    obs_cdf = 0.0
-    integral = 0.0
-
-    for i in range(M_eff):
-        forecast = fct[i]
-        if obs < forecast:
-            obs_cdf = 1.0
-        integral += (forecast - obs) * (M_eff * obs_cdf - (i + 1) + 0.5)
-
-    out[0] = (2 / M_eff**2) * integral
-
-
-@guvectorize("(),(n)->()")
-def _crps_ensemble_pwm_nanomit_gufunc(
-    obs: np.ndarray, fct: np.ndarray, out: np.ndarray
-):
-    """NaN-omit CRPS estimator based on the probability weighted moment (PWM) form.
-
-    Assumes the ensemble is pre-sorted with NaN members at the tail.
-    """
-    M = fct.shape[-1]
-
-    if np.isnan(obs):
-        out[0] = np.nan
-        return
-
-    # Count valid members — NaNs are at the tail after sorting.
-    M_eff = 0
-    for i in range(M):
-        if np.isnan(fct[i]):
-            break
-        M_eff += 1
-
-    if M_eff == 0:
-        out[0] = np.nan
-        return
-
-    expected_diff = 0.0
-    β_0 = 0.0
-    β_1 = 0.0
-
-    for i in range(M_eff):
-        forecast = fct[i]
-        expected_diff += np.abs(forecast - obs)
-        β_0 += forecast
-        β_1 += forecast * i
-
-    if M_eff == 1:
-        out[0] = expected_diff / M_eff + β_0 / M_eff
-    else:
-        out[0] = expected_diff / M_eff + β_0 / M_eff - 2 * β_1 / (M_eff * (M_eff - 1))
-
-
-@guvectorize("(),(n)->()")
-def _crps_ensemble_int_nanomit_gufunc(
-    obs: np.ndarray, fct: np.ndarray, out: np.ndarray
-):
-    """NaN-omit CRPS estimator based on the integral form.
-
-    Assumes the ensemble is pre-sorted with NaN members at the tail.
-    Unlike the base variant, this skips NaN members rather than stopping at them.
-    """
-    M = fct.shape[0]
-
-    if np.isnan(obs):
-        out[0] = np.nan
-        return
-
-    # Count valid members — NaNs are at the tail after sorting.
-    M_eff = 0
-    for i in range(M):
-        if np.isnan(fct[i]):
-            break
-        M_eff += 1
-
-    if M_eff == 0:
-        out[0] = np.nan
-        return
-
-    obs_cdf = 0
-    forecast_cdf = 0.0
-    prev_forecast = 0.0
-    integral = 0.0
-
-    for n in range(M_eff):
-        forecast = fct[n]
-
-        if obs_cdf == 0 and obs < forecast:
-            integral += (obs - prev_forecast) * forecast_cdf**2
-            integral += (forecast - obs) * (forecast_cdf - 1) ** 2
-            obs_cdf = 1
-        else:
-            integral += (forecast_cdf - obs_cdf) ** 2 * (forecast - prev_forecast)
-
-        forecast_cdf += 1 / M_eff
-        prev_forecast = forecast
-
-    if obs_cdf == 0:
-        integral += obs - fct[M_eff - 1]
-
-    out[0] = integral
 
 
 @guvectorize("(),(n)->()")
@@ -556,107 +353,7 @@ def _crps_ensemble_akr_circperm_nanomit_gufunc(
     out[0] = e_1 / M_eff - 0.5 / M_eff * e_2
 
 
-@guvectorize("(),(n),(),(n)->()")
-def _owcrps_ensemble_nrg_nanomit_gufunc(
-    obs: np.ndarray,
-    fct: np.ndarray,
-    ow: np.ndarray,
-    fw: np.ndarray,
-    out: np.ndarray,
-):
-    """NaN-omit outcome-weighted CRPS estimator based on the energy form."""
-    M = fct.shape[-1]
-
-    if np.isnan(obs):
-        out[0] = np.nan
-        return
-
-    e_1 = 0.0
-    e_2 = 0.0
-    sum_fw = 0.0
-    M_eff = 0
-
-    for i in range(M):
-        if np.isnan(fct[i]):
-            continue
-        M_eff += 1
-        e_1 += abs(fct[i] - obs) * fw[i] * ow
-        sum_fw += fw[i]
-        for j in range(i + 1, M):
-            if np.isnan(fct[j]):
-                continue
-            e_2 += 2 * abs(fct[i] - fct[j]) * fw[i] * fw[j] * ow
-
-    if M_eff == 0:
-        out[0] = np.nan
-        return
-
-    wbar = sum_fw / M_eff
-    out[0] = e_1 / (M_eff * wbar) - 0.5 * e_2 / ((M_eff * wbar) ** 2)
-
-
-@guvectorize("(),(n),(),(n)->()")
-def _vrcrps_ensemble_nrg_nanomit_gufunc(
-    obs: np.ndarray,
-    fct: np.ndarray,
-    ow: np.ndarray,
-    fw: np.ndarray,
-    out: np.ndarray,
-):
-    """NaN-omit vertically re-scaled CRPS estimator based on the energy form."""
-    M = fct.shape[-1]
-
-    if np.isnan(obs):
-        out[0] = np.nan
-        return
-
-    e_1 = 0.0
-    e_2 = 0.0
-    sum_fw = 0.0
-    sum_abs_fw = 0.0
-    M_eff = 0
-
-    for i in range(M):
-        if np.isnan(fct[i]):
-            continue
-        M_eff += 1
-        e_1 += abs(fct[i] - obs) * fw[i] * ow
-        sum_fw += fw[i]
-        sum_abs_fw += abs(fct[i]) * fw[i]
-        for j in range(i + 1, M):
-            if np.isnan(fct[j]):
-                continue
-            e_2 += 2 * abs(fct[i] - fct[j]) * fw[i] * fw[j]
-
-    if M_eff == 0:
-        out[0] = np.nan
-        return
-
-    wbar = sum_fw / M_eff
-    wabs_x = sum_abs_fw / M_eff
-    wabs_y = abs(obs) * ow
-    out[0] = e_1 / M_eff - 0.5 * e_2 / (M_eff**2) + (wabs_x - wabs_y) * (wbar - ow)
-
-
 estimator_gufuncs_nanomit = {
     "akr_circperm": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_circperm_nanomit_gufunc),
     "akr": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_nanomit_gufunc),
-    "fair": _crps_ensemble_fair_nanomit_gufunc,
-    "int": lazy_gufunc_wrapper_uv(_crps_ensemble_int_nanomit_gufunc),
-    "nrg": _crps_ensemble_nrg_nanomit_gufunc,
-    "pwm": lazy_gufunc_wrapper_uv(_crps_ensemble_pwm_nanomit_gufunc),
-    "qd": _crps_ensemble_qd_nanomit_gufunc,
-    "ownrg": lazy_gufunc_wrapper_uv(_owcrps_ensemble_nrg_nanomit_gufunc),
-    "vrnrg": lazy_gufunc_wrapper_uv(_vrcrps_ensemble_nrg_nanomit_gufunc),
 }
-
-__all__ = [
-    "_crps_ensemble_akr_circperm_gufunc",
-    "_crps_ensemble_akr_gufunc",
-    "_crps_ensemble_fair_gufunc",
-    "_crps_ensemble_int_gufunc",
-    "_crps_ensemble_nrg_gufunc",
-    "_crps_ensemble_pwm_gufunc",
-    "_crps_ensemble_qd_gufunc",
-    "quantile_pinball_gufunc",
-]

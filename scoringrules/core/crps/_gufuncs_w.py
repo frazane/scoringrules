@@ -231,7 +231,13 @@ def _vrcrps_ensemble_nrg_w_gufunc(
     out[0] = e_1 - 0.5 * e_2 + (wabs_x - wabs_y) * (wbar - ow)
 
 
-estimator_gufuncs_w = {
+def estimator_gufuncs_w(estimator):
+    if estimator not in _estimator_gufuncs_w:
+        raise ValueError(f"Unknown estimator: {estimator}")
+    return _estimator_gufuncs_w[estimator]
+
+
+_estimator_gufuncs_w = {
     "akr_circperm": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_circperm_w_gufunc),
     "akr": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_w_gufunc),
     "fair": lazy_gufunc_wrapper_uv(_crps_ensemble_fair_w_gufunc),
