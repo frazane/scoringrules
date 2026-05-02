@@ -20,7 +20,7 @@ def dssuv_ensemble(
     The Dawid-Sebastiani Score for an ensemble forecast is defined as
 
     .. math::
-        \text{DSS}(F_{ens}, y)= \frac{(y - \bar{x)^2}{\sigma^2} + 2 \log \sigma
+        \text{DSS}(F_{ens}, y) = \frac{(y - \bar{x})^2}{\sigma^2} + 2 \log \sigma
 
     where :math:`\bar{x}` and :math:`\sigma` are the mean and standard deviation of the ensemble members.
 
