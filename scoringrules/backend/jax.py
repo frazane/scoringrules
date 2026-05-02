@@ -304,6 +304,9 @@ class JaxBackend(ArrayBackend):
     def reshape(self, x: "Array", shape: int | tuple[int, ...]) -> "Array":
         return jnp.reshape(x, shape)
 
+    def all_integer(self, x: "Array"):
+        return jnp.all(x % 1 == 0).item()
+
 
 if __name__ == "__main__":
     B = JaxBackend()

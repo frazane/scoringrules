@@ -328,3 +328,6 @@ class TorchBackend(ArrayBackend):
 
     def reshape(self, x: "Tensor", shape: int | tuple[int, ...]) -> "Tensor":
         return torch.reshape(x, shape)
+
+    def all_integer(self, x: "Tensor") -> bool:
+        return torch.all(x % 1 == 0).item()

@@ -301,6 +301,9 @@ class NumpyBackend(ArrayBackend):
     def reshape(self, x: "NDArray", shape: int | tuple[int, ...]) -> "NDArray":
         return np.reshape(x, shape)
 
+    def all_integer(self, x: "NDArray") -> bool:
+        return np.all(np.mod(x, 1) == 0)
+
 
 class NumbaBackend(NumpyBackend):
     """Numba backend."""

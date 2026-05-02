@@ -155,6 +155,7 @@ def logs_beta(
     upper: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the beta distribution.
 
@@ -173,7 +174,10 @@ def logs_beta(
     upper : array_like
         Upper bound of the forecast beta distribution.
     backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -185,6 +189,19 @@ def logs_beta(
     >>> import scoringrules as sr
     >>> sr.logs_beta(0.3, 0.7, 1.1)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        a, b, lower, upper = map(B.asarray, (a, b, lower, upper))
+        if B.any(a <= 0):
+            raise ValueError(
+                "`a` contains non-positive entries. The shape parameters of the Beta distribution must be positive."
+            )
+        if B.any(b <= 0):
+            raise ValueError(
+                "`b` contains non-positive entries. The shape parameters of the Beta distribution must be positive."
+            )
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     return logarithmic.beta(obs, a, b, lower, upper, backend=backend)
 
 
@@ -194,6 +211,7 @@ def logs_binomial(
     prob: "ArrayLike",
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the binomial distribution.
 
@@ -204,11 +222,14 @@ def logs_binomial(
     obs : array_like
         The observed values.
     n : array_like
-        Size parameter of the forecast binomial distribution as an integer or array of integers.
+        Size parameter of the forecast binomial distribution as an integer or array of positive integers.
     prob : array_like
         Probability parameter of the forecast binomial distribution as a float or array of floats.
     backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -220,6 +241,19 @@ def logs_binomial(
     >>> import scoringrules as sr
     >>> sr.logs_binomial(4, 10, 0.5)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        prob = B.asarray(prob)
+        if B.any(prob < 0) or B.any(prob > 1):
+            raise ValueError("`prob` contains values outside the range [0, 1].")
+        if B.any(n <= 0):
+            raise ValueError(
+                "`n` contains non-positive entries. The size parameter of the binomial distribution must be positive."
+            )
+        if not B.all_integer(n):
+            raise ValueError(
+                "`n` contains non-integer entries. The size parameter of the binomial distribution must be an integer."
+            )
     return logarithmic.binomial(obs, n, prob, backend=backend)
 
 
@@ -228,6 +262,7 @@ def logs_exponential(
     rate: "ArrayLike",
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the exponential distribution.
 
@@ -240,7 +275,10 @@ def logs_exponential(
     rate : array_like
         Rate parameter of the forecast exponential distribution.
     backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -252,6 +290,13 @@ def logs_exponential(
     >>> import scoringrules as sr
     >>> sr.logs_exponential(0.8, 3.0)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        rate = B.asarray(rate)
+        if B.any(rate <= 0):
+            raise ValueError(
+                "`rate` contains non-positive entries. The rate parameter of the exponential distribution must be positive."
+            )
     return logarithmic.exponential(obs, rate, backend=backend)
 
 
@@ -261,6 +306,7 @@ def logs_exponential2(
     scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the exponential distribution with location and scale parameters.
 
@@ -275,7 +321,10 @@ def logs_exponential2(
     scale : array_like
         Scale parameter of the forecast exponential distribution.
     backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -287,6 +336,13 @@ def logs_exponential2(
     >>> import scoringrules as sr
     >>> sr.logs_exponential2(0.2, 0.0, 1.0)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale = B.asarray(scale)
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the exponential distribution must be positive."
+            )
     return logarithmic.exponential2(obs, location, scale, backend=backend)
 
 
@@ -297,6 +353,7 @@ def logs_2pexponential(
     location: "ArrayLike",
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the two-piece exponential distribution.
 
@@ -313,7 +370,10 @@ def logs_2pexponential(
     location : array_like
         Location parameter of the forecast two-piece exponential distribution.
     backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -325,6 +385,17 @@ def logs_2pexponential(
     >>> import scoringrules as sr
     >>> sr.logs_2pexponential(0.8, 3.0, 1.4, 0.0)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale1, scale2 = map(B.asarray, (scale1, scale2))
+        if B.any(scale1 <= 0):
+            raise ValueError(
+                "`scale1` contains non-positive entries. The scale parameters of the two-piece exponential distribution must be positive."
+            )
+        if B.any(scale2 <= 0):
+            raise ValueError(
+                "`scale2` contains non-positive entries. The scale parameters of the two-piece exponential distribution must be positive."
+            )
     return logarithmic.twopexponential(obs, scale1, scale2, location, backend=backend)
 
 
@@ -335,6 +406,7 @@ def logs_gamma(
     *,
     scale: "ArrayLike | None" = None,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the gamma distribution.
 
@@ -350,6 +422,11 @@ def logs_gamma(
         Rate parameter of the forecast gamma distribution.
     scale : array_like
         Scale parameter of the forecast gamma distribution, where `scale = 1 / rate`.
+    backend : str
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -374,6 +451,18 @@ def logs_gamma(
     if rate is None:
         rate = 1.0 / scale
 
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        shape, rate = map(B.asarray, (shape, rate))
+        if B.any(shape <= 0):
+            raise ValueError(
+                "`shape` contains non-positive entries. The shape parameter of the gamma distribution must be positive."
+            )
+        if B.any(rate <= 0):
+            raise ValueError(
+                "`rate` or `scale` contains non-positive entries. The rate and scale parameters of the gamma distribution must be positive."
+            )
+
     return logarithmic.gamma(obs, shape, rate, backend=backend)
 
 
@@ -384,6 +473,7 @@ def logs_gev(
     scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the generalised extreme value (GEV) distribution.
 
@@ -400,7 +490,10 @@ def logs_gev(
     scale : array_like
         Scale parameter of the forecast GEV distribution.
     backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -412,6 +505,13 @@ def logs_gev(
     >>> import scoringrules as sr
     >>> sr.logs_gev(0.3, 0.1)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, shape = map(B.asarray, (scale, shape))
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the GEV distribution must be positive."
+            )
     return logarithmic.gev(obs, shape, location, scale, backend=backend)
 
 
@@ -422,6 +522,7 @@ def logs_gpd(
     scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the generalised Pareto distribution (GPD).
 
@@ -439,7 +540,10 @@ def logs_gpd(
     scale : array_like
         Scale parameter of the forecast GPD distribution.
     backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -451,6 +555,13 @@ def logs_gpd(
     >>> import scoringrules as sr
     >>> sr.logs_gpd(0.3, 0.9)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, shape = map(B.asarray, (scale, shape))
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the GPD distribution must be positive. `nan` is returned in these places."
+            )
     return logarithmic.gpd(obs, shape, location, scale, backend=backend)
 
 
@@ -461,6 +572,7 @@ def logs_hypergeometric(
     k: "ArrayLike",
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the hypergeometric distribution.
 
@@ -477,7 +589,10 @@ def logs_hypergeometric(
     k : array_like
         Number of draws, without replacement. Must be in 0, 1, ..., m + n.
     backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -489,6 +604,36 @@ def logs_hypergeometric(
     >>> import scoringrules as sr
     >>> sr.logs_hypergeometric(5, 7, 13, 12)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        if B.any(m < 0):
+            raise ValueError(
+                "`m` contains negative entries. The number of successes in the hypergeometric distribution must be non-negative."
+            )
+        if B.any(n < 0):
+            raise ValueError(
+                "`n` contains negative entries. The number of failures in the hypergeometric distribution must be non-negative."
+            )
+        if B.any(k < 0):
+            raise ValueError(
+                "`k` contains negative entries. The number of draws in the hypergeometric distribution must be non-negative."
+            )
+        if B.any(k > m + n):
+            raise ValueError(
+                "`k` contains values larger than `m + n`. The number of draws in the hypergeometric distribution must be between the number of successes and failures."
+            )
+        if not B.all_integer(m):
+            raise ValueError(
+                "`m` contains non-integer entries. The number of successes in the hypergeometric distribution must be an integer."
+            )
+        if not B.all_integer(n):
+            raise ValueError(
+                "`n` contains non-integer entries. The number of failures in the hypergeometric distribution must be an integer."
+            )
+        if not B.all_integer(k):
+            raise ValueError(
+                "`k` contains non-integer entries. The number of draws in the hypergeometric distribution must be an integer."
+            )
     return logarithmic.hypergeometric(obs, m, n, k, backend=backend)
 
 
@@ -498,6 +643,7 @@ def logs_laplace(
     scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the Laplace distribution.
 
@@ -513,6 +659,11 @@ def logs_laplace(
     scale : array_like
         Scale parameter of the forecast laplace distribution.
         The LS between obs and Laplace(location, scale).
+    backend : str
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -524,6 +675,13 @@ def logs_laplace(
     >>> import scoringrules as sr
     >>> sr.logs_laplace(0.3, 0.1, 0.2)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale = B.asarray(scale)
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the laplace must be positive."
+            )
     return logarithmic.laplace(obs, location, scale, backend=backend)
 
 
@@ -533,6 +691,7 @@ def logs_loglaplace(
     scalelog: "ArrayLike",
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the log-Laplace distribution.
 
@@ -546,6 +705,11 @@ def logs_loglaplace(
         Location parameter of the forecast log-laplace distribution.
     scalelog : array_like
         Scale parameter of the forecast log-laplace distribution.
+    backend : str
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -557,15 +721,23 @@ def logs_loglaplace(
     >>> import scoringrules as sr
     >>> sr.logs_loglaplace(3.0, 0.1, 0.9)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scalelog = B.asarray(scalelog)
+        if B.any(scalelog <= 0) or B.any(scalelog >= 1):
+            raise ValueError(
+                "`scalelog` contains entries outside of the range (0, 1). The scale parameter of the log-laplace distribution must be between 0 and 1."
+            )
     return logarithmic.loglaplace(obs, locationlog, scalelog, backend=backend)
 
 
 def logs_logistic(
     obs: "ArrayLike",
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the logistic distribution.
 
@@ -575,29 +747,43 @@ def logs_logistic(
     ----------
     obs : array_like
         Observed values.
-    mu : array_like
+    location : array_like
         Location parameter of the forecast logistic distribution.
-    sigma : array_like
+    scale : array_like
         Scale parameter of the forecast logistic distribution.
+    backend : str
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
     score : array_like
-        The LS for the Logistic(mu, sigma) forecasts given the observations.
+        The LS for the Logistic(location, scale) forecasts given the observations.
 
     Examples
     --------
     >>> import scoringrules as sr
     >>> sr.logs_logistic(0.0, 0.4, 0.1)
     """
-    return logarithmic.logistic(obs, mu, sigma, backend=backend)
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale = B.asarray(scale)
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the logistic distribution must be positive."
+            )
+    return logarithmic.logistic(obs, location, scale, backend=backend)
 
 
 def logs_loglogistic(
     obs: "ArrayLike",
-    mulog: "ArrayLike",
-    sigmalog: "ArrayLike",
+    locationlog: "ArrayLike",
+    scalelog: "ArrayLike",
+    *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the log-logistic distribution.
 
@@ -607,31 +793,43 @@ def logs_loglogistic(
     ----------
     obs : array_like
         The observed values.
-    mulog : array_like
+    locationlog : array_like
         Location parameter of the log-logistic distribution.
-    sigmalog : array_like
+    scalelog : array_like
         Scale parameter of the log-logistic distribution.
     backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
     score : array_like
-        The LS between obs and Loglogis(mulog, sigmalog).
+        The LS between obs and Loglogis(locationlog, scalelog).
 
     Examples
     --------
     >>> import scoringrules as sr
     >>> sr.logs_loglogistic(3.0, 0.1, 0.9)
     """
-    return logarithmic.loglogistic(obs, mulog, sigmalog, backend=backend)
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scalelog = B.asarray(scalelog)
+        if B.any(scalelog <= 0) or B.any(scalelog >= 1):
+            raise ValueError(
+                "`scalelog` contains entries outside of the range (0, 1). The scale parameter of the log-logistic distribution must be between 0 and 1."
+            )
+    return logarithmic.loglogistic(obs, locationlog, scalelog, backend=backend)
 
 
 def logs_lognormal(
     obs: "ArrayLike",
     mulog: "ArrayLike",
     sigmalog: "ArrayLike",
+    *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the log-normal distribution.
 
@@ -645,6 +843,11 @@ def logs_lognormal(
         Mean of the normal underlying distribution.
     sigmalog : array_like
         Standard deviation of the underlying normal distribution.
+    backend : str
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -656,6 +859,13 @@ def logs_lognormal(
     >>> import scoringrules as sr
     >>> sr.logs_lognormal(0.0, 0.4, 0.1)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        sigmalog = B.asarray(sigmalog)
+        if B.any(sigmalog <= 0):
+            raise ValueError(
+                "`sigmalog` contains non-positive entries. The scale parameter of the log-normal distribution must be positive."
+            )
     return logarithmic.lognormal(obs, mulog, sigmalog, backend=backend)
 
 
@@ -664,9 +874,10 @@ def logs_mixnorm(
     m: "ArrayLike",
     s: "ArrayLike",
     w: "ArrayLike" = None,
-    mc_axis: "ArrayLike" = -1,
+    m_axis: "ArrayLike" = -1,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score for a mixture of normal distributions.
 
@@ -682,10 +893,13 @@ def logs_mixnorm(
         Standard deviations of the component normal distributions.
     w : array_like
         Non-negative weights assigned to each component.
-    mc_axis : int
+    m_axis : int
         The axis corresponding to the mixture components. Default is the last axis.
     backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -701,15 +915,24 @@ def logs_mixnorm(
     obs, m, s = map(B.asarray, (obs, m, s))
 
     if w is None:
-        M: int = m.shape[mc_axis]
+        M: int = m.shape[m_axis]
         w = B.ones(m.shape) / M
     else:
         w = B.asarray(w)
+        w = w / B.sum(w, axis=m_axis, keepdims=True)
 
-    if mc_axis != -1:
-        m = B.moveaxis(m, mc_axis, -1)
-        s = B.moveaxis(s, mc_axis, -1)
-        w = B.moveaxis(w, mc_axis, -1)
+    if check_pars:
+        if B.any(s <= 0):
+            raise ValueError(
+                "`s` contains non-positive entries. The scale parameters of the normal distributions should be positive."
+            )
+        if B.any(w < 0):
+            raise ValueError("`w` contains negative entries")
+
+    if m_axis != -1:
+        m = B.moveaxis(m, m_axis, -1)
+        s = B.moveaxis(s, m_axis, -1)
+        w = B.moveaxis(w, m_axis, -1)
 
     return logarithmic.mixnorm(obs, m, s, w, backend=backend)
 
@@ -718,9 +941,10 @@ def logs_negbinom(
     obs: "ArrayLike",
     n: "ArrayLike",
     prob: "ArrayLike | None" = None,
-    *,
     mu: "ArrayLike | None" = None,
+    *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the negative binomial distribution.
 
@@ -736,6 +960,11 @@ def logs_negbinom(
         Probability parameter of the forecast negative binomial distribution.
     mu : array_like
         Mean of the forecast negative binomial distribution.
+    backend : str
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -752,10 +981,34 @@ def logs_negbinom(
     ValueError
         If both `prob` and `mu` are provided, or if neither is provided.
     """
+    if backend in ["torch", "tensorflow", "jax"]:
+        raise TypeError(
+            "Torch, Tensorflow, and JAX backends are not supported for the Negative Binomial distribution."
+        )
     if (prob is None and mu is None) or (prob is not None and mu is not None):
         raise ValueError(
             "Either `prob` or `mu` must be provided, but not both or neither."
         )
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        if prob is not None:
+            prob = B.asarray(prob)
+            if B.any(prob < 0) or B.any(prob > 1):
+                raise ValueError("`prob` contains values outside the range [0, 1].")
+        else:
+            mu = B.asarray(mu)
+            if B.any(mu < 0):
+                raise ValueError(
+                    "`mu` contains negative values. The mean of the negative binomial distribution must be non-negative."
+                )
+        if B.any(n <= 0):
+            raise ValueError(
+                "`n` contains non-positive entries. The size parameter of the negative binomial distribution must be positive."
+            )
+        if not B.all_integer(n):
+            raise ValueError(
+                "`n` contains non-integer entries. The size parameter of the negative binomial distribution must be an integer."
+            )
 
     if prob is None:
         prob = n / (n + mu)
@@ -765,15 +1018,15 @@ def logs_negbinom(
 
 def logs_normal(
     obs: "ArrayLike",
-    mu: "ArrayLike",
-    sigma: "ArrayLike",
+    mu: "ArrayLike" = 0.0,
+    sigma: "ArrayLike" = 1.0,
     *,
-    negative: bool = True,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "Array":
     r"""Compute the logarithmic score (LS) for the normal distribution.
 
-    This score is equivalent to the (negative) log likelihood (if `negative = True`)
+    This score is equivalent to the negative log likelihood of a normal distribution.
 
     Parameters
     ----------
@@ -783,8 +1036,11 @@ def logs_normal(
         Mean of the forecast normal distribution.
     sigma : array_like
         Standard deviation of the forecast normal distribution.
-    backend : str, optional
-        The backend used for computations.
+    backend : str
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -796,16 +1052,24 @@ def logs_normal(
     >>> import scoringrules as sr
     >>> sr.logs_normal(0.0, 0.4, 0.1)
     """
-    return logarithmic.normal(obs, mu, sigma, negative=negative, backend=backend)
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        sigma = B.asarray(sigma)
+        if B.any(sigma <= 0):
+            raise ValueError(
+                "`sigma` contains non-positive entries. The standard deviation of the normal distribution must be positive."
+            )
+    return logarithmic.normal(obs, mu, sigma, backend=backend)
 
 
 def logs_2pnormal(
     obs: "ArrayLike",
-    scale1: "ArrayLike",
-    scale2: "ArrayLike",
-    location: "ArrayLike",
+    scale1: "ArrayLike" = 1.0,
+    scale2: "ArrayLike" = 1.0,
+    location: "ArrayLike" = 0.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the two-piece normal distribution.
 
@@ -822,7 +1086,10 @@ def logs_2pnormal(
     location : array_like
         Location parameter of the forecast two-piece normal distribution.
     backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -833,6 +1100,17 @@ def logs_2pnormal(
     >>> import scoringrules as sr
     >>> sr.logs_2pnormal(0.0, 0.4, 2.0, 0.1)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale1, scale2 = map(B.asarray, (scale1, scale2))
+        if B.any(scale1 <= 0):
+            raise ValueError(
+                "`scale1` contains non-positive entries. The scale parameters of the two-piece normal distribution must be positive."
+            )
+        if B.any(scale2 <= 0):
+            raise ValueError(
+                "`scale2` contains non-positive entries. The scale parameters of the two-piece normal distribution must be positive."
+            )
     return logarithmic.twopnormal(obs, scale1, scale2, location, backend=backend)
 
 
@@ -841,6 +1119,7 @@ def logs_poisson(
     mean: "ArrayLike",
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the Poisson distribution.
 
@@ -853,7 +1132,10 @@ def logs_poisson(
     mean : array_like
         Mean parameter of the forecast poisson distribution.
     backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -865,6 +1147,13 @@ def logs_poisson(
     >>> import scoringrules as sr
     >>> sr.logs_poisson(1, 2)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        mean = B.asarray(mean)
+        if B.any(mean <= 0):
+            raise ValueError(
+                "`mean` contains non-positive entries. The mean parameter of the Poisson distribution must be positive."
+            )
     return logarithmic.poisson(obs, mean, backend=backend)
 
 
@@ -875,6 +1164,7 @@ def logs_t(
     scale: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the Student's t distribution.
 
@@ -890,6 +1180,11 @@ def logs_t(
         Location parameter of the forecast t distribution.
     sigma : array_like
         Scale parameter of the forecast t distribution.
+    backend : str
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -901,17 +1196,31 @@ def logs_t(
     >>> import scoringrules as sr
     >>> sr.logs_t(0.0, 0.1, 0.4, 0.1)
     """
+    if backend == "torch":
+        raise TypeError("Torch backend is not supported for the t distribution.")
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        df, scale = map(B.asarray, (df, scale))
+        if B.any(df <= 0):
+            raise ValueError(
+                "`df` contains non-positive entries. The degrees of freedom parameter of the t distribution must be positive."
+            )
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the t distribution must be positive."
+            )
     return logarithmic.t(obs, df, location, scale, backend=backend)
 
 
 def logs_tlogistic(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the truncated logistic distribution.
 
@@ -929,6 +1238,11 @@ def logs_tlogistic(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    backend : str
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -940,17 +1254,27 @@ def logs_tlogistic(
     >>> import scoringrules as sr
     >>> sr.logs_tlogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, lower, upper = map(B.asarray, (scale, lower, upper))
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the truncated logistic distribution must be positive."
+            )
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     return logarithmic.tlogistic(obs, location, scale, lower, upper, backend=backend)
 
 
 def logs_tnormal(
     obs: "ArrayLike",
-    location: "ArrayLike",
-    scale: "ArrayLike",
+    location: "ArrayLike" = 0.0,
+    scale: "ArrayLike" = 1.0,
     lower: "ArrayLike" = float("-inf"),
     upper: "ArrayLike" = float("inf"),
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the truncated normal distribution.
 
@@ -968,6 +1292,11 @@ def logs_tnormal(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    backend : str
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -979,6 +1308,15 @@ def logs_tnormal(
     >>> import scoringrules as sr
     >>> sr.logs_tnormal(0.0, 0.1, 0.4, -1.0, 1.0)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, lower, upper = map(B.asarray, (scale, lower, upper))
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the truncated normal distribution must be positive."
+            )
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     return logarithmic.tnormal(obs, location, scale, lower, upper, backend=backend)
 
 
@@ -991,6 +1329,7 @@ def logs_tt(
     upper: "ArrayLike" = float("inf"),
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the truncated Student's t distribution.
 
@@ -1010,6 +1349,11 @@ def logs_tt(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    backend : str
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1021,15 +1365,33 @@ def logs_tt(
     >>> import scoringrules as sr
     >>> sr.logs_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     """
+    if backend in ["torch", "tensorflow", "jax"]:
+        raise TypeError(
+            "Torch, Tensorflow, and JAX backends are not supported for the Truncated t distribution."
+        )
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        scale, lower, upper = map(B.asarray, (scale, lower, upper))
+        if B.any(df <= 0):
+            raise ValueError(
+                "`df` contains non-positive entries. The degrees of freedom parameter of the truncated t distribution must be positive."
+            )
+        if B.any(scale <= 0):
+            raise ValueError(
+                "`scale` contains non-positive entries. The scale parameter of the truncated t distribution must be positive."
+            )
+        if B.any(lower >= upper):
+            raise ValueError("`lower` is not always smaller than `upper`.")
     return logarithmic.tt(obs, df, location, scale, lower, upper, backend=backend)
 
 
 def logs_uniform(
     obs: "ArrayLike",
-    min: "ArrayLike",
-    max: "ArrayLike",
+    min: "ArrayLike" = 0.0,
+    max: "ArrayLike" = 1.0,
     *,
     backend: "Backend" = None,
+    check_pars: bool = False,
 ) -> "ArrayLike":
     r"""Compute the logarithmic score (LS) for the uniform distribution.
 
@@ -1043,6 +1405,11 @@ def logs_uniform(
         Lower bound of the forecast uniform distribution.
     max : array_like
         Upper bound of the forecast uniform distribution.
+    backend : str
+        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+    check_pars: bool
+        Boolean indicating whether distribution parameter checks should be carried out prior to implementation.
+        Default is False.
 
     Returns
     -------
@@ -1054,6 +1421,11 @@ def logs_uniform(
     >>> import scoringrules as sr
     >>> sr.logs_uniform(0.4, 0.0, 1.0)
     """
+    if check_pars:
+        B = backends.active if backend is None else backends[backend]
+        min, max = map(B.asarray, (min, max))
+        if B.any(min >= max):
+            raise ValueError("`min` is not always smaller than `max`.")
     return logarithmic.uniform(obs, min, max, backend=backend)
 
 

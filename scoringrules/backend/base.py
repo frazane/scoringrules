@@ -342,3 +342,7 @@ class ArrayBackend(abc.ABC):
     @abc.abstractmethod
     def reshape(self, x: "Array", shape: int | tuple[int, ...]) -> "Array":
         """Reshape an array to a new ``shape``."""
+
+    @abc.abstractmethod
+    def all_integer(self, x: "Array") -> bool:
+        """Check whether all entries of an array are integers"""

@@ -135,9 +135,9 @@ def _crps_ensemble_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
     for i in range(M):
         e_1 += abs(fct[i] - obs)
         for j in range(i + 1, M):
-            e_2 += 2 * abs(fct[j] - fct[i])
+            e_2 += abs(fct[j] - fct[i])
 
-    out[0] = e_1 / M - 0.5 * e_2 / (M * (M - 1))
+    out[0] = e_1 / M - e_2 / (M * (M - 1))
 
 
 @guvectorize("(),(n)->()")
@@ -172,6 +172,7 @@ def _crps_ensemble_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
             i = M - 1
         e_1 += abs(forecast - obs)
         e_2 += abs(forecast - fct[i - 1])
+
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
@@ -200,11 +201,9 @@ def _owcrps_ensemble_nrg_gufunc(
 ):
     """Outcome-weighted CRPS estimator based on the energy form."""
     M = fct.shape[-1]
-
     if np.isnan(obs):
         out[0] = np.nan
         return
-
     e_1 = 0.0
     e_2 = 0.0
 
@@ -228,11 +227,9 @@ def _vrcrps_ensemble_nrg_gufunc(
 ):
     """Vertically re-scaled CRPS estimator based on the energy form."""
     M = fct.shape[-1]
-
     if np.isnan(obs):
         out[0] = np.nan
         return
-
     e_1 = 0.0
     e_2 = 0.0
 
