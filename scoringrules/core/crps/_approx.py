@@ -10,7 +10,6 @@ def ensemble(
     obs: "ArrayLike",
     fct: "Array",
     estimator: str = "pwm",
-    nan_mask=None,
     backend: "Backend" = None,
 ) -> "Array":
     """Compute the CRPS for a finite ensemble."""
@@ -61,7 +60,7 @@ def _crps_ensemble_nrg(
 
 
 def _crps_ensemble_pwm(
-    obs: "Array", fct: "Array", nan_mask=None, backend: "Backend" = None
+    obs: "Array", fct: "Array", backend: "Backend" = None
 ) -> "Array":
     """CRPS estimator based on the probability weighted moment (PWM) form."""
     B = backends.active if backend is None else backends[backend]
