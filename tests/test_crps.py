@@ -4,57 +4,209 @@ import scipy.stats as st
 import scoringrules as sr
 
 ENSEMBLE_SIZE = 11
-N = 20
+N = 5
 
 ESTIMATORS = ["nrg", "fair", "pwm", "int", "qd", "akr", "akr_circperm"]
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
 def test_crps_ensemble(estimator, backend):
-    obs = np.random.randn(N)
-    mu = obs + np.random.randn(N) * 0.3
-    sigma = abs(np.random.randn(N)) * 0.5
-    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+    """Test general behavior of scoringrules.crps_ensemble."""
 
-    # test exceptions
+    kwargs = {"estimator": estimator, "backend": backend}
+
+    # test data
+    obs = np.random.randn(N)
+    fct = np.random.randn(N, ENSEMBLE_SIZE)
+
+    # test exceptions: indefined estimator
     with pytest.raises(ValueError):
         est = "undefined_estimator"
         sr.crps_ensemble(obs, fct, estimator=est, backend=backend)
 
-    # test shapes
-    res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
+    # test shapes: default case
+    res = sr.crps_ensemble(obs, fct, **kwargs)
+    res = np.asarray(res)
+    res_mean = np.mean(res)
     assert res.shape == (N,)
-    res = sr.crps_ensemble(
-        obs,
-        np.random.randn(ENSEMBLE_SIZE, N),
-        m_axis=0,
-        estimator=estimator,
-        backend=backend,
-    )
-    assert res.shape == (N,)
+    # test shapes: with extra dimension
+    res = sr.crps_ensemble(obs[None], fct[None, :], **kwargs)
+    res = np.asarray(res)
+    assert res.shape == (1, N)
+    assert np.mean(res) == res_mean
+    # test shapes: with non-default ensemble axis
+    res = sr.crps_ensemble(obs[..., None], fct[..., None], m_axis=-2, **kwargs)
+    res = np.asarray(res)
+    assert res.shape == (N, 1)
+    assert np.mean(res) == res_mean
 
     # non-negative values
     if estimator not in ["akr", "akr_circperm"]:
-        res = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
+        res = sr.crps_ensemble(obs, fct, **kwargs)
         res = np.asarray(res)
         assert not np.any(res < 0.0)
 
-    # test equivalence with and without weights
-    w = np.ones(fct.shape)
-    res_nrg_w = sr.crps_ensemble(
-        obs, fct, ens_w=w, estimator=estimator, backend=backend
-    )
-    res_nrg_now = sr.crps_ensemble(obs, fct, estimator=estimator, backend=backend)
-    assert np.allclose(res_nrg_w, res_nrg_now, atol=1e-6)
-
     # approx zero when perfect forecast
     perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 0.00001
-    res = sr.crps_ensemble(obs, perfect_fct, estimator=estimator, backend=backend)
+    res = sr.crps_ensemble(obs, perfect_fct, **kwargs)
     res = np.asarray(res)
     assert not np.any(res - 0.0 > 0.0001)
 
 
-def test_crps_ensemble_corr(backend):
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+def test_crps_ensemble_nan_policy(estimator, backend):
+    """Test behavior of scoringrules.crps_ensemble with NaN values."""
+
+    kwargs = {"estimator": estimator, "backend": backend}
+
+    # test data
+    obs = np.random.randn(N)
+    fct = np.random.randn(N, ENSEMBLE_SIZE)
+
+    fct_nan = fct.copy()
+    fct_nan[0, [0, 3, 6]] = np.nan
+    fct_nan[2, [5]] = np.nan
+    nan_positions = np.isnan(fct_nan).any(axis=1)
+
+    # default nan policy (propagate)
+    res = sr.crps_ensemble(obs, fct_nan, **kwargs)
+    res = np.asarray(res)
+    assert np.all(np.isnan(res[nan_positions]))
+
+    # 'propagate' nan policy
+    res = sr.crps_ensemble(obs, fct_nan, nan_policy="propagate", **kwargs)
+    res = np.asarray(res)
+    assert np.all(np.isnan(res[nan_positions]))
+
+    # 'raise' nan policy
+    with pytest.raises(ValueError):
+        sr.crps_ensemble(obs, fct_nan, nan_policy="raise", **kwargs)
+
+    # 'omit' nan policy: exceptions for int, akr, akr_circperm estimators
+    if estimator in ["int", "akr", "akr_circperm"]:
+        with pytest.raises(NotImplementedError):
+            sr.crps_ensemble(obs, fct_nan, nan_policy="omit", **kwargs)
+        return
+
+    # 'omit' nan policy: no nans in results
+    res = sr.crps_ensemble(obs, fct_nan, nan_policy="omit", **kwargs)
+    res = np.asarray(res)
+    assert not np.any(np.isnan(res))
+
+    # 'omit' nan policy: equivalence with clean ensemble
+    for i in range(fct.shape[0]):
+        fct_clean = fct_nan[i, ~np.isnan(fct_nan[i])]
+        res_clean = sr.crps_ensemble(obs[i : i + 1], fct_clean[None, :], **kwargs)
+        res = sr.crps_ensemble(
+            obs[i : i + 1], fct_nan[i : i + 1], nan_policy="omit", **kwargs
+        )
+        assert np.allclose(res, res_clean)
+
+
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+def test_crps_ensemble_w_ens(estimator, backend):
+    """Test behavior of scoringrules.crps_ensemble with ensemble weights."""
+    kwargs = {"estimator": estimator, "backend": backend}
+
+    # test data
+    obs = np.random.randn(N)
+    mu = obs + np.random.randn(N) * 0.3
+    sigma = abs(np.random.randn(N)) * 0.5
+    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+    uniform_ens_w = np.ones(fct.shape)
+    non_uniform_ens_w = np.random.rand(*fct.shape)
+
+    # default
+    res = sr.crps_ensemble(obs, fct, **kwargs)
+
+    # equivalence for uniform weights
+    res_uniform_weights = sr.crps_ensemble(obs, fct, ens_w=uniform_ens_w, **kwargs)
+    assert np.allclose(res_uniform_weights, res, atol=1e-6)
+
+    # non-equivalence for non-uniform weights
+    res_non_uniform_weights = sr.crps_ensemble(
+        obs, fct, ens_w=non_uniform_ens_w, **kwargs
+    )
+    assert not np.allclose(res_non_uniform_weights, res, atol=1e-6)
+
+
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+def test_crps_ensemble_w_ens_nan_policy(estimator, backend):
+    """Test behavior of scoringrules.crps_ensemble with ensemble weights and NaN values."""
+
+    kwargs = {"estimator": estimator, "backend": backend}
+
+    # test data
+    obs = np.random.randn(N)
+    mu = obs + np.random.randn(N) * 0.3
+    sigma = abs(np.random.randn(N)) * 0.5
+    fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
+    uniform_ens_w = np.ones(fct.shape)
+    non_uniform_ens_w = np.random.rand(*fct.shape)
+    fct_nan = fct.copy()
+    fct_nan[0, [0, 3, 6]] = np.nan
+    fct_nan[2, [5]] = np.nan
+    nan_positions = np.isnan(fct_nan).any(axis=1)
+
+    # default nan policy (propagate): ensembles with NaN members return NaN
+    res = sr.crps_ensemble(obs, fct_nan, ens_w=uniform_ens_w, **kwargs)
+    res = np.asarray(res)
+    assert np.all(np.isnan(res[nan_positions]))
+
+    # 'propagate' nan policy: ensembles with NaN members return NaN
+    res = sr.crps_ensemble(
+        obs, fct_nan, ens_w=uniform_ens_w, nan_policy="propagate", **kwargs
+    )
+    res = np.asarray(res)
+    assert np.all(np.isnan(res[nan_positions]))
+
+    # 'raise' nan policy: error if NaN is encountered
+    with pytest.raises(ValueError):
+        sr.crps_ensemble(
+            obs, fct_nan, ens_w=uniform_ens_w, nan_policy="raise", **kwargs
+        )
+
+    # 'omit' nan policy: exceptions for int, akr, akr_circperm estimators
+    if estimator in ["int", "akr", "akr_circperm"]:
+        with pytest.raises(NotImplementedError):
+            sr.crps_ensemble(
+                obs, fct_nan, ens_w=uniform_ens_w, nan_policy="omit", **kwargs
+            )
+        return
+
+    # 'omit' nan policy: no nans in results
+    res = sr.crps_ensemble(
+        obs, fct_nan, ens_w=uniform_ens_w, nan_policy="omit", **kwargs
+    )
+    res = np.asarray(res)
+    assert not np.any(np.isnan(res))
+
+    # 'omit' nan policy: non-equivalence if non-uniform weights are used
+    res = sr.crps_ensemble(
+        obs, fct, ens_w=non_uniform_ens_w, nan_policy="omit", **kwargs
+    )
+    res_nans = sr.crps_ensemble(
+        obs, fct_nan, ens_w=non_uniform_ens_w, nan_policy="omit", **kwargs
+    )
+    res, res_nans = np.asarray(res), np.asarray(res_nans)
+    assert not np.any(np.isnan(res_nans))
+    assert not np.allclose(res[nan_positions], res_nans[nan_positions])
+    assert np.allclose(res[~nan_positions], res_nans[~nan_positions])
+
+    # 'omit' nan policy: equivalence with clean ensemble
+    for i in range(fct.shape[0]):
+        fct_clean = fct_nan[i, ~np.isnan(fct_nan[i])]
+        uniform_ens_w_clean = uniform_ens_w[i, ~np.isnan(fct_nan[i])]
+        res_clean = sr.crps_ensemble(
+            obs[i], fct_clean, ens_w=uniform_ens_w_clean, nan_policy="omit", **kwargs
+        )
+        res = sr.crps_ensemble(
+            obs[i], fct_nan[i], ens_w=uniform_ens_w[i], nan_policy="omit", **kwargs
+        )
+        assert np.isclose(res, res_clean)
+
+
+def test_crps_ensemble_correctness(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.3
     sigma = abs(np.random.randn(N)) * 0.5
