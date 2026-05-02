@@ -3,10 +3,10 @@ name = "scoringrules"
 version = "0.10.0"
 description = "Scoring rules for probabilistic forecast evaluation."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
-    "numpy>=1.25.0",
-    "scipy>=1.10.0",
+    "numpy>=2.0.0",
+    "scipy>=1.14.0",
 ]
 authors = [
     {name = "Francesco Zanetta", email = "zanetta.francesco@gmail.com"},
@@ -18,12 +18,11 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "License :: OSI Approved :: Apache Software License",
     "Topic :: Scientific/Engineering :: Mathematics",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 
 [project.urls]
