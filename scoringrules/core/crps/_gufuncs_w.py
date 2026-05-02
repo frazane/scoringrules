@@ -58,6 +58,11 @@ def _crps_ensemble_fair_w_gufunc(
 
     fair_c = 1 - np.sum(w**2)
 
+    # explicitly return NaN avoids warning
+    if fair_c == 0:
+        out[0] = np.nan
+        return
+
     out[0] = e_1 - e_2 / fair_c
 
 
@@ -78,10 +83,8 @@ def _crps_ensemble_int_w_gufunc(
 
     for n, forecast in enumerate(fct):
         if np.isnan(forecast):
-            if n == 0:
-                integral = np.nan
-            forecast = prev_forecast  # noqa: PLW2901
-            break
+            out[0] = np.nan
+            return
 
         if obs_cdf == 0 and obs < forecast:
             # this correctly handles the transition point of the obs CDF
@@ -163,6 +166,10 @@ def _crps_ensemble_qd_w_gufunc(
     a = np.cumsum(w) - w / 2
 
     for i, forecast in enumerate(fct):
+        if np.isnan(forecast):
+            out[0] = np.nan
+            return
+
         if obs < forecast:
             obs_cdf = 1.0
 

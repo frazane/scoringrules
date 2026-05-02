@@ -34,12 +34,10 @@ def _crps_ensemble_int_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
     prev_forecast = 0.0
     integral = 0.0
 
-    for n, forecast in enumerate(fct):
+    for forecast in fct:
         if np.isnan(forecast):
-            if n == 0:
-                integral = np.nan
-            forecast = prev_forecast  # noqa: PLW2901
-            break
+            out[0] = np.nan
+            return
 
         if obs_cdf == 0 and obs < forecast:
             # this correctly handles the transition point of the obs CDF
@@ -78,6 +76,10 @@ def _crps_ensemble_qd_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     integral = 0.0
 
     for i, forecast in enumerate(fct):
+        if np.isnan(forecast):
+            out[0] = np.nan
+            return
+
         if obs < forecast:
             obs_cdf = 1.0
 
