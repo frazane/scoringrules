@@ -362,6 +362,9 @@ def owcrps_ensemble(
     obs, fct, ens_w = apply_nan_policy_ens_uv(
         obs, fct, nan_policy, ens_w, backend=backend
     )
+    obs_w, fct_w, ens_w = apply_nan_policy_ens_uv(
+        obs_w, fct_w, nan_policy, ens_w=ens_w, backend=backend
+    )
 
     # check and normalize ensemble weights (optional)
     if ens_w is not None:
@@ -478,6 +481,9 @@ def vrcrps_ensemble(
     # apply nan policy
     obs, fct, ens_w = apply_nan_policy_ens_uv(
         obs, fct, nan_policy, ens_w, backend=backend
+    )
+    obs_w, fct_w, ens_w = apply_nan_policy_ens_uv(
+        obs_w, fct_w, nan_policy, ens_w=ens_w, backend=backend
     )
 
     # check and normalize ensemble weights (optional)
