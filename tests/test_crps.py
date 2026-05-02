@@ -463,8 +463,8 @@ def test_crps_cnormal(backend):
 
 
 def test_crps_gtct(backend):
-    if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in jax, torch or tensorflow backends")
+    if backend in ["jax", "torch"]:
+        pytest.skip("Not implemented in jax, torch backends")
     obs, df, location, scale, lower, upper, lmass, umass = (
         0.9,
         20.1,
@@ -493,8 +493,8 @@ def test_crps_gtct(backend):
 
 
 def test_crps_tt(backend):
-    if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in jax, torch or tensorflow backends")
+    if backend in ["jax", "torch"]:
+        pytest.skip("Not implemented in jax, torch backends")
 
     obs, df, location, scale, lower, upper = -1.0, 2.9, 3.1, 4.2, 1.5, 17.3
     expected = 5.084272
@@ -508,8 +508,8 @@ def test_crps_tt(backend):
 
 
 def test_crps_ct(backend):
-    if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in jax, torch or tensorflow backends")
+    if backend in ["jax", "torch"]:
+        pytest.skip("Not implemented in jax, torch backends")
 
     obs, df, location, scale, lower, upper = 1.8, 5.4, 0.4, 1.1, 0.0, 2.0
     expected = 0.8028996
@@ -623,8 +623,8 @@ def test_crps_mixnorm(backend):
 
 
 def test_crps_negbinom(backend):
-    if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in jax, torch or tensorflow backends")
+    if backend in ["jax", "torch"]:
+        pytest.skip("Not implemented in jax, torch backends")
 
     # test exceptions
     with pytest.raises(ValueError):
@@ -703,8 +703,8 @@ def test_crps_poisson(backend):
 
 
 def test_crps_t(backend):
-    if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in jax, torch or tensorflow backends")
+    if backend in ["jax", "torch"]:
+        pytest.skip("Not implemented in jax, torch backends")
 
     obs, df, mu, sigma = 11.1, 5.2, 13.8, 2.3
     expected = 1.658226
