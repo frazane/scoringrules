@@ -205,7 +205,9 @@ def nan_policy_check(nan_policy: str) -> None:
         raise ValueError(f"Invalid nan_policy '{nan_policy}'. Must be one of {valid}.")
 
 
-def apply_nan_policy_ens_uv(obs, fct, nan_policy="propagate", ens_w=None, backend=None):
+def apply_nan_policy_ens_uv(
+    obs, fct, nan_policy="propagate", ens_w=None, estimator=None, backend=None
+):
     """Apply NaN policy to univariate ensemble forecasts (fct shape: ..., M).
 
     For 'propagate': no-op, returns (obs, fct, None).
@@ -229,6 +231,10 @@ def apply_nan_policy_ens_uv(obs, fct, nan_policy="propagate", ens_w=None, backen
         return obs, fct, ens_w
 
     if nan_policy == "omit":
+        if estimator in ["int", "akr", "akr_circperm"]:
+            raise NotImplementedError(
+                f"NaN handling with nan_policy='omit' is not implemented for estimator '{estimator}'."
+            )
         fct = B.where(nan_mask, B.asarray(0.0), fct)
         if ens_w is None:
             ens_w = B.asarray(~nan_mask, dtype=fct.dtype)

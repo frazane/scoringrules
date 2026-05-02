@@ -130,7 +130,7 @@ def crps_ensemble(
 
     # apply nan policy
     obs, fct, ens_w = apply_nan_policy_ens_uv(
-        obs, fct, nan_policy, ens_w, backend=backend
+        obs, fct, nan_policy, ens_w, estimator=estimator, backend=backend
     )
 
     # check and normalize ensemble weights (optional)
