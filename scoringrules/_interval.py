@@ -136,7 +136,7 @@ def weighted_interval_score(
     For these weights, it holds that:
 
     .. math::
-        \text{WIS_{\alpha_{0:K}}(F, y) \approx \text{CRPS}(F, y).
+        \text{WIS}_{\alpha_{0:K}}(F, y) \approx \text{CRPS}(F, y).
 
     Parameters
     ----------

@@ -828,6 +828,7 @@ def logs_2pnormal(
     -------
     score : array_like
         The LS between 2pNormal(scale1, scale2, location) and obs.
+
     Examples
     --------
     >>> import scoringrules as sr

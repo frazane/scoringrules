@@ -30,11 +30,9 @@ def crps_ensemble(
     For a forecast :math:`F` and observation :math:`y`, the CRPS is formally defined as:
 
     .. math::
-        \begin{align*}
-            \mathrm{CRPS}(F, y) &= \int_{-\infty}^{\infty} (F(x)
+        \mathrm{CRPS}(F, y) &= \int_{-\infty}^{\infty} (F(x)
             - \mathbf{1}\{y \le x\})^{2} dx \\
             &= \mathbb{E} | X - y | - \frac{1}{2} \mathbb{E} | X - X^{\prime} |,
-        \end{align*}
 
     where :math:`X, X^{\prime} \sim F` are independent. When :math:`F` is the empirical
     distribution function of an ensemble forecast :math:`x_{1}, \dots, x_{M}`, the CRPS
