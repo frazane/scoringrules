@@ -28,10 +28,15 @@ from ._closed import (
 )
 
 try:
-    from ._gufuncs import estimator_gufuncs, quantile_pinball_gufunc
+    from ._gufuncs import (
+        estimator_gufuncs,
+        estimator_gufuncs_nanomit,
+        quantile_pinball_gufunc,
+    )
     from ._gufuncs_w import estimator_gufuncs_w
 except ImportError:
     estimator_gufuncs = None
+    estimator_gufuncs_nanomit = None
     estimator_gufuncs_w = None
     quantile_pinball_gufunc = None
 
@@ -67,6 +72,7 @@ __all__ = [
     "t",
     "uniform",
     "estimator_gufuncs",
+    "estimator_gufuncs_nanomit",
     "estimator_gufuncs_w",
     "quantile_pinball",
     "quantile_pinball_gufunc",

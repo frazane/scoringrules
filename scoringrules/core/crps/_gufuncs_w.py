@@ -16,10 +16,9 @@ def _crps_ensemble_akr_w_gufunc(
     e_1 = 0
     e_2 = 0
     for i, forecast in enumerate(fct):
-        if i == 0:
-            i = M - 1
+        pair_idx = i - 1 if i > 0 else M - 1
         e_1 += abs(forecast - obs) * w[i]
-        e_2 += abs(forecast - fct[i - 1]) * w[i]
+        e_2 += abs(forecast - fct[pair_idx]) * w[i]
     out[0] = e_1 - 0.5 * e_2
 
 
@@ -59,6 +58,11 @@ def _crps_ensemble_fair_w_gufunc(
 
     fair_c = 1 - np.sum(w**2)
 
+    # explicitly return NaN avoids warning
+    if fair_c == 0:
+        out[0] = np.nan
+        return
+
     out[0] = e_1 - e_2 / fair_c
 
 
@@ -79,10 +83,8 @@ def _crps_ensemble_int_w_gufunc(
 
     for n, forecast in enumerate(fct):
         if np.isnan(forecast):
-            if n == 0:
-                integral = np.nan
-            forecast = prev_forecast  # noqa: PLW2901
-            break
+            out[0] = np.nan
+            return
 
         if obs_cdf == 0 and obs < forecast:
             # this correctly handles the transition point of the obs CDF
@@ -164,6 +166,10 @@ def _crps_ensemble_qd_w_gufunc(
     a = np.cumsum(w) - w / 2
 
     for i, forecast in enumerate(fct):
+        if np.isnan(forecast):
+            out[0] = np.nan
+            return
+
         if obs < forecast:
             obs_cdf = 1.0
 
@@ -232,7 +238,13 @@ def _vrcrps_ensemble_nrg_w_gufunc(
     out[0] = e_1 - 0.5 * e_2 + (wabs_x - wabs_y) * (wbar - ow)
 
 
-estimator_gufuncs_w = {
+def estimator_gufuncs_w(estimator):
+    if estimator not in _estimator_gufuncs_w:
+        raise ValueError(f"Unknown estimator: {estimator}")
+    return _estimator_gufuncs_w[estimator]
+
+
+_estimator_gufuncs_w = {
     "akr_circperm": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_circperm_w_gufunc),
     "akr": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_w_gufunc),
     "fair": lazy_gufunc_wrapper_uv(_crps_ensemble_fair_w_gufunc),

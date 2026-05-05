@@ -34,12 +34,10 @@ def _crps_ensemble_int_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
     prev_forecast = 0.0
     integral = 0.0
 
-    for n, forecast in enumerate(fct):
+    for forecast in fct:
         if np.isnan(forecast):
-            if n == 0:
-                integral = np.nan
-            forecast = prev_forecast  # noqa: PLW2901
-            break
+            out[0] = np.nan
+            return
 
         if obs_cdf == 0 and obs < forecast:
             # this correctly handles the transition point of the obs CDF
@@ -78,6 +76,10 @@ def _crps_ensemble_qd_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     integral = 0.0
 
     for i, forecast in enumerate(fct):
+        if np.isnan(forecast):
+            out[0] = np.nan
+            return
+
         if obs < forecast:
             obs_cdf = 1.0
 
@@ -169,7 +171,7 @@ def _crps_ensemble_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
     e_2 = 0.0
     for i, forecast in enumerate(fct):
         if i == 0:
-            i = M - 1
+            i = M
         e_1 += abs(forecast - obs)
         e_2 += abs(forecast - fct[i - 1])
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
@@ -248,7 +250,7 @@ def _vrcrps_ensemble_nrg_gufunc(
     out[0] = e_1 / M - 0.5 * e_2 / (M**2) + (wabs_x - wabs_y) * (wbar - ow)
 
 
-estimator_gufuncs = {
+_estimator_gufuncs = {
     "akr_circperm": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_circperm_gufunc),
     "akr": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_gufunc),
     "fair": _crps_ensemble_fair_gufunc,
@@ -260,13 +262,100 @@ estimator_gufuncs = {
     "vrnrg": lazy_gufunc_wrapper_uv(_vrcrps_ensemble_nrg_gufunc),
 }
 
-__all__ = [
-    "_crps_ensemble_akr_circperm_gufunc",
-    "_crps_ensemble_akr_gufunc",
-    "_crps_ensemble_fair_gufunc",
-    "_crps_ensemble_int_gufunc",
-    "_crps_ensemble_nrg_gufunc",
-    "_crps_ensemble_pwm_gufunc",
-    "_crps_ensemble_qd_gufunc",
-    "quantile_pinball_gufunc",
-]
+
+def estimator_gufuncs(estimator):
+    if estimator not in _estimator_gufuncs:
+        raise ValueError(f"Unknown estimator: {estimator}")
+    return _estimator_gufuncs[estimator]
+
+
+# --- NaN-omit variants ---
+# Each gufunc below checks np.isnan inline and skips invalid members.  NaN
+# values are left in-place by the public API (the zeroing done by
+# apply_nan_policy_ens_uv is bypassed for the numba path), so the gufuncs must
+# detect them themselves.
+#
+# For the sorted-ensemble estimators (qd, pwm, int) the public API layer
+# pre-sorts the ensemble, which places NaN members at the tail (IEEE 754
+# behaviour).  Those gufuncs exploit this with an early-exit loop.
+# All other estimators (nrg, fair, akr, akr_circperm, ownrg, vrnrg) make no
+# assumption about member order and scan the full array.
+
+
+@guvectorize("(),(n)->()")
+def _crps_ensemble_akr_nanomit_gufunc(
+    obs: np.ndarray, fct: np.ndarray, out: np.ndarray
+):
+    """NaN-omit CRPS estimator based on the approximate kernel representation."""
+    M = fct.shape[-1]
+    e_1 = 0.0
+    e_2 = 0.0
+    M_eff = 0
+    first_valid_val = 0.0
+    prev_valid_val = 0.0
+
+    for i in range(M):
+        if np.isnan(fct[i]):
+            continue
+        M_eff += 1
+        e_1 += abs(fct[i] - obs)
+        if M_eff == 1:
+            first_valid_val = fct[i]
+        else:
+            e_2 += abs(fct[i] - prev_valid_val)
+        prev_valid_val = fct[i]
+
+    # Circular wrap-around: pair last valid with first valid.
+    if M_eff >= 2:
+        e_2 += abs(first_valid_val - prev_valid_val)
+
+    if M_eff == 0:
+        out[0] = np.nan
+    else:
+        out[0] = e_1 / M_eff - 0.5 / M_eff * e_2
+
+
+@guvectorize("(),(n)->()")
+def _crps_ensemble_akr_circperm_nanomit_gufunc(
+    obs: np.ndarray, fct: np.ndarray, out: np.ndarray
+):
+    """NaN-omit CRPS estimator based on the AKR with cyclic permutation."""
+    M = fct.shape[-1]
+    e_1 = 0.0
+    e_2 = 0.0
+    M_eff = 0
+
+    # First pass: count valid members.
+    for i in range(M):
+        if not np.isnan(fct[i]):
+            M_eff += 1
+
+    if M_eff == 0:
+        out[0] = np.nan
+        return
+
+    # Second pass: compute e_1 and e_2 using rank within valid members.
+    i_eff = 0
+    for i in range(M):
+        if np.isnan(fct[i]):
+            continue
+        e_1 += abs(fct[i] - obs)
+        sigma_i_eff = int((i_eff + 1 + ((M_eff - 1) / 2)) % M_eff)
+        # Find the sigma_i_eff-th valid member.
+        count = 0
+        for j in range(M):
+            if np.isnan(fct[j]):
+                continue
+            if count == sigma_i_eff:
+                e_2 += abs(fct[i] - fct[j])
+                break
+            count += 1
+        i_eff += 1
+
+    out[0] = e_1 / M_eff - 0.5 / M_eff * e_2
+
+
+estimator_gufuncs_nanomit = {
+    "akr_circperm": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_circperm_nanomit_gufunc),
+    "akr": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_nanomit_gufunc),
+}
