@@ -12,7 +12,6 @@ try:
 except ImportError:
     IR_AVAILABLE = False
 
-from scipy.interpolate import interp1d
 from scipy.stats import bernoulli
 
 
@@ -126,15 +125,7 @@ def _uncertainty_band(x, cep, n_bootstrap=100, bandtype="consistency", alpha=0.0
         elif bandtype == "confidence":
             _y = bernoulli.rvs(cep[_idx_resample])
         _x, _y, _cep = corp_reliability(_y, _x)
-        res.append(
-            interp1d(
-                _x,
-                _cep,
-                fill_value="nan",
-                bounds_error=False,
-                assume_sorted=True,
-            )(x)
-        )
+        res.append(np.interp(x, _x, _cep, left=np.nan, right=np.nan))
     res = np.array(res)
     ql = np.nanpercentile(res, alpha * 100, axis=0)
     qu = np.nanpercentile(res, (1 - alpha) * 100, axis=0)

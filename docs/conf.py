@@ -51,3 +51,4 @@ html_theme_options = {
 }
 html_title = "scoringrules"
 html_favicon = "_static/favicon.ico"
+html_css_files = ["custom.css"]
