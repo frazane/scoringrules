@@ -7,7 +7,11 @@ if tp.TYPE_CHECKING:
 
 
 def es_ensemble(
-    obs: "Array", fct: "Array", estimator: str = "nrg", backend=None
+    obs: "Array",
+    fct: "Array",
+    estimator: str = "nrg",
+    backend=None,
+    k: int = 1,
 ) -> "Array":
     """
     Compute the energy score based on a finite ensemble.
@@ -22,9 +26,11 @@ def es_ensemble(
         out = _es_ensemble_akr(obs, fct, backend=backend)
     elif estimator == "akr_circperm":
         out = _es_ensemble_akr_circperm(obs, fct, backend=backend)
+    elif estimator == "akr_kband":
+        out = _es_ensemble_akr_kband(obs, fct, k=k, backend=backend)
     else:
         raise ValueError(
-            f"For the energy score, {estimator} must be one of 'nrg', 'fair', 'akr', and 'akr_circperm'."
+            f"For the energy score, {estimator} must be one of 'nrg', 'fair', 'akr', 'akr_circperm', and 'akr_kband'."
         )
 
     return out
@@ -85,6 +91,28 @@ def _es_ensemble_akr_circperm(
     shift = M // 2
     spread_norm = B.norm(fct - B.roll(fct, shift=shift, axis=-2), -1)
     E_2 = B.sum(spread_norm, -1) / M
+
+    return E_1 - 0.5 * E_2
+
+
+def _es_ensemble_akr_kband(
+    obs: "Array", fct: "Array", k: int = 1, backend: "Backend" = None
+) -> "Array":
+    """Compute the Energy Score for a finite ensemble using the AKR with k-band approximation."""
+    B = backends.active if backend is None else backends[backend]
+    M: int = fct.shape[-2]
+
+    if k < 1:
+        raise ValueError("For estimator='akr_kband', k must be >= 1.")
+
+    err_norm = B.norm(fct - B.expand_dims(obs, -2), -1)
+    E_1 = B.sum(err_norm, -1) / M
+
+    E_2 = 0.0
+    for j in range(1, k + 1):
+        spread_norm = B.norm(fct - B.roll(fct, shift=-j, axis=-2), -1)
+        E_2 += 2 * B.sum(spread_norm, -1)
+    E_2 = E_2 / (M * k)
 
     return E_1 - 0.5 * E_2
 
