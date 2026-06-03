@@ -129,6 +129,36 @@ def test_crps_ensemble_w_ens(estimator, backend):
     )
     assert not np.allclose(res_non_uniform_weights, res, atol=1e-6)
 
+    # estimator equivalence with weights
+    w = np.abs(np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None])
+    res_nrg = sr.crps_ensemble(obs, fct, ens_w=w, estimator="nrg", backend=backend)
+    res_qd = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd", backend=backend)
+    if backend in ["torch", "jax"]:
+        assert np.allclose(res_nrg, res_qd, rtol=1e-03)
+    else:
+        assert np.allclose(res_nrg, res_qd)
+
+    # correctness against a known value (qd estimator with integer weights)
+    obs_known = -0.6042506
+    fct_known = np.array(
+        [
+            1.7812118,
+            0.5863797,
+            0.7038174,
+            -0.7743998,
+            -0.2751647,
+            1.1863249,
+            1.2990966,
+            -0.3242982,
+            -0.5968781,
+            0.9064937,
+        ]
+    )
+    res_known = sr.crps_ensemble(
+        obs_known, fct_known, ens_w=np.arange(10), estimator="qd"
+    )
+    assert np.isclose(res_known, 0.4923673)
+
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
 def test_crps_ensemble_w_ens_nan_policy(estimator, backend):
@@ -282,15 +312,6 @@ def test_crps_ensemble_correctness(backend):
         assert np.allclose(res_nrg, res_qd)
         assert np.allclose(res_fair, res_pwm)
 
-    # test equivalence of different estimators with weights
-    w = np.abs(np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None])
-    res_nrg = sr.crps_ensemble(obs, fct, ens_w=w, estimator="nrg", backend=backend)
-    res_qd = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd", backend=backend)
-    if backend in ["torch", "jax"]:
-        assert np.allclose(res_nrg, res_qd, rtol=1e-03)
-    else:
-        assert np.allclose(res_nrg, res_qd)
-
     # test correctness
     obs = -0.6042506
     fct = np.array(
@@ -309,10 +330,6 @@ def test_crps_ensemble_correctness(backend):
     )
     res = sr.crps_ensemble(obs, fct, estimator="qd")
     assert np.isclose(res, 0.6126602)
-
-    w = np.arange(10)
-    res = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd")
-    assert np.isclose(res, 0.4923673)
 
 
 def test_crps_quantile(backend):
