@@ -569,8 +569,10 @@ def vrgksmv_ensemble(
     [Allen et al. (2022)](https://arxiv.org/abs/2202.12732):
 
     .. math::
-        \mathrm{vrGKS}(F_{ens}, \mathbf{y}) = & - \frac{1}{M} \sum_{m = 1}^{M} k(\mathbf{x}_{m}, \mathbf{y}) w(\mathbf{x}_{m}) w(\mathbf{y})
-        + \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} k(\mathbf{x}_{m}, \mathbf{x}_{j}) w(\mathbf{x}_{m}) w(\mathbf{x_{j}}) + \frac{1}{2} k(y, y)w(y)w(y),
+        \begin{aligned}
+            \mathrm{vrGKS}(F_{ens}, \mathbf{y}) = & - \frac{1}{M} \sum_{m = 1}^{M} k(\mathbf{x}_{m}, \mathbf{y}) w(\mathbf{x}_{m}) w(\mathbf{y}) \\
+            & + \frac{1}{2 M^{2}} \sum_{m = 1}^{M} \sum_{j = 1}^{M} k(\mathbf{x}_{m}, \mathbf{x}_{j}) w(\mathbf{x}_{m}) w(\mathbf{x}_{j}) + \frac{1}{2} k(\mathbf{y}, \mathbf{y})w(\mathbf{y})w(\mathbf{y}),
+        \end{aligned}
 
     where :math:`F_{ens}` is the ensemble forecast :math:`\mathbf{x}_{1}, \dots, \mathbf{x}_{M}` with
     :math:`M` members, :math:`w` is the weight function used to target particular outcomes, and

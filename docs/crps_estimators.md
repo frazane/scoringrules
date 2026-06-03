@@ -37,11 +37,11 @@ Suppose $\Omega \subseteq \mathbb{R}$, so that $F$ is a predictive distribution 
 The CRPS can be expressed in several ways:
 
 $$
-\begin{align}
+\begin{aligned}
 \mathrm{CRPS}(F, y) &= \int_{-\infty}^{\infty} (F(z) - \mathbb{1}\{y \le z\})^{2} dz \\
 &= \int_{0}^{1} (\mathbb{1}\{F^{-1}(\alpha) \ge y\} - \alpha)(F^{-1}(\alpha) - y) d\alpha \\
 &= \mathbb{E}|X - y| - \frac{1}{2} \mathbb{E}|X - X^{\prime}|, \\
-\end{align}
+\end{aligned}
 $$
 
 where $F^{-1}$ is the generalised inverse of $F$, and $X, X^{\prime} \sim F$ are independent
@@ -312,19 +312,19 @@ Using, this, when $F$ is an ensemble forecast with members $\boldsymbol{x}_{1}, 
 the Variogram score becomes
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{VS}_{p}(F_{M}, \boldsymbol{y}) &= \frac{1}{M} \sum_{m=1}^{M} \left[ \sum_{i=1}^{d} \sum_{j=1}^{d} h_{i,j} \left(| x_{m,i} - x_{m,j} |^{p} - | y_{i} - y_{j} |^{p} \right)^{2} \right] - \frac{1}{2M^{2}} \sum_{m=1}^{M} \sum_{k=1}^{M} \left[ \sum_{i=1}^{d} \sum_{j=1}^{d} h_{i,j} \left(| x_{m,i} - x_{m,j} |^{p} - | x_{k,i} - x_{k,j} |^{p} \right)^{2} \right] \\
     &= \sum_{i=1}^{d} \sum_{j=1}^{d} h_{i,j} \left( \frac{1}{M}\sum_{m=1}^{M} | x_{m,i} - x_{m,j} |^{p} - | y_{i} - y_{j} |^{p} \right)^{2}, \\
-\end{align}
+\end{aligned}
 $$
 
 which is given by Scheuerer and Hamill (2015), while its fair version is
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{VS}_{p}^{f}(F_{M}, \boldsymbol{y}) &= \frac{1}{M} \sum_{m=1}^{M} \left[ \sum_{i=1}^{d} \sum_{j=1}^{d} h_{i,j} \left(| x_{m,i} - x_{m,j} |^{p} - | y_{i} - y_{j} |^{p} \right)^{2} \right] - \frac{1}{2M(M - 1)} \sum_{m=1}^{M} \sum_{k=1}^{M} \left[ \sum_{i=1}^{d} \sum_{j=1}^{d} h_{i,j} \left(| x_{m,i} - x_{m,j} |^{p} - | x_{k,i} - x_{k,j} |^{p} \right)^{2} \right] \\
     &= \sum_{i=1}^{d} \sum_{j=1}^{d} h_{i,j} \left[|y_{i} - y_{j} |^{2p} + \frac{2}{M(M - 1)} \sum_{m=1}^{M - 1} \sum_{k=m+1}^{M} | x_{m,i} - x_{m,j} |^{p} | x_{k,i} - x_{k,j} |^{p} - \frac{2}{M} | y_{i} - y_{j} |^{p} \sum_{m=1}^{M} |x_{m, i} - x_{m, j} |^{p} \right].
-\end{align}
+\end{aligned}
 $$
 
 
@@ -335,10 +335,10 @@ to particular outcomes (Matheson and Winkler, 1976; Gneiting and Ranjan, 2011).
 The threshold-weighted CRPS can also be expressed as a kernel score of the above form. In particular,
 
 $$
-\begin{align}
+\begin{aligned}
 \mathrm{twCRPS}(F, y; w) &= \int_{-\infty}^{\infty} (F(x) - 1\{y \le x\})^{2} w(x) dx \\
 &= \mathbb{E} | v(X) - v(y) | - \frac{1}{2} \mathbb{E} |v(X) - v(X^{\prime}) |,
-\end{align}
+\end{aligned}
 $$
 
 where $y \in \Omega \subseteq \mathbb{R}$,  $X, X^{\prime} \sim F$ are independent,

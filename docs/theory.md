@@ -126,12 +126,12 @@ To account for the ordering of the categories, it is common to apply the Brier s
 Log score to cumulative probabilities. Let
 
 $$
-\begin{align}
+\begin{aligned}
     \tilde{F} &= (\tilde{F}_{1}, \dots, \tilde{F}_{K}) \in [0, 1]^{K} \quad \text{with
     $\tilde{F}_{j} = \sum_{i=1}^{j} F_{i}$} \quad &\text{for $j = 1, \dots, K$,} \\
     \tilde{y} &= (\tilde{y}_{1}, \dots, \tilde{y}_{K}) \in \{0, 1\}^{K} \quad \text{with
     $\tilde{y}_{j} = \sum_{i=1}^{j} \mathbf{1}\{y = i\}$} \quad &\text{for $j = 1, \dots, K$.}
-\end{align}
+\end{aligned}
 $$
 
 Then, the *Ranked Probability Score (RPS)* is defined as
@@ -162,10 +162,10 @@ for binary outcomes.
 The *Continuous Ranked Probability Score (CRPS)* is defined as
 
 $$
-\begin{align*}
+\begin{aligned}
     \mathrm{CRPS}(F, y) &= \int_{-\infty}^{\infty} (F(x) - \mathbf{1}\{y \le x\})^{2} dx \\
     &= \mathbb{E} | X - y | - \frac{1}{2} \mathbb{E} | X - X^{\prime} |,
-\end{align*}
+\end{aligned}
 $$
 
 where $X, X^{\prime} \sim F$ are independent.
@@ -466,10 +466,10 @@ For continuous outcomes, this can be extended to the CRPS by incorporating a wei
 the integral, yielding the *threshold-weighted CRPS*
 
 $$
-\begin{align*}
+\begin{aligned}
     \mathrm{twCRPS}(F, y; w) &= \int_{\mathbb{R}} (F(x) - \mathbb{1}\{y \leq x\})^{2} w(x) dx \\
     &= \mathbb{E} | v(X) - v(y) | - \frac{1}{2} \mathbb{E} | v(X) - v(X^{\prime}) |,
-\end{align*}
+\end{aligned}
 $$
 
 where $X, X^{\prime} \sim F$ are independent, and $v$ is such that $v(x) - v(x^{\prime}) = \int_{x^{\prime}}^{x} w(z) dz$

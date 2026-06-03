@@ -53,7 +53,7 @@ reference.md
 ## Features
 
 - **Fast** computation of several probabilistic univariate and multivariate verification metrics
-- **Multiple backends**: support for numpy (accelerated with numba), jax, pytorch and tensorflow
+- **Multiple backends**: support for numpy (accelerated with numba), jax and pytorch
 - **Didactic approach** to probabilistic forecast evaluation through clear code and documentation
 
 ## Installation

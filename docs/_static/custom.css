@@ -1,0 +1,15 @@
+/* Widen the content column so equations don't overflow */
+.bd-article-container {
+    max-width: 900px;  /* default is usually 740px, adjust to taste */
+}
+
+/* Only add scroll on equations that genuinely overflow */
+mjx-container[jax="CHTML"][display="true"] {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+
+.bd-article-container {
+    max-width: min(900px, 90vw);
+}

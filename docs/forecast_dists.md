@@ -151,10 +151,10 @@ F_{\mu, \sigma}(x) =
 $$
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{CRPS}(F_{0, 1}, y) &= |y| + \exp(-|y|) - \frac{3}{4}, \\
     \mathrm{CRPS}(F_{\mu, \sigma}, y) &= \sigma \mathrm{CRPS} \left( F_{0, 1}, \frac{y - \mu}{\sigma} \right).
-\end{align}
+\end{aligned}
 $$
 
 
@@ -172,10 +172,10 @@ F_{\mu, \sigma}(x) =  \frac{1}{1 + \exp \left( - \frac{x - \mu}{\sigma} \right)}
 $$
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{CRPS}(F_{0, 1}, y) &= y - 2 \log \left( F_{0, 1}(y) \right) - 1, \\
     \mathrm{CRPS}(F_{\mu, \sigma}, y) &= \sigma \mathrm{CRPS} \left( F_{0, 1}, \frac{y - \mu}{\sigma} \right).
-\end{align}
+\end{aligned}
 $$
 
 
@@ -193,10 +193,10 @@ F_{\mu, \sigma}(x) = \Phi \left( \frac{x - \mu}{\sigma} \right) = \frac{1}{2} \l
 $$
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{CRPS}(F_{0, 1}, y) &= y (2\Phi(y) - 1) + 2 \phi(y) - \frac{1}{\sqrt{\pi}}, \\
     \mathrm{CRPS}(F_{\mu, \sigma}, y) &= \sigma \mathrm{CRPS} \left( F_{0, 1}, \frac{y - \mu}{\sigma} \right),
-\end{align}
+\end{aligned}
 $$
 
 where $\phi$ and $\Phi$ represent the standard normal pdf and cdf, respectively, and
@@ -240,10 +240,10 @@ F_{\nu, \mu, \sigma}(x) = \frac{1}{2} + \left( \frac{x - \mu}{\sigma} \right) \f
 $$
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{CRPS}(F_{\nu, 0, 1}, y) &= y (2F_{\nu, 0, 1}(y) - 1) + 2 f_{\nu, 0, 1}(y) \left( \frac{\nu + y^{2}}{\nu - 1} \right) - \frac{2 \sqrt{\nu}}{\nu - 1} \frac{B(\frac{1}{2}, \nu - \frac{1}{2})}{B(\frac{1}{2}, \frac{\nu}{2})^{2}}, \\
     \mathrm{CRPS}(F_{\nu, \mu, \sigma}, y) &= \sigma \mathrm{CRPS} \left( F_{\nu, 0, 1}, \frac{y - \mu}{\sigma} \right).
-\end{align}
+\end{aligned}
 $$
 
 
@@ -299,10 +299,10 @@ F_{\mu, \sigma_{1}, \sigma_{2}}(x) =
 $$
 
 $$
-\begin{align}
+\begin{aligned}
 \mathrm{CRPS}(F_{\mu, \sigma_{1}, \sigma_{2}}, y) = & \sigma_{1} \mathrm{CRPS} \left( F_{-\infty, 0}^{0, \sigma_{2}/(\sigma_{1} + \sigma_{2})}, \min \left(0, \frac{y - \mu}{\sigma_{1}} \right) \right) \\
     & + \sigma_{2} \mathrm{CRPS} \left( F^{\infty, 0}_{0, \sigma_{1}/(\sigma_{1} + \sigma_{2})}, \max \left(0, \frac{y - \mu}{\sigma_{2}} \right) \right),
-\end{align}
+\end{aligned}
 $$
 
 where $\phi$ and $\Phi$ the standard normal pdf and cdf, respectively, and $F_{l, L}^{u, U}$
@@ -481,10 +481,10 @@ F_{\alpha, \beta}^{l, u}(x) =
 $$
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{CRPS}(F_{\alpha, \beta}^{0, 1}, y) &= y (2F_{\alpha, \beta}^{0, 1}(y) - 1) + \frac{\alpha}{\alpha + \beta} \left( 1 - 2 F_{\alpha + 1, \beta}^{0, 1}(y) - \frac{2B(2 \alpha, 2 \beta)}{\alpha B(\alpha, \beta)^{2}} \right), \\
     \mathrm{CRPS}(F_{\alpha, \beta}^{l, u}, y) &= (u - l) \mathrm{CRPS} \left( F_{\alpha, \beta}^{0, 1}, \frac{y - l}{u - l} \right),
-\end{align}
+\end{aligned}
 $$
 
 where $B$ is the beta function, and $I$ is the regularised incomplete beta function.
@@ -516,10 +516,10 @@ F_{l, u}^{L, U}(x) =
 $$
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{CRPS}(F_{0, 1}^{L, U}, y) &= | y - F(y) | + F(y)^{2}(1 - L - U) - F(y)(1 - 2L) + \frac{(1 - L - U)^{2}}{3} + (1 - L)U, \\
     \mathrm{CRPS}(F_{l, u}^{L, U}, y) &= (u - l) \mathrm{CRPS} \left( F_{0, 1}^{L, U}, \frac{y - l}{u - l} \right),
-\end{align}
+\end{aligned}
 $$
 
 where $F = F_{0, 1}^{0, 0}$ is the standard uniform distribution function.
@@ -549,10 +549,10 @@ F_{\mu, \sigma, M}(x) =
 $$
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{CRPS}(F_{0, 1, M}, y) &= |y| - 2(1 - M)F(y) + \frac{(1 - M)^{2}}{2}, \\
     \mathrm{CRPS}(F_{\mu, \sigma, M}, y) &= \sigma \mathrm{CRPS} \left( F_{0, 1, M}, \frac{y - \mu}{\sigma} \right),
-\end{align}
+\end{aligned}
 $$
 
 where $F = F_{0, 1, 0}$ is the standard exponential distribution function.
@@ -723,10 +723,10 @@ $$
 For all $\xi$,
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{CRPS}(F_{0, 1, \xi, M}, y) &= |y| - \frac{2(1 - M)}{1 - \xi} \left( 1 - (1 - F_{0, 1, \xi, 0}(y))^{1 - \xi} \right) + \frac{(1 - M)^{2}}{2 - \xi}, \\
     \mathrm{CRPS}(F_{\mu, \sigma, \xi, M}, y) &= \sigma \mathrm{CRPS} \left( F_{0, 1, \xi, M}, \frac{y - \mu}{\sigma} \right).
-\end{align}
+\end{aligned}
 $$
 
 
@@ -760,10 +760,10 @@ F_{\mu, \sigma, l, L}^{u, U}(x) =
 $$
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{CRPS}(F_{0, 1, l, L}^{u, U}, y) &= |y - z| + uU^{2} - lL^{2} - \left( \frac{1 - L - U}{F(u) - F(l)} \right) z \left( \frac{(1 - 2L)F(u) + (1 - 2U)F(l)}{1 - L - U} \right) - \left( \frac{1 - L - U}{F(u) - F(l)} \right) (2 \log F(-z) - 2G(u)U - 2G(l)L) - \left( \frac{1 - L - U}{F(u) - F(l)} \right)^{2} (H(u) - H(l)) , \\
     \mathrm{CRPS}(F_{\mu, \sigma, l, L}^{u, U}, y) &= \sigma \mathrm{CRPS} \left( F_{0, 1, (l - \mu)/\sigma, L}^{(u - \mu)/\sigma, U}, \frac{y - \mu}{\sigma} \right),
-\end{align}
+\end{aligned}
 $$
 
 where $f_{\mu, \sigma}$ and $F_{\mu, \sigma}$ denote the pdf and cdf of the logistic distribution
@@ -771,11 +771,11 @@ with location parameter $\mu$ and scale parameter $\sigma$, $F = F_{0, 1}$ is th
 standard logistic distribution, and with
 
 $$
-\begin{align}
+\begin{aligned}
     G(x) &= xF(x) + \log F(-x), \\
     H(x) &= F(x) - xF(x)^{2} + (1 - 2F(x)) \log F(-x), \\
     z &= \max \{l, \min \{y, u\}\}.
-\end{align}
+\end{aligned}
 $$
 
 ### Generalised truncated or censored normal distribution
@@ -808,10 +808,10 @@ F_{\mu, \sigma, l, L}^{u, U}(x) =
 $$
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{CRPS}(F_{0, 1, l, L}^{u, U}, y) &= |y - z| + uU^{2} - lL^{2} + \left( \frac{1 - L - U}{\Phi(u) - \Phi(l)} \right) z \left( 2 \Phi(z) - \frac{(1 - 2L)\Phi(u) + (1 - 2U)\Phi(l)}{1 - L - U} \right) + \left( \frac{1 - L - U}{\Phi(u) - \Phi(l)} \right) (2 \phi(z) - 2 \phi(u)U - 2 \phi(l)L) - \left( \frac{1 - L - U}{\Phi(u) - \Phi(l)} \right)^{2} \left( \frac{1}{\sqrt{\pi}} \right) \left(\Phi \left( u\sqrt{2} \right) - \Phi \left( l\sqrt{2} \right) \right), \\
     \mathrm{CRPS}(F_{\mu, \sigma, l, L}^{u, U}, y) &= \sigma \mathrm{CRPS} \left( F_{0, 1, (l - \mu)/\sigma, L}^{(u - \mu)/\sigma, U}, \frac{y - \mu}{\sigma} \right),
-\end{align}
+\end{aligned}
 $$
 
 where $f_{\mu, \sigma}$ and $F_{\mu, \sigma}$ denote the pdf and cdf of the normal distribution
@@ -849,10 +849,10 @@ F_{\mu, \sigma, \nu, l, L}^{u, U}(x) =
 $$
 
 $$
-\begin{align}
+\begin{aligned}
     \mathrm{CRPS}(F_{0, 1, \nu, l, L}^{u, U}, y) &= |y - z| + uU^{2} - lL^{2} + \left( \frac{1 - L - U}{F_{\nu}(u) - F_{\nu}(l)} \right) z \left( 2 F_{\nu}(z) - \frac{(1 - 2L)F_{\nu}(u) + (1 - 2U)F_{\nu}(l)}{1 - L - U} \right) - \left( \frac{1 - L - U}{F_{\nu}(u) - F_{\nu}(l)} \right) (2 G_{\nu}(z) - 2 G_{\nu}(u)U - 2 G_{\nu}(l)L) - \left( \frac{1 - L - U}{F_{\nu}(u) - F_{\nu}(l)} \right)^{2} \bar{B}_{\nu} (H_{\nu}(u) - H_{\nu}(l)), \\
     \mathrm{CRPS}(F_{\mu, \sigma, \nu, l, L}^{u, U}, y) &= \sigma \mathrm{CRPS} \left( F_{0, 1, \nu, (l - \mu)/\sigma, L}^{(u - \mu)/\sigma, U}, \frac{y - \mu}{\sigma} \right),
-\end{align}
+\end{aligned}
 $$
 
 where $f_{\mu, \sigma, \nu}$ and $F_{\mu, \sigma, \nu}$ denote the pdf and cdf of the Student's t distribution
@@ -861,12 +861,12 @@ $f_{\nu} = f_{0, 1, \nu}$ and $F_{\nu} = F_{0, 1, \nu}$ are the pdf and cdf of t
 degrees of freedom; and
 
 $$
-\begin{align}
+\begin{aligned}
     G_{\nu}(x) &= - \left( \frac{\nu + x^{2}}{\nu - 1} \right) f_{\nu}(x), \\
     H_{\nu}(x) &= \frac{1}{2} + \frac{1}{2} \text{sgn}(x) I \left(\frac{1}{2}, \nu - \frac{1}{2}, \frac{x^{2}}{\nu + x^{2}} \right), \\
     \bar{B}_{\nu} &= \left( \frac{2 \sqrt{\nu}}{\nu - 1} \right) \frac{B \left(\frac{1}{2}, \nu - \frac{1}{2} \right)}{B(\frac{1}{2}, \frac{\nu}{2})}, \\
     z &= \max \{l, \min \{y, u\}\},
-\end{align}
+\end{aligned}
 $$
 
 where $I(a, b, x)$ is the regularised incomplete beta function, and $B$ is the beta function.

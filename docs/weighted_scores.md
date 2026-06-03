@@ -183,10 +183,10 @@ $$ \mathrm{LS}(F, y) = -\log f(y). $$
 The *conditional likelihood score* is defined as
 
 $$
-\begin{align}
+\begin{aligned}
 \mathrm{coLS}(F, y; w) &= - w(y) \log \left( \frac{f(y)}{\int_{\Omega} w(z)f(z) dz} \right) \\
     &= - w(y) \log f(y) + w(y) \log \left[ \int_{\Omega} w(z)f(z) dz \right].
-\end{align}
+\end{aligned}
 $$
 
 This can be interpreted as an outcome-weighted version of the Log score (Holzmann and Klar, 2017, Example 1).
@@ -255,10 +255,10 @@ re-scaled versions of kernel scores are themselves kernel scores.
 The CRPS is defined as
 
 $$
-\begin{align}
+\begin{aligned}
 \mathrm{CRPS}(F, y) &= \int_{-\infty}^{\infty} (F(z) - \mathbb{1}\{y \le z\})^{2} dz \\
 &= \mathbb{E}|X - y| - \frac{1}{2} \mathbb{E}|X - X^{\prime}|,
-\end{align}
+\end{aligned}
 $$
 where $y \in \Omega \subseteq \mathbb{R}$, and $X, X^{\prime} \sim F$ are independent
 (Matheson and Winkler, 1976; Gneiting and Rafery, 2007).
@@ -266,20 +266,20 @@ where $y \in \Omega \subseteq \mathbb{R}$, and $X, X^{\prime} \sim F$ are indepe
 Holzmann and Klar (2017) introduce the *outcome-weighted CRPS* as
 
 $$
-\begin{align}
+\begin{aligned}
 \mathrm{owCRPS}(F, y; w) &= w(y) \int_{-\infty}^{\infty} (F_{w}(z) - \mathbb{1}\{y \le z\})^{2} dz \\
 &= \frac{1}{\bar{w}_{F}}\mathbb{E}|X - y|w(X)w(y) - \frac{1}{2\bar{w}_{F}^{2}} \mathbb{E}|X - X^{\prime}|w(X)w(X^{\prime})w(y),
-\end{align}
+\end{aligned}
 $$
 where $\bar{w}_{F} = \mathbb{E}[w(X)]$.
 
 Gneiting and Ranjan (2011) introduce the *threshold-weighted CRPS* as
 
 $$
-\begin{align}
+\begin{aligned}
 \mathrm{twCRPS}(F, y; w) &= \int_{-\infty}^{\infty} (F(x) - 1\{y \le x\})^{2} w(x) dx \\
 &= \mathbb{E} | v(X) - v(y) | - \frac{1}{2} \mathbb{E} |v(X) - v(X^{\prime}) |,
-\end{align}
+\end{aligned}
 $$
 
 where $v : \mathbb{R} \to \mathbb{R}$ is an anti-derivative of the weight function $w$ (Allen et al., 2024).

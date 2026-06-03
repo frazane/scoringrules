@@ -439,8 +439,8 @@ def test_poisson(backend):
 
 
 def test_t(backend):
-    if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in jax, torch or tensorflow backends")
+    if backend in ["jax", "torch"]:
+        pytest.skip("Not implemented in jax, torch backends")
 
     obs, df, mu, sigma = 11.1, 5.2, 13.8, 2.3
     res = sr.logs_t(obs, df, mu, sigma, backend=backend)
@@ -483,8 +483,8 @@ def test_tnormal(backend):
 
 
 def test_tt(backend):
-    if backend in ["jax", "torch", "tensorflow"]:
-        pytest.skip("Not implemented in jax, torch or tensorflow backends")
+    if backend in ["jax", "torch"]:
+        pytest.skip("Not implemented in jax, torch backends")
 
     obs, df, location, scale, lower, upper = 1.9, 2.9, 3.1, 4.2, 1.5, 17.3
     res = sr.logs_tt(obs, df, location, scale, lower, upper, backend=backend)
