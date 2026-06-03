@@ -1,6 +1,11 @@
+import typing as tp
+
 import numpy as np
 
 from scoringrules.backend import backends
+
+if tp.TYPE_CHECKING:
+    from scoringrules.core.typing import Array, Backend, NanPolicy
 
 _V_AXIS = -1  # variable index for multivariate forecasts
 _M_AXIS = -2  # ensemble index for multivariate forecasts
@@ -206,21 +211,45 @@ def nan_policy_check(nan_policy: str) -> None:
 
 
 def apply_nan_policy_ens_uv(
-    obs, fct, nan_policy="propagate", ens_w=None, estimator=None, backend=None
-):
-    """Apply NaN policy to univariate ensemble forecasts (fct shape: ..., M).
+    obs: "Array",
+    fct: "Array",
+    nan_policy: "NanPolicy" = "propagate",
+    ens_w: "Array | None" = None,
+    estimator: str | None = None,
+    m_axis: int = -1,
+    backend: "Backend" = None,
+) -> "tuple[Array, Array, Array | None]":
+    """Apply a NaN policy to univariate ensemble forecasts (``fct`` shape ``..., M``).
 
-    For 'propagate': no-op, returns (obs, fct, None).
-    For 'raise': raises ValueError if any NaN in fct or obs.
-    For 'omit': returns (obs, fct_zeroed, nan_mask) where nan_mask is a boolean
-    array (True where fct member is NaN) and NaN members are replaced with 0.0.
+    A member is treated as invalid if its forecast value **or** its weight
+    (``ens_w``) is NaN. All policies return the same ``(obs, fct, ens_w)`` tuple
+    so the caller can keep a fixed signature regardless of the policy. When
+    supplied, ``ens_w`` is cast to float and returned with its ensemble axis
+    (``m_axis``) moved to the last position, aligned with ``fct``.
+
+    - ``'propagate'``: no-op; NaN members/weights flow through to a NaN result.
+    - ``'raise'``: raise ``ValueError`` if any NaN is present in ``obs``,
+      ``fct`` or ``ens_w``.
+    - ``'omit'``: invalid members are given zero weight. NaN forecast values are
+      replaced with ``0.0`` purely to keep them out of the arithmetic — their
+      value is irrelevant once the corresponding weight is zero. ``ens_w`` is
+      returned as a 0/1 mask when no weights were supplied, otherwise with the
+      invalid entries zeroed.
     """
     B = backends.active if backend is None else backends[backend]
+
+    if ens_w is not None:
+        # align the ensemble axis with the (already permuted) forecasts — whose
+        # ensemble axis is last — and cast to float so isnan works on integer
+        # weights. Doing this here means the axis is moved exactly once.
+        ens_w = B.moveaxis(B.asarray(ens_w, dtype=fct.dtype), m_axis, -1)
 
     if nan_policy == "propagate":
         return obs, fct, ens_w
 
     nan_mask = B.isnan(fct)
+    if ens_w is not None:
+        nan_mask = nan_mask | B.isnan(ens_w)
 
     if nan_policy == "raise":
         if B.any(nan_mask) or B.any(B.isnan(obs)):
@@ -235,7 +264,9 @@ def apply_nan_policy_ens_uv(
             raise NotImplementedError(
                 f"NaN handling with nan_policy='omit' is not implemented for estimator '{estimator}'."
             )
-        fct = B.where(nan_mask, B.asarray(0.0), fct)
+        # zero only the NaN forecast values; zero-weighted members never
+        # contribute, so their (now 0.0) value does not affect the score.
+        fct = B.where(B.isnan(fct), B.asarray(0.0), fct)
         if ens_w is None:
             ens_w = B.asarray(~nan_mask, dtype=fct.dtype)
         else:

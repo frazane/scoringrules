@@ -123,19 +123,22 @@ def crps_ensemble(
     # check required input values
     obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
 
-    # sort ensemble (for "qd", "pwm", "int" estimators)
-    fct, ens_w = univariate_sort_ens(
-        fct, ens_w, m_axis, estimator, sorted_ensemble, backend=backend
+    # apply nan policy on the raw forecasts/weights, before normalisation and
+    # sorting, so NaN positions in a user-supplied ens_w are still detectable.
+    # ens_w is returned aligned with the ensemble axis last.
+    obs, fct, ens_w = apply_nan_policy_ens_uv(
+        obs, fct, nan_policy, ens_w, estimator=estimator, m_axis=m_axis, backend=backend
     )
 
-    # apply nan policy
-    obs, fct, ens_w = apply_nan_policy_ens_uv(
-        obs, fct, nan_policy, ens_w, estimator=estimator, backend=backend
+    # sort ensemble (for "qd", "pwm", "int" estimators); the ensemble axis is
+    # already last on both fct and ens_w, so use -1 here
+    fct, ens_w = univariate_sort_ens(
+        fct, ens_w, -1, estimator, sorted_ensemble, backend=backend
     )
 
     # check and normalize ensemble weights (optional)
     if ens_w is not None:
-        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
+        ens_w = univariate_weight_check(ens_w, fct, -1, backend=backend)
 
     # dispatch implementation
     if backend == "numba":

@@ -206,6 +206,64 @@ def test_crps_ensemble_w_ens_nan_policy(estimator, backend):
         assert np.isclose(res, res_clean)
 
 
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+def test_crps_ensemble_nan_weights(estimator, backend):
+    """Test crps_ensemble when the ensemble weights (ens_w) contain NaN.
+
+    A member is invalid if its forecast value OR its weight is NaN:
+    'propagate' -> NaN, 'raise' -> error, 'omit' -> zero weight (dropped).
+    """
+    kwargs = {"estimator": estimator, "backend": backend}
+
+    obs = np.random.randn(N)
+    fct = np.random.randn(N, ENSEMBLE_SIZE)
+    ens_w = np.random.rand(N, ENSEMBLE_SIZE)
+    ens_w[0, [0, 3, 6]] = np.nan
+    ens_w[2, [5]] = np.nan
+    nan_positions = np.isnan(ens_w).any(axis=1)
+
+    # 'propagate': a NaN weight yields NaN output
+    res = np.asarray(
+        sr.crps_ensemble(obs, fct, ens_w=ens_w, nan_policy="propagate", **kwargs)
+    )
+    assert np.all(np.isnan(res[nan_positions]))
+
+    # 'raise': error if a weight is NaN
+    with pytest.raises(ValueError):
+        sr.crps_ensemble(obs, fct, ens_w=ens_w, nan_policy="raise", **kwargs)
+
+    # 'omit': not implemented for int/akr/akr_circperm estimators
+    if estimator in ["int", "akr", "akr_circperm"]:
+        with pytest.raises(NotImplementedError):
+            sr.crps_ensemble(obs, fct, ens_w=ens_w, nan_policy="omit", **kwargs)
+        return
+
+    # 'omit': NaN-weighted members get zero weight (equivalent to dropping them)
+    res = np.asarray(
+        sr.crps_ensemble(obs, fct, ens_w=ens_w, nan_policy="omit", **kwargs)
+    )
+    assert not np.any(np.isnan(res))
+    for i in range(fct.shape[0]):
+        valid = ~np.isnan(ens_w[i])
+        res_clean = sr.crps_ensemble(
+            obs[i], fct[i, valid], ens_w=ens_w[i, valid], nan_policy="omit", **kwargs
+        )
+        assert np.isclose(res[i], res_clean)
+
+    # the same result is obtained with the ensemble on a non-default axis
+    res_axis = np.asarray(
+        sr.crps_ensemble(
+            obs[..., None],
+            fct[..., None],
+            ens_w=ens_w[..., None],
+            m_axis=-2,
+            nan_policy="omit",
+            **kwargs,
+        )
+    )
+    assert np.allclose(res_axis.ravel(), res)
+
+
 def test_crps_ensemble_correctness(backend):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.3
