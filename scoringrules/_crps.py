@@ -69,15 +69,19 @@ def crps_ensemble(
         Boolean indicating whether the ensemble members are already in ascending order.
         Default is False.
     nan_policy : {'propagate', 'omit', 'raise'}, default 'propagate'
-        Defines how to handle NaN values in the ensemble members:
+        Defines how to handle NaN values. A member is considered invalid if
+        either its forecast value or its weight (``ens_w``) is NaN.
 
-        - ``'propagate'``: return NaN if any ensemble member is NaN.
-        - ``'omit'``: ignore NaN ensemble members during computation.
-        - ``'raise'``: raise a ValueError if NaN values are encountered.
+        - ``'propagate'``: return NaN if any ensemble member or its weight is NaN.
+        - ``'omit'``: drop invalid members from the computation (they are given
+          zero weight).
+        - ``'raise'``: raise a ValueError if NaN values are encountered in
+          ``obs``, ``fct`` or ``ens_w``.
 
-        Note: this applies to ensemble members (fct) only. NaN values in
-        observations (obs) always result in NaN output. Not supported when
-        ``ens_w`` is provided.
+        Note: under ``'propagate'`` and ``'omit'`` a NaN observation always
+        yields a NaN result, since an observation cannot be omitted. With
+        ``'omit'`` the ``int``, ``akr`` and ``akr_circperm`` estimators are not
+        supported and raise ``NotImplementedError``.
     backend : str, optional
         The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
 
