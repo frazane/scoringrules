@@ -182,3 +182,53 @@ def test_twes_ensemble_nan_policy(backend):
             obs[i], fct_nan[i], lambda x: x, nan_policy="omit", backend=backend
         )
         assert np.allclose(res_omit, res_clean)
+
+    # NaN in obs always propagates, even under 'omit'
+    obs_nan = obs.copy()
+    obs_nan[1, 0] = np.nan
+    res = np.asarray(
+        sr.twes_ensemble(obs_nan, fct, lambda x: x, nan_policy="omit", backend=backend)
+    )
+    assert np.isnan(res[1])
+
+
+@pytest.mark.parametrize("score_fn", [sr.owes_ensemble, sr.vres_ensemble])
+def test_weighted_energy_nan_policy_with_ens_w(score_fn, backend):
+    """owes/vres under 'omit' WITH user-supplied ens_w. Exercises the weighted
+    estimators (incl. the fixed numba kernels) under the exact scenario that
+    motivated the wbar / ow-indexing bugfixes."""
+    obs = np.random.randn(N, N_VARS)
+    fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
+    w_func = lambda x: backends[backend].sum(x**2)  # noqa: E731
+    ens_w = np.ones(fct.shape[:-1])
+
+    fct_nan = fct.copy()
+    fct_nan[0, [0, 3, 6], 0] = np.nan
+    fct_nan[2, [5], 1] = np.nan
+
+    # 'omit': no NaN in result
+    res = np.asarray(
+        score_fn(obs, fct_nan, w_func, ens_w=ens_w, nan_policy="omit", backend=backend)
+    )
+    assert not np.any(np.isnan(res))
+
+    # 'omit': equivalence with the clean weighted sub-ensemble, per row
+    for i in range(fct.shape[0]):
+        valid = ~np.isnan(fct_nan[i]).any(axis=-1)
+        res_clean = score_fn(
+            obs[i],
+            fct_nan[i][valid],
+            w_func,
+            ens_w=ens_w[i][valid],
+            nan_policy="omit",
+            backend=backend,
+        )
+        res_omit = score_fn(
+            obs[i],
+            fct_nan[i],
+            w_func,
+            ens_w=ens_w[i],
+            nan_policy="omit",
+            backend=backend,
+        )
+        assert np.allclose(res_omit, res_clean)
