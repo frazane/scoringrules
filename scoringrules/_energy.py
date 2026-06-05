@@ -7,10 +7,11 @@ from scoringrules.core.utils import (
     estimator_check,
     mv_weighted_score_chain,
     mv_weighted_score_weights,
+    apply_nan_policy_ens_mv,
 )
 
 if tp.TYPE_CHECKING:
-    from scoringrules.core.typing import Array, ArrayLike, Backend
+    from scoringrules.core.typing import Array, ArrayLike, Backend, NanPolicy
 
 
 def es_ensemble(
@@ -21,6 +22,7 @@ def es_ensemble(
     *,
     ens_w: "Array" = None,
     estimator: str = "nrg",
+    nan_policy: "NanPolicy" = "propagate",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Energy Score for a finite multivariate ensemble.
@@ -50,6 +52,12 @@ def es_ensemble(
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     estimator : str
         The energy score estimator to be used.
+    nan_policy : {'propagate', 'omit', 'raise'}, default 'propagate'
+        How to handle NaN ensemble members (a member is invalid if any of its
+        variables, or its weight, is NaN). 'propagate' lets NaN flow to a NaN
+        score; 'raise' errors on any NaN; 'omit' drops invalid members by
+        zero-weighting them. 'omit' is not implemented for the 'akr' and
+        'akr_circperm' estimators. NaN in `obs` always propagates.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -71,6 +79,15 @@ def es_ensemble(
         Some theoretical background on scoring rules for multivariate forecasts.
     """
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
+
+    # apply nan policy before weight normalisation so NaN positions in a
+    # user-supplied ens_w stay detectable. For 'omit', invalid members become
+    # zero-weighted and the score is routed through the weighted path; ens_w is
+    # returned aligned ensemble-last.
+    obs, fct, ens_w = apply_nan_policy_ens_mv(
+        obs, fct, nan_policy, ens_w, estimator=estimator, m_axis=m_axis, backend=backend
+    )
+
     if ens_w is None:
         if backend == "numba":
             estimator_check(estimator, energy.estimator_gufuncs)
@@ -78,7 +95,10 @@ def es_ensemble(
         else:
             return energy.es(obs, fct, estimator=estimator, backend=backend)
     else:
-        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
+        # ens_w is already aligned ensemble-last by the nan-policy helper, so
+        # m_axis=-2 maps to that last axis (a no-op realignment) while still
+        # running the shape/non-negativity checks and renormalisation.
+        ens_w = multivariate_weight_check(ens_w, fct, -2, backend=backend)
         if backend == "numba":
             estimator_check(estimator, energy.estimator_gufuncs_w)
             return energy.estimator_gufuncs_w[estimator](obs, fct, ens_w)
