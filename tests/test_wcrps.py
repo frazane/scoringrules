@@ -27,6 +27,48 @@ def test_owcrps_ensemble(backend):
     )
 
 
+def test_owcrps_ensemble_nan_policy(backend):
+    """Test behavior of scoringrules.owcrps_ensemble with NaN values."""
+
+    kwargs = {"backend": backend, "w_func": lambda x: x * 0.0 + 1.0}
+
+    # test data
+    obs = np.random.randn(N)
+    fct = np.random.randn(N, M)
+    fct_nan = fct.copy()
+    fct_nan[0, [0, 3, 6]] = np.nan
+    fct_nan[2, [5]] = np.nan
+    nan_positions = np.isnan(fct_nan).any(axis=1)
+
+    # default nan policy (propagate)
+    res = sr.owcrps_ensemble(obs, fct_nan, **kwargs)
+    res = np.asarray(res)
+    assert np.all(np.isnan(res[nan_positions]))
+
+    # 'propagate' nan policy
+    res = sr.owcrps_ensemble(obs, fct_nan, nan_policy="propagate", **kwargs)
+    res = np.asarray(res)
+    assert np.all(np.isnan(res[nan_positions]))
+
+    # 'raise' nan policy
+    with pytest.raises(ValueError):
+        sr.owcrps_ensemble(obs, fct_nan, nan_policy="raise", **kwargs)
+
+    # 'omit' nan policy: no nans in results
+    res = sr.owcrps_ensemble(obs, fct_nan, nan_policy="omit", **kwargs)
+    res = np.asarray(res)
+    assert not np.any(np.isnan(res))
+
+    # 'omit' nan policy: equivalence with clean ensemble
+    for i in range(fct.shape[0]):
+        fct_clean = fct_nan[i, ~np.isnan(fct_nan[i])]
+        res_clean = sr.owcrps_ensemble(obs[i : i + 1], fct_clean[None, :], **kwargs)
+        res = sr.owcrps_ensemble(
+            obs[i : i + 1], fct_nan[i : i + 1], nan_policy="omit", **kwargs
+        )
+        assert np.allclose(res, res_clean)
+
+
 def test_vrcrps_ensemble(backend):
     # test shapes
     obs = np.random.randn(N)
@@ -42,6 +84,124 @@ def test_vrcrps_ensemble(backend):
         backend=backend,
     )
     assert res.shape == (N,)
+
+
+def test_vrcrps_ensemble_nan_policy(backend):
+    """Test behavior of scoringrules.vrcrps_ensemble with NaN values."""
+
+    kwargs = {"backend": backend, "w_func": lambda x: x * 0.0 + 1.0}
+
+    # test data
+    obs = np.random.randn(N)
+    fct = np.random.randn(N, M)
+    fct_nan = fct.copy()
+    fct_nan[0, [0, 3, 6]] = np.nan
+    fct_nan[2, [5]] = np.nan
+    nan_positions = np.isnan(fct_nan).any(axis=1)
+
+    # default nan policy (propagate)
+    res = sr.vrcrps_ensemble(obs, fct_nan, **kwargs)
+    res = np.asarray(res)
+    assert np.all(np.isnan(res[nan_positions]))
+
+    # 'propagate' nan policy
+    res = sr.vrcrps_ensemble(obs, fct_nan, nan_policy="propagate", **kwargs)
+    res = np.asarray(res)
+    assert np.all(np.isnan(res[nan_positions]))
+
+    # 'raise' nan policy
+    with pytest.raises(ValueError):
+        sr.vrcrps_ensemble(obs, fct_nan, nan_policy="raise", **kwargs)
+
+    # 'omit' nan policy: no nans in results
+    res = sr.vrcrps_ensemble(obs, fct_nan, nan_policy="omit", **kwargs)
+    res = np.asarray(res)
+    assert not np.any(np.isnan(res))
+
+    # 'omit' nan policy: equivalence with clean ensemble
+    for i in range(fct.shape[0]):
+        fct_clean = fct_nan[i, ~np.isnan(fct_nan[i])]
+        res_clean = sr.vrcrps_ensemble(obs[i : i + 1], fct_clean[None, :], **kwargs)
+        res = sr.vrcrps_ensemble(
+            obs[i : i + 1], fct_nan[i : i + 1], nan_policy="omit", **kwargs
+        )
+        assert np.allclose(res, res_clean)
+
+
+def test_owcrps_ensemble_nan_weights(backend):
+    """Test owcrps_ensemble when the ensemble weights (ens_w) contain NaN."""
+    kwargs = {"backend": backend, "w_func": lambda x: x * 0.0 + 1.0}
+
+    obs = np.random.randn(N)
+    fct = np.random.randn(N, M)
+    ens_w = np.random.rand(N, M)
+    ens_w[0, [0, 3, 6]] = np.nan
+    ens_w[2, [5]] = np.nan
+    nan_positions = np.isnan(ens_w).any(axis=1)
+
+    # 'propagate': a NaN weight yields NaN output
+    res = np.asarray(
+        sr.owcrps_ensemble(obs, fct, ens_w=ens_w, nan_policy="propagate", **kwargs)
+    )
+    assert np.all(np.isnan(res[nan_positions]))
+
+    # 'raise': error if a weight is NaN
+    with pytest.raises(ValueError):
+        sr.owcrps_ensemble(obs, fct, ens_w=ens_w, nan_policy="raise", **kwargs)
+
+    # 'omit': NaN-weighted members get zero weight (equivalent to dropping them)
+    res = np.asarray(
+        sr.owcrps_ensemble(obs, fct, ens_w=ens_w, nan_policy="omit", **kwargs)
+    )
+    assert not np.any(np.isnan(res))
+    for i in range(fct.shape[0]):
+        valid = ~np.isnan(ens_w[i])
+        res_clean = sr.owcrps_ensemble(
+            obs[i : i + 1],
+            fct[i : i + 1, valid],
+            ens_w=ens_w[i : i + 1, valid],
+            nan_policy="omit",
+            **kwargs,
+        )
+        assert np.allclose(res[i], res_clean)
+
+
+def test_vrcrps_ensemble_nan_weights(backend):
+    """Test vrcrps_ensemble when the ensemble weights (ens_w) contain NaN."""
+    kwargs = {"backend": backend, "w_func": lambda x: x * 0.0 + 1.0}
+
+    obs = np.random.randn(N)
+    fct = np.random.randn(N, M)
+    ens_w = np.random.rand(N, M)
+    ens_w[0, [0, 3, 6]] = np.nan
+    ens_w[2, [5]] = np.nan
+    nan_positions = np.isnan(ens_w).any(axis=1)
+
+    # 'propagate': a NaN weight yields NaN output
+    res = np.asarray(
+        sr.vrcrps_ensemble(obs, fct, ens_w=ens_w, nan_policy="propagate", **kwargs)
+    )
+    assert np.all(np.isnan(res[nan_positions]))
+
+    # 'raise': error if a weight is NaN
+    with pytest.raises(ValueError):
+        sr.vrcrps_ensemble(obs, fct, ens_w=ens_w, nan_policy="raise", **kwargs)
+
+    # 'omit': NaN-weighted members get zero weight (equivalent to dropping them)
+    res = np.asarray(
+        sr.vrcrps_ensemble(obs, fct, ens_w=ens_w, nan_policy="omit", **kwargs)
+    )
+    assert not np.any(np.isnan(res))
+    for i in range(fct.shape[0]):
+        valid = ~np.isnan(ens_w[i])
+        res_clean = sr.vrcrps_ensemble(
+            obs[i : i + 1],
+            fct[i : i + 1, valid],
+            ens_w=ens_w[i : i + 1, valid],
+            nan_policy="omit",
+            **kwargs,
+        )
+        assert np.allclose(res[i], res_clean)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
