@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 import scoringrules as sr
 from scoringrules.backend import backends
@@ -82,3 +83,17 @@ def test_twenergy_score_correctness(backend):
 
     res = sr.twes_ensemble(obs, fct, v_func, backend=backend)
     np.testing.assert_allclose(res, 0.3345418, rtol=1e-6)
+
+
+@pytest.mark.parametrize("score_fn", [sr.owes_ensemble, sr.vres_ensemble])
+def test_weighted_energy_uniform_ens_w_equivalence(score_fn, backend):
+    """Uniform ens_w must reproduce the unweighted score. This guards the
+    weighted numba gufuncs (_owenergy_score_gufunc_w / _vrenergy_score_gufunc_w)
+    against the trusted unweighted kernels."""
+    obs = np.random.randn(N, N_VARS)
+    fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
+    w_func = lambda x: backends[backend].mean(x) * 0.0 + 1.0  # noqa: E731
+    ens_w = np.ones(fct.shape[:-1])
+    res = np.asarray(score_fn(obs, fct, w_func, backend=backend))
+    res_w = np.asarray(score_fn(obs, fct, w_func, ens_w=ens_w, backend=backend))
+    np.testing.assert_allclose(res, res_w, atol=1e-6)
