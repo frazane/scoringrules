@@ -103,7 +103,7 @@ def _owenergy_score_gufunc_w(
                 * ens_w[j]
             )
 
-    wbar = np.mean(fw)
+    wbar = np.sum(fw * ens_w)
 
     out[0] = e_1 / (wbar) - 0.5 * e_2 / (wbar**2)
 

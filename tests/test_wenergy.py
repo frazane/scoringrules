@@ -96,4 +96,57 @@ def test_weighted_energy_uniform_ens_w_equivalence(score_fn, backend):
     ens_w = np.ones(fct.shape[:-1])
     res = np.asarray(score_fn(obs, fct, w_func, backend=backend))
     res_w = np.asarray(score_fn(obs, fct, w_func, ens_w=ens_w, backend=backend))
-    np.testing.assert_allclose(res, res_w, atol=1e-6)
+    # loose tolerance: jax runs in float32 here, and the two paths accumulate
+    # differently, so this guards against gross errors (a real bug differs by O(1)).
+    np.testing.assert_allclose(res, res_w, rtol=1e-4, atol=1e-5)
+
+
+def _nan_policy_check_mv(score_fn, backend):
+    """Shared NaN-policy assertions for owes/vres (no estimator argument)."""
+    obs = np.random.randn(N, N_VARS)
+    fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
+    # non-constant weight function: this exercises the weighted denominator and
+    # would mask nothing — a constant w_func hides the owes wbar normalisation.
+    w_func = lambda x: backends[backend].sum(x**2)  # noqa: E731
+
+    fct_nan = fct.copy()
+    fct_nan[0, [0, 3, 6], 0] = np.nan
+    fct_nan[2, [5], 1] = np.nan
+    nan_positions = np.isnan(fct_nan).any(axis=(1, 2))
+
+    # 'propagate' (default + explicit)
+    for policy in (None, "propagate"):
+        kw = {} if policy is None else {"nan_policy": policy}
+        res = np.asarray(score_fn(obs, fct_nan, w_func, backend=backend, **kw))
+        assert np.all(np.isnan(res[nan_positions]))
+
+    # 'raise'
+    with pytest.raises(ValueError):
+        score_fn(obs, fct_nan, w_func, nan_policy="raise", backend=backend)
+
+    # 'omit': no NaN in result
+    res = np.asarray(score_fn(obs, fct_nan, w_func, nan_policy="omit", backend=backend))
+    assert not np.any(np.isnan(res))
+
+    # 'omit': equivalence with the surviving sub-ensemble, per row
+    for i in range(fct.shape[0]):
+        valid = ~np.isnan(fct_nan[i]).any(axis=-1)
+        res_clean = score_fn(obs[i], fct_nan[i][valid], w_func, backend=backend)
+        res_omit = score_fn(
+            obs[i], fct_nan[i], w_func, nan_policy="omit", backend=backend
+        )
+        assert np.allclose(res_omit, res_clean)
+
+    # NaN in obs always propagates, even under 'omit'
+    obs_nan = obs.copy()
+    obs_nan[1, 0] = np.nan
+    res = np.asarray(score_fn(obs_nan, fct, w_func, nan_policy="omit", backend=backend))
+    assert np.isnan(res[1])
+
+
+def test_owes_ensemble_nan_policy(backend):
+    _nan_policy_check_mv(sr.owes_ensemble, backend)
+
+
+def test_vres_ensemble_nan_policy(backend):
+    _nan_policy_check_mv(sr.vres_ensemble, backend)
