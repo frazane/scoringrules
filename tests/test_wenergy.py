@@ -150,3 +150,35 @@ def test_owes_ensemble_nan_policy(backend):
 
 def test_vres_ensemble_nan_policy(backend):
     _nan_policy_check_mv(sr.vres_ensemble, backend)
+
+
+def test_twes_ensemble_nan_policy(backend):
+    obs = np.random.randn(N, N_VARS)
+    fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
+
+    fct_nan = fct.copy()
+    fct_nan[0, [0, 3, 6], 0] = np.nan
+    nan_positions = np.isnan(fct_nan).any(axis=(1, 2))
+
+    # 'propagate'
+    res = np.asarray(sr.twes_ensemble(obs, fct_nan, lambda x: x, backend=backend))
+    assert np.all(np.isnan(res[nan_positions]))
+
+    # 'raise'
+    with pytest.raises(ValueError):
+        sr.twes_ensemble(obs, fct_nan, lambda x: x, nan_policy="raise", backend=backend)
+
+    # 'omit': finite, and equals twes over the surviving members (identity v_func)
+    res = np.asarray(
+        sr.twes_ensemble(obs, fct_nan, lambda x: x, nan_policy="omit", backend=backend)
+    )
+    assert not np.any(np.isnan(res))
+    for i in range(fct.shape[0]):
+        valid = ~np.isnan(fct_nan[i]).any(axis=-1)
+        res_clean = sr.twes_ensemble(
+            obs[i], fct_nan[i][valid], lambda x: x, backend=backend
+        )
+        res_omit = sr.twes_ensemble(
+            obs[i], fct_nan[i], lambda x: x, nan_policy="omit", backend=backend
+        )
+        assert np.allclose(res_omit, res_clean)

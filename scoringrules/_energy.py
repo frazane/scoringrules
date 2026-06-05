@@ -115,6 +115,7 @@ def twes_ensemble(
     *,
     ens_w: "Array" = None,
     estimator: str = "nrg",
+    nan_policy: "NanPolicy" = "propagate",
     backend: "Backend" = None,
 ) -> "Array":
     r"""Compute the Threshold-Weighted Energy Score (twES) for a finite multivariate ensemble.
@@ -149,6 +150,12 @@ def twes_ensemble(
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     estimator : str
         The energy score estimator to be used.
+    nan_policy : {'propagate', 'omit', 'raise'}, default 'propagate'
+        How to handle NaN ensemble members (a member is invalid if any of its
+        variables, or its weight, is NaN). 'propagate' lets NaN flow to a NaN
+        score; 'raise' errors on any NaN; 'omit' drops invalid members by
+        zero-weighting them. 'omit' is not implemented for the 'akr' and
+        'akr_circperm' estimators. NaN in `obs` always propagates.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
@@ -165,6 +172,7 @@ def twes_ensemble(
         v_axis=v_axis,
         ens_w=ens_w,
         estimator=estimator,
+        nan_policy=nan_policy,
         backend=backend,
     )
 
