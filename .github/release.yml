@@ -5,11 +5,9 @@ changelog:
         - breaking
     - title: New features
       labels:
-        - feature
         - enhancement
     - title: Bug fixes
       labels:
-        - fix
         - bug
     - title: Backend-specific
       labels:
@@ -18,7 +16,7 @@ changelog:
         - "backend:torch"
     - title: Documentation
       labels:
-        - docs
+        - documentation
     - title: CI / tooling
       labels:
         - ci
