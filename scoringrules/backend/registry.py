@@ -62,6 +62,15 @@ class BackendsRegistry(dict[str, ArrayBackend]):
             return super().__getitem__(__key)
 
     def set_active(self, backend: str):
+        if backend in {"numpy", "jax", "torch"}:
+            import warnings
+
+            warnings.warn(
+                "set_active for array-API backends is deprecated and removed in "
+                "1.0; the framework is inferred from the input.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self._active = backend
 
     @property
