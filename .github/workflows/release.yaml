@@ -3,41 +3,90 @@ name: Release
 on:
   release:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Dry-run publish target"
+        required: true
+        default: "testpypi"
+        type: choice
+        options:
+          - "testpypi"
+
+permissions:
+  contents: read
 
 jobs:
-  pypi:
+  build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v6
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: "3.13"
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-
-      - name: Check version match
+      - name: Check version matches tag (releases only)
+        if: github.event_name == 'release'
         run: |
-          # Extract version from pyproject.toml
           PYPROJECT_VERSION=$(grep -Po '(?<=^version = ")[^"]*' pyproject.toml)
-
-          # Extract the release tag version
           RELEASE_TAG=${{ github.ref_name }}
-
           echo "Pyproject version: $PYPROJECT_VERSION"
           echo "Release tag: $RELEASE_TAG"
-
-          # Check if they match
           if [ "$PYPROJECT_VERSION" != "$RELEASE_TAG" ]; then
-            echo "Version mismatch! Pyproject.toml version ($PYPROJECT_VERSION) does not match the release tag ($RELEASE_TAG)."
+            echo "Version mismatch! pyproject ($PYPROJECT_VERSION) != tag ($RELEASE_TAG)."
             exit 1
           fi
 
-      - name: Build and publish
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          uv build
-          uvx twine upload dist/*
+      - name: Build distribution
+        run: uv build
+
+      - name: Check metadata
+        run: uvx twine check dist/*
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish-testpypi:
+    needs: build
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish-pypi:
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
