@@ -4,7 +4,7 @@ core:
           - "scoringrules/_*.py"
           - "scoringrules/core/**"
 
-docs:
+documentation:
   - changed-files:
       - any-glob-to-any-file:
           - "docs/**"
