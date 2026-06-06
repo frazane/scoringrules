@@ -83,6 +83,7 @@ These are not special functions but are also provided by the extension layer:
   the one **numpy round-trip** in the layer (PARTIAL): the per-slice callable is
   evaluated through `numpy.apply_along_axis` and the result re-wrapped as a
   tensor. This breaks autograd on torch and should be avoided in grad-sensitive
-  code paths.
+  code paths; it also requires CPU tensors, since `numpy()` raises on CUDA
+  tensors.
 - `cov` — `jnp.cov` / `torch.cov` (with `correction` mapped from `bias`) / `np.cov`.
 - `indices` — `jnp.indices` / `np.indices` (torch wraps `np.indices`).

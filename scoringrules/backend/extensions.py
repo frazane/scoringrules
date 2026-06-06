@@ -5,12 +5,11 @@ falling back to scipy only where no native implementation exists.
 The forward/gradient support matrix is documented in
 ``docs/special_functions_audit.md``."""
 
-import os
+import numpy as np
+import scipy.special as sp
 
-os.environ.setdefault("SCIPY_ARRAY_API", "1")
-
-import numpy as np  # noqa: E402
-import scipy.special as sp  # noqa: E402
+# NOTE: the scipy branches below only ever receive numpy arrays (jax/torch
+# dispatch natively or raise), so SCIPY_ARRAY_API is irrelevant here.
 
 
 def _kind(xp):
@@ -66,7 +65,12 @@ def gammainc(xp, x, y):
 
 def gammalinc(xp, x, y):
     """Lower incomplete gamma (unregularised)."""
-    return gammainc(xp, x, y) * gamma(xp, x)
+    k = _kind(xp)
+    if k == "jax":
+        return _jsp().gammainc(x, y) * _jsp().gamma(x)
+    if k == "torch":
+        return _ts().special.gammainc(x, y) * _ts().exp(_ts().lgamma(x))
+    return sp.gammainc(x, y) * sp.gamma(x)
 
 
 def gammauinc(xp, x, y):
@@ -142,10 +146,10 @@ def expi(xp, x):
 
 
 def factorial(xp, n):
-    kd = _kind(xp)
-    if kd == "jax":
+    k = _kind(xp)
+    if k == "jax":
         return _jsp().factorial(n)
-    if kd == "torch":
+    if k == "torch":
         t = _ts()
         return t.exp(t.lgamma(n + 1))
     return sp.factorial(n)
@@ -171,8 +175,12 @@ def apply_along_axis(xp, func1d, x, axis):
         import jax.numpy as jnp
 
         try:
-            shape = list(x.shape)
-            return jax.vmap(func1d)(x.reshape(-1, shape.pop(axis))).reshape(shape)
+            # vmap fast path (scalar-returning func1d): move the target axis last
+            # so the reshape groups slices correctly for ANY axis, not just -1.
+            xm = jnp.moveaxis(x, axis, -1)
+            shape = list(xm.shape)
+            n = shape.pop()
+            return jax.vmap(func1d)(xm.reshape(-1, n)).reshape(shape)
         except Exception:
             return jnp.apply_along_axis(func1d, axis, x)
     if k == "numpy":
