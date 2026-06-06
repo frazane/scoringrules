@@ -1,0 +1,53 @@
+name: Bug report
+description: Report incorrect behavior or a crash in scoringrules
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! scoringrules runs the same scoring code across
+        multiple array backends, so the backend and versions below are essential.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you observe, and what did you expect instead?
+      placeholder: "crps_ensemble returns NaN where a finite score is expected…"
+    validations:
+      required: true
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Minimal reproducer
+      description: A self-contained snippet that triggers the bug.
+      render: python
+    validations:
+      required: true
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend
+      description: Which array backend exhibits the bug?
+      multiple: true
+      options:
+        - numpy
+        - numba
+        - jax
+        - torch
+    validations:
+      required: true
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      placeholder: "3.13"
+    validations:
+      required: true
+  - type: input
+    id: sr-version
+    attributes:
+      label: scoringrules version
+      description: "Output of `python -c 'import scoringrules; print(scoringrules.__version__)'`"
+      placeholder: "0.10.0"
+    validations:
+      required: true
