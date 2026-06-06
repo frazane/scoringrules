@@ -17,10 +17,17 @@ class ArrayAPINamespace:
 
     # --- standard ops: delegate everything else to the framework namespace ---
     def __getattr__(self, name):
+        # Guard against infinite recursion if ``_xp`` is missing (e.g. a
+        # partially-constructed instance): without it, ``self._xp`` would
+        # re-enter __getattr__("_xp") forever.
+        if name == "_xp":
+            raise AttributeError("ArrayAPINamespace._xp is not set")
         return getattr(self._xp, name)
 
     # --- linear algebra (thin delegations so call sites stay mechanical) ---
     def norm(self, x, axis=None):
+        # array-API standard spelling of the existing backends' linalg.norm
+        # (equivalent for the L2/vector norm scoringrules uses).
         return self._xp.linalg.vector_norm(x, axis=axis)
 
     def inv(self, x):
