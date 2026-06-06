@@ -32,7 +32,7 @@ class BackendsRegistry(dict[str, ArrayBackend]):
         if _NUMBA_IMPORTED:
             self.register_backend("numba")
 
-        self._active = "numba" if _NUMBA_IMPORTED else "numpy"
+        self._active = "numpy"
 
     @property
     def available_backends(self):
