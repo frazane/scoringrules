@@ -1,0 +1,27 @@
+changelog:
+  categories:
+    - title: Breaking changes
+      labels:
+        - breaking
+    - title: New features
+      labels:
+        - feature
+        - enhancement
+    - title: Bug fixes
+      labels:
+        - fix
+        - bug
+    - title: Backend-specific
+      labels:
+        - backend
+        - "backend:jax"
+        - "backend:torch"
+    - title: Documentation
+      labels:
+        - docs
+    - title: CI / tooling
+      labels:
+        - ci
+    - title: Other changes
+      labels:
+        - "*"

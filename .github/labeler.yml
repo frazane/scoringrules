@@ -1,0 +1,26 @@
+core:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "scoringrules/_*.py"
+          - "scoringrules/core/**"
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "**/*.md"
+
+"backend:jax":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "scoringrules/backend/jax.py"
+
+"backend:torch":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "scoringrules/backend/torch.py"
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"
