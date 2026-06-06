@@ -67,7 +67,6 @@ jobs:
         with:
           files: ./coverage.xml
           flags: unittests
-          env_vars: OS,PYTHON
           name: codecov-umbrella
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
