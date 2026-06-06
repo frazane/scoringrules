@@ -25,6 +25,18 @@ def test_use_numba_numba_with_non_numpy_raises():
         use_numba("numba", torch.tensor([1.0]))
 
 
+def test_use_numba_global_numba_with_non_numpy_returns_false():
+    # set_active("numba") globally must NOT force the gufunc path on jax/torch
+    # inputs (it only applies to numpy inputs); it returns False, not a raise.
+    jnp = pytest.importorskip("jax.numpy")
+    saved = backends._active
+    backends._active = "numba"
+    try:
+        assert use_numba(None, jnp.asarray([1.0])) is False
+    finally:
+        backends._active = saved
+
+
 def test_legacy_backend_string_warns():
     with pytest.warns(DeprecationWarning):
         resolve_backend_arg("jax")

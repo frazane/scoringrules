@@ -1,4 +1,5 @@
 import typing as tp
+import warnings
 from importlib.util import find_spec
 
 from .base import ArrayBackend
@@ -63,8 +64,6 @@ class BackendsRegistry(dict[str, ArrayBackend]):
 
     def set_active(self, backend: str):
         if backend in {"numpy", "jax", "torch"}:
-            import warnings
-
             warnings.warn(
                 "set_active for array-API backends is deprecated and removed in "
                 "1.0; the framework is inferred from the input.",
