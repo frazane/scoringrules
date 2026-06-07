@@ -8,7 +8,6 @@ dependencies = [
     "numpy>=2.0.0",
     "scipy>=1.14.0",
     "array-api-compat>=1.9",
-    "array-api-extra>=0.5",
 ]
 authors = [
     {name = "Francesco Zanetta", email = "zanetta.francesco@gmail.com"},

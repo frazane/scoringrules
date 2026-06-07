@@ -61,13 +61,6 @@ def test_missing_xp_raises_attributeerror_not_recursion():
         obj.sum  # noqa: B018
 
 
-@pytest.mark.skip(
-    reason="special-function methods exercised once extensions.py lands (later task)"
-)
-def test_special_function_method_present():
-    pass
-
-
 def test_mixed_namespaces_raise():
     torch = pytest.importorskip("torch")
     a = np.asarray([1.0, 2.0])

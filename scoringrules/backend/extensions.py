@@ -163,14 +163,17 @@ def comb(xp, n, k):
     # (matching the old floor-division form).
     n = xp.asarray(n)
     k = xp.asarray(k)
-    ratio = factorial(xp, n) / (factorial(xp, k) * factorial(xp, n - k))
-    result = xp.round(ratio)
     # ``comb`` is 0 outside ``0 <= k <= n`` (matches scipy.special.comb, the
-    # behaviour the old backends relied on). Without this guard, factorial of a
-    # negative argument yields inf/nan and propagates through masked terms (e.g.
-    # the hypergeometric PMF, where ``0 * inf`` becomes nan).
+    # behaviour the old backends relied on). Clamp ``k`` and ``n - k`` to
+    # non-negative values before taking factorials so invalid entries neither
+    # divide by zero (factorial of a negative integer is 0) nor produce inf/nan;
+    # the result for those entries is masked to 0 below.
     valid = (k >= 0) & (k <= n)
-    return xp.where(valid, result, xp.asarray(0.0))
+    zero = xp.asarray(0.0)
+    safe_k = xp.where(valid, k, zero)
+    safe_nk = xp.where(valid, n - k, zero)
+    ratio = factorial(xp, n) / (factorial(xp, safe_k) * factorial(xp, safe_nk))
+    return xp.where(valid, xp.round(ratio), zero)
 
 
 # --- non-standard helpers ---

@@ -16,18 +16,6 @@ wheels = [
 ]
 
 [[package]]
-name = "array-api-extra"
-version = "0.10.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "array-api-compat" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/4d/ff0cb01001385ad31d4798906e96c5e43e17770037a93dc5f33cd44ecd9d/array_api_extra-0.10.3.tar.gz", hash = "sha256:6cabfefe10db45f5eb4c642fc2465646ad0ed017d3774fc16d763486b31ee5ae", size = 94321, upload-time = "2026-06-03T14:34:31.057Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/8f/16/b950ac4018ee149924ca1155ea749c5d175800b78234f0941fdfcb79233b/array_api_extra-0.10.3-py3-none-any.whl", hash = "sha256:4968892e6641b8d2b6f5e4fdcdbd979951f601411436948f4342831a626ba03c", size = 91055, upload-time = "2026-06-03T14:34:29.766Z" },
-]
-
-[[package]]
 name = "cfgv"
 version = "3.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1081,7 +1069,6 @@ version = "0.11.0"
 source = { editable = "." }
 dependencies = [
     { name = "array-api-compat" },
-    { name = "array-api-extra" },
     { name = "numpy" },
     { name = "scipy" },
 ]
@@ -1108,7 +1095,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "array-api-compat", specifier = ">=1.9" },
-    { name = "array-api-extra", specifier = ">=0.5" },
     { name = "jax", marker = "extra == 'jax'", specifier = ">=0.4.31" },
     { name = "numba", marker = "extra == 'numba'", specifier = ">=0.60.0" },
     { name = "numpy", specifier = ">=2.0.0" },

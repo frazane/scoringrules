@@ -82,7 +82,8 @@ def crps_ensemble(
         ``'omit'`` the ``int``, ``akr`` and ``akr_circperm`` estimators are not
         supported and raise ``NotImplementedError``.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -224,7 +225,8 @@ def twcrps_ensemble(
         Defines how to handle NaN values in the ensemble members. Forwarded to
         :func:`crps_ensemble`. See its documentation for details.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -333,7 +335,8 @@ def owcrps_ensemble(
         weight computation so NaN members do not contribute to the mean weight.
         See :func:`crps_ensemble` for details.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -458,7 +461,8 @@ def vrcrps_ensemble(
         weight computation so NaN members do not contribute to the mean weight.
         See :func:`crps_ensemble` for details.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -566,7 +570,8 @@ def crps_quantile(
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -638,7 +643,8 @@ def crps_beta(
     upper : array_like
         Upper bound of the forecast beta distribution.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -690,7 +696,8 @@ def crps_binomial(
     prob : array_like
         Probability parameter of the forecast binomial distribution as a float or array of floats.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -737,7 +744,8 @@ def crps_exponential(
     rate : array_like
         Rate parameter of the forecast exponential distribution.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -804,7 +812,8 @@ def crps_exponentialM(
     scale : array_like
         Scale parameter of the forecast exponential distribution.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -861,7 +870,8 @@ def crps_2pexponential(
     location : array_like
         Location parameter of the forecast two-piece exponential distribution.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -920,7 +930,8 @@ def crps_gamma(
         Scale parameter of the forecast scale distribution, where ``scale = 1 / rate``.
         Either ``rate`` or ``scale`` must be provided.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -997,7 +1008,8 @@ def crps_csg0(
     shift : array_like
         Shift parameter of the forecast CSG distribution.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -1065,7 +1077,8 @@ def crps_gev(
     scale : array_like, optional
         Scale parameter of the forecast GEV distribution.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -1171,7 +1184,8 @@ def crps_gpd(
     mass : array_like
         Mass parameter at the lower boundary of the forecast GPD distribution.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -1763,7 +1777,8 @@ def crps_hypergeometric(
     k : array_like
         Number of draws, without replacement. Must be in 0, 1, ..., m + n.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -1815,7 +1830,8 @@ def crps_laplace(
     scale : array_like
         Scale parameter of the forecast laplace distribution.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -1926,7 +1942,8 @@ def crps_loglaplace(
     scalelog : array_like
         Scale parameter of the forecast log-laplace distribution.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -1987,7 +2004,8 @@ def crps_loglogistic(
     sigmalog : array_like
         Scale parameter of the log-logistic distribution.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
 
     Returns
@@ -2097,7 +2115,8 @@ def crps_mixnorm(
     m_axis : int
         The axis corresponding to the mixture components. Default is the last axis.
     backend : str, optional
-        The name of the backend used for computations. Defaults to ``numba`` if available, else ``numpy``.
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
