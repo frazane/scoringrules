@@ -37,39 +37,53 @@ sr.variogram_score(obs, fct)
 For the univariate ensemble metrics, the ensemble dimension is on the last axis unless you specify otherwise with the `axis` argument. For the multivariate ensemble metrics, the ensemble dimension and the variable dimension are on the second last and last axis respectively, unless specified otherwise with `m_axis` and `v_axis`.
 
 ## Backends
-Scoringrules supports multiple backends. By default, the `numpy` and `numba` backends will be registered when importing the library. You can see the list of registered backends with
+
+Scoringrules runs every score across multiple array frameworks — numpy, jax, and
+torch — from a single implementation. The framework is **inferred from the input
+arrays**: pass numpy, jax, or torch arrays and the result is returned in the same
+framework, with no configuration required.
 
 ```python
-print(sr.backends)
-# {'numpy': <scoringrules.backend.numpy.NumpyBackend at 0x2ba2d6f391b0>,
-# 'numba': <scoringrules.backend.numpy.NumbaBackend at 0x2ba2d6f38ac0>}
-```
+import numpy as np
+import scoringrules as sr
 
-and the currently active backend, used by default in all metrics, can be seen with
+sr.crps_normal(np.array([0.1]), np.array([0.0]), np.array([1.0]))  # numpy array in, numpy array out
+```
 
 ```python
-print(sr.backends.active)
-# <scoringrules.backend.numpy.NumpyBackend at 0x2ba2d6f38ac0>
-```
+import jax.numpy as jnp
 
-The default backend can also be changed with
+sr.crps_normal(jnp.array([0.1]), jnp.array([0.0]), jnp.array([1.0]))  # jax array out
+```
 
 ```python
-sr.backends.set_active("numba")
-print(sr.backends.active)
-# <scoringrules.backend.numpy.NumbaBackend at 0x2ba2d6f38ac0>
+import torch
+
+mu = torch.tensor([0.0], requires_grad=True)
+sr.crps_normal(torch.tensor([0.1]), mu, torch.tensor([1.0]))  # torch tensor out; autograd preserved
 ```
-When computing a metric, the `backend` argument can be used to override the default choice.
 
+Inputs must come from a single framework; mixing (e.g. a numpy observation with a
+torch forecast) raises an error.
 
-To register a new backend, for example `torch`, simply use
+### The numba fast path
+
+For numpy inputs, opt into the compiled [numba](https://numba.pydata.org/) gufuncs
+with `backend="numba"`:
 
 ```python
-sr.register_backend("torch")
+sr.crps_ensemble(np.random.randn(5), np.random.randn(5, 11), backend="numba")
 ```
 
-You can now use `torch` to compute metrics, either by setting it as the default backend or by specifying it on a specific metric:
+`backend="numba"` requires numpy-compatible inputs.
 
-```python
-sr.crps_normal(0.1, 1.0, 0.0, backend="torch")
-```
+### Deprecations
+
+Selecting an array-API backend explicitly is deprecated and will be removed in 1.0
+— the framework is inferred from the input instead. This applies to:
+
+- the `backend="numpy"`, `backend="jax"`, and `backend="torch"` arguments, and
+- `sr.register_backend(...)` / `sr.backends.set_active(...)` for those backends.
+
+`backend="numba"` is **not** deprecated; it remains the supported way to reach the
+numba fast path.

@@ -64,3 +64,42 @@ def probability_forecasts():
         usecols=(1, -1),
     )
     return data
+
+
+@pytest.fixture()
+def to_backend(backend):
+    """Return a function that converts numpy input to the backend's native array.
+
+    numpy/numba -> numpy ndarray; jax -> jax array; torch -> torch tensor.
+    """
+    import numpy as np
+
+    if backend in ("numpy", "numba"):
+        return lambda x: np.asarray(x)
+    if backend == "jax":
+        import jax.numpy as jnp
+
+        return lambda x: jnp.asarray(x)
+    if backend == "torch":
+        import torch
+
+        return lambda x: torch.as_tensor(np.asarray(x), dtype=torch.float64)
+    raise ValueError(backend)
+
+
+@pytest.fixture()
+def backend_kwargs(backend):
+    """kwargs to pass to a score: only numba needs an explicit backend string."""
+    return {"backend": "numba"} if backend == "numba" else {}
+
+
+def assert_inferred(result, backend):
+    """Assert the result array belongs to the expected framework (guards against
+    silent numpy fallback when a non-numpy backend was requested)."""
+    mod = type(result).__module__
+    if backend == "jax":
+        assert "jax" in mod, f"expected a jax array, got {mod}"
+    elif backend == "torch":
+        assert "torch" in mod, f"expected a torch tensor, got {mod}"
+    else:
+        assert "numpy" in mod, f"expected a numpy array, got {mod}"
