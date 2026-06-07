@@ -161,8 +161,16 @@ def comb(xp, n, k):
     # to 9.0 instead of 10.0. Rounding the exact-in-float ratio is robust on
     # numpy/jax/torch. comb is integer-valued, so this is not differentiable
     # (matching the old floor-division form).
+    n = xp.asarray(n)
+    k = xp.asarray(k)
     ratio = factorial(xp, n) / (factorial(xp, k) * factorial(xp, n - k))
-    return xp.round(ratio)
+    result = xp.round(ratio)
+    # ``comb`` is 0 outside ``0 <= k <= n`` (matches scipy.special.comb, the
+    # behaviour the old backends relied on). Without this guard, factorial of a
+    # negative argument yields inf/nan and propagates through masked terms (e.g.
+    # the hypergeometric PMF, where ``0 * inf`` becomes nan).
+    valid = (k >= 0) & (k <= n)
+    return xp.where(valid, result, xp.asarray(0.0))
 
 
 # --- non-standard helpers ---
