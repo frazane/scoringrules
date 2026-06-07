@@ -50,6 +50,39 @@ def univariate_sort_ens(
     return fct, ens_w
 
 
+def uv_weighted_score_weights(
+    obs, fct, a=float("-inf"), b=float("inf"), w_func=None, *, xp
+):
+    if w_func is None:
+
+        def w_func(x):
+            return ((a <= x) & (x <= b)) * 1.0
+
+    obs_w, fct_w = map(w_func, (obs, fct))
+    obs_w, fct_w = xp.asarray(obs_w), xp.asarray(fct_w)
+    if xp.any(obs_w < 0) or xp.any(fct_w < 0):
+        raise ValueError("`w_func` returns negative values")
+    return obs_w, fct_w
+
+
+def uv_weighted_score_chain(
+    obs, fct, a=float("-inf"), b=float("inf"), v_func=None, *, xp
+):
+    if v_func is None:
+        a, b, obs, fct = (
+            xp.asarray(a),
+            xp.asarray(b),
+            xp.asarray(obs),
+            xp.asarray(fct),
+        )
+
+        def v_func(x):
+            return xp.minimum(xp.maximum(x, a), b)
+
+    obs, fct = map(v_func, (obs, fct))
+    return obs, fct
+
+
 def apply_nan_policy_ens_uv(
     obs, fct, nan_policy="propagate", ens_w=None, estimator=None, m_axis=-1, *, xp
 ):
