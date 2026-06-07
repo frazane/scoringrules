@@ -1,6 +1,6 @@
 import typing as tp
 
-from scoringrules.backend import backends, get_namespace
+from scoringrules.backend import get_namespace
 from scoringrules.core import crps, stats
 from scoringrules.core.utils_xp import (
     univariate_array_check,
@@ -658,7 +658,9 @@ def crps_beta(
     >>> sr.crps_beta(0.3, 0.7, 1.1)
     0.08501024366637236
     """
-    return crps.beta(obs, a, b, lower, upper, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, a, b, lower, upper)
+    return crps.beta(obs, a, b, lower, upper, xp=xp)
 
 
 def crps_binomial(
@@ -708,7 +710,9 @@ def crps_binomial(
     >>> sr.crps_binomial(4, 10, 0.5)
     0.5955772399902344
     """
-    return crps.binomial(obs, n, prob, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, n, prob)
+    return crps.binomial(obs, n, prob, xp=xp)
 
 
 def crps_exponential(
@@ -756,7 +760,9 @@ def crps_exponential(
     >>> sr.crps_exponential(np.array([0.8, 0.9]), np.array([3.0, 2.0]))
     array([0.36047864, 0.31529889])
     """
-    return crps.exponential(obs, rate, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, rate)
+    return crps.exponential(obs, rate, xp=xp)
 
 
 def crps_exponentialM(
@@ -818,7 +824,9 @@ def crps_exponentialM(
     >>> sr.crps_exponentialM(0.4, 0.2, 0.0, 1.0)
     0.19251207365702294
     """
-    return crps.exponentialM(obs, mass, location, scale, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, mass, location, scale)
+    return crps.exponentialM(obs, mass, location, scale, xp=xp)
 
 
 def crps_2pexponential(
@@ -873,7 +881,9 @@ def crps_2pexponential(
     >>> sr.crps_2pexponential(0.8, 3.0, 1.4, 0.0)
     array(1.18038524)
     """
-    return crps.twopexponential(obs, scale1, scale2, location, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, scale1, scale2, location)
+    return crps.twopexponential(obs, scale1, scale2, location, xp=xp)
 
 
 def crps_gamma(
@@ -943,7 +953,9 @@ def crps_gamma(
     if rate is None:
         rate = 1.0 / scale
 
-    return crps.gamma(obs, shape, rate, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, shape, rate, scale)
+    return crps.gamma(obs, shape, rate, xp=xp)
 
 
 def crps_csg0(
@@ -1019,7 +1031,9 @@ def crps_csg0(
     if rate is None:
         rate = 1.0 / scale
 
-    return crps.csg0(obs, shape, rate, shift, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, shape, rate, scale, shift)
+    return crps.csg0(obs, shape, rate, shift, xp=xp)
 
 
 def crps_gev(
@@ -1113,7 +1127,9 @@ def crps_gev(
     >>> sr.crps_gev(0.3, 0.1)
     0.2924712413052034
     """
-    return crps.gev(obs, shape, location, scale, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, shape, location, scale)
+    return crps.gev(obs, shape, location, scale, xp=xp)
 
 
 def crps_gpd(
@@ -1175,7 +1191,9 @@ def crps_gpd(
     >>> sr.crps_gpd(0.3, 0.9)
     0.6849331901197213
     """
-    return crps.gpd(obs, shape, location, scale, mass, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, shape, location, scale, mass)
+    return crps.gpd(obs, shape, location, scale, mass, xp=xp)
 
 
 def crps_gtclogistic(
@@ -1246,6 +1264,8 @@ def crps_gtclogistic(
     >>> sr.crps_gtclogistic(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     0.1658713056903939
     """
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, location, scale, lower, upper, lmass, umass)
     return crps.gtclogistic(
         obs,
         location,
@@ -1254,7 +1274,7 @@ def crps_gtclogistic(
         upper,
         lmass,
         umass,
-        backend=backend,
+        xp=xp,
     )
 
 
@@ -1296,9 +1316,9 @@ def crps_tlogistic(
     >>> sr.crps_tlogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     0.12714830546327846
     """
-    return crps.gtclogistic(
-        obs, location, scale, lower, upper, 0.0, 0.0, backend=backend
-    )
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, location, scale, lower, upper)
+    return crps.gtclogistic(obs, location, scale, lower, upper, 0.0, 0.0, xp=xp)
 
 
 def crps_clogistic(
@@ -1341,6 +1361,8 @@ def crps_clogistic(
     """
     lmass = stats._logis_cdf((lower - location) / scale)
     umass = 1 - stats._logis_cdf((upper - location) / scale)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, location, scale, lower, upper)
     return crps.gtclogistic(
         obs,
         location,
@@ -1349,7 +1371,7 @@ def crps_clogistic(
         upper,
         lmass,
         umass,
-        backend=backend,
+        xp=xp,
     )
 
 
@@ -1396,6 +1418,8 @@ def crps_gtcnormal(
     >>> sr.crps_gtcnormal(0.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     0.1351100832878575
     """
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, location, scale, lower, upper, lmass, umass)
     return crps.gtcnormal(
         obs,
         location,
@@ -1404,7 +1428,7 @@ def crps_gtcnormal(
         upper,
         lmass,
         umass,
-        backend=backend,
+        xp=xp,
     )
 
 
@@ -1446,7 +1470,9 @@ def crps_tnormal(
     >>> sr.crps_tnormal(0.0, 0.1, 0.4, -1.0, 1.0)
     0.10070146718008832
     """
-    return crps.gtcnormal(obs, location, scale, lower, upper, 0.0, 0.0, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, location, scale, lower, upper)
+    return crps.gtcnormal(obs, location, scale, lower, upper, 0.0, 0.0, xp=xp)
 
 
 def crps_cnormal(
@@ -1489,6 +1515,8 @@ def crps_cnormal(
     """
     lmass = stats._norm_cdf((lower - location) / scale)
     umass = 1 - stats._norm_cdf((upper - location) / scale)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, location, scale, lower, upper)
     return crps.gtcnormal(
         obs,
         location,
@@ -1497,7 +1525,7 @@ def crps_cnormal(
         upper,
         lmass,
         umass,
-        backend=backend,
+        xp=xp,
     )
 
 
@@ -1575,6 +1603,8 @@ def crps_gtct(
     >>> sr.crps_gtct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0, 0.1, 0.1)
     0.13997789333289662
     """
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, df, location, scale, lower, upper, lmass, umass)
     return crps.gtct(
         obs,
         df,
@@ -1584,7 +1614,7 @@ def crps_gtct(
         upper,
         lmass,
         umass,
-        backend=backend,
+        xp=xp,
     )
 
 
@@ -1629,6 +1659,8 @@ def crps_tt(
     >>> sr.crps_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     0.10323007471747117
     """
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, df, location, scale, lower, upper)
     return crps.gtct(
         obs,
         df,
@@ -1638,7 +1670,7 @@ def crps_tt(
         upper,
         0.0,
         0.0,
-        backend=backend,
+        xp=xp,
     )
 
 
@@ -1685,6 +1717,8 @@ def crps_ct(
     """
     lmass = stats._t_cdf((lower - location) / scale, df)
     umass = 1 - stats._t_cdf((upper - location) / scale, df)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, df, location, scale, lower, upper)
     return crps.gtct(
         obs,
         df,
@@ -1694,7 +1728,7 @@ def crps_ct(
         upper,
         lmass,
         umass,
-        backend=backend,
+        xp=xp,
     )
 
 
@@ -1749,7 +1783,9 @@ def crps_hypergeometric(
     >>> sr.crps_hypergeometric(5, 7, 13, 12)
     0.44697415547610597
     """
-    return crps.hypergeometric(obs, m, n, k, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, m, n, k)
+    return crps.hypergeometric(obs, m, n, k, xp=xp)
 
 
 def crps_laplace(
@@ -1799,7 +1835,9 @@ def crps_laplace(
     >>> sr.crps_laplace(0.3, 0.1, 0.2)
     0.12357588823428847
     """
-    return crps.laplace(obs, location, scale, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, location, scale)
+    return crps.laplace(obs, location, scale, xp=xp)
 
 
 def crps_logistic(
@@ -1846,7 +1884,9 @@ def crps_logistic(
     >>> sr.crps_logistic(0.0, 0.4, 0.1)
     0.3036299855835619
     """
-    return crps.logistic(obs, mu, sigma, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, mu, sigma)
+    return crps.logistic(obs, mu, sigma, xp=xp)
 
 
 def crps_loglaplace(
@@ -1906,7 +1946,9 @@ def crps_loglaplace(
     >>> sr.crps_loglaplace(3.0, 0.1, 0.9)
     1.162020513653791
     """
-    return crps.loglaplace(obs, locationlog, scalelog, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, locationlog, scalelog)
+    return crps.loglaplace(obs, locationlog, scalelog, xp=xp)
 
 
 def crps_loglogistic(
@@ -1966,7 +2008,9 @@ def crps_loglogistic(
     >>> sr.crps_loglogistic(3.0, 0.1, 0.9)
     1.1329527730161177
     """
-    return crps.loglogistic(obs, mulog, sigmalog, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, mulog, sigmalog)
+    return crps.loglogistic(obs, mulog, sigmalog, xp=xp)
 
 
 def crps_lognormal(
@@ -2016,7 +2060,9 @@ def crps_lognormal(
     >>> sr.crps_lognormal(0.1, 0.4, 0.0)
     1.3918246976412703
     """
-    return crps.lognormal(obs, mulog, sigmalog, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, mulog, sigmalog)
+    return crps.lognormal(obs, mulog, sigmalog, xp=xp)
 
 
 def crps_mixnorm(
@@ -2071,21 +2117,22 @@ def crps_mixnorm(
     >>> sr.crps_mixnorm(0.0, [0.1, -0.3, 1.0], [0.4, 2.1, 0.7], [0.1, 0.2, 0.7])
     0.46806866729387275
     """
-    B = backends.active if backend is None else backends[backend]
-    obs, m, s = map(B.asarray, (obs, m, s))
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, m, s, w)
+    obs, m, s = map(xp.asarray, (obs, m, s))
 
     if w is None:
         M: int = m.shape[m_axis]
-        w = B.zeros(m.shape) + 1 / M
+        w = xp.zeros(m.shape) + 1 / M
     else:
-        w = B.asarray(w)
+        w = xp.asarray(w)
 
     if m_axis != -1:
-        m = B.moveaxis(m, m_axis, -1)
-        s = B.moveaxis(s, m_axis, -1)
-        w = B.moveaxis(w, m_axis, -1)
+        m = xp.moveaxis(m, m_axis, -1)
+        s = xp.moveaxis(s, m_axis, -1)
+        w = xp.moveaxis(w, m_axis, -1)
 
-    return crps.mixnorm(obs, m, s, w, backend=backend)
+    return crps.mixnorm(obs, m, s, w, xp=xp)
 
 
 def crps_negbinom(
@@ -2148,7 +2195,9 @@ def crps_negbinom(
     if prob is None:
         prob = n / (n + mu)
 
-    return crps.negbinom(obs, n, prob, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, n, prob, mu)
+    return crps.negbinom(obs, n, prob, xp=xp)
 
 
 def crps_normal(
@@ -2194,7 +2243,9 @@ def crps_normal(
     >>> sr.crps_normal(0.0, 0.1, 0.4)
     0.10339992515976162
     """
-    return crps.normal(obs, mu, sigma, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, mu, sigma)
+    return crps.normal(obs, mu, sigma, xp=xp)
 
 
 def crps_2pnormal(
@@ -2247,24 +2298,21 @@ def crps_2pnormal(
     >>> sr.crps_2pnormal(0.0, 0.4, 2.0, 0.1)
     0.7243199144002115
     """
-    B = backends.active if backend is None else backends[backend]
-    obs, scale1, scale2, location = map(B.asarray, (obs, scale1, scale2, location))
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, scale1, scale2, location)
+    obs, scale1, scale2, location = map(xp.asarray, (obs, scale1, scale2, location))
     lower = float("-inf")
     upper = 0.0
     lmass = 0.0
     umass = scale2 / (scale1 + scale2)
-    z = B.minimum(B.asarray(0.0), B.asarray(obs - location)) / scale1
-    s1 = scale1 * crps.gtcnormal(
-        z, 0.0, 1.0, lower, upper, lmass, umass, backend=backend
-    )
+    z = xp.minimum(xp.asarray(0.0), xp.asarray(obs - location)) / scale1
+    s1 = scale1 * crps.gtcnormal(z, 0.0, 1.0, lower, upper, lmass, umass, xp=xp)
     lower = 0.0
     upper = float("inf")
     lmass = scale1 / (scale1 + scale2)
     umass = 0.0
-    z = B.maximum(B.asarray(0.0), B.asarray(obs - location)) / scale2
-    s2 = scale2 * crps.gtcnormal(
-        z, 0.0, 1.0, lower, upper, lmass, umass, backend=backend
-    )
+    z = xp.maximum(xp.asarray(0.0), xp.asarray(obs - location)) / scale2
+    s2 = scale2 * crps.gtcnormal(z, 0.0, 1.0, lower, upper, lmass, umass, xp=xp)
     return s1 + s2
 
 
@@ -2310,7 +2358,9 @@ def crps_poisson(
     >>> sr.crps_poisson(1, 2)
     0.4991650450203817
     """
-    return crps.poisson(obs, mean, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, mean)
+    return crps.poisson(obs, mean, xp=xp)
 
 
 def crps_t(
@@ -2365,7 +2415,9 @@ def crps_t(
     >>> sr.crps_t(0.0, 0.1, 0.4, 0.1)
     0.07687151141732129
     """
-    return crps.t(obs, df, location, scale, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, df, location, scale)
+    return crps.t(obs, df, location, scale, xp=xp)
 
 
 def crps_uniform(
@@ -2422,7 +2474,9 @@ def crps_uniform(
     >>> sr.crps_uniform(0.4, 0.0, 1.0, 0.0, 0.0)
     0.09333333333333332
     """
-    return crps.uniform(obs, min, max, lmass, umass, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, min, max, lmass, umass)
+    return crps.uniform(obs, min, max, lmass, umass, xp=xp)
 
 
 __all__ = [
