@@ -271,7 +271,7 @@ def gev(
 
     out = out * scale
 
-    return float(out) if out.size == 1 else out
+    return out
 
 
 def gpd(

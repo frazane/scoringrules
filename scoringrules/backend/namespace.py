@@ -5,6 +5,8 @@ The wrapper delegates every standard array-API op to the framework namespace
 inferred from the input arrays (via array-api-compat) and adds the missing
 special functions and a few non-standard helpers (see ``extensions``)."""
 
+import math
+
 import numpy as np
 from array_api_compat import array_namespace, is_array_api_obj
 
@@ -75,6 +77,22 @@ class ArrayAPINamespace:
 
             return _scalar_tolerant
         return attr
+
+    def asarray(self, obj, /, **kwargs):
+        # Preserve identity for inputs that are already arrays of this namespace:
+        # array-API ``torch.asarray`` drops ``requires_grad`` (and re-wrapping
+        # loses autograd/device), so returning the input unchanged keeps
+        # gradients flowing. Only coerce scalars/lists, or when dtype/copy/device
+        # kwargs are explicitly requested.
+        if is_array_api_obj(obj) and not kwargs:
+            return obj
+        return self._xp.asarray(obj, **kwargs)
+
+    def size(self, x):
+        # The array-API standard does not expose a ``size`` free function and
+        # array-api-compat's torch namespace lacks one; the element count is a
+        # portable property of ``shape``.
+        return math.prod(x.shape)
 
     # --- linear algebra (thin delegations so call sites stay mechanical) ---
     def norm(self, x, axis=None):

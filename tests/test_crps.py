@@ -682,8 +682,6 @@ def test_crps_csg0(backend, to_backend, backend_kwargs):
 
 def test_crps_gev(backend, to_backend, backend_kwargs):
     def fa(x):
-        # use size-2 arrays: crps_gev collapses size-1 results to a python float,
-        # which would defeat assert_inferred (and raises on jax size-1 arrays).
         return to_backend(np.full(2, float(x)))
 
     if backend == "torch":
@@ -1047,11 +1045,6 @@ def test_crps_hypergeometric(backend, to_backend, backend_kwargs):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
-    if backend == "torch":
-        # crps_hypergeometric calls xp.size(), which array_api_compat.torch
-        # does not expose (genuine torch gap, see report).
-        pytest.skip("array_api_compat.torch has no `size`; crps_hypergeometric uses it")
-
     # test shapes
     res = sr.crps_hypergeometric(
         fa(5 * np.ones((2, 2))), fa(7), fa(13), fa(12), **backend_kwargs
@@ -1341,15 +1334,6 @@ def test_crps_ensemble_grad_jax():
     assert jnp.all(jnp.isfinite(g))
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "crps_normal detaches torch autograd: core.crps._closed.normal() runs "
-        "map(xp.asarray, ...) and array_api_compat.torch.asarray drops "
-        "requires_grad, so the result has no grad_fn. Remove this xfail once the "
-        "core path preserves torch gradients."
-    ),
-)
 def test_crps_normal_grad_torch():
     torch = pytest.importorskip("torch")
     obs = torch.tensor([0.2], dtype=torch.float64)
