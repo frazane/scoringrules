@@ -57,13 +57,6 @@ def _closed_ref(fn, *args):
 def test_core_closed_matches_numpy(dist, args, backend, to_backend):
     from scoringrules.core import crps
 
-    if backend == "torch" and dist == "normal":
-        # _norm_cdf/_norm_pdf call xp.sqrt(2.0) / xp.sqrt(xp.pi) with python-float
-        # scalars; the torch array-API namespace does not coerce them to tensors
-        # (the legacy torch backend did). This is a namespace-layer gap, out of
-        # scope for the closed-form migration; see DONE_WITH_CONCERNS report.
-        pytest.skip("torch namespace: xp.sqrt rejects python-float scalar")
-
     fn = getattr(crps, dist)
     bargs = [to_backend(np.asarray(float(a))) for a in args]
     out = np.asarray(fn(*bargs, xp=get_namespace(*bargs)))

@@ -8,6 +8,48 @@ special functions and a few non-standard helpers (see ``extensions``)."""
 import numpy as np
 from array_api_compat import array_namespace, is_array_api_obj
 
+# Elementwise math functions that the core may call on Python-scalar constants
+# (e.g. ``xp.sqrt(2.0)``, ``xp.log(2)``). The array-API standard requires array
+# arguments and torch's namespace rejects bare Python floats, whereas the old
+# backend methods coerced them. We restore that leniency by wrapping these so a
+# Python-scalar first argument is converted to an array (a no-op for arrays).
+_SCALAR_COERCE_FUNCS = frozenset(
+    {
+        "sqrt",
+        "exp",
+        "expm1",
+        "log",
+        "log1p",
+        "log2",
+        "log10",
+        "abs",
+        "floor",
+        "ceil",
+        "round",
+        "trunc",
+        "sign",
+        "square",
+        "reciprocal",
+        "negative",
+        "positive",
+        "sin",
+        "cos",
+        "tan",
+        "asin",
+        "acos",
+        "atan",
+        "sinh",
+        "cosh",
+        "tanh",
+        "asinh",
+        "acosh",
+        "atanh",
+        "isnan",
+        "isinf",
+        "isfinite",
+    }
+)
+
 
 class ArrayAPINamespace:
     """A superset of an array-API namespace (bound to ``xp`` at call sites)."""
@@ -22,7 +64,17 @@ class ArrayAPINamespace:
         # re-enter __getattr__("_xp") forever.
         if name == "_xp":
             raise AttributeError("ArrayAPINamespace._xp is not set")
-        return getattr(self._xp, name)
+        attr = getattr(self._xp, name)
+        if name in _SCALAR_COERCE_FUNCS and callable(attr):
+            xp = self._xp
+
+            def _scalar_tolerant(x, *args, **kwargs):
+                if isinstance(x, (bool, int, float, complex)):
+                    x = xp.asarray(x)
+                return attr(x, *args, **kwargs)
+
+            return _scalar_tolerant
+        return attr
 
     # --- linear algebra (thin delegations so call sites stay mechanical) ---
     def norm(self, x, axis=None):
