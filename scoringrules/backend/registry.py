@@ -1,4 +1,5 @@
 import typing as tp
+import warnings
 from importlib.util import find_spec
 
 from .base import ArrayBackend
@@ -32,7 +33,7 @@ class BackendsRegistry(dict[str, ArrayBackend]):
         if _NUMBA_IMPORTED:
             self.register_backend("numba")
 
-        self._active = "numba" if _NUMBA_IMPORTED else "numpy"
+        self._active = "numpy"
 
     @property
     def available_backends(self):
@@ -62,6 +63,13 @@ class BackendsRegistry(dict[str, ArrayBackend]):
             return super().__getitem__(__key)
 
     def set_active(self, backend: str):
+        if backend in {"numpy", "jax", "torch"}:
+            warnings.warn(
+                "set_active for array-API backends is deprecated and removed in "
+                "1.0; the framework is inferred from the input.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self._active = backend
 
     @property
