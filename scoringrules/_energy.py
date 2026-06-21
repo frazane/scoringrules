@@ -22,6 +22,7 @@ def es_ensemble(
     ens_w: "Array" = None,
     estimator: str = "nrg",
     backend: "Backend" = None,
+    **kwargs,
 ) -> "Array":
     r"""Compute the Energy Score for a finite multivariate ensemble.
 
@@ -71,18 +72,39 @@ def es_ensemble(
         Some theoretical background on scoring rules for multivariate forecasts.
     """
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
+
+    if estimator == "akr_kband":
+        k = kwargs.get("k", 1)
+
     if ens_w is None:
         if backend == "numba":
             estimator_check(estimator, energy.estimator_gufuncs)
-            return energy.estimator_gufuncs[estimator](obs, fct)
+            if estimator == "akr_kband":
+                return energy.estimator_gufuncs[estimator](obs, fct, k)
+            else:
+                return energy.estimator_gufuncs[estimator](obs, fct)
         else:
+            if estimator == "akr_kband":
+                return energy.es(obs, fct, estimator=estimator, backend=backend, k=k)
             return energy.es(obs, fct, estimator=estimator, backend=backend)
     else:
         ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
         if backend == "numba":
             estimator_check(estimator, energy.estimator_gufuncs_w)
-            return energy.estimator_gufuncs_w[estimator](obs, fct, ens_w)
+            if estimator == "akr_kband":
+                return energy.estimator_gufuncs_w[estimator](obs, fct, k, ens_w)
+            else:
+                return energy.estimator_gufuncs_w[estimator](obs, fct, ens_w)
         else:
+            if estimator == "akr_kband":
+                return energy.es_w(
+                    obs,
+                    fct,
+                    ens_w,
+                    estimator=estimator,
+                    backend=backend,
+                    k=k,
+                )
             return energy.es_w(obs, fct, ens_w, estimator=estimator, backend=backend)
 
 

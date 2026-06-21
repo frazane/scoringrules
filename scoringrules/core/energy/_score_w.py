@@ -7,7 +7,12 @@ if tp.TYPE_CHECKING:
 
 
 def es_ensemble_w(
-    obs: "Array", fct: "Array", ens_w: "Array", estimator: str = "nrg", backend=None
+    obs: "Array",
+    fct: "Array",
+    ens_w: "Array",
+    estimator: str = "nrg",
+    backend=None,
+    k: int = 1,
 ) -> "Array":
     """
     Compute the energy score based on a finite ensemble.
@@ -22,9 +27,11 @@ def es_ensemble_w(
         out = _es_ensemble_akr_w(obs, fct, ens_w, backend=backend)
     elif estimator == "akr_circperm":
         out = _es_ensemble_akr_circperm_w(obs, fct, ens_w, backend=backend)
+    elif estimator == "akr_kband":
+        out = _es_ensemble_akr_kband_w(obs, fct, ens_w, k=k, backend=backend)
     else:
         raise ValueError(
-            f"For the energy score, {estimator} must be one of 'nrg', 'fair', 'akr', and 'akr_circperm'."
+            f"For the energy score, {estimator} must be one of 'nrg', 'fair', 'akr', 'akr_circperm', and 'akr_kband'."
         )
 
     return out
@@ -100,6 +107,32 @@ def _es_ensemble_akr_circperm_w(
     E_2 = B.sum(spread_norm * ens_w, -1)
 
     return E_1 - 0.5 * E_2
+
+
+def _es_ensemble_akr_kband_w(
+    obs: "Array",
+    fct: "Array",
+    ens_w: "Array",
+    k: int = 1,
+    backend: "Backend" = None,
+) -> "Array":
+    """Compute the weighted Energy Score using the AKR with k-band approximation."""
+    B = backends.active if backend is None else backends[backend]
+
+    if k < 1:
+        raise ValueError("For estimator='akr_kband', k must be >= 1.")
+
+    err_norm = B.norm(fct - B.expand_dims(obs, -2), -1)
+    E_1 = B.sum(err_norm * ens_w, -1)
+
+    E_2 = 0.0
+    for j in range(1, k + 1):
+        fct_shift = B.roll(fct, shift=-j, axis=-2)
+        ens_w_shift = B.roll(ens_w, shift=-j, axis=-1)
+        spread_norm = B.norm(fct - fct_shift, -1)
+        E_2 += 2 * B.sum(spread_norm * ens_w * ens_w_shift, -1)
+
+    return E_1 - 0.5 * E_2 / k
 
 
 def owes_ensemble_w(

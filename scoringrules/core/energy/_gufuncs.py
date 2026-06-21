@@ -83,6 +83,22 @@ def _energy_score_akr_circperm_gufunc(
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
+@guvectorize("(d),(m,d),()->()")
+def _energy_score_akr_kband_gufunc(
+    obs: np.ndarray, fct: np.ndarray, k: int, out: np.ndarray
+):
+    """Compute the Energy Score for a finite ensemble using the AKR with k-band approximation."""
+    M = fct.shape[0]
+    e_1 = 0.0
+    e_2 = 0.0
+    for i in range(M):
+        e_1 += float(np.linalg.norm(fct[i] - obs))
+        for j in range(1, k + 1):
+            e_2 += float(np.linalg.norm(fct[i] - fct[(i + j) % M]))
+
+    out[0] = e_1 / M - 0.5 * 1 / (M * k) * e_2
+
+
 @guvectorize("(d),(m,d),(),(m)->()")
 def _owenergy_score_gufunc(
     obs: np.ndarray,
@@ -133,6 +149,7 @@ def _vrenergy_score_gufunc(
 
 estimator_gufuncs = {
     "akr_circperm": lazy_gufunc_wrapper_mv(_energy_score_akr_circperm_gufunc),
+    "akr_kband": lazy_gufunc_wrapper_mv(_energy_score_akr_kband_gufunc),
     "akr": lazy_gufunc_wrapper_mv(_energy_score_akr_gufunc),
     "fair": lazy_gufunc_wrapper_mv(_energy_score_fair_gufunc),
     "nrg": lazy_gufunc_wrapper_mv(_energy_score_nrg_gufunc),
@@ -142,6 +159,7 @@ estimator_gufuncs = {
 
 __all__ = [
     "_energy_score_akr_circperm_gufunc",
+    "_energy_score_akr_kband_gufunc",
     "_energy_score_akr_gufunc",
     "_energy_score_fair_gufunc",
     "_energy_score_nrg_gufunc",
