@@ -56,13 +56,36 @@ def test_interval_score(backend):
 
 ## We use Bracher et al (2021) Eq. (3) to test the WIS
 def test_weighted_interval_score(backend):
-    obs = np.zeros(N)
+    # `obs` differs from the predictive median, so the median term contributes
+    # `w_median * |obs - median|` and cannot be confused with `w_median * median`.
+    obs = np.full(N, 0.4)
+    median = np.zeros(N)
     alpha = np.linspace(0.01, 0.99, 99)
     upper = st.norm(0, 1).ppf(np.tile(1 - alpha / 2, (N, 1)))
     lower = st.norm(0, 1).ppf(np.tile(alpha / 2, (N, 1)))
 
-    WIS = sr.weighted_interval_score(obs, obs, lower, upper, alpha, backend=backend)
+    WIS = sr.weighted_interval_score(obs, median, lower, upper, alpha, backend=backend)
     CRPS = sr.crps_normal(obs, 0, 1, backend=backend)
     WIS, CRPS = map(np.asarray, (WIS, CRPS))
 
     assert np.all(1 - WIS / CRPS <= 0.001 * CRPS)
+
+
+def test_weighted_interval_score_median_term(backend):
+    # Closed form of Bracher et al (2021) Eq. (3) for a single set of intervals.
+    obs, median = 1.4, 1.0
+    alpha = np.array([0.2, 0.5])
+    lower = np.array([0.5, 0.8])
+    upper = np.array([1.2, 1.1])
+
+    interval_scores = (
+        (upper - lower)
+        + 2 / alpha * (lower - obs) * (obs < lower)
+        + 2 / alpha * (obs - upper) * (obs > upper)
+    )
+    expected = (0.5 * abs(obs - median) + np.sum(alpha / 2 * interval_scores)) / (
+        len(alpha) + 0.5
+    )
+
+    res = sr.weighted_interval_score(obs, median, lower, upper, alpha, backend=backend)
+    assert np.isclose(np.asarray(res), expected)
