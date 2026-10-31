@@ -1318,8 +1318,10 @@ def crps_clogistic(
     >>> sr.crps_clogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     0.15805632276434345
     """
-    lmass = stats._logis_cdf((lower - location) / scale)
-    umass = 1 - stats._logis_cdf((upper - location) / scale)
+    B = backends.active if backend is None else backends[backend]
+    location, scale, lower, upper = map(B.asarray, (location, scale, lower, upper))
+    lmass = stats._logis_cdf((lower - location) / scale, backend=backend)
+    umass = 1 - stats._logis_cdf((upper - location) / scale, backend=backend)
     return crps.gtclogistic(
         obs,
         location,
@@ -1466,8 +1468,19 @@ def crps_cnormal(
     >>> sr.crps_cnormal(0.0, 0.1, 0.4, -1.0, 1.0)
     0.10338851213123085
     """
-    lmass = stats._norm_cdf((lower - location) / scale)
-    umass = 1 - stats._norm_cdf((upper - location) / scale)
+    B = backends.active if backend is None else backends[backend]
+    location, scale, lower, upper = map(B.asarray, (location, scale, lower, upper))
+    # jax's float32 erf stops short of +-1 at +-inf, and gtcnormal needs exact zeros there
+    lmass = B.where(
+        lower == float("-inf"),
+        0.0,
+        stats._norm_cdf((lower - location) / scale, backend=backend),
+    )
+    umass = B.where(
+        upper == float("inf"),
+        0.0,
+        1 - stats._norm_cdf((upper - location) / scale, backend=backend),
+    )
     return crps.gtcnormal(
         obs,
         location,
@@ -1662,8 +1675,12 @@ def crps_ct(
     >>> sr.crps_ct(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     0.12672580744453948
     """
-    lmass = stats._t_cdf((lower - location) / scale, df)
-    umass = 1 - stats._t_cdf((upper - location) / scale, df)
+    B = backends.active if backend is None else backends[backend]
+    df, location, scale, lower, upper = map(
+        B.asarray, (df, location, scale, lower, upper)
+    )
+    lmass = stats._t_cdf((lower - location) / scale, df, backend=backend)
+    umass = 1 - stats._t_cdf((upper - location) / scale, df, backend=backend)
     return crps.gtct(
         obs,
         df,
