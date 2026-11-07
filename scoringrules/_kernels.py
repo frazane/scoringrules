@@ -1,20 +1,30 @@
 import typing as tp
 
+from scoringrules._dispatch import resolve_backend_arg, use_numba
+from scoringrules.backend import get_namespace
 from scoringrules.core import kernels
-from scoringrules.core.utils import (
-    univariate_array_check,
-    univariate_weight_check,
+from scoringrules.core.utils import estimator_check, mv_weighted_score_chain
+from scoringrules.core.utils_xp import (
     multivariate_array_check,
     multivariate_weight_check,
-    estimator_check,
-    uv_weighted_score_weights,
-    uv_weighted_score_chain,
     mv_weighted_score_weights,
-    mv_weighted_score_chain,
+    univariate_array_check,
+    univariate_weight_check,
+    uv_weighted_score_chain,
+    uv_weighted_score_weights,
 )
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
+
+
+def _uv_ens_w(ens_w, fct, m_axis, *, xp):
+    """``ens_w`` as ``xp.float_dtype(fct)``, checked and normalised against the
+    permuted ``fct`` (ensemble last), or ``None``."""
+    if ens_w is None:
+        return None
+    ens_w = xp.astype(xp.asarray(ens_w), xp.float_dtype(fct))
+    return univariate_weight_check(ens_w, fct, m_axis, xp=xp)
 
 
 def gksuv_ensemble(
@@ -56,8 +66,9 @@ def gksuv_ensemble(
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     estimator : str
         Indicates the estimator to be used.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -69,22 +80,21 @@ def gksuv_ensemble(
     >>> import scoringrules as sr
     >>> sr.gks_ensemble(obs, pred)
     """
-    obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
-    if ens_w is None:
-        if backend == "numba":
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
+    ens_w = _uv_ens_w(ens_w, fct, m_axis, xp=xp)
+
+    if numba:
+        if ens_w is None:
             estimator_check(estimator, kernels.estimator_gufuncs_uv)
             return kernels.estimator_gufuncs_uv[estimator](obs, fct)
-        else:
-            return kernels.ensemble_uv(obs, fct, estimator=estimator, backend=backend)
-    else:
-        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
-        if backend == "numba":
-            estimator_check(estimator, kernels.estimator_gufuncs_uv_w)
-            return kernels.estimator_gufuncs_uv_w[estimator](obs, fct, ens_w)
-        else:
-            return kernels.ensemble_uv_w(
-                obs, fct, ens_w=ens_w, estimator=estimator, backend=backend
-            )
+        estimator_check(estimator, kernels.estimator_gufuncs_uv_w)
+        return kernels.estimator_gufuncs_uv_w[estimator](obs, fct, ens_w)
+    if ens_w is None:
+        return kernels.ensemble_uv(obs, fct, estimator=estimator, xp=xp)
+    return kernels.ensemble_uv_w(obs, fct, ens_w, estimator=estimator, xp=xp)
 
 
 def twgksuv_ensemble(
@@ -138,8 +148,9 @@ def twgksuv_ensemble(
         Chaining function used to emphasise particular outcomes. For example, a function that
         only considers values above a certain threshold :math:`t` by projecting forecasts and observations
         to :math:`[t, \inf)`.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -156,7 +167,9 @@ def twgksuv_ensemble(
     >>>
     >>> sr.twgksuv_ensemble(obs, pred, v_func=v_func)
     """
-    obs, fct = uv_weighted_score_chain(obs, fct, a, b, v_func, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, fct)
+    obs, fct = uv_weighted_score_chain(obs, fct, a=a, b=b, v_func=v_func, xp=xp)
     return gksuv_ensemble(
         obs,
         fct,
@@ -216,8 +229,9 @@ def owgksuv_ensemble(
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -234,21 +248,20 @@ def owgksuv_ensemble(
     >>>
     >>> sr.owgksuv_ensemble(obs, pred, w_func=w_func)
     """
-    obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
-    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, backend=backend)
-    if ens_w is None:
-        if backend == "numba":
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
+    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
+    ens_w = _uv_ens_w(ens_w, fct, m_axis, xp=xp)
+
+    if numba:
+        if ens_w is None:
             return kernels.estimator_gufuncs_uv["ow"](obs, fct, obs_w, fct_w)
-        else:
-            return kernels.ow_ensemble_uv(obs, fct, obs_w, fct_w, backend=backend)
-    else:
-        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
-        if backend == "numba":
-            return kernels.estimator_gufuncs_uv_w["ow"](obs, fct, obs_w, fct_w, ens_w)
-        else:
-            return kernels.ow_ensemble_uv_w(
-                obs, fct, obs_w, fct_w, ens_w, backend=backend
-            )
+        return kernels.estimator_gufuncs_uv_w["ow"](obs, fct, obs_w, fct_w, ens_w)
+    if ens_w is None:
+        return kernels.ow_ensemble_uv(obs, fct, obs_w, fct_w, xp=xp)
+    return kernels.ow_ensemble_uv_w(obs, fct, obs_w, fct_w, ens_w, xp=xp)
 
 
 def vrgksuv_ensemble(
@@ -299,8 +312,9 @@ def vrgksuv_ensemble(
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -317,21 +331,20 @@ def vrgksuv_ensemble(
     >>>
     >>> sr.vrgksuv_ensemble(obs, pred, w_func=w_func)
     """
-    obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
-    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, backend=backend)
-    if ens_w is None:
-        if backend == "numba":
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
+    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
+    ens_w = _uv_ens_w(ens_w, fct, m_axis, xp=xp)
+
+    if numba:
+        if ens_w is None:
             return kernels.estimator_gufuncs_uv["vr"](obs, fct, obs_w, fct_w)
-        else:
-            return kernels.vr_ensemble_uv(obs, fct, obs_w, fct_w, backend=backend)
-    else:
-        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
-        if backend == "numba":
-            return kernels.estimator_gufuncs_uv_w["vr"](obs, fct, obs_w, fct_w, ens_w)
-        else:
-            return kernels.vr_ensemble_uv_w(
-                obs, fct, obs_w, fct_w, ens_w, backend=backend
-            )
+        return kernels.estimator_gufuncs_uv_w["vr"](obs, fct, obs_w, fct_w, ens_w)
+    if ens_w is None:
+        return kernels.vr_ensemble_uv(obs, fct, obs_w, fct_w, xp=xp)
+    return kernels.vr_ensemble_uv_w(obs, fct, obs_w, fct_w, ens_w, xp=xp)
 
 
 def gksmv_ensemble(
@@ -380,30 +393,31 @@ def gksmv_ensemble(
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     estimator : str
         Indicates the estimator to be used.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
     score : array_like
         The GKS between the forecast ensemble and obs.
     """
-    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-    if ens_w is None:
-        if backend == "numba":
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
+    if ens_w is not None:
+        ens_w = multivariate_weight_check(ens_w, fct, m_axis, v_axis, xp=xp)
+
+    if numba:
+        if ens_w is None:
             estimator_check(estimator, kernels.estimator_gufuncs_mv)
             return kernels.estimator_gufuncs_mv[estimator](obs, fct)
-        else:
-            return kernels.ensemble_mv(obs, fct, estimator=estimator, backend=backend)
-    else:
-        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
-        if backend == "numba":
-            estimator_check(estimator, kernels.estimator_gufuncs_mv_w)
-            return kernels.estimator_gufuncs_mv_w[estimator](obs, fct, ens_w)
-        else:
-            return kernels.ensemble_mv_w(
-                obs, fct, ens_w, estimator=estimator, backend=backend
-            )
+        estimator_check(estimator, kernels.estimator_gufuncs_mv_w)
+        return kernels.estimator_gufuncs_mv_w[estimator](obs, fct, ens_w)
+    if ens_w is None:
+        return kernels.ensemble_mv(obs, fct, estimator=estimator, xp=xp)
+    return kernels.ensemble_mv_w(obs, fct, ens_w, estimator=estimator, xp=xp)
 
 
 def twgksmv_ensemble(
@@ -452,14 +466,16 @@ def twgksmv_ensemble(
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     estimator : str
         Indicates the estimator to be used.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
     score : array_like
         The computed Threshold-Weighted Gaussian Kernel Score.
     """
+    resolve_backend_arg(backend)
     obs, fct = mv_weighted_score_chain(obs, fct, v_func)
     return gksmv_ensemble(
         obs,
@@ -528,29 +544,30 @@ def owgksmv_ensemble(
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
     score : array_like
         The computed Outcome-Weighted GKS.
     """
-    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
-    if ens_w is None:
-        if backend == "numba":
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
+    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    if ens_w is not None:
+        ens_w = multivariate_weight_check(ens_w, fct, m_axis, v_axis, xp=xp)
+
+    if numba:
+        if ens_w is None:
             return kernels.estimator_gufuncs_mv["ow"](obs, fct, obs_w, fct_w)
-        else:
-            return kernels.ow_ensemble_mv(obs, fct, obs_w, fct_w, backend=backend)
-    else:
-        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
-        if backend == "numba":
-            return kernels.estimator_gufuncs_mv_w["ow"](obs, fct, obs_w, fct_w, ens_w)
-        else:
-            return kernels.ow_ensemble_mv_w(
-                obs, fct, obs_w, fct_w, ens_w, backend=backend
-            )
+        return kernels.estimator_gufuncs_mv_w["ow"](obs, fct, obs_w, fct_w, ens_w)
+    if ens_w is None:
+        return kernels.ow_ensemble_mv(obs, fct, obs_w, fct_w, xp=xp)
+    return kernels.ow_ensemble_mv_w(obs, fct, obs_w, fct_w, ens_w, xp=xp)
 
 
 def vrgksmv_ensemble(
@@ -599,29 +616,30 @@ def vrgksmv_ensemble(
     ens_w : array_like
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
-    backend: str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
     score : array_like
         The computed Vertically Re-scaled Gaussian Kernel Score.
     """
-    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
-    if ens_w is None:
-        if backend == "numba":
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
+    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    if ens_w is not None:
+        ens_w = multivariate_weight_check(ens_w, fct, m_axis, v_axis, xp=xp)
+
+    if numba:
+        if ens_w is None:
             return kernels.estimator_gufuncs_mv["vr"](obs, fct, obs_w, fct_w)
-        else:
-            return kernels.vr_ensemble_mv(obs, fct, obs_w, fct_w, backend=backend)
-    else:
-        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
-        if backend == "numba":
-            return kernels.estimator_gufuncs_mv_w["vr"](obs, fct, obs_w, fct_w, ens_w)
-        else:
-            return kernels.vr_ensemble_mv_w(
-                obs, fct, obs_w, fct_w, ens_w, backend=backend
-            )
+        return kernels.estimator_gufuncs_mv_w["vr"](obs, fct, obs_w, fct_w, ens_w)
+    if ens_w is None:
+        return kernels.vr_ensemble_mv(obs, fct, obs_w, fct_w, xp=xp)
+    return kernels.vr_ensemble_mv_w(obs, fct, obs_w, fct_w, ens_w, xp=xp)
 
 
 __all__ = [

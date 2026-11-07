@@ -1,42 +1,35 @@
 import typing as tp
 
-from scoringrules.backend import backends
-
 if tp.TYPE_CHECKING:
-    from scoringrules.core.typing import Array, ArrayLike, Backend
+    from scoringrules.core.typing import Array, ArrayLike
 
 
-def gauss_kern_uv(
-    x1: "ArrayLike", x2: "ArrayLike", backend: "Backend" = None
-) -> "Array":
+def gauss_kern_uv(x1: "ArrayLike", x2: "ArrayLike", *, xp) -> "Array":
     """Compute the gaussian kernel evaluated at x1 and x2."""
-    B = backends.active if backend is None else backends[backend]
-    return B.exp(-0.5 * (x1 - x2) ** 2)
+    return xp.exp(-0.5 * (x1 - x2) ** 2)
 
 
-def gauss_kern_mv(
-    x1: "ArrayLike", x2: "ArrayLike", backend: "Backend" = None
-) -> "Array":
+def gauss_kern_mv(x1: "ArrayLike", x2: "ArrayLike", *, xp) -> "Array":
     """Compute the gaussian kernel evaluated at vectors x1 and x2."""
-    B = backends.active if backend is None else backends[backend]
-    return B.exp(-0.5 * B.norm(x1 - x2, -1) ** 2)
+    return xp.exp(-0.5 * xp.norm(x1 - x2, -1) ** 2)
 
 
 def ensemble_uv(
     obs: "ArrayLike",
     fct: "Array",
     estimator: str = "nrg",
-    backend: "Backend" = None,
+    *,
+    xp,
 ) -> "Array":
     """Compute a kernel score for a finite ensemble."""
     if estimator == "nrg":
-        out = _ks_ensemble_nrg_uv(obs, fct, backend=backend)
+        out = _ks_ensemble_nrg_uv(obs, fct, xp=xp)
     elif estimator == "fair":
-        out = _ks_ensemble_fair_uv(obs, fct, backend=backend)
+        out = _ks_ensemble_fair_uv(obs, fct, xp=xp)
     elif estimator == "akr":
-        out = _ks_ensemble_akr_uv(obs, fct, backend=backend)
+        out = _ks_ensemble_akr_uv(obs, fct, xp=xp)
     elif estimator == "akr_circperm":
-        out = _ks_ensemble_akr_circperm_uv(obs, fct, backend=backend)
+        out = _ks_ensemble_akr_circperm_uv(obs, fct, xp=xp)
     else:
         raise ValueError(
             f"{estimator} not a valid estimator, must be one of 'nrg', 'fair', 'akr', and 'akr_circperm'."
@@ -45,73 +38,59 @@ def ensemble_uv(
     return out
 
 
-def _ks_ensemble_nrg_uv(
-    obs: "ArrayLike", fct: "Array", backend: "Backend" = None
-) -> "Array":
+def _ks_ensemble_nrg_uv(obs: "ArrayLike", fct: "Array", *, xp) -> "Array":
     """Standard version of the kernel score."""
-    B = backends.active if backend is None else backends[backend]
     M: int = fct.shape[-1]
-    e_1 = B.sum(gauss_kern_uv(obs[..., None], fct, backend=backend), axis=-1)
-    e_2 = B.sum(
-        gauss_kern_uv(fct[..., None], fct[..., None, :], backend=backend),
+    e_1 = xp.sum(gauss_kern_uv(obs[..., None], fct, xp=xp), axis=-1)
+    e_2 = xp.sum(
+        gauss_kern_uv(fct[..., None], fct[..., None, :], xp=xp),
         axis=(-1, -2),
     )
-    e_3 = gauss_kern_uv(obs, obs, backend=backend)
+    e_3 = gauss_kern_uv(obs, obs, xp=xp)
 
     out = e_1 / M - 0.5 * e_2 / (M**2) - 0.5 * e_3
 
     return -out
 
 
-def _ks_ensemble_fair_uv(
-    obs: "ArrayLike", fct: "Array", backend: "Backend" = None
-) -> "Array":
+def _ks_ensemble_fair_uv(obs: "ArrayLike", fct: "Array", *, xp) -> "Array":
     """Fair version of the kernel score."""
-    B = backends.active if backend is None else backends[backend]
     M: int = fct.shape[-1]
-    e_1 = B.sum(gauss_kern_uv(obs[..., None], fct, backend=backend), axis=-1)
-    e_2 = B.sum(
-        gauss_kern_uv(fct[..., None], fct[..., None, :], backend=backend),
+    e_1 = xp.sum(gauss_kern_uv(obs[..., None], fct, xp=xp), axis=-1)
+    e_2 = xp.sum(
+        gauss_kern_uv(fct[..., None], fct[..., None, :], xp=xp),
         axis=(-1, -2),
     )
-    e_2 -= B.sum(gauss_kern_uv(fct, fct, backend=backend), axis=-1)
-    e_3 = gauss_kern_uv(obs, obs, backend=backend)
+    e_2 = e_2 - xp.sum(gauss_kern_uv(fct, fct, xp=xp), axis=-1)
+    e_3 = gauss_kern_uv(obs, obs, xp=xp)
 
     out = e_1 / M - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3
 
     return -out
 
 
-def _ks_ensemble_akr_uv(
-    obs: "ArrayLike", fct: "Array", backend: "Backend" = None
-) -> "Array":
+def _ks_ensemble_akr_uv(obs: "ArrayLike", fct: "Array", *, xp) -> "Array":
     """Approximate kernel representation estimator of the kernel score."""
-    B = backends.active if backend is None else backends[backend]
     M: int = fct.shape[-1]
-    e_1 = B.sum(gauss_kern_uv(obs[..., None], fct, backend=backend), axis=-1)
-    e_2 = B.sum(
-        gauss_kern_uv(fct, B.roll(fct, shift=1, axis=-1), backend=backend), axis=-1
-    )
-    e_3 = gauss_kern_uv(obs, obs, backend=backend)
+    e_1 = xp.sum(gauss_kern_uv(obs[..., None], fct, xp=xp), axis=-1)
+    e_2 = xp.sum(gauss_kern_uv(fct, xp.roll(fct, shift=1, axis=-1), xp=xp), axis=-1)
+    e_3 = gauss_kern_uv(obs, obs, xp=xp)
 
     out = e_1 / M - 0.5 * e_2 / M - 0.5 * e_3
 
     return -out
 
 
-def _ks_ensemble_akr_circperm_uv(
-    obs: "ArrayLike", fct: "Array", backend: "Backend" = None
-) -> "Array":
+def _ks_ensemble_akr_circperm_uv(obs: "ArrayLike", fct: "Array", *, xp) -> "Array":
     """AKR estimator of the kernel score with cyclic permutation."""
-    B = backends.active if backend is None else backends[backend]
     M: int = fct.shape[-1]
-    e_1 = B.sum(gauss_kern_uv(obs[..., None], fct, backend=backend), axis=-1)
+    e_1 = xp.sum(gauss_kern_uv(obs[..., None], fct, xp=xp), axis=-1)
     # member i is paired with member (i + M // 2) % M
-    e_2 = B.sum(
-        gauss_kern_uv(fct, B.roll(fct, shift=-(M // 2), axis=-1), backend=backend),
+    e_2 = xp.sum(
+        gauss_kern_uv(fct, xp.roll(fct, shift=-(M // 2), axis=-1), xp=xp),
         axis=-1,
     )
-    e_3 = gauss_kern_uv(obs, obs, backend=backend)
+    e_3 = gauss_kern_uv(obs, obs, xp=xp)
 
     out = e_1 / M - 0.5 * e_2 / M - 0.5 * e_3
 
@@ -122,20 +101,21 @@ def ensemble_mv(
     obs: "ArrayLike",
     fct: "Array",
     estimator: str = "nrg",
-    backend: "Backend" = None,
+    *,
+    xp,
 ) -> "Array":
     """Compute a kernel score for a finite multivariate ensemble.
 
     The ensemble and variables axes are on the second last and last dimensions respectively.
     """
     if estimator == "nrg":
-        out = _ks_ensemble_nrg_mv(obs, fct, backend=backend)
+        out = _ks_ensemble_nrg_mv(obs, fct, xp=xp)
     elif estimator == "fair":
-        out = _ks_ensemble_fair_mv(obs, fct, backend=backend)
+        out = _ks_ensemble_fair_mv(obs, fct, xp=xp)
     elif estimator == "akr":
-        out = _ks_ensemble_akr_mv(obs, fct, backend=backend)
+        out = _ks_ensemble_akr_mv(obs, fct, xp=xp)
     elif estimator == "akr_circperm":
-        out = _ks_ensemble_akr_circperm_mv(obs, fct, backend=backend)
+        out = _ks_ensemble_akr_circperm_mv(obs, fct, xp=xp)
     else:
         raise ValueError(
             f"{estimator} not a valid estimator, must be one of 'nrg', 'fair', 'akr', and 'akr_circperm'."
@@ -144,73 +124,63 @@ def ensemble_mv(
     return out
 
 
-def _ks_ensemble_nrg_mv(
-    obs: "ArrayLike", fct: "Array", backend: "Backend" = None
-) -> "Array":
-    B = backends.active if backend is None else backends[backend]
+def _ks_ensemble_nrg_mv(obs: "ArrayLike", fct: "Array", *, xp) -> "Array":
     M: int = fct.shape[-2]
 
-    e_1 = B.sum(gauss_kern_mv(B.expand_dims(obs, -2), fct, backend=backend), axis=-1)
-    e_2 = B.sum(
-        gauss_kern_mv(B.expand_dims(fct, -3), B.expand_dims(fct, -2), backend=backend),
+    e_1 = xp.sum(gauss_kern_mv(xp.expand_dims(obs, axis=-2), fct, xp=xp), axis=-1)
+    e_2 = xp.sum(
+        gauss_kern_mv(
+            xp.expand_dims(fct, axis=-3), xp.expand_dims(fct, axis=-2), xp=xp
+        ),
         axis=(-2, -1),
     )
-    e_3 = gauss_kern_mv(obs, obs, backend=backend)
+    e_3 = gauss_kern_mv(obs, obs, xp=xp)
 
     out = e_1 / M - 0.5 * e_2 / (M**2) - 0.5 * e_3
 
     return -out
 
 
-def _ks_ensemble_fair_mv(
-    obs: "ArrayLike", fct: "Array", backend: "Backend" = None
-) -> "Array":
-    B = backends.active if backend is None else backends[backend]
+def _ks_ensemble_fair_mv(obs: "ArrayLike", fct: "Array", *, xp) -> "Array":
     M: int = fct.shape[-2]
 
-    e_1 = B.sum(gauss_kern_mv(B.expand_dims(obs, -2), fct, backend=backend), axis=-1)
-    e_2 = B.sum(
-        gauss_kern_mv(B.expand_dims(fct, -3), B.expand_dims(fct, -2), backend=backend),
+    e_1 = xp.sum(gauss_kern_mv(xp.expand_dims(obs, axis=-2), fct, xp=xp), axis=-1)
+    e_2 = xp.sum(
+        gauss_kern_mv(
+            xp.expand_dims(fct, axis=-3), xp.expand_dims(fct, axis=-2), xp=xp
+        ),
         axis=(-2, -1),
     )
-    e_2 -= B.sum(gauss_kern_mv(fct, fct, backend=backend), axis=-1)
-    e_3 = gauss_kern_mv(obs, obs, backend=backend)
+    e_2 = e_2 - xp.sum(gauss_kern_mv(fct, fct, xp=xp), axis=-1)
+    e_3 = gauss_kern_mv(obs, obs, xp=xp)
 
     out = e_1 / M - 0.5 * e_2 / (M * (M - 1)) - 0.5 * e_3
 
     return -out
 
 
-def _ks_ensemble_akr_mv(
-    obs: "ArrayLike", fct: "Array", backend: "Backend" = None
-) -> "Array":
-    B = backends.active if backend is None else backends[backend]
+def _ks_ensemble_akr_mv(obs: "ArrayLike", fct: "Array", *, xp) -> "Array":
     M: int = fct.shape[-2]
 
-    e_1 = B.sum(gauss_kern_mv(B.expand_dims(obs, -2), fct, backend=backend), axis=-1)
-    e_2 = B.sum(
-        gauss_kern_mv(fct, B.roll(fct, shift=1, axis=-2), backend=backend), axis=-1
-    )
-    e_3 = gauss_kern_mv(obs, obs, backend=backend)
+    e_1 = xp.sum(gauss_kern_mv(xp.expand_dims(obs, axis=-2), fct, xp=xp), axis=-1)
+    e_2 = xp.sum(gauss_kern_mv(fct, xp.roll(fct, shift=1, axis=-2), xp=xp), axis=-1)
+    e_3 = gauss_kern_mv(obs, obs, xp=xp)
 
     out = e_1 / M - 0.5 * e_2 / M - 0.5 * e_3
 
     return -out
 
 
-def _ks_ensemble_akr_circperm_mv(
-    obs: "ArrayLike", fct: "Array", backend: "Backend" = None
-) -> "Array":
-    B = backends.active if backend is None else backends[backend]
+def _ks_ensemble_akr_circperm_mv(obs: "ArrayLike", fct: "Array", *, xp) -> "Array":
     M: int = fct.shape[-2]
 
-    e_1 = B.sum(gauss_kern_mv(B.expand_dims(obs, -2), fct, backend=backend), axis=-1)
+    e_1 = xp.sum(gauss_kern_mv(xp.expand_dims(obs, axis=-2), fct, xp=xp), axis=-1)
     # member i is paired with member (i + M // 2) % M
-    e_2 = B.sum(
-        gauss_kern_mv(fct, B.roll(fct, shift=-(M // 2), axis=-2), backend=backend),
+    e_2 = xp.sum(
+        gauss_kern_mv(fct, xp.roll(fct, shift=-(M // 2), axis=-2), xp=xp),
         axis=-1,
     )
-    e_3 = gauss_kern_mv(obs, obs, backend=backend)
+    e_3 = gauss_kern_mv(obs, obs, xp=xp)
 
     out = e_1 / M - 0.5 * e_2 / M - 0.5 * e_3
 
@@ -222,25 +192,25 @@ def ow_ensemble_uv(
     fct: "Array",
     ow: "Array",
     fw: "Array",
-    backend: "Backend" = None,
+    *,
+    xp,
 ) -> "Array":
     """Compute an outcome-weighted kernel score for a finite univariate ensemble."""
-    B = backends.active if backend is None else backends[backend]
     M: int = fct.shape[-1]
-    wbar = B.mean(fw, axis=-1)
+    wbar = xp.mean(fw, axis=-1)
     e_1 = (
-        B.sum(gauss_kern_uv(obs[..., None], fct, backend=backend) * fw, axis=-1)
+        xp.sum(gauss_kern_uv(obs[..., None], fct, xp=xp) * fw, axis=-1)
         * ow
         / (M * wbar)
     )
-    e_2 = B.sum(
-        gauss_kern_uv(fct[..., None], fct[..., None, :], backend=backend)
+    e_2 = xp.sum(
+        gauss_kern_uv(fct[..., None], fct[..., None, :], xp=xp)
         * fw[..., None]
         * fw[..., None, :],
         axis=(-1, -2),
     )
-    e_2 *= ow / (M**2 * wbar**2)
-    e_3 = gauss_kern_uv(obs, obs, backend=backend) * ow
+    e_2 = e_2 * (ow / (M**2 * wbar**2))
+    e_3 = gauss_kern_uv(obs, obs, xp=xp) * ow
 
     out = e_1 - 0.5 * e_2 - 0.5 * e_3
     return -out
@@ -251,27 +221,28 @@ def ow_ensemble_mv(
     fct: "Array",
     ow: "Array",
     fw: "Array",
-    backend: "Backend" = None,
+    *,
+    xp,
 ) -> "Array":
     """Compute an outcome-weighted kernel score for a finite multivariate ensemble.
 
     The ensemble and variables axes are on the second last and last dimensions respectively.
     """
-    B = backends.active if backend is None else backends[backend]
     M: int = fct.shape[-2]
-    wbar = B.sum(fw, -1) / M
+    wbar = xp.sum(fw, axis=-1) / M
 
-    err_kern = gauss_kern_mv(B.expand_dims(obs, -2), fct, backend=backend)
-    E_1 = B.sum(err_kern * fw * B.expand_dims(ow, -1), axis=-1) / (M * wbar)
+    err_kern = gauss_kern_mv(xp.expand_dims(obs, axis=-2), fct, xp=xp)
+    E_1 = xp.sum(err_kern * fw * xp.expand_dims(ow, axis=-1), axis=-1) / (M * wbar)
 
     spread_kern = gauss_kern_mv(
-        B.expand_dims(fct, -3), B.expand_dims(fct, -2), backend=backend
+        xp.expand_dims(fct, axis=-3), xp.expand_dims(fct, axis=-2), xp=xp
     )
-    fw_prod = B.expand_dims(fw, -1) * B.expand_dims(fw, -2)
-    spread_kern *= fw_prod * B.expand_dims(ow, (-2, -1))
-    E_2 = B.sum(spread_kern, (-2, -1)) / (M**2 * wbar**2)
+    fw_prod = xp.expand_dims(fw, axis=-1) * xp.expand_dims(fw, axis=-2)
+    # out of place: torch autograd needs the kernel output unchanged
+    spread_kern = spread_kern * (fw_prod * ow[..., None, None])
+    E_2 = xp.sum(spread_kern, axis=(-2, -1)) / (M**2 * wbar**2)
 
-    E_3 = gauss_kern_mv(obs, obs, backend=backend) * ow
+    E_3 = gauss_kern_mv(obs, obs, xp=xp) * ow
 
     out = E_1 - 0.5 * E_2 - 0.5 * E_3
     out = -out
@@ -283,27 +254,19 @@ def vr_ensemble_uv(
     fct: "Array",
     ow: "Array",
     fw: "Array",
-    backend: "Backend" = None,
+    *,
+    xp,
 ) -> "Array":
     """Compute a vertically re-scaled kernel score for a finite univariate ensemble."""
-    B = backends.active if backend is None else backends[backend]
     M: int = fct.shape[-1]
 
-    e_1 = (
-        B.sum(gauss_kern_uv(obs[..., None], fct, backend=backend) * fw, axis=-1)
-        * ow
-        / M
-    )
-    e_2 = B.sum(
-        gauss_kern_uv(
-            B.expand_dims(fct, axis=-1),
-            B.expand_dims(fct, axis=-2),
-            backend=backend,
-        )
-        * (B.expand_dims(fw, axis=-1) * B.expand_dims(fw, axis=-2)),
+    e_1 = xp.sum(gauss_kern_uv(obs[..., None], fct, xp=xp) * fw, axis=-1) * ow / M
+    e_2 = xp.sum(
+        gauss_kern_uv(xp.expand_dims(fct, axis=-1), xp.expand_dims(fct, axis=-2), xp=xp)
+        * (xp.expand_dims(fw, axis=-1) * xp.expand_dims(fw, axis=-2)),
         axis=(-1, -2),
     ) / (M**2)
-    e_3 = gauss_kern_uv(obs, obs, backend=backend) * ow * ow
+    e_3 = gauss_kern_uv(obs, obs, xp=xp) * ow * ow
 
     out = e_1 - 0.5 * e_2 - 0.5 * e_3
     out = -out
@@ -315,26 +278,26 @@ def vr_ensemble_mv(
     fct: "Array",
     ow: "Array",
     fw: "Array",
-    backend: "Backend" = None,
+    *,
+    xp,
 ) -> "Array":
     """Compute a vertically re-scaled kernel score for a finite multivariate ensemble.
 
     The ensemble and variables axes are on the second last and last dimensions respectively.
     """
-    B = backends.active if backend is None else backends[backend]
     M: int = fct.shape[-2]
 
-    err_kern = gauss_kern_mv(B.expand_dims(obs, -2), fct, backend=backend)
-    E_1 = B.sum(err_kern * fw * B.expand_dims(ow, -1), axis=-1) / M
+    err_kern = gauss_kern_mv(xp.expand_dims(obs, axis=-2), fct, xp=xp)
+    E_1 = xp.sum(err_kern * fw * xp.expand_dims(ow, axis=-1), axis=-1) / M
 
     spread_kern = gauss_kern_mv(
-        B.expand_dims(fct, -3), B.expand_dims(fct, -2), backend=backend
+        xp.expand_dims(fct, axis=-3), xp.expand_dims(fct, axis=-2), xp=xp
     )
-    fw_prod = B.expand_dims(fw, -1) * B.expand_dims(fw, -2)
-    spread_kern *= fw_prod
-    E_2 = B.sum(spread_kern, (-2, -1)) / (M**2)
+    fw_prod = xp.expand_dims(fw, axis=-1) * xp.expand_dims(fw, axis=-2)
+    spread_kern = spread_kern * fw_prod
+    E_2 = xp.sum(spread_kern, axis=(-2, -1)) / (M**2)
 
-    E_3 = gauss_kern_mv(obs, obs, backend=backend) * ow * ow
+    E_3 = gauss_kern_mv(obs, obs, xp=xp) * ow * ow
 
     out = E_1 - 0.5 * E_2 - 0.5 * E_3
     out = -out
