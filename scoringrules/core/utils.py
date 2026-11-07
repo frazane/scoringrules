@@ -277,9 +277,11 @@ def apply_nan_policy_ens_mv(
 
 
 def _gufunc_out(args, shape):
-    """Output buffer for a lazy gufunc: the inputs' result dtype, at least float,
-    so integer observations still give float scores."""
-    return np.empty(shape, dtype=np.result_type(*args, np.float32))
+    """Output buffer for a lazy gufunc: the result dtype of ``obs`` and ``fct``
+    (the first two arguments), at least float, so integer observations still
+    give float scores. Auxiliary arguments (weights, exponents, constants built
+    by the caller) do not take part, matching the dtype of the array path."""
+    return np.empty(shape, dtype=np.result_type(args[0], args[1], np.float32))
 
 
 def lazy_gufunc_wrapper_uv(func):
@@ -294,7 +296,7 @@ def lazy_gufunc_wrapper_uv(func):
         out = _gufunc_out(args, np.shape(args[0]))
         func(*args, out)
         if out.shape == ():
-            return out.item()
+            return out[()]  # a numpy scalar of out's dtype
         else:
             return out
 
@@ -314,7 +316,7 @@ def lazy_gufunc_wrapper_mv(func):
         out = _gufunc_out(args, np.shape(args[0])[:-1])
         func(*args, out)
         if out.shape == ():
-            return out.item()
+            return out[()]  # a numpy scalar of out's dtype
         else:
             return out
 
