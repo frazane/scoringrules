@@ -176,14 +176,18 @@ def mv_ensemble_inputs(case, M, weighted, seed=0, N=5, D=3):
 def mark_known_mv_failures(request, case, weighted):
     """Apply the strict xfails shared by every multivariate parity test."""
     if case == "v_axis" and weighted:
-        # Both paths fail the same way, so this is not a parity issue.
+        # Both paths fail the same way, so this is not a parity issue. Here the
+        # moved axis is out of range and it raises; when it happens to be in range
+        # (e.g. M == N) the wrong ens_w axis is used silently.
         request.applymarker(
             pytest.mark.xfail(
                 raises=ValueError,
                 strict=True,
-                reason="multivariate_weight_check moves ens_w from m_axis taken "
-                "relative to fct.ndim, so ens_w fails when v_axis comes before "
-                "m_axis (core/utils.py:115-117); not filed, see PR 1 notes",
+                reason="ens_w's m_axis is taken relative to fct.ndim, so with v_axis "
+                "before m_axis ens_w raises or silently uses the wrong weights "
+                "(apply_nan_policy_ens_mv, core/utils.py:243, for the energy scores; "
+                "multivariate_weight_check, core/utils.py:117, for the others); "
+                "not filed, see PR 1 notes",
             )
         )
 
