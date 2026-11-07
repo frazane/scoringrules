@@ -36,7 +36,7 @@ def ensemble_uv_w(
         out = _ks_ensemble_fair_uv_w(obs, fct, ens_w, backend=backend)
     elif estimator == "akr":
         out = _ks_ensemble_akr_uv_w(obs, fct, ens_w, backend=backend)
-    elif estimator == "akr_circperm_w":
+    elif estimator == "akr_circperm":
         out = _ks_ensemble_akr_circperm_uv_w(obs, fct, ens_w, backend=backend)
     else:
         raise ValueError(
