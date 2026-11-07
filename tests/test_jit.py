@@ -69,10 +69,14 @@ def test_interval_scores_jit():
 
 
 def test_error_spread_score_jit():
-    obs = jnp.asarray(np.random.randn(5))
-    fct = jnp.asarray(np.random.randn(5, 11))
+    # seeded: the score divides by the ensemble variance, so float32 rounding
+    # differences between the jitted and eager runs can exceed a tight rtol
+    rng = np.random.default_rng(0)
+    obs = jnp.asarray(rng.normal(size=5))
+    fct = jnp.asarray(rng.normal(size=(5, 11)))
     np.testing.assert_allclose(
         jax.jit(sr.error_spread_score)(obs, fct),
         sr.error_spread_score(obs, fct),
         rtol=1e-5,
+        atol=1e-5,
     )

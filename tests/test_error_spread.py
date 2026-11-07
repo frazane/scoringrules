@@ -97,6 +97,7 @@ def test_error_spread_score_numba_dispatch(backend, to_backend):
         with pytest.raises(ValueError, match="numpy-compatible"):
             sr.error_spread_score(obs, fct, backend="numba")
     else:
+        pytest.importorskip("numba")
         assert_inferred(sr.error_spread_score(obs, fct, backend="numba"), backend)
 
 

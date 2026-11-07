@@ -168,6 +168,7 @@ def test_weighted_interval_score_numba_dispatch(backend, to_backend):
         with pytest.raises(ValueError, match="numpy-compatible"):
             sr.weighted_interval_score(*args, backend="numba")
     else:
+        pytest.importorskip("numba")
         assert_inferred(sr.weighted_interval_score(*args, backend="numba"), backend)
 
 
