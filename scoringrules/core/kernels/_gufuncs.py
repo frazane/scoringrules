@@ -95,7 +95,7 @@ def _ks_ensemble_uv_akr_circperm_gufunc(
     e_1 = 0
     e_2 = 0
     for i in range(M):
-        sigma_i = int((i + 1 + ((M - 1) / 2)) % M)
+        sigma_i = (i + M // 2) % M
         e_1 += _gauss_kern_uv(fct[i], obs)
         e_2 += _gauss_kern_uv(fct[i], fct[sigma_i])
     e_3 = _gauss_kern_uv(obs, obs)
@@ -216,7 +216,7 @@ def _ks_ensemble_mv_akr_circperm_gufunc(
     e_1 = 0
     e_2 = 0
     for i in range(M):
-        sigma_i = int((i + 1 + ((M - 1) / 2)) % M)
+        sigma_i = (i + M // 2) % M
         e_1 += float(_gauss_kern_mv(fct[i], obs))
         e_2 += float(_gauss_kern_mv(fct[i], fct[sigma_i]))
     e_3 = float(_gauss_kern_mv(obs, obs))

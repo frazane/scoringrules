@@ -101,7 +101,7 @@ def _ks_ensemble_uv_w_akr_circperm_gufunc(
     e_1 = 0
     e_2 = 0
     for i in range(M):
-        sigma_i = int((i + 1 + ((M - 1) / 2)) % M)
+        sigma_i = (i + M // 2) % M
         e_1 += _gauss_kern_uv(fct[i], obs) * w[i]
         e_2 += _gauss_kern_uv(fct[i], fct[sigma_i]) * w[i]
     e_3 = _gauss_kern_uv(obs, obs)
@@ -228,7 +228,7 @@ def _ks_ensemble_mv_w_akr_circperm_gufunc(
     e_1 = 0
     e_2 = 0
     for i in range(M):
-        sigma_i = int((i + 1 + ((M - 1) / 2)) % M)
+        sigma_i = (i + M // 2) % M
         e_1 += float(_gauss_kern_mv(fct[i], obs) * w[i])
         e_2 += float(_gauss_kern_mv(fct[i], fct[sigma_i]) * w[i])
     e_3 = float(_gauss_kern_mv(obs, obs))
@@ -247,7 +247,6 @@ def _owks_ensemble_mv_w_gufunc(
 ):
     """Outcome-weighted kernel score for multivariate ensembles."""
     M = fct.shape[0]
-    ow = ow[0]
 
     e_1 = 0.0
     e_2 = 0.0
@@ -264,6 +263,7 @@ def _owks_ensemble_mv_w_gufunc(
     out[0] = -(e_1 / wbar - 0.5 * e_2 / (wbar**2) - 0.5 * e_3)
 
 
+@guvectorize("(d),(m,d),(),(m),(m)->()")
 def _vrks_ensemble_mv_w_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -274,7 +274,6 @@ def _vrks_ensemble_mv_w_gufunc(
 ):
     """Vertically re-scaled kernel score for multivariate ensembles."""
     M = fct.shape[0]
-    ow = ow[0]
 
     e_1 = 0.0
     e_2 = 0.0

@@ -95,8 +95,8 @@ def _es_ensemble_akr_circperm_w(
     err_norm = B.norm(fct - B.expand_dims(obs, -2), -1)
     E_1 = B.sum(err_norm * ens_w, -1)
 
-    shift = M // 2
-    spread_norm = B.norm(fct - B.roll(fct, shift=shift, axis=-2), -1)
+    # member i is paired with member (i + M // 2) % M
+    spread_norm = B.norm(fct - B.roll(fct, shift=-(M // 2), axis=-2), -1)
     E_2 = B.sum(spread_norm * ens_w, -1)
 
     return E_1 - 0.5 * E_2

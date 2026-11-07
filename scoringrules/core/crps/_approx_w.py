@@ -89,9 +89,9 @@ def _crps_ensemble_akr_circperm_w(
     """CRPS estimator based on the AKR with cyclic permutation."""
     M = fct.shape[-1]
     e_1 = xp.sum(xp.abs(obs[..., None] - fct) * w, axis=-1)
-    shift = int((M - 1) / 2)
-    ind = [(i + shift) % M for i in range(M)]
-    e_2 = xp.sum(xp.abs(fct[..., ind] - fct) * w[..., ind], axis=-1)
+    # member i is paired with member (i + M // 2) % M and keeps its own weight
+    partner = xp.roll(fct, shift=-(M // 2), axis=-1)
+    e_2 = xp.sum(xp.abs(fct - partner) * w, axis=-1)
     return e_1 - 0.5 * e_2
 
 

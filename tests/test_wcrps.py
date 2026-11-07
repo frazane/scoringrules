@@ -542,18 +542,15 @@ def test_vrcrps_score_correctness(backend, to_backend, backend_kwargs):
 @pytest.mark.parametrize("M", [6, 7])
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("score", ["owcrps_ensemble", "vrcrps_ensemble"])
-def test_weighted_crps_paths_agree(score, weighted, M, case, paths_agree, request):
-    if score == "vrcrps_ensemble" and not weighted and case in ("scalar_obs", "batch"):
-        # fct must be 2-d: the array path raises for 1-d/3-d fct (and is silently
-        # wrong for 3-d fct whose last two axes have equal length).
-        request.applymarker(
-            pytest.mark.xfail(
-                raises=ValueError,
-                strict=True,
-                reason="unweighted vr_ensemble averages fw over axis=1, not -1 "
-                "(core/crps/_approx.py:156); not filed yet, see PR 0 notes",
-            )
-        )
+def test_weighted_crps_paths_agree(score, weighted, M, case, paths_agree):
     obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted)
     raises = ValueError if case == "nan_raise" else None
     paths_agree(getattr(sr, score), obs, fct, -0.5, 1.0, raises=raises, **kwargs)
+
+
+def test_vrcrps_ensemble_square_batch_paths_agree(paths_agree):
+    # the last two axes of fct have equal length, so averaging fw over the wrong
+    # axis would not raise
+    rng = np.random.default_rng(0)
+    obs, fct = rng.normal(size=(2, 7)), rng.normal(size=(2, 7, 7))
+    paths_agree(sr.vrcrps_ensemble, obs, fct, -0.5, 1.0)

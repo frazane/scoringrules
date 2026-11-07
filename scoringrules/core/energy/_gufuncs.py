@@ -76,7 +76,7 @@ def _energy_score_akr_circperm_gufunc(
     e_1 = 0.0
     e_2 = 0.0
     for i in range(M):
-        sigma_i = int((i + (M // 2)) % M)
+        sigma_i = (i + M // 2) % M
         e_1 += float(np.linalg.norm(fct[i] - obs))
         e_2 += float(np.linalg.norm(fct[i] - fct[sigma_i]))
 

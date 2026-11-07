@@ -36,7 +36,7 @@ def ensemble_uv_w(
         out = _ks_ensemble_fair_uv_w(obs, fct, ens_w, backend=backend)
     elif estimator == "akr":
         out = _ks_ensemble_akr_uv_w(obs, fct, ens_w, backend=backend)
-    elif estimator == "akr_circperm_w":
+    elif estimator == "akr_circperm":
         out = _ks_ensemble_akr_circperm_uv_w(obs, fct, ens_w, backend=backend)
     else:
         raise ValueError(
@@ -84,6 +84,7 @@ def _ks_ensemble_fair_uv_w(
         * ens_w[..., None, :],
         axis=(-1, -2),
     )
+    e_2 -= B.sum(gauss_kern_uv(fct, fct, backend=backend) * ens_w * ens_w, axis=-1)
     e_3 = gauss_kern_uv(obs, obs)
 
     fair_c = 1 - B.sum(ens_w * ens_w, axis=-1)
@@ -117,9 +118,10 @@ def _ks_ensemble_akr_circperm_uv_w(
     B = backends.active if backend is None else backends[backend]
     M: int = fct.shape[-1]
     e_1 = B.sum(gauss_kern_uv(obs[..., None], fct, backend=backend) * ens_w, axis=-1)
-    shift = M // 2
+    # member i is paired with member (i + M // 2) % M
     e_2 = B.sum(
-        gauss_kern_uv(fct, B.roll(fct, shift=shift, axis=-1), backend=backend) * ens_w,
+        gauss_kern_uv(fct, B.roll(fct, shift=-(M // 2), axis=-1), backend=backend)
+        * ens_w,
         axis=-1,
     )
     e_3 = gauss_kern_uv(obs, obs, backend=backend)
@@ -195,6 +197,7 @@ def _ks_ensemble_fair_mv_w(
         * B.expand_dims(ens_w, -2),
         axis=(-2, -1),
     )
+    e_2 -= B.sum(gauss_kern_mv(fct, fct, backend=backend) * ens_w * ens_w, axis=-1)
     e_3 = gauss_kern_mv(obs, obs)
 
     fair_c = 1 - B.sum(ens_w * ens_w, axis=-1)
@@ -231,9 +234,10 @@ def _ks_ensemble_akr_circperm_mv_w(
     e_1 = B.sum(
         gauss_kern_mv(B.expand_dims(obs, -2), fct, backend=backend) * ens_w, axis=-1
     )
-    shift = M // 2
+    # member i is paired with member (i + M // 2) % M
     e_2 = B.sum(
-        gauss_kern_mv(fct, B.roll(fct, shift=shift, axis=-2), backend=backend) * ens_w,
+        gauss_kern_mv(fct, B.roll(fct, shift=-(M // 2), axis=-2), backend=backend)
+        * ens_w,
         axis=-1,
     )
     e_3 = gauss_kern_mv(obs, obs, backend=backend)
