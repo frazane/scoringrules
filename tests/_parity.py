@@ -32,16 +32,25 @@ def assert_paths_agree(
     """
     inputs = [a for a in (*args, *kwargs.values()) if isinstance(a, np.ndarray)]
     snapshot = [a.copy() for a in inputs]
+
+    def check_unchanged(path):
+        for before, after in zip(snapshot, inputs, strict=True):
+            np.testing.assert_array_equal(
+                after, before, f"{path} path modified an input in place"
+            )
+
     if raises is not None:
         with pytest.raises(raises):
             fn(*args, backend="numba", **kwargs)
+        check_unchanged("numba")
         with pytest.raises(raises):
             fn(*args, **kwargs)
+        check_unchanged("numpy")
         return None
     res_numba = np.asarray(fn(*args, backend="numba", **kwargs))
+    check_unchanged("numba")
     res_numpy = np.asarray(fn(*args, **kwargs))
-    for before, after in zip(snapshot, inputs, strict=True):
-        np.testing.assert_array_equal(after, before, "input modified in place")
+    check_unchanged("numpy")
     assert res_numba.shape == res_numpy.shape, (res_numba.shape, res_numpy.shape)
     assert res_numba.dtype.kind == "f", f"numba path returned {res_numba.dtype}"
     assert res_numpy.dtype.kind == "f", f"numpy path returned {res_numpy.dtype}"
