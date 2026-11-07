@@ -1,6 +1,8 @@
 import typing as tp
 
-from scoringrules.backend import backends
+from scoringrules._dispatch import resolve_backend_arg
+from scoringrules.backend import get_namespace
+from scoringrules.core import quantile
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
@@ -34,6 +36,9 @@ def quantile_score(
         The forecast values.
     alpha : array_like
         The quantile level.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
 
     Returns
     -------
@@ -51,8 +56,6 @@ def quantile_score(
     ValueError
         If the quantile level is not between 0 and 1.
     """
-    B = backends.active if backend is None else backends[backend]
-    obs, fct, alpha = map(B.asarray, (obs, fct, alpha))
-    if B.any(alpha < 0) or B.any(alpha > 1):
-        raise ValueError("The quantile level must be between 0 and 1.")
-    return (B.asarray((obs < fct), dtype=alpha.dtype) - alpha) * (fct - obs)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, fct, alpha)
+    return quantile.quantile_score(obs, fct, alpha, xp=xp)
