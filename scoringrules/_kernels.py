@@ -27,6 +27,14 @@ def _uv_ens_w(ens_w, fct, m_axis, *, xp):
     return univariate_weight_check(ens_w, fct, m_axis, xp=xp)
 
 
+def _uv_outcome_weights(obs, fct, a, b, w_func, *, xp):
+    """``w_func(obs)`` and ``w_func(fct)`` as ``xp.float_dtype(fct)``, so boolean
+    or lower-precision weights follow the forecast precision."""
+    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
+    dtype = xp.float_dtype(fct)
+    return xp.astype(obs_w, dtype), xp.astype(fct_w, dtype)
+
+
 def gksuv_ensemble(
     obs: "ArrayLike",
     fct: "Array",
@@ -252,7 +260,7 @@ def owgksuv_ensemble(
     numba = use_numba(backend, obs, fct)
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
-    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
+    obs_w, fct_w = _uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
     ens_w = _uv_ens_w(ens_w, fct, m_axis, xp=xp)
 
     if numba:
@@ -335,7 +343,7 @@ def vrgksuv_ensemble(
     numba = use_numba(backend, obs, fct)
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
-    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
+    obs_w, fct_w = _uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
     ens_w = _uv_ens_w(ens_w, fct, m_axis, xp=xp)
 
     if numba:

@@ -562,6 +562,10 @@ def test_kernels_float32(estimator, backend, to_backend_float32, backend_kwargs)
         sr.twgksuv_ensemble(obs, fct, v_func=lambda x: x.clip(min=-0.5), **kwargs),
         sr.owgksuv_ensemble(obs, fct, w_func=_uv_w_func, **backend_kwargs),
         sr.owgksuv_ensemble(obs, fct, b=0.5, ens_w=ens_w, **backend_kwargs),
+        sr.owgksuv_ensemble(obs, fct, w_func=lambda x: x > 0.0, **backend_kwargs),
+        sr.owgksuv_ensemble(
+            obs, fct, w_func=lambda x: (x > 0.0) * 1.0, ens_w=ens_w, **backend_kwargs
+        ),
         sr.vrgksuv_ensemble(obs, fct, w_func=lambda x: x > 0.0, **backend_kwargs),
     ):
         assert_inferred(res, backend)

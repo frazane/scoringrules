@@ -197,7 +197,8 @@ def ow_ensemble_uv(
 ) -> "Array":
     """Compute an outcome-weighted kernel score for a finite univariate ensemble."""
     M: int = fct.shape[-1]
-    wbar = xp.mean(fw, axis=-1)
+    # sum / M, not mean: mean rejects a boolean fw on torch
+    wbar = xp.sum(fw, axis=-1) / M
     e_1 = (
         xp.sum(gauss_kern_uv(obs[..., None], fct, xp=xp) * fw, axis=-1)
         * ow
