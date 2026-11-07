@@ -199,8 +199,10 @@ WIS_CASES = (
     "default",
     "n1",
     "int_obs",
+    "int_bounds",
     "scalar_obs",
     "batch",
+    "list_inputs",
     "weights",
     "median_term",
 )
@@ -216,6 +218,8 @@ def _wis_inputs(case, K=4, N=5, seed=0):
     half = rng.uniform(0.1, 2.0, size=(*batch, K))
     center = rng.normal(size=(*batch, 1))
     lower, upper = center - half, center + half
+    if case == "int_bounds":
+        lower, upper = np.floor(lower).astype(int), np.ceil(upper).astype(int)
     median = obs + rng.normal(size=batch)
     kwargs = {"w_median": 0.0}
     if case == "weights":
@@ -224,7 +228,10 @@ def _wis_inputs(case, K=4, N=5, seed=0):
         kwargs = {}
     if case == "scalar_obs":
         obs, median = float(obs), float(median)
-    return (obs, median, lower, upper, alpha), kwargs
+    args = (obs, median, lower, upper, alpha)
+    if case == "list_inputs":
+        args = tuple(np.asarray(a).tolist() for a in args)
+    return args, kwargs
 
 
 def _wis_parity_params():
