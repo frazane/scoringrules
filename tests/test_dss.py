@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 import scoringrules as sr
-from ._parity import UV_CASES, uv_ensemble_inputs
+from ._parity import MV_CASES, UV_CASES, mv_ensemble_inputs, uv_ensemble_inputs
 from .conftest import assert_inferred
 
 
@@ -99,50 +99,47 @@ def test_dss_legacy_backend_string_deprecated():
         sr.dssmv_ensemble(obs, fct, backend="numpy")
 
 
+# dss has no nan_policy: NaN inputs propagate, so of the nan cases only the
+# data of "nan_propagate" is used (without the argument). Its NaN members sit in
+# columns 1 and 3, so it needs M >= 4.
+DSS_UV_CASES = [c for c in UV_CASES if not c.startswith("nan_")] + ["nan_propagate"]
+
+
 @pytest.mark.parametrize("bias", [False, True])
 @pytest.mark.parametrize("M", [2, 3, 6, 7])
-@pytest.mark.parametrize("case", UV_CASES)
+@pytest.mark.parametrize("case", DSS_UV_CASES)
 def test_dssuv_paths_agree(case, M, bias, paths_agree):
+    if case == "nan_propagate" and M < 4:
+        pytest.skip("the nan case puts NaN members in columns 1 and 3, needs M >= 4")
     obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted=False)
+    kwargs.pop("nan_policy", None)
     paths_agree(sr.dssuv_ensemble, obs, fct, bias=bias, **kwargs)
 
 
-MV_CASES = ("default", "d1", "n1", "int_obs", "single", "batch", "m_first", "v_first")
+# The shared MV cases plus "v_first": v_axis=0 and m_axis=-1, so obs has its
+# variables axis moved too (the shared "v_axis" case leaves obs in place).
+DSS_MV_CASES = (*MV_CASES, "v_first")
 
 
-def mv_ensemble_inputs(case, M, D=3, seed=0, N=5):
-    """``(obs, fct, kwargs)`` for a multivariate ensemble parity case.
-
-    ``"default"``: ``fct`` of shape ``(N, M, D)``; ``"d1"``: ``D=1``; ``"n1"``:
-    ``N=1``; ``"int_obs"``: integer ``obs``; ``"single"``: ``fct`` of shape
-    ``(M, D)`` (0-d result); ``"batch"``: ``fct`` of shape ``(2, N, M, D)``;
-    ``"m_first"``: ``fct`` of shape ``(M, N, D)`` with ``m_axis=0``;
-    ``"v_first"``: ``fct`` of shape ``(D, N, M)`` with ``m_axis=-1, v_axis=0``.
-    """
-    rng = np.random.default_rng(seed)
-    D = 1 if case == "d1" else D
-    batch = {"n1": (1,), "single": (), "batch": (2, N)}.get(case, (N,))
-    obs = rng.normal(size=(*batch, D))
-    fct = rng.normal(size=(*batch, M, D))
-    kwargs = {}
-    if case == "int_obs":
-        obs = rng.integers(-2, 3, size=(*batch, D))
-    elif case == "m_first":
-        fct = np.moveaxis(fct, -2, 0).copy()
-        kwargs = {"m_axis": 0}
-    elif case == "v_first":
-        obs = np.moveaxis(obs, -1, 0).copy()
-        fct = np.moveaxis(fct, (-1, -2), (0, -1)).copy()
-        kwargs = {"m_axis": -1, "v_axis": 0}
-    return obs, fct, kwargs
+def dss_mv_inputs(case, M, D):
+    if case != "v_first":
+        return mv_ensemble_inputs(case, M, weighted=False, D=D)
+    obs, fct, _ = mv_ensemble_inputs("default", M, weighted=False, D=D)
+    obs = np.moveaxis(obs, -1, 0).copy()  # (D, N)
+    fct = np.moveaxis(fct, (-1, -2), (0, -1)).copy()  # (D, N, M)
+    return obs, fct, {"m_axis": -1, "v_axis": 0}
 
 
 @pytest.mark.parametrize("bias", [False, True])
-@pytest.mark.parametrize("M", [2, 3, 6, 7])
-@pytest.mark.parametrize("case", MV_CASES)
-def test_dssmv_paths_agree(case, M, bias, paths_agree):
-    # the covariance is singular unless M > D, so tiny ensembles get fewer variables
-    obs, fct, kwargs = mv_ensemble_inputs(case, M, D=min(3, M - 1))
+# the covariance is singular unless M > D, so tiny ensembles get fewer variables
+@pytest.mark.parametrize("M,D", [(2, 1), (3, 2), (6, 1), (6, 3), (7, 3)])
+@pytest.mark.parametrize("case", DSS_MV_CASES)
+def test_dssmv_paths_agree(case, M, D, bias, paths_agree):
+    obs, fct, kwargs = dss_mv_inputs(case, M, D)
+    if case == "int_fct" and (M, D) == (3, 2):
+        # some integer ensembles of 3 members in 2-d are collinear, so the
+        # covariance is exactly singular and both numpy paths raise
+        kwargs["raises"] = np.linalg.LinAlgError
     paths_agree(sr.dssmv_ensemble, obs, fct, bias=bias, **kwargs)
 
 
