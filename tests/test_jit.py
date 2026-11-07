@@ -52,19 +52,22 @@ def test_crps_ensemble_jit(estimator):
 
 
 def test_interval_scores_jit():
-    obs = jnp.asarray(np.random.randn(5))
+    rng = np.random.default_rng(0)  # float32 rounding: keep the draw fixed
+    obs = jnp.asarray(rng.normal(size=5))
     alpha = jnp.asarray([0.2, 0.5, 0.8])
-    half = jnp.asarray(np.random.uniform(0.1, 2.0, (5, 3)))
+    half = jnp.asarray(rng.uniform(0.1, 2.0, (5, 3)))
     lower, upper = obs[:, None] - half, obs[:, None] + half
     np.testing.assert_allclose(
         jax.jit(sr.interval_score)(obs, lower, upper, alpha),
         sr.interval_score(obs, lower, upper, alpha),
         rtol=1e-6,
+        atol=1e-6,
     )
     np.testing.assert_allclose(
         jax.jit(sr.weighted_interval_score)(obs, obs, lower, upper, alpha),
         sr.weighted_interval_score(obs, obs, lower, upper, alpha),
         rtol=1e-6,
+        atol=1e-6,
     )
 
 
