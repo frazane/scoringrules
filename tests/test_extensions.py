@@ -117,3 +117,120 @@ def test_gamma_grad_jax():
         jnp.asarray([1.5, 2.5])
     )
     assert jnp.all(jnp.isfinite(g))
+
+
+# --- torch: no numpy round-trips (device + autograd preserved) ---------------
+
+_TORCH_NATIVE_SPECIAL = {
+    "erf": 1,
+    "gamma": 1,
+    "gammainc": 2,
+    "gammalinc": 2,
+    "gammauinc": 2,
+    "beta": 2,
+    "mbessel0": 1,
+    "mbessel1": 1,
+    "factorial": 1,
+}
+
+
+@pytest.mark.parametrize("name", sorted(_TORCH_NATIVE_SPECIAL))
+def test_torch_special_functions_stay_native(name):
+    torch = pytest.importorskip("torch")
+    nargs = _TORCH_NATIVE_SPECIAL[name]
+    fn = getattr(ext, name)
+
+    meta = [torch.full((3,), 1.5, device="meta") for _ in range(nargs)]
+    assert fn(array_namespace(meta[0]), *meta).device.type == "meta"
+
+    # torch implements no derivative of the incomplete gamma w.r.t. its shape
+    # (first) argument, so for those only ``x`` requires grad.
+    no_shape_grad = name in ("gammainc", "gammalinc", "gammauinc")
+    args = [
+        torch.tensor(
+            [1.5, 2.5],
+            dtype=torch.float64,
+            requires_grad=not (no_shape_grad and i == 0),
+        )
+        for i in range(nargs)
+    ]
+    out = fn(array_namespace(args[-1]), *args)
+    assert out.requires_grad
+    out.sum().backward()
+    assert all(a.grad is not None for a in args if a.requires_grad)
+
+
+@pytest.mark.parametrize("axis", [0, 1, -1])
+def test_apply_along_axis_torch_matches_numpy(axis):
+    torch = pytest.importorskip("torch")
+    x = np.arange(24.0).reshape(2, 3, 4)
+    t = torch.tensor(x)
+    ns = array_namespace(t)
+    # scalar-returning func1d (vmap path)
+    out = ext.apply_along_axis(ns, torch.sum, t, axis)
+    assert isinstance(out, torch.Tensor)
+    np.testing.assert_allclose(out.numpy(), np.apply_along_axis(np.sum, axis, x))
+    # vector-returning func1d: its output dimension replaces ``axis``
+    out = ext.apply_along_axis(ns, lambda a: a[:2] * 2, t, axis)
+    np.testing.assert_allclose(
+        out.numpy(), np.apply_along_axis(lambda a: a[:2] * 2, axis, x)
+    )
+
+
+def test_apply_along_axis_torch_keeps_grad_and_device():
+    torch = pytest.importorskip("torch")
+
+    def func1d(a):
+        return (a**2).sum()
+
+    x = torch.randn(3, 4, dtype=torch.float64, requires_grad=True)
+    out = ext.apply_along_axis(array_namespace(x), func1d, x, -1)
+    assert out.requires_grad
+    out.sum().backward()
+    torch.testing.assert_close(x.grad, 2 * x.detach())
+
+    m = torch.zeros(3, 4, device="meta")
+    out = ext.apply_along_axis(array_namespace(m), func1d, m, 0)
+    assert out.device.type == "meta"
+    assert out.shape == (4,)
+
+
+def test_apply_along_axis_torch_loop_fallback_keeps_grad():
+    torch = pytest.importorskip("torch")
+
+    def func1d(a):
+        # data-dependent Python control flow: torch.vmap cannot trace this,
+        # so the per-slice loop fallback is used.
+        return a.sum() if a.sum().item() > 0 else -a.sum()
+
+    x = torch.tensor([[1.0, 2.0], [-3.0, -4.0]], requires_grad=True)
+    out = ext.apply_along_axis(array_namespace(x), func1d, x, -1)
+    assert out.tolist() == [3.0, 7.0]
+    out.sum().backward()
+    assert x.grad.tolist() == [[1.0, 1.0], [-1.0, -1.0]]
+
+
+def test_indices_torch_native_device_and_dtype():
+    torch = pytest.importorskip("torch")
+    x = torch.zeros(1, device="meta")
+    ns = array_namespace(x)
+    out = ext.indices(ns, (2, 3), device=x.device)
+    assert isinstance(out, torch.Tensor)
+    assert out.device.type == "meta"
+    assert out.shape == (2, 2, 3)
+    assert out.dtype == torch.int64
+
+    cpu = ext.indices(ns, (2, 3))
+    np.testing.assert_array_equal(cpu.numpy(), np.indices((2, 3)))
+    assert ext.indices(ns, ()).shape == (0,)
+    assert ext.indices(ns, (2,), dtype=torch.float64).dtype == torch.float64
+
+
+def test_indices_numpy_and_jax():
+    np.testing.assert_array_equal(ext.indices(NP, (2, 3)), np.indices((2, 3)))
+    jax = pytest.importorskip("jax")
+    import jax.numpy as jnp
+
+    ns = array_namespace(jnp.zeros(1))
+    out = ext.indices(ns, (2, 3), device=jax.devices()[0])
+    np.testing.assert_array_equal(np.asarray(out), np.indices((2, 3)))

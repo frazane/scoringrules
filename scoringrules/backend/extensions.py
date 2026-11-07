@@ -196,12 +196,39 @@ def apply_along_axis(xp, func1d, x, axis):
             return jnp.apply_along_axis(func1d, axis, x)
     if k == "numpy":
         return np.apply_along_axis(func1d, axis, x)
+    return _torch_apply_along_axis(func1d, x, axis)
+
+
+def _torch_apply_along_axis(func1d, x, axis):
+    """Torch-native ``apply_along_axis``: no numpy round-trip, so autograd and
+    the input's device are preserved.
+
+    Tries ``torch.vmap`` first; falls back to a Python loop over the 1-d slices
+    for callables vmap cannot trace (data-dependent control flow, ``.item()``).
+    Like ``numpy.apply_along_axis``, any dimensions ``func1d`` returns take the
+    place of ``axis`` in the output.
+    """
     t = _ts()
-    return t.as_tensor(
-        np.apply_along_axis(
-            lambda a: np.asarray(func1d(t.as_tensor(a))), axis, np.asarray(x)
+    axis = axis % x.ndim
+    xm = t.movedim(x, axis, -1)
+    batch_shape = tuple(xm.shape[:-1])
+    flat = xm.reshape(-1, xm.shape[-1])
+    try:
+        out = t.vmap(func1d)(flat)
+    except Exception:
+        out = t.stack(
+            [t.as_tensor(func1d(row), device=x.device) for row in t.unbind(flat)]
         )
-    )
+    tail = tuple(out.shape[1:])
+    out = out.reshape(batch_shape + tail)
+    if tail:
+        nb = len(batch_shape)
+        out = t.movedim(
+            out,
+            tuple(range(nb, nb + len(tail))),
+            tuple(range(axis, axis + len(tail))),
+        )
+    return out
 
 
 def cov(xp, x, rowvar=True, bias=False):
@@ -218,12 +245,25 @@ def cov(xp, x, rowvar=True, bias=False):
     return np.cov(x, rowvar=rowvar, bias=bias)
 
 
-def indices(xp, dimensions):
+def indices(xp, dimensions, *, dtype=None, device=None):
+    """``numpy.indices`` for every framework.
+
+    ``device`` places the result (pass ``device(x)`` of an input array so it
+    lands next to the data); ``dtype`` defaults to the framework's default
+    integer type.
+    """
     k = _kind(xp)
     if k == "jax":
+        import jax
         import jax.numpy as jnp
 
-        return jnp.indices(dimensions)
+        out = jnp.indices(dimensions, dtype=dtype or jnp.int_)
+        return out if device is None else jax.device_put(out, device)
     if k == "torch":
-        return _ts().as_tensor(np.indices(dimensions))
-    return np.indices(dimensions)
+        t = _ts()
+        dtype = dtype or t.int64
+        ranges = [t.arange(n, dtype=dtype, device=device) for n in dimensions]
+        if not ranges:
+            return t.empty((0,), dtype=dtype, device=device)
+        return t.stack(t.meshgrid(*ranges, indexing="ij"))
+    return np.indices(dimensions, dtype=dtype or int)
