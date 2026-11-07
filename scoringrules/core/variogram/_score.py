@@ -72,7 +72,7 @@ def owvs_ensemble(
     E_1 = xp.mean(E_1 * fw * xp.expand_dims(ow, axis=-1), axis=-1) / wbar  # (...)
 
     fct_diff_spread = xp.expand_dims(fct_diff, axis=-3) - xp.expand_dims(
-        fct_diff, -4
+        fct_diff, axis=-4
     )  # (... M M D D)
     fw_prod = xp.expand_dims(fw, axis=-2) * xp.expand_dims(fw, axis=-1)  # (... M M)
     E_2 = xp.sum(

@@ -83,7 +83,7 @@ def owvs_ensemble_w(
     )  # (...)
 
     fct_diff_spread = xp.expand_dims(fct_diff, axis=-3) - xp.expand_dims(
-        fct_diff, -4
+        fct_diff, axis=-4
     )  # (... M M D D)
     fw_prod = xp.expand_dims(fw, axis=-2) * xp.expand_dims(fw, axis=-1)  # (... M M)
     ew_prod = xp.expand_dims(ens_w, axis=-2) * xp.expand_dims(
