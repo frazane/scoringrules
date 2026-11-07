@@ -1,11 +1,11 @@
-"""Transitional copy of ``core/stats.py`` for the array-API migration.
+"""Statistics helpers (pdfs, pmfs, cdfs) for the array-API path.
 
 ``xp``-parameterised statistics helpers used by the CRPS closed-form scores
 (``core/crps/_closed.py``) and the logarithmic scores (``core/logarithmic.py``).
 They take a keyword-only ``xp`` augmented array-API namespace (see
 ``scoringrules.backend.get_namespace``) instead of resolving a backend object
-from the registry. The legacy ``core/stats.py`` lost its last caller with the
-logarithmic-score migration and was deleted.
+from the registry. They replace the legacy ``core/stats.py``, deleted with the
+logarithmic-score migration (PR 7 may rename this module to ``stats``).
 """
 
 import typing as tp
