@@ -689,6 +689,21 @@ def test_crps_cnormal(backend):
     assert np.isclose(res, res0)
 
 
+@pytest.mark.parametrize("name", ["crps_cnormal", "crps_clogistic"])
+def test_crps_censored_tail_masses_use_backend(name, backend):
+    """Censored scores compute their tail masses with the requested backend (#138)."""
+    if backend != "torch":
+        pytest.skip("Only a torch tensor that requires grad fails the numpy fallback")
+    import torch
+
+    location = torch.zeros(3, requires_grad=True)
+    res = getattr(sr, name)(
+        torch.zeros(3), location, torch.ones(3), -1.0, 1.0, backend=backend
+    )
+    res.sum().backward()
+    assert location.grad is not None
+
+
 def test_crps_gtct(backend):
     if backend in ["jax", "torch"]:
         pytest.skip("Not implemented in jax, torch backends")
