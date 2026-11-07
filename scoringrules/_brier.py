@@ -1,7 +1,9 @@
 import typing as tp
 
+from scoringrules._dispatch import resolve_backend_arg
+from scoringrules.backend import get_namespace
 from scoringrules.core import brier
-from scoringrules.core.utils import binary_array_check, categorical_array_check
+from scoringrules.core.utils_xp import binary_array_check, categorical_array_check
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
@@ -30,8 +32,9 @@ def brier_score(
         Observed outcomes, either 0 or 1.
     fct : array_like
         Forecast probabilities, between 0 and 1.
-    backend : str
-        The name of the backend used for computations. Default is 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
 
     Returns
     -------
@@ -50,8 +53,10 @@ def brier_score(
     >>> sr.brier_score(1, 0.2)
     0.64000
     """
-    obs, fct = binary_array_check(obs, fct, backend=backend)
-    return brier.brier_score(obs=obs, fct=fct, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, fct)
+    obs, fct = binary_array_check(obs, fct, xp=xp)
+    return brier.brier_score(obs=obs, fct=fct)
 
 
 def rps_score(
@@ -93,8 +98,9 @@ def rps_score(
     onehot: bool
         Boolean indicating whether the observation is the category that occurs or a onehot
         encoded vector of 0's and 1's. Default is False.
-    backend : str
-        The name of the backend used for computations. Default is 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
 
     Returns
     -------
@@ -120,8 +126,10 @@ def rps_score(
     >>> sr.rps_score(obs, fct, onehot=True)
     0.25999999999999995
     """
-    obs, fct = categorical_array_check(obs, fct, k_axis, onehot, backend=backend)
-    return brier.rps_score(obs=obs, fct=fct, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, fct)
+    obs, fct = categorical_array_check(obs, fct, k_axis, onehot, xp=xp)
+    return brier.rps_score(obs=obs, fct=fct, xp=xp)
 
 
 def log_score(
@@ -146,8 +154,9 @@ def log_score(
         Observed outcome, either 0 or 1.
     fct : array_like
         Forecasted probabilities between 0 and 1.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
 
     Returns
     -------
@@ -155,8 +164,10 @@ def log_score(
         The computed Log Score.
 
     """
-    obs, fct = binary_array_check(obs, fct, backend=backend)
-    return brier.log_score(obs=obs, fct=fct, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, fct)
+    obs, fct = binary_array_check(obs, fct, xp=xp)
+    return brier.log_score(obs=obs, fct=fct, xp=xp)
 
 
 def rls_score(
@@ -192,8 +203,9 @@ def rls_score(
     onehot: bool
         Boolean indicating whether the observation is the category that occurs or a onehot
         encoded vector of 0's and 1's. Default is False.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
 
     Returns
     -------
@@ -201,8 +213,10 @@ def rls_score(
         The computed Ranked Logarithmic Score.
 
     """
-    obs, fct = categorical_array_check(obs, fct, k_axis, onehot, backend=backend)
-    return brier.rls_score(obs=obs, fct=fct, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, fct)
+    obs, fct = categorical_array_check(obs, fct, k_axis, onehot, xp=xp)
+    return brier.rls_score(obs=obs, fct=fct, xp=xp)
 
 
 __all__ = [
