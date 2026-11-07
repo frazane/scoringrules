@@ -360,6 +360,12 @@ def apply_nan_policy_ens_mv(
     )
 
 
+def _gufunc_out(args, shape):
+    """Output buffer for a lazy gufunc: the inputs' result dtype, at least float,
+    so integer observations still give float scores."""
+    return np.empty(shape, dtype=np.result_type(*args, np.float32))
+
+
 def lazy_gufunc_wrapper_uv(func):
     """
     Wrapper for lazy/dynamic generalized universal functions so
@@ -369,7 +375,7 @@ def lazy_gufunc_wrapper_uv(func):
     """
 
     def wrapper(*args):
-        out = np.empty_like(args[0])
+        out = _gufunc_out(args, np.shape(args[0]))
         func(*args, out)
         if out.shape == ():
             return out.item()
@@ -389,7 +395,7 @@ def lazy_gufunc_wrapper_mv(func):
     """
 
     def wrapper(*args):
-        out = np.empty_like(args[0][..., 0])
+        out = _gufunc_out(args, np.shape(args[0])[:-1])
         func(*args, out)
         if out.shape == ():
             return out.item()
