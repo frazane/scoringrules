@@ -116,7 +116,9 @@ def exponential2(
 ) -> "Array":
     """Compute the logarithmic score for the exponential distribution with location and scale parameters."""
     obs, location, scale = map(xp.asarray, (obs, location, scale))
-    obs = obs - location
+    # Not in place (#153), but keep obs's float dtype like the old ``obs -= location``:
+    # a Python-float location is a 0-d float64 array on numpy and would upcast float32.
+    obs = xp.astype(obs - location, xp.float_dtype(obs))
     rate = 1 / scale
 
     zind = obs < 0.0

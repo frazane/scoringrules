@@ -603,6 +603,60 @@ def test_float32(name, args, backend, to_backend_float32, backend_kwargs):
     np.testing.assert_allclose(np.asarray(res), expected, rtol=1e-4, atol=1e-5)
 
 
+def test_exponential2_float32_python_location(backend, to_backend_float32):
+    # the #153 fix (obs - location, not in place) must keep float32 obs in float32
+    obs = to_backend_float32([0.3, 1.2])
+    res = sr.logs_exponential2(obs, -1.0, to_backend_float32(2.0))
+    assert_inferred(res, backend)
+    assert str(res.dtype).endswith("float32"), res.dtype
+
+
+LOCATION_SCALE = {
+    "logs_exponential2",
+    "logs_2pexponential",
+    "logs_gev",
+    "logs_gpd",
+    "logs_laplace",
+    "logs_loglaplace",
+    "logs_logistic",
+    "logs_loglogistic",
+    "logs_lognormal",
+    "logs_normal",
+    "logs_2pnormal",
+    "logs_t",
+    "logs_tlogistic",
+    "logs_tnormal",
+    "logs_tt",
+    "logs_uniform",
+}
+PYFLOAT_CASES = [c for c in FLOAT32_CASES if c[0] in LOCATION_SCALE]
+
+
+@pytest.mark.parametrize("name, args", PYFLOAT_CASES, ids=[c[0] for c in PYFLOAT_CASES])
+def test_float32_python_float_params(
+    name, args, backend, to_backend_float32, backend_kwargs, request
+):
+    """float32 obs with Python-float parameters must stay float32."""
+    if backend == "torch" and name == "logs_tt":
+        pytest.skip(
+            "betainc is BLOCKED on torch (docs/special_functions_audit.md, "
+            "betainc row)"
+        )
+    if backend in ("numpy", "numba"):
+        request.applymarker(
+            pytest.mark.xfail(
+                strict=True,
+                reason="xp.asarray turns a Python float into a 0-d float64 array, "
+                "which upcasts float32 (as on main); fixed by adopting "
+                "utils_xp.asarray_matching from PR 2",
+            )
+        )
+    fn = getattr(sr, name)
+    res = fn(to_backend_float32(args[0]), *args[1:], **backend_kwargs)
+    assert_inferred(res, backend)
+    assert str(res.dtype).endswith("float32"), f"{name} returned {res.dtype}"
+
+
 def test_logs_legacy_backend_string_deprecated():
     with pytest.warns(DeprecationWarning):
         sr.logs_normal(0.0, 0.1, 0.1, backend="numpy")
