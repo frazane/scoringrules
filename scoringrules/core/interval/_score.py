@@ -1,9 +1,7 @@
 import typing as tp
 
-from scoringrules.backend import backends
-
 if tp.TYPE_CHECKING:
-    from scoringrules.core.typing import Array, Backend
+    from scoringrules.core.typing import Array
 
 
 def interval_score(
@@ -17,7 +15,7 @@ def interval_score(
     above = obs > upper
     below = obs < lower
     W = width + below * (2 / alpha) * (lower - obs)
-    W += above * (2 / alpha) * (obs - upper)
+    W = W + above * (2 / alpha) * (obs - upper)
     return W
 
 
@@ -29,13 +27,12 @@ def weighted_interval_score(
     alpha: "Array",
     w_median: "Array",
     w_alpha: "Array",
-    backend: "Backend" = None,
+    *,
+    xp,
 ) -> "Array":
     """Weighted Interval Score for prediction interval PI[lower, upper]."""
-    B = backends.active if backend is None else backends[backend]
     K = w_alpha.shape[0]
     IS = interval_score(obs[..., None], lower, upper, alpha)
-    WIS = B.sum(IS * w_alpha, axis=-1)
-    WIS += w_median * median
-    WIS /= K + 1 / 2
-    return B.squeeze(WIS)
+    WIS = xp.sum(IS * w_alpha, axis=-1)
+    WIS = WIS + w_median * median
+    return WIS / (K + 1 / 2)

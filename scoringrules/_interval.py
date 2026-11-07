@@ -1,7 +1,8 @@
 import typing as tp
 from typing import Optional
 
-from scoringrules.backend import backends
+from scoringrules._dispatch import resolve_backend_arg, use_numba
+from scoringrules.backend import get_namespace
 from scoringrules.core import interval
 
 if tp.TYPE_CHECKING:
@@ -42,8 +43,9 @@ def interval_score(
         The predicted upper bound of the PI as a scalar or array of values.
     alpha : array_like
         The 1 - alpha level for the PI as a scalar or array of values.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
 
     Returns
     -------
@@ -85,8 +87,9 @@ def interval_score(
     ... ).shape
     (10, 5)
     """
-    B = backends.active if backend is None else backends[backend]
-    obs, lower, upper, alpha = map(B.asarray, (obs, lower, upper, alpha))
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, lower, upper, alpha)
+    obs, lower, upper, alpha = map(xp.asarray, (obs, lower, upper, alpha))
 
     if lower.shape != upper.shape:
         raise ValueError(
@@ -104,7 +107,9 @@ def interval_score(
             )
 
     res = interval.interval_score(obs, lower, upper, alpha)
-    return B.squeeze(res)
+    if alpha.ndim == 1 and alpha.shape[0] == 1:
+        res = xp.squeeze(res, axis=-1)
+    return res
 
 
 def weighted_interval_score(
@@ -156,26 +161,30 @@ def weighted_interval_score(
         The weight for the median prediction. Defaults to 0.5.
     w_alpha : array_like
         The weights for the PI. Defaults to `2/alpha`.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
     score:
         An array of interval scores with the same shape as `obs`.
     """
+    resolve_backend_arg(backend)
+    arrays = (obs, median, lower, upper, alpha, w_median, w_alpha)
+    numba = use_numba(backend, *arrays)
+    xp = get_namespace(*arrays)
+    obs, median, lower, upper, alpha = map(xp.asarray, arrays[:5])
     if w_median is None:
-        w_median = 0.5
-    if w_alpha is None:
-        w_alpha = alpha / 2
+        # a float64 default would upcast float32 inputs on numpy
+        dtype = xp.result_type(
+            *(xp.float_dtype(x) for x in (obs, median, lower, upper, alpha))
+        )
+        w_median = xp.asarray(0.5, dtype=dtype, device=xp.device(obs))
+    w_median = xp.asarray(w_median)
+    w_alpha = alpha / 2 if w_alpha is None else xp.asarray(w_alpha)
+    args = (obs, median, lower, upper, alpha, w_median, w_alpha)
 
-    B = backends.active if backend is None else backends[backend]
-    args = map(
-        B.asarray,
-        (obs, median, lower, upper, alpha, w_median, w_alpha),
-    )
-
-    if B.name == "numba":
+    if numba:
         return interval._weighted_interval_score_gufunc(*args)
-    else:
-        return interval.weighted_interval_score(*args, backend=backend)
+    return interval.weighted_interval_score(*args, xp=xp)
