@@ -20,7 +20,7 @@ def test_nan_policy_propagate_is_noop():
     assert w is None
 
 
-def test_xp_helpers_match_original_numpy():
+def test_uv_helpers_on_numpy_inputs():
     obs = np.random.randn(4)
     fct = np.random.randn(4, 7)
     xp = get_namespace(obs, fct)

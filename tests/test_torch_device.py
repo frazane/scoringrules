@@ -47,8 +47,8 @@ class _RequireExplicitDevice(TorchFunctionMode):
 
 @pytest.fixture(autouse=True)
 def _torch_backend():
-    # the deprecated ``backend="torch"`` calls and ``sr.backends["torch"]``
-    # below need the torch backend registered; silence its DeprecationWarning.
+    # ``sr.backends["torch"]`` below needs the torch backend registered;
+    # silence the DeprecationWarnings of the legacy backend calls.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         sr.register_backend("torch")

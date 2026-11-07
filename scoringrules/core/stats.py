@@ -1,6 +1,6 @@
 """Statistics helpers (pdfs, pmfs, cdfs).
 
-Used by the CRPS closed-form scores (``core/crps/_closed.py``) and the
+Used by the CRPS scores (``core/crps/_closed.py`` and ``_crps.py``) and the
 logarithmic scores (``core/logarithmic.py``). They take a keyword-only ``xp``
 augmented array-API namespace (see ``scoringrules.backend.get_namespace``).
 """
