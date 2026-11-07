@@ -3,7 +3,7 @@ import typing as tp
 from scoringrules._dispatch import resolve_backend_arg
 from scoringrules.backend import get_namespace
 from scoringrules.core import logarithmic
-from scoringrules.core.utils_xp import univariate_array_check
+from scoringrules.core.utils_xp import asarray_matching, univariate_array_check
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
@@ -55,6 +55,7 @@ def logs_ensemble(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, fct, bw)
+    obs, fct, bw = asarray_matching(obs, fct, bw, xp=xp)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     bw = _ensemble_bw(fct, bw, xp=xp)
 
@@ -64,11 +65,12 @@ def logs_ensemble(
     return logarithmic.mixnorm(obs, fct, bw, w, xp=xp)
 
 
-def _ensemble_bw(fct: "Array", bw: "ArrayLike | None", *, xp) -> "Array":
+def _ensemble_bw(fct: "Array", bw: "Array | None", *, xp) -> "Array":
     """Kernel bandwidth for every ensemble member, of shape ``fct.shape``.
 
     ``bw`` is one bandwidth per forecast (broadcast over the members). If not
-    given, it is estimated with Silverman's rule of thumb.
+    given, it is estimated with Silverman's rule of thumb. A given ``bw`` is
+    already an array (``asarray_matching`` in the callers).
     """
     M = fct.shape[-1]  # number of ensemble members
     if bw is None:
@@ -77,7 +79,6 @@ def _ensemble_bw(fct: "Array", bw: "ArrayLike | None", *, xp) -> "Array":
         q25 = xp.quantile(fct, 0.25, axis=-1)
         iqr = q75 - q25
         bw = 1.06 * xp.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
-    bw = xp.asarray(bw)
     return xp.broadcast_to(bw[..., None], (*bw.shape, M))
 
 
@@ -138,6 +139,7 @@ def clogs_ensemble(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, fct, a, b, bw)
+    obs, fct, a, b, bw = asarray_matching(obs, fct, a, b, bw, xp=xp)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     bw = _ensemble_bw(fct, bw, xp=xp)
 
@@ -194,6 +196,7 @@ def logs_beta(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, a, b, lower, upper)
+    obs, a, b, lower, upper = asarray_matching(obs, a, b, lower, upper, xp=xp)
     return logarithmic.beta(obs, a, b, lower, upper, xp=xp)
 
 
@@ -233,6 +236,7 @@ def logs_binomial(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, n, prob)
+    obs, n, prob = asarray_matching(obs, n, prob, xp=xp)
     return logarithmic.binomial(obs, n, prob, xp=xp)
 
 
@@ -269,6 +273,7 @@ def logs_exponential(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, rate)
+    obs, rate = asarray_matching(obs, rate, xp=xp)
     return logarithmic.exponential(obs, rate, xp=xp)
 
 
@@ -308,6 +313,7 @@ def logs_exponential2(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, location, scale)
+    obs, location, scale = asarray_matching(obs, location, scale, xp=xp)
     return logarithmic.exponential2(obs, location, scale, xp=xp)
 
 
@@ -350,6 +356,9 @@ def logs_2pexponential(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, scale1, scale2, location)
+    obs, scale1, scale2, location = asarray_matching(
+        obs, scale1, scale2, location, xp=xp
+    )
     return logarithmic.twopexponential(obs, scale1, scale2, location, xp=xp)
 
 
@@ -401,6 +410,7 @@ def logs_gamma(
 
     resolve_backend_arg(backend)
     xp = get_namespace(obs, shape, rate, scale)
+    obs, shape, rate = asarray_matching(obs, shape, rate, xp=xp)
     return logarithmic.gamma(obs, shape, rate, xp=xp)
 
 
@@ -443,6 +453,7 @@ def logs_gev(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, shape, location, scale)
+    obs, shape, location, scale = asarray_matching(obs, shape, location, scale, xp=xp)
     return logarithmic.gev(obs, shape, location, scale, xp=xp)
 
 
@@ -486,6 +497,7 @@ def logs_gpd(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, shape, location, scale)
+    obs, shape, location, scale = asarray_matching(obs, shape, location, scale, xp=xp)
     return logarithmic.gpd(obs, shape, location, scale, xp=xp)
 
 
@@ -528,6 +540,7 @@ def logs_hypergeometric(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, m, n, k)
+    obs, m, n, k = asarray_matching(obs, m, n, k, xp=xp)
     return logarithmic.hypergeometric(obs, m, n, k, xp=xp)
 
 
@@ -565,6 +578,7 @@ def logs_laplace(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, location, scale)
+    obs, location, scale = asarray_matching(obs, location, scale, xp=xp)
     return logarithmic.laplace(obs, location, scale, xp=xp)
 
 
@@ -600,6 +614,7 @@ def logs_loglaplace(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, locationlog, scalelog)
+    obs, locationlog, scalelog = asarray_matching(obs, locationlog, scalelog, xp=xp)
     return logarithmic.loglaplace(obs, locationlog, scalelog, xp=xp)
 
 
@@ -635,6 +650,7 @@ def logs_logistic(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, mu, sigma)
+    obs, mu, sigma = asarray_matching(obs, mu, sigma, xp=xp)
     return logarithmic.logistic(obs, mu, sigma, xp=xp)
 
 
@@ -673,6 +689,7 @@ def logs_loglogistic(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, mulog, sigmalog)
+    obs, mulog, sigmalog = asarray_matching(obs, mulog, sigmalog, xp=xp)
     return logarithmic.loglogistic(obs, mulog, sigmalog, xp=xp)
 
 
@@ -707,6 +724,7 @@ def logs_lognormal(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, mulog, sigmalog)
+    obs, mulog, sigmalog = asarray_matching(obs, mulog, sigmalog, xp=xp)
     return logarithmic.lognormal(obs, mulog, sigmalog, xp=xp)
 
 
@@ -752,13 +770,11 @@ def logs_mixnorm(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, m, s, w)
-    obs, m, s = map(xp.asarray, (obs, m, s))
+    obs, m, s, w = asarray_matching(obs, m, s, w, xp=xp)
 
     if w is None:
         M: int = m.shape[mc_axis]
         w = xp.ones(m.shape, dtype=xp.float_dtype(m), device=xp.device(m)) / M
-    else:
-        w = xp.asarray(w)
 
     if mc_axis != -1:
         m = xp.moveaxis(m, mc_axis, -1)
@@ -816,6 +832,7 @@ def logs_negbinom(
 
     resolve_backend_arg(backend)
     xp = get_namespace(obs, n, prob, mu)
+    obs, n, prob = asarray_matching(obs, n, prob, xp=xp)
     return logarithmic.negbinom(obs, n, prob, xp=xp)
 
 
@@ -854,6 +871,7 @@ def logs_normal(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, mu, sigma)
+    obs, mu, sigma = asarray_matching(obs, mu, sigma, xp=xp)
     return logarithmic.normal(obs, mu, sigma, negative=negative, xp=xp)
 
 
@@ -896,6 +914,9 @@ def logs_2pnormal(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, scale1, scale2, location)
+    obs, scale1, scale2, location = asarray_matching(
+        obs, scale1, scale2, location, xp=xp
+    )
     return logarithmic.twopnormal(obs, scale1, scale2, location, xp=xp)
 
 
@@ -932,6 +953,7 @@ def logs_poisson(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, mean)
+    obs, mean = asarray_matching(obs, mean, xp=xp)
     return logarithmic.poisson(obs, mean, xp=xp)
 
 
@@ -970,6 +992,7 @@ def logs_t(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, df, location, scale)
+    obs, df, location, scale = asarray_matching(obs, df, location, scale, xp=xp)
     return logarithmic.t(obs, df, location, scale, xp=xp)
 
 
@@ -1011,6 +1034,9 @@ def logs_tlogistic(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, location, scale, lower, upper)
+    obs, location, scale, lower, upper = asarray_matching(
+        obs, location, scale, lower, upper, xp=xp
+    )
     return logarithmic.tlogistic(obs, location, scale, lower, upper, xp=xp)
 
 
@@ -1052,6 +1078,9 @@ def logs_tnormal(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, location, scale, lower, upper)
+    obs, location, scale, lower, upper = asarray_matching(
+        obs, location, scale, lower, upper, xp=xp
+    )
     return logarithmic.tnormal(obs, location, scale, lower, upper, xp=xp)
 
 
@@ -1096,6 +1125,9 @@ def logs_tt(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, df, location, scale, lower, upper)
+    obs, df, location, scale, lower, upper = asarray_matching(
+        obs, df, location, scale, lower, upper, xp=xp
+    )
     return logarithmic.tt(obs, df, location, scale, lower, upper, xp=xp)
 
 
@@ -1131,6 +1163,7 @@ def logs_uniform(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, min, max)
+    obs, min, max = asarray_matching(obs, min, max, xp=xp)
     return logarithmic.uniform(obs, min, max, xp=xp)
 
 

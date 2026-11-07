@@ -611,50 +611,44 @@ def test_exponential2_float32_python_location(backend, to_backend_float32):
     assert str(res.dtype).endswith("float32"), res.dtype
 
 
-LOCATION_SCALE = {
-    "logs_exponential2",
-    "logs_2pexponential",
-    "logs_gev",
-    "logs_gpd",
-    "logs_laplace",
-    "logs_loglaplace",
-    "logs_logistic",
-    "logs_loglogistic",
-    "logs_lognormal",
-    "logs_normal",
-    "logs_2pnormal",
-    "logs_t",
-    "logs_tlogistic",
-    "logs_tnormal",
-    "logs_tt",
-    "logs_uniform",
-}
-PYFLOAT_CASES = [c for c in FLOAT32_CASES if c[0] in LOCATION_SCALE]
-
-
-@pytest.mark.parametrize("name, args", PYFLOAT_CASES, ids=[c[0] for c in PYFLOAT_CASES])
+@pytest.mark.parametrize("name, args", FLOAT32_CASES, ids=FLOAT32_IDS)
 def test_float32_python_float_params(
-    name, args, backend, to_backend_float32, backend_kwargs, request
+    name, args, backend, to_backend_float32, backend_kwargs
 ):
-    """float32 obs with Python-float parameters must stay float32."""
+    """float32 obs with Python-float (or list) parameters must stay float32."""
     if backend == "torch" and name == "logs_tt":
         pytest.skip(
             "betainc is BLOCKED on torch (docs/special_functions_audit.md, "
             "betainc row)"
         )
-    if backend in ("numpy", "numba"):
-        request.applymarker(
-            pytest.mark.xfail(
-                strict=True,
-                reason="xp.asarray turns a Python float into a 0-d float64 array, "
-                "which upcasts float32 (as on main); fixed by adopting "
-                "utils_xp.asarray_matching from PR 2",
-            )
-        )
     fn = getattr(sr, name)
     res = fn(to_backend_float32(args[0]), *args[1:], **backend_kwargs)
     assert_inferred(res, backend)
     assert str(res.dtype).endswith("float32"), f"{name} returned {res.dtype}"
+
+
+@pytest.mark.parametrize(
+    "name, args",
+    [
+        # obs on the lower bound: a float32 bound used to make this inf on torch
+        ("logs_tnormal", ([-1.0, 0.5], 0.3, 1.0, -1.0, 2.0)),
+        ("logs_tlogistic", ([-1.0, 0.5], 0.3, 1.0, -1.0, 2.0)),
+        ("logs_t", ([0.3, 2.0], 1e6, 0.1, 1.2)),
+        ("logs_uniform", ([0.3, 1.5], -1.0, 2.0)),
+        ("logs_normal", ([0.3, -1.5], 0.1, 1.2)),
+    ],
+)
+def test_python_float_params_keep_float64(name, args, backend, to_backend):
+    """Python-float parameters take the float64 dtype of the obs (torch made them
+    float32 tensors, which lost precision and moved support bounds)."""
+    fn = getattr(sr, name)
+    res = fn(to_backend(args[0]), *args[1:])
+    assert_inferred(res, backend)
+    if backend == "jax":
+        return  # jax runs in float32 (x64 off): nothing float64 to check
+    assert str(res.dtype).endswith("float64"), res.dtype
+    expected = fn(np.asarray(args[0]), *args[1:])
+    assert_close(res, expected, backend, rtol=1e-12, atol=1e-12)
 
 
 def test_logs_legacy_backend_string_deprecated():
