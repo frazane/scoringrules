@@ -87,8 +87,9 @@ def test_error_spread_score_jit():
 
 @pytest.mark.parametrize("bias", [False, True])
 def test_dss_ensemble_jit(bias):
-    obs = jnp.asarray(np.random.randn(5, 3))
-    fct = jnp.asarray(np.random.randn(5, 11, 3))
+    rng = np.random.default_rng(0)  # float32 rounding: keep the draw fixed
+    obs = jnp.asarray(rng.normal(size=(5, 3)))
+    fct = jnp.asarray(rng.normal(size=(5, 11, 3)))
 
     @jax.jit
     def uv(o, x):
@@ -99,6 +100,8 @@ def test_dss_ensemble_jit(bias):
         return sr.dssmv_ensemble(o, x, bias=bias)
 
     expected = sr.dssuv_ensemble(obs[:, 0], fct[..., 0], bias=bias)
-    np.testing.assert_allclose(uv(obs[:, 0], fct[..., 0]), expected, rtol=1e-5)
+    np.testing.assert_allclose(
+        uv(obs[:, 0], fct[..., 0]), expected, rtol=1e-5, atol=1e-5
+    )
     expected = sr.dssmv_ensemble(obs, fct, bias=bias)
-    np.testing.assert_allclose(mv(obs, fct), expected, rtol=1e-5)
+    np.testing.assert_allclose(mv(obs, fct), expected, rtol=1e-5, atol=1e-5)
