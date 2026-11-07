@@ -7,7 +7,14 @@ import typing as tp
 
 from array_api_compat import is_array_api_obj
 
-from .utils import EPSILON, _K_AXIS, _M_AXIS, _M_AXIS_UV, _V_AXIS, _shape_compatibility_check
+from .utils import (
+    EPSILON,
+    _K_AXIS,
+    _M_AXIS,
+    _M_AXIS_UV,
+    _V_AXIS,
+    _shape_compatibility_check,
+)
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, NanPolicy  # noqa: F401
