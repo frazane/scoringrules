@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import pytest
 import scoringrules as sr
@@ -625,5 +627,29 @@ def test_gks_fair_ens_w_known_value(score, backend):
     )
     expected = -(e_1 - 0.5 * e_2 / (1 - np.sum(w**2)) - 0.5)
     res = getattr(sr, score)(obs, fct, ens_w=w, estimator="fair", backend=backend)
+    # rtol for jax, which runs in float32 here
+    np.testing.assert_allclose(np.asarray(res), expected, rtol=1e-5)
+
+
+@pytest.mark.parametrize("score", ["gksuv_ensemble", "gksmv_ensemble"])
+def test_gks_akr_circperm_ens_w_known_value(score, backend):
+    """Weighted akr_circperm pairs member i with (i + M // 2) % M and uses w_i (#149)."""
+    mv = score == "gksmv_ensemble"
+    obs = [0.3, -0.1] if mv else [0.3]
+    fct = [[0.1, 0.2], [-0.4, 0.0], [1.2, -0.5]] if mv else [[0.1], [-0.4], [1.2]]
+    w = [0.5, 0.3, 0.2]
+    partner = [1, 2, 0]  # M = 3, M // 2 = 1
+
+    def kern(a, b):
+        return math.exp(-0.5 * sum((ai - bi) ** 2 for ai, bi in zip(a, b)))
+
+    e_1 = sum(w[i] * kern(fct[i], obs) for i in range(3))
+    e_2 = sum(w[i] * kern(fct[i], fct[partner[i]]) for i in range(3))
+    expected = -(e_1 - 0.5 * e_2 - 0.5)
+    obs_in = np.array(obs) if mv else obs[0]
+    fct_in = np.array(fct) if mv else np.array(fct)[:, 0]
+    res = getattr(sr, score)(
+        obs_in, fct_in, ens_w=np.array(w), estimator="akr_circperm", backend=backend
+    )
     # rtol for jax, which runs in float32 here
     np.testing.assert_allclose(np.asarray(res), expected, rtol=1e-5)

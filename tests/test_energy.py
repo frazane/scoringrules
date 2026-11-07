@@ -287,3 +287,23 @@ def test_energy_paths_agree(score, estimator, weighted, M, case, paths_agree, re
     obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
     args = (mv_v_func,) if score == "twes_ensemble" else ()
     paths_agree(getattr(sr, score), obs, fct, *args, estimator=estimator, **kwargs)
+
+
+def test_energy_score_akr_circperm_ens_w_known_value(backend):
+    """Weighted akr_circperm pairs member i with (i + M // 2) % M and uses w_i (#149)."""
+    obs = np.array([0.3, -0.1])
+    fct = np.array([[0.1, 0.2], [-0.4, 0.0], [1.2, -0.5]])
+    w = [0.5, 0.3, 0.2]
+    partner = [1, 2, 0]  # M = 3, M // 2 = 1
+
+    def norm(a, b):
+        return sum((ai - bi) ** 2 for ai, bi in zip(a, b)) ** 0.5
+
+    e_1 = sum(w[i] * norm(fct[i], obs) for i in range(3))
+    e_2 = sum(w[i] * norm(fct[i], fct[partner[i]]) for i in range(3))
+    expected = e_1 - 0.5 * e_2
+    res = sr.es_ensemble(
+        obs, fct, ens_w=np.array(w), estimator="akr_circperm", backend=backend
+    )
+    # rtol for jax, which runs in float32 here
+    np.testing.assert_allclose(np.asarray(res), expected, rtol=1e-5)

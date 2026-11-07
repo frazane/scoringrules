@@ -1419,3 +1419,23 @@ def test_crps_normal_grad_torch():
     sigma = torch.tensor([1.0], dtype=torch.float64, requires_grad=True)
     sr.crps_normal(obs, mu, sigma).sum().backward()
     assert torch.isfinite(mu.grad).all() and torch.isfinite(sigma.grad).all()
+
+
+def test_crps_ensemble_akr_circperm_ens_w_known_value(
+    backend, to_backend, backend_kwargs
+):
+    """Weighted akr_circperm pairs member i with (i + M // 2) % M and uses w_i (#149).
+
+    M = 3, partners [1, 2, 0]:
+    sum_i w_i |x_i - y| = 0.5 * 0.2 + 0.3 * 0.7 + 0.2 * 0.9 = 0.49,
+    sum_i w_i |x_i - x_sigma(i)| = 0.5 * 0.5 + 0.3 * 1.6 + 0.2 * 1.1 = 0.95,
+    so CRPS = 0.49 - 0.5 * 0.95 = 0.015 (pairing with i - 1 instead gives -0.02).
+    """
+    obs = to_backend(np.array([0.3]))
+    fct = to_backend(np.array([[0.1, -0.4, 1.2]]))
+    ens_w = to_backend(np.array([[0.5, 0.3, 0.2]]))
+    res = sr.crps_ensemble(
+        obs, fct, ens_w=ens_w, estimator="akr_circperm", **backend_kwargs
+    )
+    assert_inferred(res, backend)
+    assert_close(res, [0.015], backend)
