@@ -31,13 +31,12 @@ def test_xp_helpers_match_original_numpy():
     w_xp = utils_xp.univariate_weight_check(w.copy(), fct, -1, xp=xp)
     w_orig = orig.univariate_weight_check(w.copy(), fct, -1, backend="numpy")
     assert np.asarray(w_xp) == pytest.approx(np.asarray(w_orig))
-    # nan omit parity (mask building)
+    # nan omit mask building (the legacy numpy helper is gone, the numba path
+    # uses this one too)
     fct_nan = fct.copy()
     fct_nan[0, [1, 3]] = np.nan
     _, f_xp, m_xp = utils_xp.apply_nan_policy_ens_uv(
         obs, fct_nan.copy(), "omit", estimator="nrg", xp=xp
     )
-    _, f_o, m_o = orig.apply_nan_policy_ens_uv(
-        obs, fct_nan.copy(), "omit", estimator="nrg", m_axis=-1, backend="numpy"
-    )
-    assert np.asarray(m_xp) == pytest.approx(np.asarray(m_o))
+    np.testing.assert_array_equal(m_xp, (~np.isnan(fct_nan)).astype(float))
+    np.testing.assert_array_equal(f_xp, np.where(np.isnan(fct_nan), 0.0, fct_nan))
