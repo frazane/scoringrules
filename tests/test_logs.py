@@ -682,6 +682,7 @@ TORCH_GRAD_CASES = [
     ("logs_gev", (0.3, 0.3, 0.1, 1.2), 1),
     ("logs_beta", (0.3, 0.7, 1.1), 1),
     ("logs_t", (0.3, 4.0, 0.1, 1.2), 1),
+    ("logs_binomial", ([8.0, 50.0], [10.0, 171.0], [0.6, 0.4]), 2),
 ]
 
 
@@ -689,17 +690,32 @@ TORCH_GRAD_CASES = [
     "name, args, i", TORCH_GRAD_CASES, ids=[c[0] for c in TORCH_GRAD_CASES]
 )
 def test_grad_torch(name, args, i):
+    """Autograd matches finite differences (float64 ``gradcheck``)."""
     torch = pytest.importorskip("torch")
     args = [torch.tensor(a, dtype=torch.float64) for a in args]
-    args[i].requires_grad_(True)
-    res = getattr(sr, name)(*args)
-    res.sum().backward()
-    assert torch.isfinite(args[i].grad).all()
+    fn = getattr(sr, name)
+
+    def f(x):
+        return fn(*args[:i], x, *args[i + 1 :])
+
+    x = args[i].clone().requires_grad_(True)
+    assert torch.autograd.gradcheck(f, (x,), eps=1e-6, atol=1e-6, rtol=1e-5)
+
+
+def test_normal_grad_torch_analytic():
+    torch = pytest.importorskip("torch")
+    obs = torch.tensor([0.3, -1.5, 2.0], dtype=torch.float64)
+    mu = torch.tensor([0.1, 0.4, -0.2], dtype=torch.float64, requires_grad=True)
+    sigma = torch.tensor([1.2, 0.7, 2.5], dtype=torch.float64, requires_grad=True)
+    sr.logs_normal(obs, mu, sigma).sum().backward()
+    z = (obs - mu.detach()) / sigma.detach()
+    torch.testing.assert_close(mu.grad, -z / sigma.detach())
+    torch.testing.assert_close(sigma.grad, (1 - z**2) / sigma.detach())
 
 
 def test_tt_grad_jax():
     # #144 for logs_tt: betainc is BLOCKED on torch (audit, betainc row), so the
-    # regression is checked through jax.grad instead.
+    # regression is checked through jax.grad, against central differences.
     jax = pytest.importorskip("jax")
     import jax.numpy as jnp
 
@@ -708,4 +724,7 @@ def test_tt_grad_jax():
         return sr.logs_tt(obs, 4.0, 0.1, scale, -1.0, 2.0).sum()
 
     g = jax.grad(f)(jnp.asarray(1.2))
+    eps = 1e-2  # jax runs in float32
+    fd = (f(jnp.asarray(1.2 + eps)) - f(jnp.asarray(1.2 - eps))) / (2 * eps)
     assert jnp.isfinite(g)
+    np.testing.assert_allclose(float(g), float(fd), rtol=1e-3)
