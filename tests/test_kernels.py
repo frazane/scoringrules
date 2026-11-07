@@ -668,21 +668,35 @@ def test_kernels_grad_torch(estimator, mv):
         np.testing.assert_allclose(fct.grad[index].item(), expected, rtol=1e-5)
 
 
-@pytest.mark.parametrize("score", ["owgksuv_ensemble", "vrgksuv_ensemble"])
+@pytest.mark.parametrize(
+    "score",
+    ["owgksuv_ensemble", "vrgksuv_ensemble", "owgksmv_ensemble", "vrgksmv_ensemble"],
+)
 def test_weighted_kernels_grad_torch(score):
+    """Autograd w.r.t. fct and obs matches a central finite difference."""
     torch = pytest.importorskip("torch")
     rng = np.random.default_rng(6)
-    obs = torch.as_tensor(rng.normal(size=4))
-    fct = torch.tensor(rng.normal(size=(4, ENSEMBLE_SIZE)), requires_grad=True)
+    mv = score.endswith("mv_ensemble")
+    shape = (4, ENSEMBLE_SIZE, N_VARS) if mv else (4, ENSEMBLE_SIZE)
+    obs = torch.tensor(rng.normal(size=shape[:1] + shape[2:]), requires_grad=True)
+    fct = torch.tensor(rng.normal(size=shape), requires_grad=True)
+    fn = getattr(sr, score)
 
-    def f(x):
-        return getattr(sr, score)(obs, x, w_func=_uv_w_func).sum()
+    def f(o, x):
+        if mv:
+            return fn(o, x, _mv_w_func).sum()
+        return fn(o, x, w_func=_uv_w_func).sum()
 
-    f(fct).backward()
-    assert torch.isfinite(fct.grad).all()
+    f(obs, fct).backward()
+    assert torch.isfinite(fct.grad).all() and torch.isfinite(obs.grad).all()
+    fct_index = (2, 3, 1) if mv else (2, 3)
+    obs_index = (1, 0) if mv else (1,)
     with torch.no_grad():
-        expected = _finite_difference(f, fct.detach(), (2, 3))
-    np.testing.assert_allclose(fct.grad[2, 3].item(), expected, rtol=1e-5)
+        o, x = obs.detach(), fct.detach()
+        expected_fct = _finite_difference(lambda x_: f(o, x_), x, fct_index)
+        expected_obs = _finite_difference(lambda o_: f(o_, x), o, obs_index)
+    np.testing.assert_allclose(fct.grad[fct_index].item(), expected_fct, rtol=1e-5)
+    np.testing.assert_allclose(obs.grad[obs_index].item(), expected_obs, rtol=1e-5)
 
 
 def _jax_mv_scores(estimator):
