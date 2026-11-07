@@ -86,8 +86,9 @@ sr.crps_ensemble(np.random.randn(5), np.random.randn(5, 11))  # numba gufunc
 `backend="numba"` requires numpy-compatible inputs and raises an error for jax or
 torch arrays. The global setting only applies to numpy inputs: jax and torch inputs
 keep running in their own framework. Scores without a numba implementation ignore
-both. Without numba installed, `sr.backends.set_active("numba")` and
-`backend="numba"` raise an error that says how to install it.
+both. If numba is not installed, `sr.backends.set_active("numba")` and
+`backend="numba"` raise an `ImportError` that says how to install it; if it is
+installed but fails to import, the error includes the original import error.
 
 ### Deprecations
 
@@ -98,10 +99,12 @@ since the framework is inferred from the input. This applies to:
 - `sr.register_backend(...)` and `sr.backends.set_active(...)` for those backends
   (`sr.backends.set_active("numpy")` still switches the global numba setting off),
   and
-- reading from the `sr.backends` registry (`sr.backends["torch"]`,
-  `sr.backends.active`). It is a compatibility shim: its values are the array-API
-  namespaces scoringrules uses internally, so standard array-API calls such as
-  `sr.backends["torch"].sum(x, axis=-1)` keep working until 1.0.
+- reading values from the `sr.backends` registry: any `sr.backends[...]` lookup,
+  `sr.backends.get(...)`, `.values()`, `.items()` and `.active` warn. It is a
+  compatibility shim: its values are the array-API namespaces scoringrules uses
+  internally, so standard array-API calls such as `sr.backends["torch"].sum(x, axis=-1)`
+  keep working until 1.0. Checking for a backend (`"torch" in sr.backends`,
+  `sr.backends.available_backends`) does not warn.
 
 `backend="numba"` and `sr.backends.set_active("numba")` are **not** deprecated; they
 remain the supported ways to reach the numba fast path.

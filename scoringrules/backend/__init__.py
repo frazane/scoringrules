@@ -11,8 +11,9 @@ def register_backend(backend):
 
     The array framework is inferred from the inputs, so registering ``"numpy"``,
     ``"jax"`` or ``"torch"`` is deprecated and removed in 1.0. Registering
-    ``"numba"`` only checks that numba is installed; enable the numba fast path
-    with ``backend="numba"`` or ``scoringrules.backends.set_active("numba")``.
+    ``"numba"`` checks that numba can be imported and registers the numpy
+    namespace under ``"numba"``; it does not enable the numba fast path, use
+    ``backend="numba"`` or ``scoringrules.backends.set_active("numba")`` for that.
 
     Parameters
     ----------
@@ -22,7 +23,8 @@ def register_backend(backend):
     Raises
     ------
     BackendNotAvailable
-        If the library is not installed.
+        If the library is not installed (or, for numba, cannot be imported).
+        It is a subclass of ``ImportError``.
     """
     if backend in {"numpy", "jax", "torch"}:
         warnings.warn(
