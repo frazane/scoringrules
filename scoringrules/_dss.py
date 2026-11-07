@@ -1,7 +1,9 @@
 import typing as tp
 
+from scoringrules._dispatch import resolve_backend_arg, use_numba
+from scoringrules.backend import get_namespace
 from scoringrules.core import dss
-from scoringrules.core.utils import univariate_array_check, multivariate_array_check
+from scoringrules.core.utils_xp import multivariate_array_check, univariate_array_check
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, Backend
@@ -36,19 +38,22 @@ def dssuv_ensemble(
     bias : bool
         Logical specifying whether the biased or unbiased estimator of the standard deviation
         should be used to calculate the score. Default is the unbiased estimator (`bias=False`).
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
     score: Array
         The computed Dawid-Sebastiani Score.
     """
-    obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
-    if backend == "numba":
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
+    if numba:
         return dss._dss_uv_gufunc(obs, fct, bias)
-    else:
-        return dss.ds_score_uv(obs, fct, bias, backend=backend)
+    return dss.ds_score_uv(obs, fct, bias, xp=xp)
 
 
 def dssmv_ensemble(
@@ -84,16 +89,19 @@ def dssmv_ensemble(
     bias : bool
         Logical specifying whether the biased or unbiased estimator of the covariance matrix
         should be used to calculate the score. Default is the unbiased estimator (`bias=False`).
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
     score: Array
         The computed Dawid-Sebastiani Score.
     """
-    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-    if backend == "numba":
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
+    if numba:
         return dss._dss_mv_gufunc(obs, fct, bias)
-    else:
-        return dss.ds_score_mv(obs, fct, bias, backend=backend)
+    return dss.ds_score_mv(obs, fct, bias, xp=xp)
