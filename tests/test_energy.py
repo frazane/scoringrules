@@ -331,8 +331,10 @@ def test_energy_legacy_backend_string_deprecated():
     fct = np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
     with pytest.warns(DeprecationWarning):
         sr.es_ensemble(obs, fct, backend="numpy")
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning) as record:
         sr.twes_ensemble(obs, fct, lambda x: x, backend="numpy")
+    # one warning, pointing at the caller (this file), not at the wrapper
+    assert len(record) == 1 and record[0].filename == __file__
     with pytest.warns(DeprecationWarning):
         sr.owes_ensemble(obs, fct, lambda x: x.mean() * 0.0 + 1.0, backend="numpy")
     with pytest.warns(DeprecationWarning):

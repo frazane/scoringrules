@@ -192,8 +192,10 @@ def test_variogram_legacy_backend_string_deprecated():
     w_func = lambda x: x.mean() * 0.0 + 1.0  # noqa: E731
     with pytest.warns(DeprecationWarning):
         sr.vs_ensemble(obs, fct, backend="numpy")
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning) as record:
         sr.twvs_ensemble(obs, fct, lambda x: x, backend="numpy")
+    # one warning, pointing at the caller (this file), not at the wrapper
+    assert len(record) == 1 and record[0].filename == __file__
     with pytest.warns(DeprecationWarning):
         sr.owvs_ensemble(obs, fct, w_func, backend="numpy")
     with pytest.warns(DeprecationWarning):

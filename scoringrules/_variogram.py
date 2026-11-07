@@ -185,6 +185,8 @@ def twvs_ensemble(
     array([5.94996894, 4.72029765, 6.08947229])
     """
     resolve_backend_arg(backend)
+    # warned above, at the user's call: forward only the numba choice
+    backend = "numba" if backend == "numba" else None
     obs, fct = mv_weighted_score_chain(obs, fct, v_func)
     return vs_ensemble(
         obs,

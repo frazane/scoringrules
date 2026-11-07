@@ -172,6 +172,8 @@ def twes_ensemble(
         The computed Threshold-Weighted Energy Score.
     """
     resolve_backend_arg(backend)
+    # warned above, at the user's call: forward only the numba choice
+    backend = "numba" if backend == "numba" else None
     obs, fct = mv_weighted_score_chain(obs, fct, v_func)
     return es_ensemble(
         obs,
