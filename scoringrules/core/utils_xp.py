@@ -204,3 +204,124 @@ def apply_nan_policy_ens_uv(
         f"Invalid nan_policy '{nan_policy}'. Must be one of 'propagate', 'omit', "
         "'raise'."
     )
+
+
+def _mv_weights_ensemble_last(ens_w, fct, m_axis, v_axis, *, xp):
+    """``ens_w`` as ``xp.float_dtype(fct)`` with its ensemble axis last.
+
+    ``m_axis`` and ``v_axis`` describe the forecast layout the weights follow:
+    ``ens_w`` is that layout without the variables axis, so its ensemble axis
+    shifts down by one when ``v_axis`` comes before ``m_axis``. ``fct`` is
+    only used for its rank and dtype.
+    """
+    ens_w = xp.astype(xp.asarray(ens_w), xp.float_dtype(fct))
+    if ens_w.ndim != fct.ndim - 1:
+        raise ValueError(
+            f"Shape of weights {ens_w.shape} is not compatible with forecast "
+            f"shape {fct.shape}"
+        )
+    m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
+    v_axis = v_axis if v_axis >= 0 else fct.ndim + v_axis
+    w_axis = m_axis - 1 if v_axis < m_axis else m_axis
+    return xp.moveaxis(ens_w, w_axis, -1)
+
+
+def multivariate_weight_check(ens_w, fct, m_axis, v_axis, *, xp):
+    """Check ensemble weights against the permuted ``fct`` (``..., M, D``).
+
+    ``m_axis`` and ``v_axis`` give the layout ``ens_w`` follows (see
+    ``_mv_weights_ensemble_last``): the caller's axes for weights as passed by
+    the user, or ``-2, -1`` for weights already moved ensemble-last. Returns
+    the weights ensemble-last, as ``xp.float_dtype(fct)``, normalised to sum
+    to one over the members.
+    """
+    if ens_w is None:
+        return None
+    ens_w = _mv_weights_ensemble_last(ens_w, fct, m_axis, v_axis, xp=xp)
+    if ens_w.shape != fct.shape[:-1]:
+        raise ValueError(
+            f"Shape of weights {ens_w.shape} is not compatible with forecast "
+            f"shape {fct.shape}"
+        )
+    if xp.any(ens_w < 0):
+        raise ValueError("`ens_w` contains negative entries")
+    return ens_w / xp.sum(ens_w, axis=-1, keepdims=True)
+
+
+def mv_weighted_score_weights(obs, fct, w_func, *, xp):
+    """Outcome weights ``w_func(obs)`` (``...``) and ``w_func(fct)`` (``..., M``).
+
+    ``w_func`` receives one vector of the ``D`` variables at a time and returns
+    a scalar. The weights are cast to ``xp.float_dtype(fct)``, so boolean or
+    Python-float results follow the forecast precision.
+    """
+    dtype = xp.float_dtype(fct)
+    obs_w = xp.astype(xp.asarray(xp.apply_along_axis(w_func, obs, -1)), dtype)
+    fct_w = xp.astype(xp.asarray(xp.apply_along_axis(w_func, fct, -1)), dtype)
+    if xp.any(obs_w < 0) or xp.any(fct_w < 0):
+        raise ValueError("`w_func` returns negative values")
+    return obs_w, fct_w
+
+
+def apply_nan_policy_ens_mv(
+    obs,
+    fct,
+    nan_policy="propagate",
+    ens_w=None,
+    estimator=None,
+    m_axis=-2,
+    v_axis=-1,
+    *,
+    xp,
+):
+    """Apply a NaN policy to permuted multivariate forecasts (``..., M, D``).
+
+    A member is invalid if any of its variables, or its weight, is NaN. NaN in
+    ``obs`` always propagates. A user ``ens_w`` (laid out like the original
+    ``fct`` given ``m_axis``/``v_axis``, without the variables axis) is returned
+    ensemble-last as ``xp.float_dtype(fct)``, whatever the policy.
+
+    - ``'propagate'``: no-op.
+    - ``'raise'``: ``ValueError`` if ``obs``, ``fct`` or ``ens_w`` has a NaN.
+    - ``'omit'``: invalid members get zero weight (a 0/1 mask when no weights
+      were given) and their NaN values become ``0.0``, so the caller routes the
+      score through the weighted path. Not implemented for ``'akr'`` and
+      ``'akr_circperm'``.
+    """
+    if ens_w is not None:
+        ens_w = _mv_weights_ensemble_last(ens_w, fct, m_axis, v_axis, xp=xp)
+
+    if nan_policy == "propagate":
+        return obs, fct, ens_w
+
+    nan_mask = xp.any(xp.isnan(fct), axis=-1)  # (..., M)
+    if ens_w is not None:
+        nan_mask = nan_mask | xp.isnan(ens_w)
+
+    if nan_policy == "raise":
+        if xp.any(nan_mask) or xp.any(xp.isnan(obs)):
+            raise ValueError(
+                "NaN values encountered in input. Use nan_policy='propagate' or "
+                "nan_policy='omit' to handle NaN values."
+            )
+        return obs, fct, ens_w
+
+    if nan_policy == "omit":
+        if estimator in ["akr", "akr_circperm"]:
+            raise NotImplementedError(
+                f"NaN handling with nan_policy='omit' is not implemented for "
+                f"estimator '{estimator}'."
+            )
+        # zero-weighted members never contribute; zeroing their values only
+        # keeps NaN out of the arithmetic.
+        fct = xp.where(nan_mask[..., None], 0.0, fct)
+        if ens_w is None:
+            ens_w = xp.astype(~nan_mask, xp.float_dtype(fct))
+        else:
+            ens_w = xp.where(nan_mask, 0.0, ens_w)
+        return obs, fct, ens_w
+
+    raise ValueError(
+        f"Invalid nan_policy '{nan_policy}'. Must be one of 'propagate', 'omit', "
+        "'raise'."
+    )

@@ -145,7 +145,7 @@ def mv_weighted_score_weights(obs, fct, w_func=None, backend=None):
     return obs_w, fct_w
 
 
-def mv_weighted_score_chain(obs, fct, v_func=None):
+def mv_weighted_score_chain(obs, fct, v_func):
     """Calculate transformed observations and ensemble members for threshold-weighted scoring rules given a chaining function."""
     obs, fct = map(v_func, (obs, fct))
     return obs, fct
