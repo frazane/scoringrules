@@ -1,13 +1,14 @@
 import typing as tp
 
+from scoringrules._dispatch import resolve_backend_arg, use_numba
+from scoringrules.backend import get_namespace
 from scoringrules.core import energy
-from scoringrules.core.utils import (
+from scoringrules.core.utils import estimator_check, mv_weighted_score_chain
+from scoringrules.core.utils_xp import (
+    apply_nan_policy_ens_mv,
     multivariate_array_check,
     multivariate_weight_check,
-    estimator_check,
-    mv_weighted_score_chain,
     mv_weighted_score_weights,
-    apply_nan_policy_ens_mv,
 )
 
 if tp.TYPE_CHECKING:
@@ -58,8 +59,9 @@ def es_ensemble(
         score; 'raise' errors on any NaN; 'omit' drops invalid members by
         zero-weighting them. 'omit' is not implemented for the 'akr' and
         'akr_circperm' estimators. NaN in `obs` always propagates.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -78,32 +80,36 @@ def es_ensemble(
     :ref:`theory.multivariate`
         Some theoretical background on scoring rules for multivariate forecasts.
     """
-    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-
-    # apply nan policy before weight normalisation so NaN positions in a
-    # user-supplied ens_w stay detectable. For 'omit', invalid members become
-    # zero-weighted and the score is routed through the weighted path; ens_w is
-    # returned aligned ensemble-last.
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
+    # apply the nan policy before normalising the weights, so NaN in a user ens_w
+    # stays detectable. For 'omit', invalid members become zero-weighted and the
+    # score goes through the weighted path. ens_w comes back ensemble-last.
     obs, fct, ens_w = apply_nan_policy_ens_mv(
-        obs, fct, nan_policy, ens_w, estimator=estimator, m_axis=m_axis, backend=backend
+        obs,
+        fct,
+        nan_policy,
+        ens_w,
+        estimator=estimator,
+        m_axis=m_axis,
+        v_axis=v_axis,
+        xp=xp,
     )
+    if ens_w is not None:
+        # already ensemble-last: (-2, -1) only checks and normalises
+        ens_w = multivariate_weight_check(ens_w, fct, -2, -1, xp=xp)
 
-    if ens_w is None:
-        if backend == "numba":
+    if numba:
+        if ens_w is None:
             estimator_check(estimator, energy.estimator_gufuncs)
             return energy.estimator_gufuncs[estimator](obs, fct)
-        else:
-            return energy.es(obs, fct, estimator=estimator, backend=backend)
-    else:
-        # ens_w is already aligned ensemble-last by the nan-policy helper, so
-        # m_axis=-2 maps to that last axis (a no-op realignment) while still
-        # running the shape/non-negativity checks and renormalisation.
-        ens_w = multivariate_weight_check(ens_w, fct, -2, backend=backend)
-        if backend == "numba":
-            estimator_check(estimator, energy.estimator_gufuncs_w)
-            return energy.estimator_gufuncs_w[estimator](obs, fct, ens_w)
-        else:
-            return energy.es_w(obs, fct, ens_w, estimator=estimator, backend=backend)
+        estimator_check(estimator, energy.estimator_gufuncs_w)
+        return energy.estimator_gufuncs_w[estimator](obs, fct, ens_w)
+    if ens_w is None:
+        return energy.es(obs, fct, estimator=estimator, xp=xp)
+    return energy.es_w(obs, fct, ens_w, estimator=estimator, xp=xp)
 
 
 def twes_ensemble(
@@ -156,14 +162,16 @@ def twes_ensemble(
         score; 'raise' errors on any NaN; 'omit' drops invalid members by
         zero-weighting them. 'omit' is not implemented for the 'akr' and
         'akr_circperm' estimators. NaN in `obs` always propagates.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
     twes_ensemble : array_like
         The computed Threshold-Weighted Energy Score.
     """
+    resolve_backend_arg(backend)
     obs, fct = mv_weighted_score_chain(obs, fct, v_func)
     return es_ensemble(
         obs,
@@ -226,32 +234,35 @@ def owes_ensemble(
         variables, or its weight, is NaN). 'propagate' lets NaN flow to a NaN
         score; 'raise' errors on any NaN; 'omit' drops invalid members by
         zero-weighting them. NaN in `obs` always propagates.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
     owes_ensemble : array_like
         The computed Outcome-Weighted Energy Score.
     """
-    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-    # apply nan policy before deriving the outcome weights, so the (now zeroed)
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
+    # apply the nan policy before deriving the outcome weights, so the (now zeroed)
     # NaN members do not leak NaN into obs_w/fct_w; they carry zero ens_w anyway.
     obs, fct, ens_w = apply_nan_policy_ens_mv(
-        obs, fct, nan_policy, ens_w, m_axis=m_axis, backend=backend
+        obs, fct, nan_policy, ens_w, m_axis=m_axis, v_axis=v_axis, xp=xp
     )
-    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
-    if ens_w is None:
-        if backend == "numba":
+    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    if ens_w is not None:
+        ens_w = multivariate_weight_check(ens_w, fct, -2, -1, xp=xp)
+
+    if numba:
+        if ens_w is None:
             return energy.estimator_gufuncs["ownrg"](obs, fct, obs_w, fct_w)
-        else:
-            return energy.owes(obs, fct, obs_w, fct_w, backend=backend)
-    else:
-        ens_w = multivariate_weight_check(ens_w, fct, -2, backend=backend)
-        if backend == "numba":
-            return energy.estimator_gufuncs_w["ownrg"](obs, fct, obs_w, fct_w, ens_w)
-        else:
-            return energy.owes_w(obs, fct, obs_w, fct_w, ens_w=ens_w, backend=backend)
+        return energy.estimator_gufuncs_w["ownrg"](obs, fct, obs_w, fct_w, ens_w)
+    if ens_w is None:
+        return energy.owes(obs, fct, obs_w, fct_w, xp=xp)
+    return energy.owes_w(obs, fct, obs_w, fct_w, ens_w, xp=xp)
 
 
 def vres_ensemble(
@@ -304,28 +315,32 @@ def vres_ensemble(
         variables, or its weight, is NaN). 'propagate' lets NaN flow to a NaN
         score; 'raise' errors on any NaN; 'omit' drops invalid members by
         zero-weighting them. NaN in `obs` always propagates.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
     vres_ensemble : array_like
         The computed Vertically Re-scaled Energy Score.
     """
-    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-    # apply nan policy before deriving the outcome weights (see owes_ensemble).
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
+    # apply the nan policy before deriving the outcome weights, so the (now zeroed)
+    # NaN members do not leak NaN into obs_w/fct_w; they carry zero ens_w anyway.
     obs, fct, ens_w = apply_nan_policy_ens_mv(
-        obs, fct, nan_policy, ens_w, m_axis=m_axis, backend=backend
+        obs, fct, nan_policy, ens_w, m_axis=m_axis, v_axis=v_axis, xp=xp
     )
-    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
-    if ens_w is None:
-        if backend == "numba":
+    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    if ens_w is not None:
+        ens_w = multivariate_weight_check(ens_w, fct, -2, -1, xp=xp)
+
+    if numba:
+        if ens_w is None:
             return energy.estimator_gufuncs["vrnrg"](obs, fct, obs_w, fct_w)
-        else:
-            return energy.vres(obs, fct, obs_w, fct_w, backend=backend)
-    else:
-        ens_w = multivariate_weight_check(ens_w, fct, -2, backend=backend)
-        if backend == "numba":
-            return energy.estimator_gufuncs_w["vrnrg"](obs, fct, obs_w, fct_w, ens_w)
-        else:
-            return energy.vres_w(obs, fct, obs_w, fct_w, ens_w=ens_w, backend=backend)
+        return energy.estimator_gufuncs_w["vrnrg"](obs, fct, obs_w, fct_w, ens_w)
+    if ens_w is None:
+        return energy.vres(obs, fct, obs_w, fct_w, xp=xp)
+    return energy.vres_w(obs, fct, obs_w, fct_w, ens_w, xp=xp)
