@@ -555,4 +555,5 @@ def test_weighted_crps_paths_agree(score, weighted, M, case, paths_agree, reques
             )
         )
     obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted)
-    paths_agree(getattr(sr, score), obs, fct, -0.5, 1.0, **kwargs)
+    raises = ValueError if case == "nan_raise" else None
+    paths_agree(getattr(sr, score), obs, fct, -0.5, 1.0, raises=raises, **kwargs)

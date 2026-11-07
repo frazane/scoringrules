@@ -353,12 +353,14 @@ def owcrps_ensemble(
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
-    obs, fct, ens_w = apply_nan_policy_ens_uv(obs, fct, nan_policy, ens_w, xp=xp)
+    obs, fct, ens_w = apply_nan_policy_ens_uv(
+        obs, fct, nan_policy, ens_w, m_axis=m_axis, xp=xp
+    )
     obs_w, fct_w, ens_w = apply_nan_policy_ens_uv(
         obs_w, fct_w, nan_policy, ens_w=ens_w, xp=xp
     )
     if ens_w is not None:
-        ens_w = univariate_weight_check(ens_w, fct, m_axis, xp=xp)
+        ens_w = univariate_weight_check(ens_w, fct, -1, xp=xp)
 
     if numba:
         if ens_w is None:
@@ -464,12 +466,14 @@ def vrcrps_ensemble(
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
-    obs, fct, ens_w = apply_nan_policy_ens_uv(obs, fct, nan_policy, ens_w, xp=xp)
+    obs, fct, ens_w = apply_nan_policy_ens_uv(
+        obs, fct, nan_policy, ens_w, m_axis=m_axis, xp=xp
+    )
     obs_w, fct_w, ens_w = apply_nan_policy_ens_uv(
         obs_w, fct_w, nan_policy, ens_w=ens_w, xp=xp
     )
     if ens_w is not None:
-        ens_w = univariate_weight_check(ens_w, fct, m_axis, xp=xp)
+        ens_w = univariate_weight_check(ens_w, fct, -1, xp=xp)
 
     if numba:
         if ens_w is None:

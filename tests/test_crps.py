@@ -416,13 +416,26 @@ def test_crps_ensemble_correctness(backend, to_backend, backend_kwargs):
         assert np.isclose(res, 0.6126602)
 
 
+def _expected_raise(case, estimator):
+    if case == "nan_raise":
+        return ValueError
+    if case.startswith("nan_omit") and estimator in ("int", "akr", "akr_circperm"):
+        return NotImplementedError
+    return None
+
+
 def _ensemble_parity_params():
     for estimator in ESTIMATORS:
         for weighted in (False, True):
             for M in (6, 7):
                 for case in UV_CASES:
                     marks = ()
-                    if estimator == "akr_circperm" and weighted and M % 2 == 0:
+                    if (
+                        estimator == "akr_circperm"
+                        and weighted
+                        and M % 2 == 0
+                        and _expected_raise(case, estimator) is None
+                    ):
                         marks = pytest.mark.xfail(
                             raises=AssertionError,
                             strict=True,
@@ -441,10 +454,13 @@ def _ensemble_parity_params():
 @pytest.mark.parametrize("estimator,weighted,M,case", _ensemble_parity_params())
 def test_crps_ensemble_paths_agree(estimator, weighted, M, case, paths_agree):
     obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted)
-    paths_agree(sr.crps_ensemble, obs, fct, estimator=estimator, **kwargs)
+    raises = _expected_raise(case, estimator)
+    paths_agree(
+        sr.crps_ensemble, obs, fct, estimator=estimator, raises=raises, **kwargs
+    )
 
 
-@pytest.mark.parametrize("case", UV_CASES)
+@pytest.mark.parametrize("case", [c for c in UV_CASES if not c.startswith("nan_")])
 def test_crps_quantile_paths_agree(case, paths_agree):
     obs, fct, kwargs = uv_ensemble_inputs(case, 7, weighted=False)
     fct = np.sort(fct, axis=kwargs.get("m_axis", -1))
