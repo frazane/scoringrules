@@ -7,7 +7,14 @@ import typing as tp
 
 from array_api_compat import is_array_api_obj
 
-from .utils import EPSILON, _K_AXIS, _M_AXIS_UV, _shape_compatibility_check
+from .utils import (
+    EPSILON,
+    _K_AXIS,
+    _M_AXIS,
+    _M_AXIS_UV,
+    _V_AXIS,
+    _shape_compatibility_check,
+)
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, NanPolicy  # noqa: F401
@@ -76,6 +83,22 @@ def categorical_array_check(obs, fct, k_axis, onehot, *, xp):
         categories = xp.arange(1, fct.shape[-1] + 1, device=xp.device(obs))
         obs = xp.astype(xp.expand_dims(obs, axis=-1) == categories, xp.float_dtype(fct))
     return obs, fct
+
+
+def _multivariate_shape_permute(obs, fct, m_axis, v_axis, *, xp):
+    v_axis_obs = v_axis - 1 if m_axis < v_axis else v_axis
+    fct = xp.moveaxis(fct, (m_axis, v_axis), (_M_AXIS, _V_AXIS))
+    obs = xp.moveaxis(obs, v_axis_obs, _V_AXIS)
+    return obs, fct
+
+
+def multivariate_array_check(obs, fct, m_axis, v_axis, *, xp):
+    """Check and adapt the shapes of multivariate forecasts and observations arrays."""
+    obs, fct = xp.asarray(obs), xp.asarray(fct)
+    m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
+    v_axis = v_axis if v_axis >= 0 else fct.ndim + v_axis
+    _shape_compatibility_check(obs, fct, m_axis)
+    return _multivariate_shape_permute(obs, fct, m_axis, v_axis, xp=xp)
 
 
 def univariate_weight_check(ens_w, fct, m_axis, xp):
