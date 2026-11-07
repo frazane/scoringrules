@@ -4,35 +4,35 @@ Known non-jittable, with the validation line that blocks each (the worklist for
 a 1.0 ``validate=`` flag):
 
 - weighted ``crps_ensemble`` (``ens_w=...``): ``xp.any(ens_w < 0)`` in
-  ``core/utils_xp.py::univariate_weight_check``.
+  ``core/utils.py::univariate_weight_check``.
 - ``crps_ensemble(..., nan_policy="raise")``: ``xp.any(nan_mask)`` in
-  ``core/utils_xp.py::apply_nan_policy_ens_uv``.
+  ``core/utils.py::apply_nan_policy_ens_uv``.
 - ``owcrps_ensemble`` / ``vrcrps_ensemble``: ``xp.any(obs_w < 0)`` in
-  ``core/utils_xp.py::uv_weighted_score_weights``.
+  ``core/utils.py::uv_weighted_score_weights``.
 - ``crps_beta``: ``_is_scalar_value(lower, 0.0)`` (``.item()``) and
   ``xp.any(lower >= upper)`` in ``core/crps/_closed.py::beta``.
 - ``crps_exponentialM``: ``_is_scalar_value`` (``.item()``) on ``location``,
   ``mass`` and ``scale`` in ``core/crps/_closed.py::exponentialM``.
 - ``brier_score`` / ``log_score``: ``xp.any(fct < 0.0)`` in
-  ``core/utils_xp.py::binary_array_check``.
+  ``core/utils.py::binary_array_check``.
 - ``rps_score`` / ``rls_score``: ``xp.any(fct < 0.0)`` in
-  ``core/utils_xp.py::categorical_array_check``.
+  ``core/utils.py::categorical_array_check``.
 - ``quantile_score``: ``xp.any(alpha < 0)`` in ``core/quantile.py::quantile_score``.
 - weighted ``es_ensemble`` / ``twes_ensemble`` / ``vs_ensemble`` / ``twvs_ensemble``
   (``ens_w=...``, and ``es_ensemble(..., nan_policy="omit")``): ``xp.any(ens_w < 0)``
-  in ``core/utils_xp.py::multivariate_weight_check``.
+  in ``core/utils.py::multivariate_weight_check``.
 - ``es_ensemble(..., nan_policy="raise")``: ``xp.any(nan_mask)`` in
-  ``core/utils_xp.py::apply_nan_policy_ens_mv``.
+  ``core/utils.py::apply_nan_policy_ens_mv``.
 - ``owes_ensemble`` / ``vres_ensemble`` / ``owvs_ensemble`` / ``vrvs_ensemble``:
-  ``xp.any(obs_w < 0)`` in ``core/utils_xp.py::mv_weighted_score_weights``.
+  ``xp.any(obs_w < 0)`` in ``core/utils.py::mv_weighted_score_weights``.
 - weighted ``gksuv_ensemble`` / ``twgksuv_ensemble`` (``ens_w=...``):
-  ``xp.any(ens_w < 0)`` in ``core/utils_xp.py::univariate_weight_check``.
+  ``xp.any(ens_w < 0)`` in ``core/utils.py::univariate_weight_check``.
 - weighted ``gksmv_ensemble`` / ``twgksmv_ensemble`` (``ens_w=...``):
-  ``xp.any(ens_w < 0)`` in ``core/utils_xp.py::multivariate_weight_check``.
+  ``xp.any(ens_w < 0)`` in ``core/utils.py::multivariate_weight_check``.
 - ``owgksuv_ensemble`` / ``vrgksuv_ensemble``: ``xp.any(obs_w < 0)`` in
-  ``core/utils_xp.py::uv_weighted_score_weights``.
+  ``core/utils.py::uv_weighted_score_weights``.
 - ``owgksmv_ensemble`` / ``vrgksmv_ensemble``: ``xp.any(obs_w < 0)`` in
-  ``core/utils_xp.py::mv_weighted_score_weights``.
+  ``core/utils.py::mv_weighted_score_weights``.
 """
 
 import numpy as np

@@ -47,8 +47,8 @@ class _RequireExplicitDevice(TorchFunctionMode):
 
 @pytest.fixture(autouse=True)
 def _torch_backend():
-    # the legacy (non-array-API) families still need the torch backend
-    # registered and passed explicitly; silence its DeprecationWarning.
+    # ``sr.backends["torch"]`` below needs the torch backend registered;
+    # silence the DeprecationWarnings of the legacy backend calls.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         sr.register_backend("torch")
@@ -59,7 +59,7 @@ def _meta(*shape):
     return torch.zeros(shape, device=META)
 
 
-# --- array-API path (CRPS family) -------------------------------------------
+# --- CRPS family -------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -151,7 +151,7 @@ def test_crps_ensemble_created_arrays_keep_autograd(estimator):
     assert fct.grad is not None and torch.isfinite(fct.grad).all()
 
 
-# --- legacy ArrayBackend path (unmigrated families) --------------------------
+# --- other families (deprecated backend string) and the ArrayBackend ---------
 
 
 @pytest.mark.parametrize(

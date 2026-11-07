@@ -1,6 +1,6 @@
 import typing as tp
 
-from scoringrules.core.utils_xp import asarray_matching
+from scoringrules.core.utils import asarray_matching
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike

@@ -4,7 +4,7 @@ from typing import Optional
 from scoringrules._dispatch import resolve_backend_arg, use_numba
 from scoringrules.backend import get_namespace
 from scoringrules.core import interval
-from scoringrules.core.utils_xp import asarray_matching
+from scoringrules.core.utils import asarray_matching
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend

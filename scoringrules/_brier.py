@@ -3,7 +3,7 @@ import typing as tp
 from scoringrules._dispatch import resolve_backend_arg
 from scoringrules.backend import get_namespace
 from scoringrules.core import brier
-from scoringrules.core.utils_xp import binary_array_check, categorical_array_check
+from scoringrules.core.utils import binary_array_check, categorical_array_check
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
