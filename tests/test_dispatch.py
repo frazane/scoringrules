@@ -13,7 +13,16 @@ from scoringrules.backend.registry import BackendNotAvailable
 @pytest.fixture()
 def numba_missing(monkeypatch):
     """Pretend numba is not installed."""
-    monkeypatch.setattr(_dispatch, "_numba_installed", lambda: False)
+    err = ModuleNotFoundError("No module named 'numba'", name="numba")
+    monkeypatch.setattr(_dispatch, "_numba_import_error", lambda: err)
+
+
+@pytest.fixture()
+def numba_broken(monkeypatch):
+    """Pretend numba is installed but fails to import (e.g. numpy mismatch)."""
+    err = ImportError("Numba needs NumPy 2.0 or less")
+    monkeypatch.setattr(_dispatch, "_numba_import_error", lambda: err)
+    return err
 
 
 def test_default_numba_flag_is_off():
@@ -87,6 +96,26 @@ def test_numba_missing_set_active_raises(numba_missing, restore_active):
     with pytest.raises(BackendNotAvailable, match=r"scoringrules\[numba\]"):
         backends.set_active("numba")
     assert _dispatch._numba_active is False
+
+
+def test_numba_broken_reports_and_chains_import_error(numba_broken, restore_active):
+    with pytest.raises(ImportError, match="could not be imported") as info:
+        sr.crps_ensemble(np.zeros(3), np.zeros((3, 5)), backend="numba")
+    assert "NumPy 2.0" in str(info.value)
+    assert "pip install" not in str(info.value)
+    assert info.value.__cause__ is numba_broken
+    with pytest.raises(BackendNotAvailable, match="could not be imported") as info:
+        backends.set_active("numba")
+    assert info.value.__cause__ is numba_broken
+    assert _dispatch._numba_active is False
+
+
+def test_numba_broken_not_listed(numba_broken):
+    # the registry uses the same availability check as ``backend="numba"``
+    assert "numba" not in backends.available_backends
+    assert "numba" not in type(backends)()
+    with pytest.raises(BackendNotAvailable, match="could not be imported"):
+        backends.register_backend("numba")
 
 
 def test_numba_missing_default_path_unaffected(numba_missing):

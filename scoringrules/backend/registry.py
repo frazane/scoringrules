@@ -42,7 +42,7 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
 
     def __init__(self):
         self.register_backend("numpy")
-        if find_spec("numba") is not None:
+        if _dispatch._numba_available():
             self.register_backend("numba")
 
         # Name returned by ``active``; the numba switch itself is
@@ -51,11 +51,24 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
 
     @property
     def available_backends(self):
-        """Find if a backend library is available without importing it."""
-        return [b for b in _ALL_BACKENDS if find_spec(b) is not None]
+        """The backends whose library is installed.
+
+        jax and torch are looked up without importing them. numba must also
+        import, with the same check as ``backend="numba"``: the gufunc modules
+        import it with scoringrules anyway.
+        """
+        return [
+            b
+            for b in _ALL_BACKENDS
+            if (_dispatch._numba_available() if b == "numba" else find_spec(b))
+        ]
 
     def register_backend(self, backend_name: "Backend"):
         """Register a backend. Currently supported backends are numpy, numba, jax, and torch."""
+        if backend_name == "numba" and not _dispatch._numba_available():
+            raise _dispatch.numba_unavailable_error(
+                "The numba backend", BackendNotAvailable
+            )
         if backend_name not in self.available_backends:
             raise BackendNotAvailable(
                 f"The backend '{backend_name}' is not available. "
@@ -81,8 +94,8 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
         """Select the global default backend.
 
         ``"numba"`` enables the numba gufuncs for numpy inputs when ``backend`` is
-        not passed to a score (raises ``BackendNotAvailable`` if numba is not
-        installed). ``"numpy"``, ``"jax"`` and ``"torch"`` are deprecated: they
+        not passed to a score (raises ``BackendNotAvailable`` if numba cannot
+        be imported). ``"numpy"``, ``"jax"`` and ``"torch"`` are deprecated: they
         only switch numba off again.
         """
         if backend in _ARRAY_API_BACKENDS:
@@ -91,9 +104,9 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
                 DeprecationWarning,
                 stacklevel=2,
             )
-        elif backend == "numba" and not _dispatch._numba_installed():
-            raise BackendNotAvailable(
-                "The backend 'numba' is not available. " + _dispatch.NUMBA_INSTALL_HINT
+        elif backend == "numba" and not _dispatch._numba_available():
+            raise _dispatch.numba_unavailable_error(
+                "set_active('numba')", BackendNotAvailable
             )
         _dispatch._set_numba_active(backend == "numba")
         self._active = backend
