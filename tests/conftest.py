@@ -132,7 +132,7 @@ def to_backend_float32(backend):
 @pytest.fixture()
 def native(to_backend, backend):
     """Wrap a score so numpy array arguments are converted with ``to_backend``
-    and shaped results are checked with ``assert_inferred``.
+    and results are checked with ``assert_inferred`` (except 0-d numba ones).
 
     ``native(sr.es_ensemble)(obs, fct, ens_w=w)`` keeps tests that build their
     inputs with numpy (NaN patterns, sub-ensembles) running on every framework.
@@ -146,7 +146,8 @@ def native(to_backend, backend):
                 for k, v in kwargs.items()
             }
             res = fn(*args, **kwargs)
-            if getattr(res, "shape", ()) != ():
+            # the lazy numba gufuncs return a Python float for 0-d results
+            if backend != "numba" or getattr(res, "shape", ()) != ():
                 assert_inferred(res, backend)
             return res
 
