@@ -1,8 +1,9 @@
 import typing as tp
 
-from scoringrules.backend import backends
+from scoringrules._dispatch import resolve_backend_arg
+from scoringrules.backend import get_namespace
 from scoringrules.core import logarithmic
-from scoringrules.core.utils import univariate_array_check
+from scoringrules.core.utils_xp import asarray_matching, univariate_array_check
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
@@ -37,8 +38,10 @@ def logs_ensemble(
     bw : array_like
         The bandwidth parameter for each forecast ensemble. If not given, estimated using
         Silverman's rule of thumb.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -50,23 +53,33 @@ def logs_ensemble(
     >>> import scoringrules as sr
     >>> sr.logs_ensemble(obs, pred)
     """
-    B = backends.active if backend is None else backends[backend]
-    obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, fct, bw)
+    obs, fct, bw = asarray_matching(obs, fct, bw, xp=xp)
+    obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
+    bw = _ensemble_bw(fct, bw, xp=xp)
 
     M = fct.shape[-1]  # number of ensemble members
+    w = xp.ones(fct.shape, dtype=xp.float_dtype(fct), device=xp.device(fct)) / M
 
-    # Silverman's rule of thumb for estimating the bandwidth parameter
+    return logarithmic.mixnorm(obs, fct, bw, w, xp=xp)
+
+
+def _ensemble_bw(fct: "Array", bw: "Array | None", *, xp) -> "Array":
+    """Kernel bandwidth for every ensemble member, of shape ``fct.shape``.
+
+    ``bw`` is one bandwidth per forecast (broadcast over the members). If not
+    given, it is estimated with Silverman's rule of thumb. A given ``bw`` is
+    already an array (``asarray_matching`` in the callers).
+    """
+    M = fct.shape[-1]  # number of ensemble members
     if bw is None:
-        sigmahat = B.std(fct, axis=-1)
-        q75 = B.quantile(fct, 0.75, axis=-1)
-        q25 = B.quantile(fct, 0.25, axis=-1)
+        sigmahat = xp.std(fct, axis=-1, correction=1)
+        q75 = xp.quantile(fct, 0.75, axis=-1)
+        q25 = xp.quantile(fct, 0.25, axis=-1)
         iqr = q75 - q25
-        bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
-    bw = B.stack([bw] * M, axis=-1)
-
-    w = B.ones(fct.shape, dtype=fct.dtype, device=B.device(fct)) / M
-
-    return logarithmic.mixnorm(obs, fct, bw, w, backend=backend)
+        bw = 1.06 * xp.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
+    return xp.broadcast_to(bw[..., None], (*bw.shape, M))
 
 
 def clogs_ensemble(
@@ -109,8 +122,10 @@ def clogs_ensemble(
     cens : Boolean
         Boolean specifying whether to return the conditional ('cens = False') or the censored
         likelihood score ('cens = True').
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -122,19 +137,11 @@ def clogs_ensemble(
     >>> import scoringrules as sr
     >>> sr.clogs_ensemble(obs, pred, -1.0, 1.0)
     """
-    B = backends.active if backend is None else backends[backend]
-    obs, fct = univariate_array_check(obs, fct, m_axis, backend=backend)
-
-    M = fct.shape[-1]  # number of ensemble members
-
-    # Silverman's rule of thumb for estimating the bandwidth parameter
-    if bw is None:
-        sigmahat = B.std(fct, axis=-1)
-        q75 = B.quantile(fct, 0.75, axis=-1)
-        q25 = B.quantile(fct, 0.25, axis=-1)
-        iqr = q75 - q25
-        bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
-    bw = B.stack([bw] * M, axis=-1)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, fct, a, b, bw)
+    obs, fct, a, b, bw = asarray_matching(obs, fct, a, b, bw, xp=xp)
+    obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
+    bw = _ensemble_bw(fct, bw, xp=xp)
 
     return logarithmic.clogs_ensemble(
         obs,
@@ -143,7 +150,7 @@ def clogs_ensemble(
         b=b,
         bw=bw,
         cens=cens,
-        backend=backend,
+        xp=xp,
     )
 
 
@@ -172,8 +179,10 @@ def logs_beta(
         Lower bound of the forecast beta distribution.
     upper : array_like
         Upper bound of the forecast beta distribution.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -185,7 +194,10 @@ def logs_beta(
     >>> import scoringrules as sr
     >>> sr.logs_beta(0.3, 0.7, 1.1)
     """
-    return logarithmic.beta(obs, a, b, lower, upper, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, a, b, lower, upper)
+    obs, a, b, lower, upper = asarray_matching(obs, a, b, lower, upper, xp=xp)
+    return logarithmic.beta(obs, a, b, lower, upper, xp=xp)
 
 
 def logs_binomial(
@@ -207,8 +219,10 @@ def logs_binomial(
         Size parameter of the forecast binomial distribution as an integer or array of integers.
     prob : array_like
         Probability parameter of the forecast binomial distribution as a float or array of floats.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -220,7 +234,10 @@ def logs_binomial(
     >>> import scoringrules as sr
     >>> sr.logs_binomial(4, 10, 0.5)
     """
-    return logarithmic.binomial(obs, n, prob, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, n, prob)
+    obs, n, prob = asarray_matching(obs, n, prob, xp=xp)
+    return logarithmic.binomial(obs, n, prob, xp=xp)
 
 
 def logs_exponential(
@@ -239,8 +256,10 @@ def logs_exponential(
         The observed values.
     rate : array_like
         Rate parameter of the forecast exponential distribution.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -252,7 +271,10 @@ def logs_exponential(
     >>> import scoringrules as sr
     >>> sr.logs_exponential(0.8, 3.0)
     """
-    return logarithmic.exponential(obs, rate, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, rate)
+    obs, rate = asarray_matching(obs, rate, xp=xp)
+    return logarithmic.exponential(obs, rate, xp=xp)
 
 
 def logs_exponential2(
@@ -274,8 +296,10 @@ def logs_exponential2(
         Location parameter of the forecast exponential distribution.
     scale : array_like
         Scale parameter of the forecast exponential distribution.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -287,7 +311,10 @@ def logs_exponential2(
     >>> import scoringrules as sr
     >>> sr.logs_exponential2(0.2, 0.0, 1.0)
     """
-    return logarithmic.exponential2(obs, location, scale, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, location, scale)
+    obs, location, scale = asarray_matching(obs, location, scale, xp=xp)
+    return logarithmic.exponential2(obs, location, scale, xp=xp)
 
 
 def logs_2pexponential(
@@ -312,8 +339,10 @@ def logs_2pexponential(
         Second scale parameter of the forecast two-piece exponential distribution.
     location : array_like
         Location parameter of the forecast two-piece exponential distribution.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -325,7 +354,12 @@ def logs_2pexponential(
     >>> import scoringrules as sr
     >>> sr.logs_2pexponential(0.8, 3.0, 1.4, 0.0)
     """
-    return logarithmic.twopexponential(obs, scale1, scale2, location, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, scale1, scale2, location)
+    obs, scale1, scale2, location = asarray_matching(
+        obs, scale1, scale2, location, xp=xp
+    )
+    return logarithmic.twopexponential(obs, scale1, scale2, location, xp=xp)
 
 
 def logs_gamma(
@@ -374,7 +408,10 @@ def logs_gamma(
     if rate is None:
         rate = 1.0 / scale
 
-    return logarithmic.gamma(obs, shape, rate, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, shape, rate, scale)
+    obs, shape, rate = asarray_matching(obs, shape, rate, xp=xp)
+    return logarithmic.gamma(obs, shape, rate, xp=xp)
 
 
 def logs_gev(
@@ -399,8 +436,10 @@ def logs_gev(
         Location parameter of the forecast GEV distribution.
     scale : array_like
         Scale parameter of the forecast GEV distribution.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -412,7 +451,10 @@ def logs_gev(
     >>> import scoringrules as sr
     >>> sr.logs_gev(0.3, 0.1)
     """
-    return logarithmic.gev(obs, shape, location, scale, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, shape, location, scale)
+    obs, shape, location, scale = asarray_matching(obs, shape, location, scale, xp=xp)
+    return logarithmic.gev(obs, shape, location, scale, xp=xp)
 
 
 def logs_gpd(
@@ -438,8 +480,10 @@ def logs_gpd(
         Location parameter of the forecast GPD distribution.
     scale : array_like
         Scale parameter of the forecast GPD distribution.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -451,7 +495,10 @@ def logs_gpd(
     >>> import scoringrules as sr
     >>> sr.logs_gpd(0.3, 0.9)
     """
-    return logarithmic.gpd(obs, shape, location, scale, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, shape, location, scale)
+    obs, shape, location, scale = asarray_matching(obs, shape, location, scale, xp=xp)
+    return logarithmic.gpd(obs, shape, location, scale, xp=xp)
 
 
 def logs_hypergeometric(
@@ -476,8 +523,10 @@ def logs_hypergeometric(
         Number of failure states in the population.
     k : array_like
         Number of draws, without replacement. Must be in 0, 1, ..., m + n.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -489,7 +538,10 @@ def logs_hypergeometric(
     >>> import scoringrules as sr
     >>> sr.logs_hypergeometric(5, 7, 13, 12)
     """
-    return logarithmic.hypergeometric(obs, m, n, k, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, m, n, k)
+    obs, m, n, k = asarray_matching(obs, m, n, k, xp=xp)
+    return logarithmic.hypergeometric(obs, m, n, k, xp=xp)
 
 
 def logs_laplace(
@@ -524,7 +576,10 @@ def logs_laplace(
     >>> import scoringrules as sr
     >>> sr.logs_laplace(0.3, 0.1, 0.2)
     """
-    return logarithmic.laplace(obs, location, scale, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, location, scale)
+    obs, location, scale = asarray_matching(obs, location, scale, xp=xp)
+    return logarithmic.laplace(obs, location, scale, xp=xp)
 
 
 def logs_loglaplace(
@@ -557,7 +612,10 @@ def logs_loglaplace(
     >>> import scoringrules as sr
     >>> sr.logs_loglaplace(3.0, 0.1, 0.9)
     """
-    return logarithmic.loglaplace(obs, locationlog, scalelog, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, locationlog, scalelog)
+    obs, locationlog, scalelog = asarray_matching(obs, locationlog, scalelog, xp=xp)
+    return logarithmic.loglaplace(obs, locationlog, scalelog, xp=xp)
 
 
 def logs_logistic(
@@ -590,7 +648,10 @@ def logs_logistic(
     >>> import scoringrules as sr
     >>> sr.logs_logistic(0.0, 0.4, 0.1)
     """
-    return logarithmic.logistic(obs, mu, sigma, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, mu, sigma)
+    obs, mu, sigma = asarray_matching(obs, mu, sigma, xp=xp)
+    return logarithmic.logistic(obs, mu, sigma, xp=xp)
 
 
 def logs_loglogistic(
@@ -611,8 +672,10 @@ def logs_loglogistic(
         Location parameter of the log-logistic distribution.
     sigmalog : array_like
         Scale parameter of the log-logistic distribution.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -624,7 +687,10 @@ def logs_loglogistic(
     >>> import scoringrules as sr
     >>> sr.logs_loglogistic(3.0, 0.1, 0.9)
     """
-    return logarithmic.loglogistic(obs, mulog, sigmalog, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, mulog, sigmalog)
+    obs, mulog, sigmalog = asarray_matching(obs, mulog, sigmalog, xp=xp)
+    return logarithmic.loglogistic(obs, mulog, sigmalog, xp=xp)
 
 
 def logs_lognormal(
@@ -656,7 +722,10 @@ def logs_lognormal(
     >>> import scoringrules as sr
     >>> sr.logs_lognormal(0.0, 0.4, 0.1)
     """
-    return logarithmic.lognormal(obs, mulog, sigmalog, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, mulog, sigmalog)
+    obs, mulog, sigmalog = asarray_matching(obs, mulog, sigmalog, xp=xp)
+    return logarithmic.lognormal(obs, mulog, sigmalog, xp=xp)
 
 
 def logs_mixnorm(
@@ -684,8 +753,10 @@ def logs_mixnorm(
         Non-negative weights assigned to each component.
     mc_axis : int
         The axis corresponding to the mixture components. Default is the last axis.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -697,21 +768,20 @@ def logs_mixnorm(
     >>> import scoringrules as sr
     >>> sr.logs_mixnormal(0.0, [0.1, -0.3, 1.0], [0.4, 2.1, 0.7], [0.1, 0.2, 0.7])
     """
-    B = backends.active if backend is None else backends[backend]
-    obs, m, s = map(B.asarray, (obs, m, s))
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, m, s, w)
+    obs, m, s, w = asarray_matching(obs, m, s, w, xp=xp)
 
     if w is None:
         M: int = m.shape[mc_axis]
-        w = B.ones(m.shape, dtype=m.dtype, device=B.device(m)) / M
-    else:
-        w = B.asarray(w)
+        w = xp.ones(m.shape, dtype=xp.float_dtype(m), device=xp.device(m)) / M
 
     if mc_axis != -1:
-        m = B.moveaxis(m, mc_axis, -1)
-        s = B.moveaxis(s, mc_axis, -1)
-        w = B.moveaxis(w, mc_axis, -1)
+        m = xp.moveaxis(m, mc_axis, -1)
+        s = xp.moveaxis(s, mc_axis, -1)
+        w = xp.moveaxis(w, mc_axis, -1)
 
-    return logarithmic.mixnorm(obs, m, s, w, backend=backend)
+    return logarithmic.mixnorm(obs, m, s, w, xp=xp)
 
 
 def logs_negbinom(
@@ -760,7 +830,10 @@ def logs_negbinom(
     if prob is None:
         prob = n / (n + mu)
 
-    return logarithmic.negbinom(obs, n, prob, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, n, prob, mu)
+    obs, n, prob = asarray_matching(obs, n, prob, xp=xp)
+    return logarithmic.negbinom(obs, n, prob, xp=xp)
 
 
 def logs_normal(
@@ -796,7 +869,10 @@ def logs_normal(
     >>> import scoringrules as sr
     >>> sr.logs_normal(0.0, 0.4, 0.1)
     """
-    return logarithmic.normal(obs, mu, sigma, negative=negative, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, mu, sigma)
+    obs, mu, sigma = asarray_matching(obs, mu, sigma, xp=xp)
+    return logarithmic.normal(obs, mu, sigma, negative=negative, xp=xp)
 
 
 def logs_2pnormal(
@@ -821,8 +897,10 @@ def logs_2pnormal(
         Scale parameter of the upper half of the forecast two-piece normal distribution.
     location : array_like
         Location parameter of the forecast two-piece normal distribution.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -834,7 +912,12 @@ def logs_2pnormal(
     >>> import scoringrules as sr
     >>> sr.logs_2pnormal(0.0, 0.4, 2.0, 0.1)
     """
-    return logarithmic.twopnormal(obs, scale1, scale2, location, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, scale1, scale2, location)
+    obs, scale1, scale2, location = asarray_matching(
+        obs, scale1, scale2, location, xp=xp
+    )
+    return logarithmic.twopnormal(obs, scale1, scale2, location, xp=xp)
 
 
 def logs_poisson(
@@ -853,8 +936,10 @@ def logs_poisson(
         The observed values.
     mean : array_like
         Mean parameter of the forecast poisson distribution.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        The array framework is inferred from the inputs, so this is only kept for
+        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
+        numba fast path) and the legacy framework names are deprecated.
 
     Returns
     -------
@@ -866,7 +951,10 @@ def logs_poisson(
     >>> import scoringrules as sr
     >>> sr.logs_poisson(1, 2)
     """
-    return logarithmic.poisson(obs, mean, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, mean)
+    obs, mean = asarray_matching(obs, mean, xp=xp)
+    return logarithmic.poisson(obs, mean, xp=xp)
 
 
 def logs_t(
@@ -902,7 +990,10 @@ def logs_t(
     >>> import scoringrules as sr
     >>> sr.logs_t(0.0, 0.1, 0.4, 0.1)
     """
-    return logarithmic.t(obs, df, location, scale, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, df, location, scale)
+    obs, df, location, scale = asarray_matching(obs, df, location, scale, xp=xp)
+    return logarithmic.t(obs, df, location, scale, xp=xp)
 
 
 def logs_tlogistic(
@@ -941,7 +1032,12 @@ def logs_tlogistic(
     >>> import scoringrules as sr
     >>> sr.logs_tlogistic(0.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return logarithmic.tlogistic(obs, location, scale, lower, upper, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, location, scale, lower, upper)
+    obs, location, scale, lower, upper = asarray_matching(
+        obs, location, scale, lower, upper, xp=xp
+    )
+    return logarithmic.tlogistic(obs, location, scale, lower, upper, xp=xp)
 
 
 def logs_tnormal(
@@ -980,7 +1076,12 @@ def logs_tnormal(
     >>> import scoringrules as sr
     >>> sr.logs_tnormal(0.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return logarithmic.tnormal(obs, location, scale, lower, upper, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, location, scale, lower, upper)
+    obs, location, scale, lower, upper = asarray_matching(
+        obs, location, scale, lower, upper, xp=xp
+    )
+    return logarithmic.tnormal(obs, location, scale, lower, upper, xp=xp)
 
 
 def logs_tt(
@@ -1022,7 +1123,12 @@ def logs_tt(
     >>> import scoringrules as sr
     >>> sr.logs_tt(0.0, 2.0, 0.1, 0.4, -1.0, 1.0)
     """
-    return logarithmic.tt(obs, df, location, scale, lower, upper, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, df, location, scale, lower, upper)
+    obs, df, location, scale, lower, upper = asarray_matching(
+        obs, df, location, scale, lower, upper, xp=xp
+    )
+    return logarithmic.tt(obs, df, location, scale, lower, upper, xp=xp)
 
 
 def logs_uniform(
@@ -1055,7 +1161,10 @@ def logs_uniform(
     >>> import scoringrules as sr
     >>> sr.logs_uniform(0.4, 0.0, 1.0)
     """
-    return logarithmic.uniform(obs, min, max, backend=backend)
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, min, max)
+    obs, min, max = asarray_matching(obs, min, max, xp=xp)
+    return logarithmic.uniform(obs, min, max, xp=xp)
 
 
 __all__ = [
