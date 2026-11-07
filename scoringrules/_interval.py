@@ -132,7 +132,7 @@ def weighted_interval_score(
     :math:`1 - \alpha` prediction interval and :math:`w_k` is the according weight.
     The WIS is calculated for a set of (central) PIs and the predictive median.
     The weights are an optional parameter and default weight is the canonical
-    weight :math:`w_k = \frac{2}{\alpha_k}` and :math:`w_0 = 0.5`.
+    weight :math:`w_k = \frac{\alpha_k}{2}` and :math:`w_0 = 0.5`.
     For these weights, it holds that:
 
     .. math::

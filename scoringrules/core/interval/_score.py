@@ -36,6 +36,6 @@ def weighted_interval_score(
     K = w_alpha.shape[0]
     IS = interval_score(obs[..., None], lower, upper, alpha)
     WIS = B.sum(IS * w_alpha, axis=-1)
-    WIS += w_median * median
+    WIS += w_median * B.abs(obs - median)
     WIS /= K + 1 / 2
     return B.squeeze(WIS)
