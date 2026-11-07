@@ -46,12 +46,10 @@ class _RequireExplicitDevice(TorchFunctionMode):
 
 
 @pytest.fixture(autouse=True)
-def _torch_backend():
-    # ``sr.backends["torch"]`` below needs the torch backend registered;
-    # silence the DeprecationWarnings of the legacy backend calls.
+def _silence_deprecations():
+    # silence the DeprecationWarnings of ``backend="torch"`` and ``sr.backends``
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
-        sr.register_backend("torch")
         yield
 
 
@@ -151,7 +149,7 @@ def test_crps_ensemble_created_arrays_keep_autograd(estimator):
     assert fct.grad is not None and torch.isfinite(fct.grad).all()
 
 
-# --- other families (deprecated backend string) and the ArrayBackend ---------
+# --- deprecated backend string and the sr.backends shim ---------------------
 
 
 @pytest.mark.parametrize(
@@ -202,7 +200,8 @@ def test_legacy_creation_calls_pass_device(call):
     assert out.dtype == f64
 
 
-def test_legacy_torch_backend_creation():
+def test_backends_shim_creation():
+    # ``sr.backends["torch"]`` is the augmented array-API namespace of torch
     B = sr.backends["torch"]
     x = _meta(3)
     assert B.device(x).type == META
@@ -211,10 +210,6 @@ def test_legacy_torch_backend_creation():
         B.arange(1, 4, device=B.device(x)),
         B.zeros((2,), device=B.device(x)),
         B.ones((2,), device=B.device(x)),
-        B.indices((2, 3), device=B.device(x)),
     ):
         assert arr.device.type == META
-    # single-argument arange used to pass ``stop=None`` through to torch
     assert B.arange(3).tolist() == [0, 1, 2]
-    np.testing.assert_array_equal(B.indices((2, 3)).numpy(), np.indices((2, 3)))
-    assert B.indices(()).shape == (0,)

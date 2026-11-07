@@ -172,8 +172,7 @@ def test_weighted_interval_score_numba_dispatch(backend, to_backend):
         assert_inferred(sr.weighted_interval_score(*args, backend="numba"), backend)
 
 
-def test_weighted_interval_score_set_active_numba(requires_numba, monkeypatch):
-    from scoringrules.backend import backends
+def test_weighted_interval_score_set_active_numba(numba_active, monkeypatch):
     from scoringrules.core import interval
 
     calls = []
@@ -184,7 +183,6 @@ def test_weighted_interval_score_set_active_numba(requires_numba, monkeypatch):
         return gufunc(*args)
 
     monkeypatch.setattr(interval, "_weighted_interval_score_gufunc", spy)
-    monkeypatch.setattr(backends, "_active", "numba")
     args, _ = _wis_inputs("default")
     sr.weighted_interval_score(*args)
     assert len(calls) == 1

@@ -113,6 +113,22 @@ def requires_numba(request):
 
 
 @pytest.fixture()
+def restore_active(monkeypatch):
+    """Undo any ``backends.set_active`` call made by the test."""
+    from scoringrules import _dispatch
+
+    monkeypatch.setattr(_dispatch, "_numba_active", _dispatch._numba_active)
+    monkeypatch.setattr(backends, "_active", backends._active)
+
+
+@pytest.fixture()
+def numba_active(requires_numba, restore_active):
+    """Enable the global numba switch for one test, with the public
+    ``set_active("numba")``."""
+    backends.set_active("numba")
+
+
+@pytest.fixture()
 def paths_agree(requires_numba):
     """``assert_paths_agree`` from ``tests/_parity.py``, skipped without numba."""
     from ._parity import assert_paths_agree
