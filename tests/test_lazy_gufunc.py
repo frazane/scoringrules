@@ -33,3 +33,17 @@ def test_integer_obs_give_float_scores_on_numba(name, requires_numba):
     res = np.asarray(fn(obs, backend="numba"))
     assert res.dtype.kind == "f", res.dtype
     np.testing.assert_array_equal(res, fn(obs.astype(float), backend="numba"))
+
+
+def test_float32_stays_float32_on_numba(requires_numba):
+    f32 = np.float32
+    fct = _FCT_UV.astype(f32)
+    # 0-d obs: a numpy float32 scalar, not a Python float
+    res = sr.owcrps_ensemble(f32(0.3), fct[0], -1.0, 1.0, backend="numba")
+    assert isinstance(res, np.float32)
+    # auxiliary 0-d arrays built by the caller (w_median) do not promote
+    args = [
+        np.asarray(x, dtype=f32)
+        for x in ([0.1, 0.5], [0.0, 0.2], [[-1, -0.5]] * 2, [[1, 0.5]] * 2, [0.2, 0.5])
+    ]
+    assert sr.weighted_interval_score(*args, backend="numba").dtype == f32
