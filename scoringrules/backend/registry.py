@@ -90,6 +90,36 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
         )
         return self._get(__key)
 
+    # The other accessors that hand out namespaces warn like item access. Key
+    # lookups (``keys()``, ``in``, iteration) stay silent: they expose no
+    # namespace and are what code checking for a backend uses.
+    def get(self, key, default=None):
+        """Like ``dict.get`` (deprecated, see ``__getitem__``)."""
+        warnings.warn(
+            f"scoringrules.backends.get({key!r}) {_REMOVAL_NOTE}",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return super().get(key, default)
+
+    def values(self):
+        """Like ``dict.values`` (deprecated, see ``__getitem__``)."""
+        warnings.warn(
+            f"scoringrules.backends.values() {_REMOVAL_NOTE}",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return super().values()
+
+    def items(self):
+        """Like ``dict.items`` (deprecated, see ``__getitem__``)."""
+        warnings.warn(
+            f"scoringrules.backends.items() {_REMOVAL_NOTE}",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return super().items()
+
     def set_active(self, backend: str):
         """Select the global default backend.
 

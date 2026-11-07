@@ -154,6 +154,29 @@ def test_registry_active_warns(restore_active):
     assert B._xp is get_namespace(np.zeros(1))._xp
 
 
+@pytest.mark.parametrize(
+    "access",
+    [
+        lambda r: r.get("numpy"),
+        lambda r: list(r.values()),
+        lambda r: list(r.items()),
+    ],
+    ids=["get", "values", "items"],
+)
+def test_registry_value_accessors_warn(access):
+    with pytest.warns(DeprecationWarning, match="removed in 1.0"):
+        out = access(backends)
+    assert out
+
+
+def test_registry_key_lookups_are_silent(recwarn):
+    assert "numpy" in backends
+    assert "numpy" in list(backends)
+    assert "numpy" in backends.keys()
+    assert "numpy" in backends.available_backends
+    assert not any(isinstance(w.message, DeprecationWarning) for w in recwarn)
+
+
 def test_registry_unavailable_backend_raises(monkeypatch):
     monkeypatch.setattr(
         type(backends), "available_backends", property(lambda self: ["numpy"])
