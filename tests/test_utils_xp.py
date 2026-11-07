@@ -21,16 +21,13 @@ def test_nan_policy_propagate_is_noop():
 
 
 def test_xp_helpers_match_original_numpy():
-    from scoringrules.core import utils as orig
-
     obs = np.random.randn(4)
     fct = np.random.randn(4, 7)
     xp = get_namespace(obs, fct)
-    # weight normalisation parity
+    # weight normalisation (the legacy helper is gone; compare with the formula)
     w = np.abs(np.random.randn(4, 7)) + 0.1
     w_xp = utils_xp.univariate_weight_check(w.copy(), fct, -1, xp=xp)
-    w_orig = orig.univariate_weight_check(w.copy(), fct, -1, backend="numpy")
-    assert np.asarray(w_xp) == pytest.approx(np.asarray(w_orig))
+    assert np.asarray(w_xp) == pytest.approx(w / w.sum(axis=-1, keepdims=True))
     # nan omit mask building (the legacy numpy helper is gone, the numba path
     # uses this one too)
     fct_nan = fct.copy()
