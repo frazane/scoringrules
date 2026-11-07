@@ -1,7 +1,7 @@
 import typing as tp
 
 from scoringrules.backend import get_namespace
-from scoringrules.core import crps, stats_xp
+from scoringrules.core import crps, stats
 from scoringrules.core.utils import (
     univariate_array_check,
     univariate_weight_check,
@@ -1322,8 +1322,8 @@ def crps_clogistic(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, location, scale, lower, upper)
-    lmass = stats_xp._logis_cdf((lower - location) / scale, xp=xp)
-    umass = 1 - stats_xp._logis_cdf((upper - location) / scale, xp=xp)
+    lmass = stats._logis_cdf((lower - location) / scale, xp=xp)
+    umass = 1 - stats._logis_cdf((upper - location) / scale, xp=xp)
     return crps.gtclogistic(
         obs,
         location,
@@ -1476,8 +1476,8 @@ def crps_cnormal(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, location, scale, lower, upper)
-    lmass = stats_xp._norm_cdf((lower - location) / scale, xp=xp)
-    umass = 1 - stats_xp._norm_cdf((upper - location) / scale, xp=xp)
+    lmass = stats._norm_cdf((lower - location) / scale, xp=xp)
+    umass = 1 - stats._norm_cdf((upper - location) / scale, xp=xp)
     return crps.gtcnormal(
         obs,
         location,
@@ -1678,8 +1678,8 @@ def crps_ct(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, df, location, scale, lower, upper)
-    lmass = stats_xp._t_cdf((lower - location) / scale, df, xp=xp)
-    umass = 1 - stats_xp._t_cdf((upper - location) / scale, df, xp=xp)
+    lmass = stats._t_cdf((lower - location) / scale, df, xp=xp)
+    umass = 1 - stats._t_cdf((upper - location) / scale, df, xp=xp)
     return crps.gtct(
         obs,
         df,

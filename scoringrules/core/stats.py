@@ -1,11 +1,8 @@
-"""Statistics helpers (pdfs, pmfs, cdfs) for the array-API path.
+"""Statistics helpers (pdfs, pmfs, cdfs).
 
-``xp``-parameterised statistics helpers used by the CRPS closed-form scores
-(``core/crps/_closed.py``) and the logarithmic scores (``core/logarithmic.py``).
-They take a keyword-only ``xp`` augmented array-API namespace (see
-``scoringrules.backend.get_namespace``) instead of resolving a backend object
-from the registry. They replace the legacy ``core/stats.py``, deleted with the
-logarithmic-score migration (PR 7 may rename this module to ``stats``).
+Used by the CRPS closed-form scores (``core/crps/_closed.py``) and the
+logarithmic scores (``core/logarithmic.py``). They take a keyword-only ``xp``
+augmented array-API namespace (see ``scoringrules.backend.get_namespace``).
 """
 
 import typing as tp
@@ -247,7 +244,7 @@ def _negbinom_pdf(x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", *, xp) -> "
     # comb(n + x - 1, x) as 1 / ((n + x) * B(n, x + 1)), which is what
     # scipy.special.comb computes for real arguments (``xp.comb`` rounds to an
     # integer, wrong for a real-valued size ``n``). Like scipy's comb it is 0
-    # when k > N or N < 0, i.e. for n < 1, which matches the legacy helper.
+    # when k > N or N < 0, i.e. for n < 1, as the former ``B.comb`` version did.
     big_n = n + x_plus - 1
     coef = xp.where(
         (x_plus <= big_n) & (big_n >= 0),

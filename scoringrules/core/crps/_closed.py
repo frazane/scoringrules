@@ -1,6 +1,6 @@
 import typing as tp
 
-from scoringrules.core.stats_xp import (
+from scoringrules.core.stats import (
     _binom_cdf,
     _binom_pdf,
     _exp_cdf,
