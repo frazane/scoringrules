@@ -103,3 +103,27 @@ def assert_inferred(result, backend):
         assert "torch" in mod, f"expected a torch tensor, got {mod}"
     else:
         assert "numpy" in mod, f"expected a numpy array, got {mod}"
+
+
+@pytest.fixture()
+def requires_numba(request):
+    """Skip unless the numba backend is selected (``--backend``) and installed."""
+    if "numba" not in get_test_backends(request.config):
+        pytest.skip("needs the numba backend (not selected or not installed)")
+
+
+@pytest.fixture()
+def paths_agree(requires_numba):
+    """``assert_paths_agree`` from ``tests/_parity.py``, skipped without numba."""
+    from ._parity import assert_paths_agree
+
+    return assert_paths_agree
+
+
+@pytest.fixture()
+def to_backend_float32(backend):
+    """Like ``to_backend``, but always float32 (``to_backend`` forces float64 on
+    torch, and jax already defaults to float32)."""
+    from ._parity import as_float32
+
+    return lambda x: as_float32(x, backend)
