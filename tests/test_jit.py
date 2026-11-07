@@ -25,6 +25,14 @@ a 1.0 ``validate=`` flag):
   ``core/utils_xp.py::apply_nan_policy_ens_mv``.
 - ``owes_ensemble`` / ``vres_ensemble`` / ``owvs_ensemble`` / ``vrvs_ensemble``:
   ``xp.any(obs_w < 0)`` in ``core/utils_xp.py::mv_weighted_score_weights``.
+- weighted ``gksuv_ensemble`` / ``twgksuv_ensemble`` (``ens_w=...``):
+  ``xp.any(ens_w < 0)`` in ``core/utils_xp.py::univariate_weight_check``.
+- weighted ``gksmv_ensemble`` / ``twgksmv_ensemble`` (``ens_w=...``):
+  ``xp.any(ens_w < 0)`` in ``core/utils_xp.py::multivariate_weight_check``.
+- ``owgksuv_ensemble`` / ``vrgksuv_ensemble``: ``xp.any(obs_w < 0)`` in
+  ``core/utils_xp.py::uv_weighted_score_weights``.
+- ``owgksmv_ensemble`` / ``vrgksmv_ensemble``: ``xp.any(obs_w < 0)`` in
+  ``core/utils_xp.py::mv_weighted_score_weights``.
 """
 
 import numpy as np
@@ -196,3 +204,34 @@ def test_variogram_score_jit(estimator):
         obs, fct, lambda v: v.clip(min=-0.5), estimator=estimator
     )
     np.testing.assert_allclose(twvs(obs, fct), expected, rtol=1e-5, atol=1e-5)
+
+
+@pytest.mark.parametrize("estimator", ["nrg", "fair", "akr", "akr_circperm"])
+def test_kernel_scores_jit(estimator):
+    obs = jnp.asarray(np.random.randn(5, 3))
+    fct = jnp.asarray(np.random.randn(5, 11, 3))
+
+    def v_func(v):
+        return v.clip(min=-0.5)
+
+    scores = {
+        "gksuv": lambda o, x: sr.gksuv_ensemble(
+            o[:, 0], x[..., 0], estimator=estimator
+        ),
+        "twgksuv": lambda o, x: sr.twgksuv_ensemble(
+            o[:, 0], x[..., 0], -0.5, 1.0, estimator=estimator
+        ),
+        "twgksuv_v_func": lambda o, x: sr.twgksuv_ensemble(
+            o[:, 0], x[..., 0], v_func=v_func, estimator=estimator
+        ),
+        "gksmv": lambda o, x: sr.gksmv_ensemble(o, x, estimator=estimator),
+        "twgksmv": lambda o, x: sr.twgksmv_ensemble(o, x, v_func, estimator=estimator),
+    }
+    for name, score in scores.items():
+        np.testing.assert_allclose(
+            jax.jit(score)(obs, fct),
+            score(obs, fct),
+            rtol=1e-5,
+            atol=1e-5,
+            err_msg=name,
+        )

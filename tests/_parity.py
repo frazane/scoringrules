@@ -188,26 +188,6 @@ def mv_ensemble_inputs(case, M, weighted, seed=0, N=5, D=3):
     return obs, fct, kwargs
 
 
-def mark_known_mv_failures(request, case, weighted):
-    """Apply the strict xfails of the multivariate parity tests that still use
-    the legacy helpers (kernels, until PR 6)."""
-    if case == "v_axis" and weighted:
-        # Both paths fail the same way, so this is not a parity issue. Here the
-        # moved axis is out of range and it raises; when it happens to be in range
-        # (e.g. M == N) the wrong ens_w axis is used silently.
-        request.applymarker(
-            pytest.mark.xfail(
-                raises=ValueError,
-                strict=True,
-                reason="legacy multivariate_weight_check takes ens_w's m_axis "
-                "relative to fct.ndim, so with v_axis before m_axis ens_w raises "
-                "or silently uses the wrong weights (core/utils.py); B8, fixed "
-                "for energy and variogram in PR 5, kernels moves to the xp "
-                "helper in PR 6",
-            )
-        )
-
-
 def mv_w_func(x):
     """A smooth, positive multivariate weight function (numpy only)."""
     return 1.0 / (1.0 + np.exp(-np.mean(x)))

@@ -16,7 +16,9 @@ def _gauss_kern_uv(x1: float, x2: float) -> float:
 @njit(["float32(float32[:], float32[:])", "float64(float64[:], float64[:])"])
 def _gauss_kern_mv(x1: float, x2: float) -> float:
     """Gaussian kernel evaluated at x1 and x2."""
-    out: float = math.exp(-0.5 * np.linalg.norm(x1 - x2) ** 2)
+    # sum of squares, like the array path (gauss_kern_mv in _approx.py)
+    d = x1 - x2
+    out: float = math.exp(-0.5 * np.sum(d * d))
     return out
 
 
