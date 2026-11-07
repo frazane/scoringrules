@@ -469,6 +469,23 @@ def test_crps_quantile_paths_agree(case, paths_agree):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
+def test_crps_ensemble_int_fct_float_weights(estimator, backend, backend_kwargs):
+    # integer fct must not truncate float ens_w (it used to be cast to fct.dtype)
+    mod = {"jax": "jax.numpy", "torch": "torch"}.get(backend, "numpy")
+    xp_mod = pytest.importorskip(mod)
+    rng = np.random.default_rng(3)
+    obs0 = rng.normal(size=N)
+    fct0 = rng.integers(-3, 4, size=(N, ENSEMBLE_SIZE))
+    w0 = rng.uniform(0.1, 2.0, size=(N, ENSEMBLE_SIZE))
+    kwargs = {"estimator": estimator, **backend_kwargs}
+    res = sr.crps_ensemble(
+        xp_mod.asarray(obs0), xp_mod.asarray(fct0), ens_w=xp_mod.asarray(w0), **kwargs
+    )
+    expected = sr.crps_ensemble(obs0, fct0.astype(float), ens_w=w0, **kwargs)
+    assert_close(res, expected, backend)
+
+
+@pytest.mark.parametrize("estimator", ESTIMATORS)
 def test_crps_ensemble_float32(estimator, backend, to_backend_float32, backend_kwargs):
     obs = to_backend_float32(np.random.randn(N))
     fct = to_backend_float32(np.random.randn(N, ENSEMBLE_SIZE))
