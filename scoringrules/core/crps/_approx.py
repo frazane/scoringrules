@@ -57,7 +57,8 @@ def _crps_ensemble_pwm(obs: "Array", fct: "Array", *, xp) -> "Array":
     M: int = fct.shape[-1]
     expected_diff = xp.sum(xp.abs(obs[..., None] - fct), axis=-1) / M
     β_0 = xp.sum(fct, axis=-1) / M
-    β_1 = xp.sum(fct * xp.arange(0, M), axis=-1) / (M * (M - 1.0))
+    i = xp.arange(0, M, dtype=xp.float_dtype(fct), device=xp.device(fct))
+    β_1 = xp.sum(fct * i, axis=-1) / (M * (M - 1.0))
     return expected_diff + β_0 - 2.0 * β_1
 
 
@@ -81,7 +82,8 @@ def _crps_ensemble_akr_circperm(obs: "Array", fct: "Array", *, xp) -> "Array":
 def _crps_ensemble_qd(obs: "Array", fct: "Array", *, xp) -> "Array":
     """CRPS estimator based on the quantile decomposition form."""
     M: int = fct.shape[-1]
-    alpha = xp.arange(1, M + 1) - 0.5
+    kw = {"dtype": xp.float_dtype(fct), "device": xp.device(fct)}
+    alpha = xp.arange(1, M + 1, **kw) - 0.5
     below = (fct <= obs[..., None]) * alpha * (obs[..., None] - fct)
     above = (fct > obs[..., None]) * (M - alpha) * (fct - obs[..., None])
     out = xp.sum(below + above, axis=-1) / (M**2)
@@ -91,14 +93,18 @@ def _crps_ensemble_qd(obs: "Array", fct: "Array", *, xp) -> "Array":
 def _crps_ensemble_int(obs: "Array", fct: "Array", *, xp) -> "Array":
     """CRPS estimator based on the integral representation."""
     M: int = fct.shape[-1]
-    y_pos = xp.mean((fct <= obs[..., None]) * 1.0, axis=-1, keepdims=True)
-    fct_cdf = xp.zeros(fct.shape) + xp.arange(1, M + 1) / M
+    kw = {"dtype": xp.float_dtype(fct), "device": xp.device(fct)}
+    # astype, not ``* 1.0``: bool * float defaults to float64 (numpy) / float32 (torch)
+    y_pos = xp.mean(
+        xp.astype(fct <= obs[..., None], kw["dtype"]), axis=-1, keepdims=True
+    )
+    fct_cdf = xp.zeros(fct.shape, **kw) + xp.arange(1, M + 1, **kw) / M
     fct_cdf = xp.concat((fct_cdf, y_pos), axis=-1)
     fct_cdf = xp.sort(fct_cdf, axis=-1)
     fct_exp = xp.concat((fct, obs[..., None]), axis=-1)
     fct_exp = xp.sort(fct_exp, axis=-1)
     fct_dif = fct_exp[..., 1:] - fct_exp[..., :M]
-    obs_cdf = (obs[..., None] <= fct_exp) * 1.0
+    obs_cdf = xp.astype(obs[..., None] <= fct_exp, kw["dtype"])
     out = fct_dif * (fct_cdf[..., :M] - obs_cdf[..., :M]) ** 2
     return xp.sum(out, axis=-1)
 

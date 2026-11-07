@@ -145,16 +145,25 @@ class NumpyBackend(ArrayBackend):
         step: int | float = 1,
         *,
         dtype: Dtype | None = None,
+        device: tp.Any = None,
     ) -> "NDArray":
         return np.arange(start, stop, step, dtype=dtype)
 
     def zeros(
-        self, shape: int | tuple[int, ...], *, dtype: Dtype | None = None
+        self,
+        shape: int | tuple[int, ...],
+        *,
+        dtype: Dtype | None = None,
+        device: tp.Any = None,
     ) -> "NDArray":
         return np.zeros(shape, dtype=dtype)
 
     def ones(
-        self, shape: int | tuple[int, ...], *, dtype: Dtype | None = None
+        self,
+        shape: int | tuple[int, ...],
+        *,
+        dtype: Dtype | None = None,
+        device: tp.Any = None,
     ) -> "NDArray":
         return np.ones(shape, dtype=dtype)
 
@@ -280,7 +289,10 @@ class NumpyBackend(ArrayBackend):
     def size(self, x: "NDArray") -> int:
         return x.size
 
-    def indices(self, dimensions: tuple) -> "NDArray":
+    def device(self, x: "NDArray") -> str:
+        return "cpu"
+
+    def indices(self, dimensions: tuple, *, device: tp.Any = None) -> "NDArray":
         return np.indices(dimensions)
 
     def gather(self, x: "NDArray", ind: "NDArray", axis: int) -> "NDArray":

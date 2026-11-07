@@ -87,7 +87,7 @@ def vs_ensemble(
 
     if w is None:
         D = fct.shape[-1]
-        w = B.ones(obs.shape + (D,))
+        w = B.ones(obs.shape + (D,), dtype=fct.dtype, device=B.device(fct))
     else:
         w = B.asarray(w)
 
@@ -267,7 +267,7 @@ def owvs_ensemble(
 
     if w is None:
         D = fct.shape[-1]
-        w = B.ones(obs.shape + (D,))
+        w = B.ones(obs.shape + (D,), dtype=fct.dtype, device=B.device(fct))
 
     if ens_w is None:
         if backend == "numba":
@@ -361,7 +361,7 @@ def vrvs_ensemble(
 
     if w is None:
         D = fct.shape[-1]
-        w = B.ones(obs.shape + (D,))
+        w = B.ones(obs.shape + (D,), dtype=fct.dtype, device=B.device(fct))
 
     if ens_w is None:
         if backend == "numba":

@@ -146,24 +146,29 @@ class TorchBackend(ArrayBackend):
         step: int | float = 1,
         *,
         dtype: Dtype | None = None,
+        device: tp.Any = None,
     ) -> "Tensor":
-        return torch.arange(start, stop, step, dtype=dtype)  # TODO: fix this
+        if stop is None:
+            start, stop = 0, start
+        return torch.arange(start, stop, step, dtype=dtype, device=device)
 
     def zeros(
         self,
         shape: int | tuple[int, ...],
         *,
         dtype: Dtype | None = None,
+        device: tp.Any = None,
     ) -> "Tensor":
-        return torch.zeros(shape, dtype=dtype)
+        return torch.zeros(shape, dtype=dtype, device=device)
 
     def ones(
         self,
         shape: int | tuple[int, ...],
         *,
         dtype: Dtype | None = None,
+        device: tp.Any = None,
     ) -> "Tensor":
-        return torch.ones(shape, dtype=dtype)
+        return torch.ones(shape, dtype=dtype, device=device)
 
     def abs(self, x: "Tensor") -> "Tensor":
         return torch.abs(x)
@@ -299,10 +304,13 @@ class TorchBackend(ArrayBackend):
     def size(self, x: "Tensor") -> int:
         return x.numel()
 
-    def indices(self, dimensions: tuple) -> "Tensor":
-        ranges = [self.arange(s) for s in dimensions]
+    def device(self, x: "Tensor") -> "torch.device":
+        return x.device
+
+    def indices(self, dimensions: tuple, *, device: tp.Any = None) -> "Tensor":
+        ranges = [self.arange(s, device=device) for s in dimensions]
         if ranges == []:
-            indices = self.asarray(ranges)
+            indices = torch.empty((0,), dtype=torch.int64, device=device)
         else:
             index_grids = torch.meshgrid(*ranges, indexing="ij")
             indices = torch.stack(index_grids)

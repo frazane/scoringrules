@@ -2142,7 +2142,7 @@ def crps_mixnorm(
 
     if w is None:
         M: int = m.shape[m_axis]
-        w = xp.zeros(m.shape) + 1 / M
+        w = xp.full(m.shape, 1 / M, dtype=xp.float_dtype(m), device=xp.device(m))
     else:
         w = xp.asarray(w)
 
@@ -2324,13 +2324,14 @@ def crps_2pnormal(
     upper = 0.0
     lmass = 0.0
     umass = scale2 / (scale1 + scale2)
-    z = xp.minimum(xp.asarray(0.0), xp.asarray(obs - location)) / scale1
+    d = obs - location
+    z = xp.minimum(xp.zeros_like(d), d) / scale1
     s1 = scale1 * crps.gtcnormal(z, 0.0, 1.0, lower, upper, lmass, umass, xp=xp)
     lower = 0.0
     upper = float("inf")
     lmass = scale1 / (scale1 + scale2)
     umass = 0.0
-    z = xp.maximum(xp.asarray(0.0), xp.asarray(obs - location)) / scale2
+    z = xp.maximum(xp.zeros_like(d), d) / scale2
     s2 = scale2 * crps.gtcnormal(z, 0.0, 1.0, lower, upper, lmass, umass, xp=xp)
     return s1 + s2
 
