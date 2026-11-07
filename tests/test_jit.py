@@ -105,3 +105,43 @@ def test_dss_ensemble_jit(bias):
     )
     expected = sr.dssmv_ensemble(obs, fct, bias=bias)
     np.testing.assert_allclose(mv(obs, fct), expected, rtol=1e-5, atol=1e-5)
+
+
+# Every logarithmic score is jittable. (name, args); args become jax arrays.
+_ENS_OBS = [0.2, 1.1]
+_ENS_FCT = [[0.1, -0.5, 0.9, 1.3], [0.8, 1.6, 0.2, 1.0]]
+LOGS_CASES = [
+    ("logs_ensemble", (_ENS_OBS, _ENS_FCT)),
+    ("clogs_ensemble", (_ENS_OBS, _ENS_FCT, -1.0, 1.0)),
+    ("logs_beta", ([0.3, 0.6], 0.7, 1.1, 0.0, 1.0)),
+    ("logs_binomial", ([8.0, 3.0], 10.0, 0.6)),
+    ("logs_exponential", ([0.3, 1.2], 0.9)),
+    ("logs_exponential2", ([0.3, 1.2], 0.1, 2.0)),
+    ("logs_2pexponential", ([0.3, -1.2], 0.5, 2.0, 0.1)),
+    ("logs_gamma", ([0.2, 1.5], 1.1, 0.7)),
+    ("logs_gev", ([0.3, 1.5], 0.3, 0.1, 1.2)),
+    ("logs_gpd", ([0.3, 1.5], 0.3, 0.1, 1.2)),
+    ("logs_hypergeometric", ([5.0, 6.0], 7.0, 13.0, 12.0)),
+    ("logs_laplace", ([0.3, -1.5], 0.1, 1.2)),
+    ("logs_loglaplace", ([0.3, 1.5], 0.1, 1.2)),
+    ("logs_logistic", ([0.3, -1.5], 0.1, 1.2)),
+    ("logs_loglogistic", ([0.3, 1.5], 0.1, 1.2)),
+    ("logs_lognormal", ([0.3, 1.5], 0.1, 1.2)),
+    ("logs_mixnorm", ([0.3, 1.5], [0.0, -2.9, 0.9], [0.5, 1.4, 0.7])),
+    ("logs_negbinom", ([2.0, 4.0], 7.0, 0.8)),
+    ("logs_normal", ([0.3, -1.5], 0.1, 1.2)),
+    ("logs_2pnormal", ([0.3, -1.5], 0.5, 2.0, 0.1)),
+    ("logs_poisson", ([1.0, 4.0], 3.0)),
+    ("logs_t", ([0.3, -1.5], 4.0, 0.1, 1.2)),
+    ("logs_tlogistic", ([0.3, 1.5], 0.1, 1.2, -1.0, 2.0)),
+    ("logs_tnormal", ([0.3, 1.5], 0.1, 1.2, -1.0, 2.0)),
+    ("logs_tt", ([0.3, 1.5], 4.0, 0.1, 1.2, -1.0, 2.0)),
+    ("logs_uniform", ([0.3, 1.5], -1.0, 2.0)),
+]
+
+
+@pytest.mark.parametrize("name, args", LOGS_CASES, ids=[c[0] for c in LOGS_CASES])
+def test_logs_jit(name, args):
+    fn = getattr(sr, name)
+    args = [jnp.asarray(a) for a in args]
+    np.testing.assert_allclose(jax.jit(fn)(*args), fn(*args), rtol=1e-6)
