@@ -247,7 +247,6 @@ def _owks_ensemble_mv_w_gufunc(
 ):
     """Outcome-weighted kernel score for multivariate ensembles."""
     M = fct.shape[0]
-    ow = ow[0]
 
     e_1 = 0.0
     e_2 = 0.0
