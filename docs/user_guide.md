@@ -69,21 +69,39 @@ torch forecast) raises an error.
 ### The numba fast path
 
 For numpy inputs, opt into the compiled [numba](https://numba.pydata.org/) gufuncs
-with `backend="numba"`:
+with `backend="numba"` (numba is an optional dependency:
+`pip install scoringrules[numba]`):
 
 ```python
 sr.crps_ensemble(np.random.randn(5), np.random.randn(5, 11), backend="numba")
 ```
 
-`backend="numba"` requires numpy-compatible inputs.
+To use them by default for every numpy input, enable numba globally:
+
+```python
+sr.backends.set_active("numba")
+sr.crps_ensemble(np.random.randn(5), np.random.randn(5, 11))  # numba gufunc
+```
+
+`backend="numba"` requires numpy-compatible inputs and raises an error for jax or
+torch arrays. The global setting only applies to numpy inputs: jax and torch inputs
+keep running in their own framework. Scores without a numba implementation ignore
+both. Without numba installed, `sr.backends.set_active("numba")` and
+`backend="numba"` raise an error that says how to install it.
 
 ### Deprecations
 
-Selecting an array-API backend explicitly is deprecated and will be removed in 1.0
-— the framework is inferred from the input instead. This applies to:
+Selecting an array-API backend explicitly is deprecated and will be removed in 1.0,
+since the framework is inferred from the input. This applies to:
 
-- the `backend="numpy"`, `backend="jax"`, and `backend="torch"` arguments, and
-- `sr.register_backend(...)` / `sr.backends.set_active(...)` for those backends.
+- the `backend="numpy"`, `backend="jax"`, and `backend="torch"` arguments,
+- `sr.register_backend(...)` and `sr.backends.set_active(...)` for those backends
+  (`sr.backends.set_active("numpy")` still switches the global numba setting off),
+  and
+- reading from the `sr.backends` registry (`sr.backends["torch"]`,
+  `sr.backends.active`). It is a compatibility shim: its values are the array-API
+  namespaces scoringrules uses internally, so standard array-API calls such as
+  `sr.backends["torch"].sum(x, axis=-1)` keep working until 1.0.
 
-`backend="numba"` is **not** deprecated; it remains the supported way to reach the
-numba fast path.
+`backend="numba"` and `sr.backends.set_active("numba")` are **not** deprecated; they
+remain the supported ways to reach the numba fast path.

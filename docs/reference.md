@@ -136,6 +136,12 @@ Categorical forecasts
 
 Backends
 ========
+The array framework is inferred from the inputs, so no backend needs to be
+selected. ``register_backend`` and the ``backends`` registry are deprecated
+compatibility shims, removed in 1.0; ``backend="numba"`` and
+``backends.set_active("numba")`` remain the way to reach the numba fast path.
+See the user guide for details.
+
 .. autosummary::
     :toctree: generated
 

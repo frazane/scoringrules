@@ -9,5 +9,6 @@ if tp.TYPE_CHECKING:
     Array = tp.TypeVar("Array", bound=_array)
     ArrayLike = tp.TypeVar("ArrayLike", bound=_array | float | int)
 
+    # "numpy", "jax" and "torch" are deprecated (removed in 1.0): only None | "numba"
     Backend = tp.Literal["numpy", "numba", "jax", "torch"] | None
     NanPolicy = tp.Literal["propagate", "omit", "raise"]
