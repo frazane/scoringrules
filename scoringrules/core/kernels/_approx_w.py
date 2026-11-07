@@ -84,6 +84,7 @@ def _ks_ensemble_fair_uv_w(
         * ens_w[..., None, :],
         axis=(-1, -2),
     )
+    e_2 -= B.sum(gauss_kern_uv(fct, fct, backend=backend) * ens_w * ens_w, axis=-1)
     e_3 = gauss_kern_uv(obs, obs)
 
     fair_c = 1 - B.sum(ens_w * ens_w, axis=-1)
@@ -196,6 +197,7 @@ def _ks_ensemble_fair_mv_w(
         * B.expand_dims(ens_w, -2),
         axis=(-2, -1),
     )
+    e_2 -= B.sum(gauss_kern_mv(fct, fct, backend=backend) * ens_w * ens_w, axis=-1)
     e_3 = gauss_kern_mv(obs, obs)
 
     fair_c = 1 - B.sum(ens_w * ens_w, axis=-1)
