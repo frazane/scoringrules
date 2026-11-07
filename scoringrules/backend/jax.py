@@ -298,7 +298,8 @@ class JaxBackend(ArrayBackend):
         return getattr(x, "device", None)
 
     def indices(self, dimensions: tuple, *, device: tp.Any = None) -> "Array":
-        return jnp.indices(dimensions)
+        out = jnp.indices(dimensions)
+        return out if device is None else jax.device_put(out, device)
 
     def gather(self, x: "Array", ind: "Array", axis: int) -> "Array":
         return jnp.take_along_axis(x, ind, axis=axis)

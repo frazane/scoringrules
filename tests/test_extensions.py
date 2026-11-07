@@ -234,3 +234,30 @@ def test_indices_numpy_and_jax():
     ns = array_namespace(jnp.zeros(1))
     out = ext.indices(ns, (2, 3), device=jax.devices()[0])
     np.testing.assert_array_equal(np.asarray(out), np.indices((2, 3)))
+
+
+def test_apply_along_axis_torch_rejects_out_of_range_axis():
+    torch = pytest.importorskip("torch")
+    x = torch.ones(2, 3)
+    for axis in (2, -3):
+        with pytest.raises(np.exceptions.AxisError):
+            ext.apply_along_axis(array_namespace(x), torch.sum, x, axis)
+
+
+def test_apply_along_axis_torch_empty_axis():
+    torch = pytest.importorskip("torch")
+    x = torch.ones(2, 0)
+    out = ext.apply_along_axis(array_namespace(x), torch.sum, x, 1)
+    np.testing.assert_array_equal(
+        out.numpy(), np.apply_along_axis(np.sum, 1, np.ones((2, 0)))
+    )
+
+
+def test_legacy_jax_indices_honors_device():
+    jax = pytest.importorskip("jax")
+    from scoringrules.backend.jax import JaxBackend
+
+    dev = jax.devices()[0]
+    out = JaxBackend().indices((2, 3), device=dev)
+    assert out.devices() == {dev}
+    np.testing.assert_array_equal(np.asarray(out), np.indices((2, 3)))

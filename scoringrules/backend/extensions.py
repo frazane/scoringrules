@@ -5,6 +5,8 @@ falling back to scipy only where no native implementation exists.
 The forward/gradient support matrix is documented in
 ``docs/special_functions_audit.md``."""
 
+import math
+
 import numpy as np
 import scipy.special as sp
 
@@ -209,10 +211,13 @@ def _torch_apply_along_axis(func1d, x, axis):
     place of ``axis`` in the output.
     """
     t = _ts()
+    if not -x.ndim <= axis < x.ndim:
+        raise np.exceptions.AxisError(axis, x.ndim)
     axis = axis % x.ndim
     xm = t.movedim(x, axis, -1)
     batch_shape = tuple(xm.shape[:-1])
-    flat = xm.reshape(-1, xm.shape[-1])
+    # explicit batch size (not -1) so an empty ``axis`` still reshapes
+    flat = xm.reshape(math.prod(batch_shape), xm.shape[-1])
     try:
         out = t.vmap(func1d)(flat)
     except Exception:
