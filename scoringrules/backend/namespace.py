@@ -155,6 +155,11 @@ class ArrayAPINamespace:
 
         return extensions.cov(self._xp, x, rowvar=rowvar, bias=bias)
 
+    def quantile(self, x, q, /, *, axis=None, keepdims=False):
+        from . import extensions
+
+        return extensions.quantile(self._xp, x, q, axis=axis, keepdims=keepdims)
+
     def indices(self, dimensions, *, dtype=None, device=None):
         from . import extensions
 

@@ -9,18 +9,23 @@ import math
 
 import numpy as np
 import scipy.special as sp
+from array_api_compat import is_jax_namespace, is_numpy_namespace, is_torch_namespace
 
 # NOTE: the scipy branches below only ever receive numpy arrays (jax/torch
 # dispatch natively or raise), so SCIPY_ARRAY_API is irrelevant here.
 
 
 def _kind(xp):
-    name = getattr(xp, "__name__", "")
-    if "torch" in name:
-        return "torch"
-    if "jax" in name:
+    if is_numpy_namespace(xp):
+        return "numpy"
+    if is_jax_namespace(xp):
         return "jax"
-    return "numpy"
+    if is_torch_namespace(xp):
+        return "torch"
+    raise NotImplementedError(
+        f"Array namespace {getattr(xp, '__name__', xp)!r} is not supported; "
+        "scoringrules supports numpy, jax and torch arrays."
+    )
 
 
 def _jsp():
@@ -179,6 +184,26 @@ def comb(xp, n, k):
 
 
 # --- non-standard helpers ---
+
+
+def quantile(xp, x, q, axis=None, keepdims=False):
+    """``numpy.quantile`` (linear interpolation) for every framework.
+
+    ``q`` is a scalar or 1-d array of levels in ``[0, 1]``; for a 1-d ``q`` the
+    levels form the leading axis of the result, as in numpy. ``axis`` is an int
+    or ``None`` (flatten).
+    """
+    k = _kind(xp)
+    if k == "jax":
+        import jax.numpy as jnp
+
+        return jnp.quantile(x, jnp.asarray(q), axis=axis, keepdims=keepdims)
+    if k == "torch":
+        t = _ts()
+        # torch.quantile wants q as a tensor of x's dtype and device.
+        q = t.as_tensor(q, dtype=x.dtype, device=x.device)
+        return t.quantile(x, q, dim=axis, keepdim=keepdims)
+    return np.quantile(x, q, axis=axis, keepdims=keepdims)
 
 
 def apply_along_axis(xp, func1d, x, axis):

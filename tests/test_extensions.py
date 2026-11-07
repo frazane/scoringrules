@@ -261,3 +261,62 @@ def test_legacy_jax_indices_honors_device():
     out = JaxBackend().indices((2, 3), device=dev)
     assert out.devices() == {dev}
     np.testing.assert_array_equal(np.asarray(out), np.indices((2, 3)))
+
+
+def test_kind_rejects_unknown_namespace():
+    import types
+
+    fake = types.ModuleType("array_api_strict")
+    with pytest.raises(NotImplementedError, match="not supported"):
+        ext._kind(fake)
+    with pytest.raises(NotImplementedError):
+        ext.erf(fake, np.asarray([0.5]))
+
+
+def test_kind_known_namespaces(backend):
+    mods = {"numpy": "numpy", "numba": "numpy", "jax": "jax.numpy", "torch": "torch"}
+    xp_mod = pytest.importorskip(mods[backend])
+    expected = {"numba": "numpy"}.get(backend, backend)
+    assert ext._kind(array_namespace(xp_mod.ones(2))) == expected
+
+
+@pytest.mark.parametrize("q", [0.3, [0.25, 0.75]])
+@pytest.mark.parametrize("axis", [None, 0, -1])
+@pytest.mark.parametrize("keepdims", [False, True])
+def test_quantile_matches_numpy(backend, q, axis, keepdims):
+    mods = {"numpy": "numpy", "numba": "numpy", "jax": "jax.numpy", "torch": "torch"}
+    xp_mod = pytest.importorskip(mods[backend])
+    from scoringrules.backend import get_namespace
+
+    ref = np.random.default_rng(0).normal(size=(3, 8))
+    x = xp_mod.asarray(ref)
+    out = get_namespace(x).quantile(x, q, axis=axis, keepdims=keepdims)
+    assert get_namespace(out)._xp is get_namespace(x)._xp
+    expected = np.quantile(ref, q, axis=axis, keepdims=keepdims)
+    assert np.asarray(out).shape == expected.shape
+    atol = 1e-6 if backend == "jax" else 0  # jax runs in float32 in the tests
+    np.testing.assert_allclose(np.asarray(out), expected, rtol=1e-6, atol=atol)
+
+
+def test_quantile_torch_keeps_grad_dtype_and_device():
+    torch = pytest.importorskip("torch")
+    x = torch.tensor([[1.0, 3.0, 2.0, 5.0]], dtype=torch.float32, requires_grad=True)
+    out = ext.quantile(array_namespace(x), x, [0.25, 0.5], axis=-1)
+    assert out.dtype == torch.float32
+    out.sum().backward()
+    assert x.grad is not None and torch.all(torch.isfinite(x.grad))
+    m = torch.zeros(2, 4, device="meta")
+    assert ext.quantile(array_namespace(m), m, 0.5, axis=-1).device.type == "meta"
+
+
+def test_quantile_jax_grad_and_jit():
+    jax = pytest.importorskip("jax")
+    import jax.numpy as jnp
+
+    def f(v):
+        return ext.quantile(array_namespace(v), v, 0.75, axis=-1).sum()
+
+    x = jnp.asarray([[1.0, 3.0, 2.0, 5.0]])
+    g = jax.grad(f)(x)
+    assert jnp.all(jnp.isfinite(g))
+    np.testing.assert_allclose(jax.jit(f)(x), np.quantile(np.asarray(x), 0.75))
