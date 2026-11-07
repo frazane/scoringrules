@@ -314,3 +314,24 @@ def test_weighted_energy_grad_torch(score):
     fct.grad = None
     sr.twes_ensemble(obs, fct, lambda x: x.clip(min=-0.5)).sum().backward()
     assert fct.grad is not None and torch.isfinite(fct.grad).all()
+
+
+@pytest.mark.parametrize(
+    "score", ["owes_ensemble", "vres_ensemble", "owvs_ensemble", "vrvs_ensemble"]
+)
+def test_weighted_mv_python_float_w_func_torch(score):
+    """A w_func returning Python floats (not vmappable: ``.item()``) runs through
+    the torch loop fallback and keeps float64 precision (matches numpy)."""
+    torch = pytest.importorskip("torch")
+    rng = np.random.default_rng(6)
+    obs = rng.normal(size=(4, N_VARS))
+    fct = rng.normal(size=(4, 9, N_VARS))
+
+    def w_func(x):
+        return float(1.0 / (1.0 + np.exp(-float(x.mean().item()))))
+
+    fn = getattr(sr, score)
+    expected = fn(obs, fct, w_func)
+    res = fn(torch.as_tensor(obs), torch.as_tensor(fct), w_func)
+    assert res.dtype == torch.float64
+    np.testing.assert_allclose(res.numpy(), expected, rtol=1e-13)
