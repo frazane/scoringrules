@@ -125,33 +125,7 @@ def crps_ensemble(
     """
 
     resolve_backend_arg(backend)
-    if use_numba(backend, obs, fct):
-        # numba path: inputs are numpy-compatible; reuse the existing numpy-based
-        # helpers (gufuncs consume numpy arrays — no behaviour change).
-        from scoringrules.core.utils import (
-            apply_nan_policy_ens_uv as _nan,
-            univariate_array_check as _uac,
-            univariate_sort_ens as _sort,
-            univariate_weight_check as _wchk,
-        )
-
-        obs, fct = _uac(obs, fct, m_axis, backend="numba")
-        obs, fct, ens_w = _nan(
-            obs,
-            fct,
-            nan_policy,
-            ens_w,
-            estimator=estimator,
-            m_axis=m_axis,
-            backend="numba",
-        )
-        fct, ens_w = _sort(fct, ens_w, -1, estimator, sorted_ensemble, backend="numba")
-        if ens_w is not None:
-            ens_w = _wchk(ens_w, fct, -1, backend="numba")
-        if ens_w is None:
-            return crps.estimator_gufuncs(estimator)(obs, fct)
-        return crps.estimator_gufuncs_w(estimator)(obs, fct, ens_w)
-
+    numba = use_numba(backend, obs, fct)
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs, fct, ens_w = apply_nan_policy_ens_uv(
@@ -161,6 +135,10 @@ def crps_ensemble(
     if ens_w is not None:
         ens_w = univariate_weight_check(ens_w, fct, -1, xp=xp)
 
+    if numba:
+        if ens_w is None:
+            return crps.estimator_gufuncs(estimator)(obs, fct)
+        return crps.estimator_gufuncs_w(estimator)(obs, fct, ens_w)
     if ens_w is None:
         return crps.ensemble(obs, fct, estimator, xp=xp)
     return crps.ensemble_w(obs, fct, ens_w, estimator, xp=xp)
@@ -371,26 +349,7 @@ def owcrps_ensemble(
     """
 
     resolve_backend_arg(backend)
-    if use_numba(backend, obs, fct):
-        from scoringrules.core.utils import (
-            apply_nan_policy_ens_uv as _nan,
-            univariate_array_check as _uac,
-            univariate_weight_check as _wchk,
-            uv_weighted_score_weights as _wts,
-        )
-
-        obs, fct = _uac(obs, fct, m_axis, backend="numba")
-        obs_w, fct_w = _wts(obs, fct, a, b, w_func, backend="numba")
-        obs, fct, ens_w = _nan(obs, fct, nan_policy, ens_w, backend="numba")
-        obs_w, fct_w, ens_w = _nan(
-            obs_w, fct_w, nan_policy, ens_w=ens_w, backend="numba"
-        )
-        if ens_w is not None:
-            ens_w = _wchk(ens_w, fct, m_axis, backend="numba")
-        if ens_w is None:
-            return crps.estimator_gufuncs("ownrg")(obs, fct, obs_w, fct_w)
-        return crps.estimator_gufuncs_w("ownrg")(obs, fct, obs_w, fct_w, ens_w)
-
+    numba = use_numba(backend, obs, fct)
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
@@ -401,6 +360,10 @@ def owcrps_ensemble(
     if ens_w is not None:
         ens_w = univariate_weight_check(ens_w, fct, m_axis, xp=xp)
 
+    if numba:
+        if ens_w is None:
+            return crps.estimator_gufuncs("ownrg")(obs, fct, obs_w, fct_w)
+        return crps.estimator_gufuncs_w("ownrg")(obs, fct, obs_w, fct_w, ens_w)
     if ens_w is None:
         return crps.ow_ensemble(obs, fct, obs_w, fct_w, xp=xp)
     return crps.ow_ensemble_w(obs, fct, obs_w, fct_w, ens_w, xp=xp)
@@ -497,26 +460,7 @@ def vrcrps_ensemble(
     """
 
     resolve_backend_arg(backend)
-    if use_numba(backend, obs, fct):
-        from scoringrules.core.utils import (
-            apply_nan_policy_ens_uv as _nan,
-            univariate_array_check as _uac,
-            univariate_weight_check as _wchk,
-            uv_weighted_score_weights as _wts,
-        )
-
-        obs, fct = _uac(obs, fct, m_axis, backend="numba")
-        obs_w, fct_w = _wts(obs, fct, a, b, w_func, backend="numba")
-        obs, fct, ens_w = _nan(obs, fct, nan_policy, ens_w, backend="numba")
-        obs_w, fct_w, ens_w = _nan(
-            obs_w, fct_w, nan_policy, ens_w=ens_w, backend="numba"
-        )
-        if ens_w is not None:
-            ens_w = _wchk(ens_w, fct, m_axis, backend="numba")
-        if ens_w is None:
-            return crps.estimator_gufuncs("vrnrg")(obs, fct, obs_w, fct_w)
-        return crps.estimator_gufuncs_w("vrnrg")(obs, fct, obs_w, fct_w, ens_w)
-
+    numba = use_numba(backend, obs, fct)
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
@@ -527,6 +471,10 @@ def vrcrps_ensemble(
     if ens_w is not None:
         ens_w = univariate_weight_check(ens_w, fct, m_axis, xp=xp)
 
+    if numba:
+        if ens_w is None:
+            return crps.estimator_gufuncs("vrnrg")(obs, fct, obs_w, fct_w)
+        return crps.estimator_gufuncs_w("vrnrg")(obs, fct, obs_w, fct_w, ens_w)
     if ens_w is None:
         return crps.vr_ensemble(obs, fct, obs_w, fct_w, xp=xp)
     return crps.vr_ensemble_w(obs, fct, obs_w, fct_w, ens_w, xp=xp)
@@ -595,11 +543,7 @@ def crps_quantile(
     if not fct.shape[-1] == alpha.shape[-1]:
         raise ValueError("Expected matching length of `fct` and `alpha` values.")
     if use_numba(backend, obs, fct):
-        import numpy as np
-
-        return crps.quantile_pinball_gufunc(
-            np.asarray(obs), np.asarray(fct), np.asarray(alpha)
-        )
+        return crps.quantile_pinball_gufunc(obs, fct, alpha)
     return crps.quantile_pinball(obs, fct, alpha, xp=xp)
 
 
