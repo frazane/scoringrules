@@ -137,3 +137,67 @@ def uv_ensemble_inputs(case, M, weighted, seed=0, N=5):
     if weighted:
         kwargs["ens_w"] = w
     return obs, fct, kwargs
+
+
+MV_CASES = ("default", "m_axis", "v_axis", "n1", "int_obs", "single", "batch")
+
+
+def mv_ensemble_inputs(case, M, weighted, seed=0, N=5, D=3):
+    """``(obs, fct, kwargs)`` for a multivariate ensemble parity case.
+
+    ``case`` is one of ``MV_CASES``: ``"default"`` (``obs`` of shape ``(N, D)``,
+    ``fct`` of shape ``(N, M, D)``), ``"m_axis"`` (``fct`` of shape ``(M, N, D)``
+    with ``m_axis=0``), ``"v_axis"`` (``fct`` of shape ``(N, D, M)`` with
+    ``m_axis=-1, v_axis=-2``), ``"n1"`` (``N=1``), ``"int_obs"`` (integer
+    ``obs``), ``"single"`` (``obs`` of shape ``(D,)``, ``fct`` of shape
+    ``(M, D)``) and ``"batch"`` (an extra leading axis, ``fct`` of shape
+    ``(2, N, M, D)``). With ``weighted``, ``kwargs`` holds non-uniform ``ens_w``
+    laid out like ``fct`` without its variables axis.
+    """
+    rng = np.random.default_rng(seed)
+    batch = {"n1": (1,), "single": (), "batch": (2, N)}.get(case, (N,))
+    obs = rng.normal(size=(*batch, D))
+    fct = rng.normal(size=(*batch, M, D))
+    w = rng.uniform(0.1, 2.0, size=(*batch, M))
+    kwargs = {}
+    if case == "m_axis":
+        fct, w = np.moveaxis(fct, -2, 0).copy(), np.moveaxis(w, -1, 0).copy()
+        kwargs["m_axis"] = 0
+    elif case == "v_axis":
+        fct = np.swapaxes(fct, -1, -2).copy()
+        kwargs["m_axis"], kwargs["v_axis"] = -1, -2
+    elif case == "int_obs":
+        obs = rng.integers(-2, 3, size=obs.shape)
+    if weighted:
+        kwargs["ens_w"] = w
+    return obs, fct, kwargs
+
+
+def mark_known_mv_failures(request, case, weighted):
+    """Apply the strict xfails shared by every multivariate parity test."""
+    if case == "v_axis" and weighted:
+        # Both paths fail the same way, so this is not a parity issue.
+        request.applymarker(
+            pytest.mark.xfail(
+                raises=ValueError,
+                strict=True,
+                reason="multivariate_weight_check moves ens_w from m_axis taken "
+                "relative to fct.ndim, so ens_w fails when v_axis comes before "
+                "m_axis (core/utils.py:115-117); not filed, see PR 1 notes",
+            )
+        )
+
+
+def mv_w_func(x):
+    """A smooth, positive multivariate weight function (numpy only)."""
+    return 1.0 / (1.0 + np.exp(-np.mean(x)))
+
+
+def mv_v_func(x):
+    """A multivariate chaining function (numpy only)."""
+    return np.maximum(x, -0.5)
+
+
+def uv_w_func(x):
+    """A smooth, positive univariate weight function (numpy only)."""
+    return 1.0 / (1.0 + np.exp(-x))

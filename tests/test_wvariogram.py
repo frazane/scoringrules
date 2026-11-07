@@ -1,8 +1,11 @@
 import numpy as np
+import pytest
 
 
 import scoringrules as sr
 from scoringrules.backend import backends
+
+from ._parity import MV_CASES, mark_known_mv_failures, mv_ensemble_inputs, mv_w_func
 
 
 ENSEMBLE_SIZE = 51
@@ -85,3 +88,21 @@ def test_twvariogram_score_correctness(backend):
 
     res = sr.twvs_ensemble(obs, fct, v_func, p=1.0, backend=backend)
     np.testing.assert_allclose(res, 0.04856366, rtol=1e-6)
+
+
+@pytest.mark.parametrize("case", MV_CASES)
+@pytest.mark.parametrize("M", [6, 7])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("score", ["owvs_ensemble", "vrvs_ensemble"])
+def test_weighted_variogram_paths_agree(score, weighted, M, case, paths_agree, request):
+    mark_known_mv_failures(request, case, weighted)
+    obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
+    paths_agree(getattr(sr, score), obs, fct, mv_w_func, **kwargs)
+
+
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("score", ["owvs_ensemble", "vrvs_ensemble"])
+def test_weighted_variogram_paths_agree_w_p(score, weighted, paths_agree):
+    obs, fct, kwargs = mv_ensemble_inputs("default", 7, weighted)
+    w = np.random.default_rng(1).uniform(0.1, 2.0, size=(*obs.shape, obs.shape[-1]))
+    paths_agree(getattr(sr, score), obs, fct, mv_w_func, w, p=1.0, **kwargs)

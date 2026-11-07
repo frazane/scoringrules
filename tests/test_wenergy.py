@@ -4,6 +4,8 @@ import pytest
 import scoringrules as sr
 from scoringrules.backend import backends
 
+from ._parity import MV_CASES, mark_known_mv_failures, mv_ensemble_inputs, mv_w_func
+
 
 ENSEMBLE_SIZE = 51
 N = 100
@@ -232,3 +234,13 @@ def test_weighted_energy_nan_policy_with_ens_w(score_fn, backend):
             backend=backend,
         )
         assert np.allclose(res_omit, res_clean)
+
+
+@pytest.mark.parametrize("case", MV_CASES)
+@pytest.mark.parametrize("M", [6, 7])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("score", ["owes_ensemble", "vres_ensemble"])
+def test_weighted_energy_paths_agree(score, weighted, M, case, paths_agree, request):
+    mark_known_mv_failures(request, case, weighted)
+    obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
+    paths_agree(getattr(sr, score), obs, fct, mv_w_func, **kwargs)

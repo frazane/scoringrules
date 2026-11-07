@@ -3,6 +3,17 @@ import pytest
 import scoringrules as sr
 from scoringrules.backend import backends
 
+from ._parity import (
+    MV_CASES,
+    UV_CASES,
+    mark_known_mv_failures,
+    mv_ensemble_inputs,
+    mv_v_func,
+    mv_w_func,
+    uv_ensemble_inputs,
+    uv_w_func,
+)
+
 
 ENSEMBLE_SIZE = 11
 N = 10
@@ -491,3 +502,45 @@ def test_vrgksmv(backend):
         obs, fct, lambda x: backends[backend].mean(x) * 0.0 + 1.0, backend=backend
     )
     np.testing.assert_allclose(res, res0, rtol=1e-6)
+
+
+@pytest.mark.parametrize("case", UV_CASES)
+@pytest.mark.parametrize("M", [6, 7])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+@pytest.mark.parametrize("score", ["gksuv_ensemble", "twgksuv_ensemble"])
+def test_gksuv_paths_agree(score, estimator, weighted, M, case, paths_agree):
+    obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted)
+    args = (-0.5, 1.0) if score == "twgksuv_ensemble" else ()
+    paths_agree(getattr(sr, score), obs, fct, *args, estimator=estimator, **kwargs)
+
+
+@pytest.mark.parametrize("case", UV_CASES)
+@pytest.mark.parametrize("M", [6, 7])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("score", ["owgksuv_ensemble", "vrgksuv_ensemble"])
+def test_weighted_gksuv_paths_agree(score, weighted, M, case, paths_agree):
+    obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted)
+    paths_agree(getattr(sr, score), obs, fct, w_func=uv_w_func, **kwargs)
+
+
+@pytest.mark.parametrize("case", MV_CASES)
+@pytest.mark.parametrize("M", [6, 7])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+@pytest.mark.parametrize("score", ["gksmv_ensemble", "twgksmv_ensemble"])
+def test_gksmv_paths_agree(score, estimator, weighted, M, case, paths_agree, request):
+    mark_known_mv_failures(request, case, weighted)
+    obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
+    args = (mv_v_func,) if score == "twgksmv_ensemble" else ()
+    paths_agree(getattr(sr, score), obs, fct, *args, estimator=estimator, **kwargs)
+
+
+@pytest.mark.parametrize("case", MV_CASES)
+@pytest.mark.parametrize("M", [6, 7])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("score", ["owgksmv_ensemble", "vrgksmv_ensemble"])
+def test_weighted_gksmv_paths_agree(score, weighted, M, case, paths_agree, request):
+    mark_known_mv_failures(request, case, weighted)
+    obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
+    paths_agree(getattr(sr, score), obs, fct, mv_w_func, **kwargs)

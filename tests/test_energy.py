@@ -2,6 +2,8 @@ import numpy as np
 import pytest
 import scoringrules as sr
 
+from ._parity import MV_CASES, mark_known_mv_failures, mv_ensemble_inputs, mv_v_func
+
 
 ENSEMBLE_SIZE = 11
 N = 20
@@ -273,3 +275,15 @@ def test_energy_score_nan_weights(estimator, backend):
             obs[i], fct[i], ens_w=ens_w[i], nan_policy="omit", **kwargs
         )
         assert np.allclose(res_omit, res_clean)
+
+
+@pytest.mark.parametrize("case", MV_CASES)
+@pytest.mark.parametrize("M", [6, 7])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+@pytest.mark.parametrize("score", ["es_ensemble", "twes_ensemble"])
+def test_energy_paths_agree(score, estimator, weighted, M, case, paths_agree, request):
+    mark_known_mv_failures(request, case, weighted)
+    obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
+    args = (mv_v_func,) if score == "twes_ensemble" else ()
+    paths_agree(getattr(sr, score), obs, fct, *args, estimator=estimator, **kwargs)
