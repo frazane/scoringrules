@@ -18,6 +18,13 @@ a 1.0 ``validate=`` flag):
 - ``rps_score`` / ``rls_score``: ``xp.any(fct < 0.0)`` in
   ``core/utils_xp.py::categorical_array_check``.
 - ``quantile_score``: ``xp.any(alpha < 0)`` in ``core/quantile.py::quantile_score``.
+- weighted ``es_ensemble`` / ``twes_ensemble`` / ``vs_ensemble`` / ``twvs_ensemble``
+  (``ens_w=...``, and ``es_ensemble(..., nan_policy="omit")``): ``xp.any(ens_w < 0)``
+  in ``core/utils_xp.py::multivariate_weight_check``.
+- ``es_ensemble(..., nan_policy="raise")``: ``xp.any(nan_mask)`` in
+  ``core/utils_xp.py::apply_nan_policy_ens_mv``.
+- ``owes_ensemble`` / ``vres_ensemble`` / ``owvs_ensemble`` / ``vrvs_ensemble``:
+  ``xp.any(obs_w < 0)`` in ``core/utils_xp.py::mv_weighted_score_weights``.
 """
 
 import numpy as np
@@ -145,3 +152,47 @@ def test_logs_jit(name, args):
     fn = getattr(sr, name)
     args = [jnp.asarray(a) for a in args]
     np.testing.assert_allclose(jax.jit(fn)(*args), fn(*args), rtol=1e-6)
+
+
+@pytest.mark.parametrize("estimator", ["nrg", "fair", "akr", "akr_circperm"])
+def test_energy_score_jit(estimator):
+    rng = np.random.default_rng(0)  # float32 rounding: keep the draw fixed
+    obs = jnp.asarray(rng.normal(size=(5, 3)))
+    fct = jnp.asarray(rng.normal(size=(5, 11, 3)))
+
+    @jax.jit
+    def es(o, x):
+        return sr.es_ensemble(o, x, estimator=estimator)
+
+    @jax.jit
+    def twes(o, x):
+        return sr.twes_ensemble(o, x, lambda v: v.clip(min=-0.5), estimator=estimator)
+
+    expected = sr.es_ensemble(obs, fct, estimator=estimator)
+    np.testing.assert_allclose(es(obs, fct), expected, rtol=1e-5, atol=1e-5)
+    expected = sr.twes_ensemble(
+        obs, fct, lambda v: v.clip(min=-0.5), estimator=estimator
+    )
+    np.testing.assert_allclose(twes(obs, fct), expected, rtol=1e-5, atol=1e-5)
+
+
+@pytest.mark.parametrize("estimator", ["nrg", "fair"])
+def test_variogram_score_jit(estimator):
+    rng = np.random.default_rng(0)  # float32 rounding: keep the draw fixed
+    obs = jnp.asarray(rng.normal(size=(5, 3)))
+    fct = jnp.asarray(rng.normal(size=(5, 11, 3)))
+
+    @jax.jit
+    def vs(o, x):
+        return sr.vs_ensemble(o, x, estimator=estimator)
+
+    @jax.jit
+    def twvs(o, x):
+        return sr.twvs_ensemble(o, x, lambda v: v.clip(min=-0.5), estimator=estimator)
+
+    expected = sr.vs_ensemble(obs, fct, estimator=estimator)
+    np.testing.assert_allclose(vs(obs, fct), expected, rtol=1e-5, atol=1e-5)
+    expected = sr.twvs_ensemble(
+        obs, fct, lambda v: v.clip(min=-0.5), estimator=estimator
+    )
+    np.testing.assert_allclose(twvs(obs, fct), expected, rtol=1e-5, atol=1e-5)

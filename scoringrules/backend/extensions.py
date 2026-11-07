@@ -259,12 +259,18 @@ def _torch_apply_along_axis(func1d, x, axis):
     batch_shape = tuple(xm.shape[:-1])
     # explicit batch size (not -1) so an empty ``axis`` still reshapes
     flat = xm.reshape(math.prod(batch_shape), xm.shape[-1])
+
+    def as_row_tensor(r):
+        # Python floats follow a floating input's precision; as_tensor alone
+        # would make them float32 (torch's default dtype).
+        if isinstance(r, float) and x.is_floating_point():
+            return t.as_tensor(r, dtype=x.dtype, device=x.device)
+        return t.as_tensor(r, device=x.device)
+
     try:
         out = t.vmap(func1d)(flat)
     except Exception:
-        out = t.stack(
-            [t.as_tensor(func1d(row), device=x.device) for row in t.unbind(flat)]
-        )
+        out = t.stack([as_row_tensor(func1d(row)) for row in t.unbind(flat)])
     tail = tuple(out.shape[1:])
     out = out.reshape(batch_shape + tail)
     if tail:

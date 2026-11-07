@@ -189,7 +189,8 @@ def mv_ensemble_inputs(case, M, weighted, seed=0, N=5, D=3):
 
 
 def mark_known_mv_failures(request, case, weighted):
-    """Apply the strict xfails shared by every multivariate parity test."""
+    """Apply the strict xfails of the multivariate parity tests that still use
+    the legacy helpers (kernels, until PR 6)."""
     if case == "v_axis" and weighted:
         # Both paths fail the same way, so this is not a parity issue. Here the
         # moved axis is out of range and it raises; when it happens to be in range
@@ -198,11 +199,11 @@ def mark_known_mv_failures(request, case, weighted):
             pytest.mark.xfail(
                 raises=ValueError,
                 strict=True,
-                reason="ens_w's m_axis is taken relative to fct.ndim, so with v_axis "
-                "before m_axis ens_w raises or silently uses the wrong weights "
-                "(apply_nan_policy_ens_mv, core/utils.py:243, for the energy scores; "
-                "multivariate_weight_check, core/utils.py:117, for the others); "
-                "not filed, see PR 1 notes",
+                reason="legacy multivariate_weight_check takes ens_w's m_axis "
+                "relative to fct.ndim, so with v_axis before m_axis ens_w raises "
+                "or silently uses the wrong weights (core/utils.py); B8, fixed "
+                "for energy and variogram in PR 5, kernels moves to the xp "
+                "helper in PR 6",
             )
         )
 

@@ -177,6 +177,19 @@ def test_apply_along_axis_torch_matches_numpy(axis):
     )
 
 
+def test_apply_along_axis_torch_python_float_keeps_precision():
+    """The loop fallback (func1d not vmappable, here ``.item()``) keeps a float64
+    input's precision for Python-float results instead of torch's float32 default."""
+    torch = pytest.importorskip("torch")
+    x = np.random.default_rng(0).normal(size=(3, 4))
+    t = torch.tensor(x, dtype=torch.float64)
+    out = ext.apply_along_axis(
+        array_namespace(t), lambda a: 1.0 / 3.0 + a.mean().item(), t, -1
+    )
+    assert out.dtype == torch.float64
+    np.testing.assert_allclose(out.numpy(), 1.0 / 3.0 + x.mean(axis=-1), rtol=1e-15)
+
+
 def test_apply_along_axis_torch_keeps_grad_and_device():
     torch = pytest.importorskip("torch")
 
