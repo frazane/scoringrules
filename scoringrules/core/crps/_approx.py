@@ -74,8 +74,9 @@ def _crps_ensemble_akr_circperm(obs: "Array", fct: "Array", *, xp) -> "Array":
     """CRPS estimator based on the AKR with cyclic permutation."""
     M: int = fct.shape[-1]
     e_1 = xp.sum(xp.abs(obs[..., None] - fct), axis=-1) / M
-    shift = M // 2
-    e_2 = xp.sum(xp.abs(fct - xp.roll(fct, shift=shift, axis=-1)), axis=-1) / M
+    # member i is paired with member (i + M // 2) % M
+    partner = xp.roll(fct, shift=-(M // 2), axis=-1)
+    e_2 = xp.sum(xp.abs(fct - partner), axis=-1) / M
     return e_1 - 0.5 * e_2
 
 

@@ -186,7 +186,7 @@ def _crps_ensemble_akr_circperm_gufunc(
     e_1 = 0.0
     e_2 = 0.0
     for i, forecast in enumerate(fct):
-        sigma_i = int((i + 1 + ((M - 1) / 2)) % M)
+        sigma_i = (i + M // 2) % M
         e_1 += abs(forecast - obs)
         e_2 += abs(forecast - fct[sigma_i])
     out[0] = e_1 / M - 0.5 * 1 / M * e_2

@@ -429,25 +429,12 @@ def _ensemble_parity_params():
         for weighted in (False, True):
             for M in (6, 7):
                 for case in UV_CASES:
-                    marks = ()
-                    if (
-                        estimator == "akr_circperm"
-                        and weighted
-                        and M % 2 == 0
-                        and _expected_raise(case, estimator) is None
-                    ):
-                        marks = pytest.mark.xfail(
-                            raises=AssertionError,
-                            strict=True,
-                            reason="#149, fixed in PR 1",
-                        )
                     yield pytest.param(
                         estimator,
                         weighted,
                         M,
                         case,
                         id=f"{estimator}-{'w' if weighted else 'uw'}-M{M}-{case}",
-                        marks=marks,
                     )
 
 

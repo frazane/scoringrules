@@ -106,9 +106,10 @@ def _ks_ensemble_akr_circperm_uv(
     B = backends.active if backend is None else backends[backend]
     M: int = fct.shape[-1]
     e_1 = B.sum(gauss_kern_uv(obs[..., None], fct, backend=backend), axis=-1)
-    shift = M // 2
+    # member i is paired with member (i + M // 2) % M
     e_2 = B.sum(
-        gauss_kern_uv(fct, B.roll(fct, shift=shift, axis=-1), backend=backend), axis=-1
+        gauss_kern_uv(fct, B.roll(fct, shift=-(M // 2), axis=-1), backend=backend),
+        axis=-1,
     )
     e_3 = gauss_kern_uv(obs, obs, backend=backend)
 
@@ -204,9 +205,10 @@ def _ks_ensemble_akr_circperm_mv(
     M: int = fct.shape[-2]
 
     e_1 = B.sum(gauss_kern_mv(B.expand_dims(obs, -2), fct, backend=backend), axis=-1)
-    shift = M // 2
+    # member i is paired with member (i + M // 2) % M
     e_2 = B.sum(
-        gauss_kern_mv(fct, B.roll(fct, shift=shift, axis=-2), backend=backend), axis=-1
+        gauss_kern_mv(fct, B.roll(fct, shift=-(M // 2), axis=-2), backend=backend),
+        axis=-1,
     )
     e_3 = gauss_kern_mv(obs, obs, backend=backend)
 
