@@ -2,7 +2,7 @@ import typing as tp
 
 from scoringrules.backend import get_namespace
 from scoringrules.core import crps, stats_xp
-from scoringrules.core.utils_xp import (
+from scoringrules.core.utils import (
     univariate_array_check,
     univariate_weight_check,
     uv_weighted_score_weights,

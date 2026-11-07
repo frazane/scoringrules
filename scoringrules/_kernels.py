@@ -3,12 +3,13 @@ import typing as tp
 from scoringrules._dispatch import resolve_backend_arg, use_numba
 from scoringrules.backend import get_namespace
 from scoringrules.core import kernels
-from scoringrules.core.utils import estimator_check, mv_weighted_score_chain
-from scoringrules.core.utils_xp import (
+from scoringrules.core.utils import (
     asarray_like,
     asarray_matching,
+    estimator_check,
     multivariate_array_check,
     multivariate_weight_check,
+    mv_weighted_score_chain,
     mv_weighted_score_weights,
     univariate_array_check,
     univariate_weight_check,
