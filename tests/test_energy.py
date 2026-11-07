@@ -278,7 +278,9 @@ def test_energy_paths_agree(score, estimator, weighted, M, case, paths_agree):
     paths_agree(getattr(sr, score), obs, fct, *args, estimator=estimator, **kwargs)
 
 
-def test_energy_score_akr_circperm_ens_w_known_value(backend, to_backend, backend_kwargs):
+def test_energy_score_akr_circperm_ens_w_known_value(
+    backend, to_backend, backend_kwargs
+):
     """Weighted akr_circperm pairs member i with (i + M // 2) % M and uses w_i (#149)."""
     obs = np.array([0.3, -0.1])
     fct = np.array([[0.1, 0.2], [-0.4, 0.0], [1.2, -0.5]])
