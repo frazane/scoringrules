@@ -240,8 +240,10 @@ def test_twgksmv(backend, to_backend, backend_kwargs):
     res = sr.twgksmv_ensemble(obs, fct, lambda x: x.clip(min=0.2), **backend_kwargs)
     assert_close(res, 0.08671498, backend, rtol=1e-6)
 
-    res = sr.twgksmv_ensemble(obs, fct, lambda x: x.clip(max=1), **backend_kwargs)
-    assert_close(res, 0.1016436, backend, rtol=1e-6)
+    # a threshold that moves obs and two members (every MV_OBS/MV_FCT value is < 1)
+    expected = _ref_kernel_score_mv(MV_OBS, MV_FCT, v=lambda x: min(x, 0.7))
+    res = sr.twgksmv_ensemble(obs, fct, lambda x: x.clip(max=0.7), **backend_kwargs)
+    assert_close(res, expected, backend, rtol=1e-6)
 
 
 @pytest.mark.parametrize("score", ["owgksuv_ensemble", "vrgksuv_ensemble"])
@@ -301,13 +303,62 @@ def test_weighted_gksmv(score, backend, to_backend, backend_kwargs):
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend, rtol=1e-6)
 
-    if score == "owgksmv_ensemble":
-        obs, fct = to_backend(MV_OBS), to_backend(MV_FCT)
-        res = fn(obs, fct, lambda x: (x > 0.2).all(), **backend_kwargs)
-        assert_close(res, 0.03901075, backend, rtol=1e-5)
+    # weight functions that drop members (every MV_OBS/MV_FCT value is < 1)
+    kind = "ow" if score == "owgksmv_ensemble" else "vr"
+    obs, fct = to_backend(MV_OBS), to_backend(MV_FCT)
+    for w_func, w_ref in (
+        (lambda x: (x > 0.2).all(), lambda x: float(all(xi > 0.2 for xi in x))),
+        (lambda x: x[1] > 0.5, lambda x: float(x[1] > 0.5)),
+        (lambda x: 1.0 / (1.0 + x.sum() ** 2), lambda x: 1.0 / (1.0 + sum(x) ** 2)),
+    ):
+        expected = _ref_kernel_score_mv(MV_OBS, MV_FCT, w=w_ref, kind=kind)
+        res = fn(obs, fct, w_func, **backend_kwargs)
+        assert_close(res, expected, backend, rtol=1e-6)
 
-        res = fn(obs, fct, lambda x: (x < 1.0).all(), **backend_kwargs)
-        assert_close(res, 0.1016436, backend, rtol=1e-6)
+
+def _ref_kernel_score_mv(obs, fct, v=None, w=None, kind="tw"):
+    """Plain-Python Gaussian kernel score of one multivariate ensemble ``fct``
+    (members x variables) from the definitions in the docstrings: ``"tw"``
+    applies the chaining function ``v`` elementwise, ``"ow"``/``"vr"`` use
+    the weight function ``w`` of a member vector."""
+    obs, fct = [float(y) for y in obs], [[float(x) for x in m] for m in fct]
+    M = len(fct)
+
+    def k(a, b):
+        return math.exp(-0.5 * sum((ai - bi) ** 2 for ai, bi in zip(a, b)))
+
+    if kind == "tw":
+        v = v or (lambda x: x)
+        obs, fct = [v(y) for y in obs], [[v(x) for x in m] for m in fct]
+        wy, wx = 1.0, [1.0] * M
+    else:
+        wy, wx = w(obs), [w(m) for m in fct]
+    e_1 = sum(k(fct[m], obs) * wx[m] * wy for m in range(M)) / M
+    e_2 = sum(k(fct[m], fct[j]) * wx[m] * wx[j] for m in range(M) for j in range(M)) / (
+        M**2
+    )
+    e_3 = k(obs, obs) * wy * wy
+    if kind == "ow":
+        wbar = sum(wx) / M
+        return -(e_1 / wbar - 0.5 * e_2 * wy / wbar**2 - 0.5 * k(obs, obs) * wy)
+    return -(e_1 - 0.5 * e_2 - 0.5 * e_3)
+
+
+def test_ref_kernel_score_mv_matches_r():
+    """The plain-Python reference reproduces the R (scoringRules) values used
+    as known values in this file."""
+    np.testing.assert_allclose(
+        _ref_kernel_score_mv(MV_OBS, MV_FCT, v=lambda x: max(x, 0.2)),
+        0.08671498,
+        rtol=1e-6,
+    )
+    np.testing.assert_allclose(
+        _ref_kernel_score_mv(
+            MV_OBS, MV_FCT, w=lambda x: float(all(xi > 0.2 for xi in x)), kind="ow"
+        ),
+        0.03901075,
+        rtol=1e-6,
+    )
 
 
 # the univariate kernel scores have no nan_policy
