@@ -11,7 +11,10 @@ def gauss_kern_uv(x1: "ArrayLike", x2: "ArrayLike", *, xp) -> "Array":
 
 def gauss_kern_mv(x1: "ArrayLike", x2: "ArrayLike", *, xp) -> "Array":
     """Compute the gaussian kernel evaluated at vectors x1 and x2."""
-    return xp.exp(-0.5 * xp.norm(x1 - x2, -1) ** 2)
+    # squared distance as a sum of squares, not norm ** 2: the norm has no
+    # derivative at 0 (the i == j pairs and k(obs, obs)), so jax grads were NaN
+    d = x1 - x2
+    return xp.exp(-0.5 * xp.sum(d * d, axis=-1))
 
 
 def ensemble_uv(

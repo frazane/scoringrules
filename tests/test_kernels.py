@@ -630,3 +630,47 @@ def test_weighted_kernels_grad_torch(score):
     with torch.no_grad():
         expected = _finite_difference(f, fct.detach(), (2, 3))
     np.testing.assert_allclose(fct.grad[2, 3].item(), expected, rtol=1e-5)
+
+
+def _jax_mv_scores(estimator):
+    ens_w = np.random.default_rng(8).uniform(0.1, 1.0, (4, ENSEMBLE_SIZE))
+    return {
+        "gksmv": lambda o, x: sr.gksmv_ensemble(o, x, estimator=estimator),
+        "gksmv_w": lambda o, x: sr.gksmv_ensemble(
+            o, x, ens_w=ens_w, estimator=estimator
+        ),
+        "twgksmv": lambda o, x: sr.twgksmv_ensemble(
+            o, x, lambda v: v.clip(min=-0.5), estimator=estimator
+        ),
+        "owgksmv": lambda o, x: sr.owgksmv_ensemble(o, x, _mv_w_func),
+        "vrgksmv": lambda o, x: sr.vrgksmv_ensemble(o, x, _mv_w_func),
+    }
+
+
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+def test_kernels_mv_grad_jax(estimator):
+    """jax grads of the multivariate scores are finite (the squared distance
+    is a sum of squares; norm ** 2 had a NaN derivative at 0) and match a
+    central finite difference, for fct and obs."""
+    jax = pytest.importorskip("jax")
+    jnp = jax.numpy
+    rng = np.random.default_rng(7)
+    with jax.enable_x64(True):
+        obs = jnp.asarray(rng.normal(size=(4, N_VARS)))
+        fct = jnp.asarray(rng.normal(size=(4, ENSEMBLE_SIZE, N_VARS)))
+        h = 1e-6
+        for name, score in _jax_mv_scores(estimator).items():
+
+            def f(o, x):
+                return score(o, x).sum()
+
+            g_obs, g_fct = jax.grad(f, argnums=(0, 1))(obs, fct)
+            assert jnp.isfinite(g_obs).all() and jnp.isfinite(g_fct).all(), name
+            fd_fct = (
+                f(obs, fct.at[1, 2, 0].add(h)) - f(obs, fct.at[1, 2, 0].add(-h))
+            ) / (2 * h)
+            fd_obs = (f(obs.at[1, 1].add(h), fct) - f(obs.at[1, 1].add(-h), fct)) / (
+                2 * h
+            )
+            np.testing.assert_allclose(g_fct[1, 2, 0], fd_fct, rtol=1e-5, err_msg=name)
+            np.testing.assert_allclose(g_obs[1, 1], fd_obs, rtol=1e-5, err_msg=name)
