@@ -29,12 +29,15 @@ def test_error_spread_score(backend, to_backend, backend_kwargs):
     res = sr.error_spread_score(
         to_backend(obs[:1]), to_backend(fct.T[:1]), **backend_kwargs
     )
+    assert_inferred(res, backend)
     assert res.shape == (1,)
 
     # test correctness
     obs = 0.5
     fct = np.sqrt(np.arange(ENSEMBLE_SIZE))
     res = sr.error_spread_score(to_backend(obs), to_backend(fct), **backend_kwargs)
+    if backend != "numba":  # the lazy gufunc returns a Python float for 0-d obs
+        assert_inferred(res, backend)
     assert np.isclose(np.asarray(res), 1.7942340)
 
     # approx zero when perfect forecast
@@ -58,9 +61,13 @@ def test_error_spread_score_paths_agree(case, M, paths_agree):
 def test_error_spread_score_float32(backend, to_backend_float32, backend_kwargs):
     obs = to_backend_float32(np.random.randn(N))
     fct = to_backend_float32(np.random.randn(N, ENSEMBLE_SIZE))
-    res = sr.error_spread_score(obs, fct, **backend_kwargs)
-    assert_inferred(res, backend)
-    assert res.dtype == fct.dtype
+    for res in (
+        sr.error_spread_score(obs, fct, **backend_kwargs),
+        # Python-float obs take the forecast's dtype
+        sr.error_spread_score([0.5] * N, fct, **backend_kwargs),
+    ):
+        assert_inferred(res, backend)
+        assert res.dtype == fct.dtype
 
 
 def test_error_spread_score_legacy_backend_string_deprecated():
@@ -76,5 +83,34 @@ def test_error_spread_score_grad_torch():
     fct = torch.tensor(
         np.random.randn(N, ENSEMBLE_SIZE), dtype=torch.float64, requires_grad=True
     )
-    sr.error_spread_score(obs, fct).sum().backward()
-    assert torch.isfinite(fct.grad).all()
+    assert torch.autograd.gradcheck(lambda f: sr.error_spread_score(obs, f), (fct,))
+
+
+def test_error_spread_score_numba_dispatch(backend, to_backend):
+    obs, fct = to_backend(np.random.randn(N)), to_backend(np.random.randn(N, 7))
+    if backend in ("jax", "torch"):
+        with pytest.raises(ValueError, match="numpy-compatible"):
+            sr.error_spread_score(obs, fct, backend="numba")
+    else:
+        assert_inferred(sr.error_spread_score(obs, fct, backend="numba"), backend)
+
+
+def test_error_spread_score_set_active_numba(requires_numba, monkeypatch):
+    from scoringrules.backend import backends
+    from scoringrules.core import error_spread
+
+    calls = []
+    gufunc = error_spread._ess_gufunc
+
+    def spy(*args):
+        calls.append(args)
+        return gufunc(*args)
+
+    monkeypatch.setattr(error_spread, "_ess_gufunc", spy)
+    monkeypatch.setattr(backends, "_active", "numba")
+    obs, fct = np.random.randn(N), np.random.randn(N, ENSEMBLE_SIZE)
+    sr.error_spread_score(obs, fct)
+    assert len(calls) == 1
+    torch = pytest.importorskip("torch")
+    res = sr.error_spread_score(torch.as_tensor(obs), torch.as_tensor(fct))
+    assert len(calls) == 1 and isinstance(res, torch.Tensor)

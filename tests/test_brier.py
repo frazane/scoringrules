@@ -137,6 +137,11 @@ def test_brier_family_float32(backend, to_backend_float32, backend_kwargs):
         sr.log_score(obs_b, fct_b, **backend_kwargs),
         sr.rps_score(obs_k, fct_k, **backend_kwargs),
         sr.rls_score(obs_k, fct_k, **backend_kwargs),
+        # Python obs take the forecast's dtype
+        sr.brier_score(1, fct_b, **backend_kwargs),
+        sr.log_score([0, 1, 1], fct_b, **backend_kwargs),
+        sr.rps_score(OBS_K, fct_k, **backend_kwargs),
+        sr.rls_score(OBS_K, fct_k, **backend_kwargs),
     ):
         assert_inferred(res, backend)
         assert res.dtype == fct_b.dtype
@@ -151,6 +156,16 @@ def test_brier_family_grad_torch():
     torch = pytest.importorskip("torch")
     obs_b = torch.tensor([0.0, 1.0, 1.0], dtype=torch.float64)
     obs_k = torch.tensor(OBS_K, dtype=torch.float64)
+
+    # analytic: d/dF (F - y)^2 = 2 (F - y), d/dF -log|F + y - 1| = -1 / (F + y - 1)
+    fct = torch.tensor([0.2, 0.7, 0.4], dtype=torch.float64, requires_grad=True)
+    sr.brier_score(obs_b, fct).sum().backward()
+    torch.testing.assert_close(fct.grad, 2 * (fct.detach() - obs_b))
+    fct.grad = None
+    sr.log_score(obs_b, fct).sum().backward()
+    torch.testing.assert_close(fct.grad, -1 / (fct.detach() + obs_b - 1))
+
+    # finite differences
     for fn, obs, fct in (
         (sr.brier_score, obs_b, [0.2, 0.7, 0.4]),
         (sr.log_score, obs_b, [0.2, 0.7, 0.4]),
@@ -158,5 +173,19 @@ def test_brier_family_grad_torch():
         (sr.rls_score, obs_k, FCT_K),
     ):
         fct = torch.tensor(fct, dtype=torch.float64, requires_grad=True)
-        fn(obs, fct).sum().backward()
-        assert torch.isfinite(fct.grad).all(), fn.__name__
+        assert torch.autograd.gradcheck(lambda f, fn=fn, o=obs: fn(o, f), (fct,))
+
+
+@pytest.mark.parametrize("fn", ["brier_score", "log_score", "rps_score", "rls_score"])
+def test_brier_family_numba_arg_infers(fn, backend, to_backend):
+    # no gufunc: backend="numba" means "infer", also for jax/torch inputs
+    obs, fct = (
+        ([0, 1], [0.2, 0.7])
+        if fn in ("brier_score", "log_score")
+        else (
+            OBS_K,
+            FCT_K,
+        )
+    )
+    res = getattr(sr, fn)(to_backend(obs), to_backend(fct), backend="numba")
+    assert_inferred(res, backend)

@@ -89,13 +89,14 @@ def test_weighted_interval_score(backend, to_backend, backend_kwargs):
     assert np.all(1 - WIS / CRPS <= 0.001 * CRPS)
 
 
-def test_weighted_interval_score_list_alpha(backend_kwargs):
+def test_weighted_interval_score_list_alpha(backend, to_backend, backend_kwargs):
     alpha = [0.2, 0.5, 0.8]
-    obs = np.zeros(3)
-    lower, upper = -np.ones((3, 3)), np.ones((3, 3))
+    obs = to_backend(np.zeros(3))
+    lower, upper = to_backend(-np.ones((3, 3))), to_backend(np.ones((3, 3)))
     res = sr.weighted_interval_score(obs, obs, lower, upper, alpha, **backend_kwargs)
+    assert_inferred(res, backend)
     expected = sr.weighted_interval_score(
-        obs, obs, lower, upper, np.asarray(alpha), **backend_kwargs
+        obs, obs, lower, upper, to_backend(alpha), **backend_kwargs
     )
     assert np.allclose(np.asarray(res), np.asarray(expected))
 
@@ -109,6 +110,14 @@ def test_interval_float32(backend, to_backend_float32, backend_kwargs):
     for res in (
         sr.interval_score(obs, lower, upper, alpha, **backend_kwargs),
         sr.weighted_interval_score(obs, obs, lower, upper, alpha, **backend_kwargs),
+        # Python-float parameters take the inputs' dtype
+        sr.interval_score(obs, lower[:, 0], upper[:, 0], 0.1, **backend_kwargs),
+        sr.weighted_interval_score(
+            obs, obs, lower, upper, alpha, 0.3, **backend_kwargs
+        ),
+        sr.weighted_interval_score(
+            obs, obs, lower, upper, list(np.linspace(0.1, 0.9, 5)), **backend_kwargs
+        ),
     ):
         assert_inferred(res, backend)
         assert res.dtype == obs.dtype
@@ -126,10 +135,61 @@ def test_weighted_interval_score_grad_torch():
     alpha = torch.tensor([0.2, 0.5], dtype=dt)
     lower = torch.tensor([[-1.0, -0.5], [-1.0, -0.5]], dtype=dt, requires_grad=True)
     upper = torch.tensor([[1.0, 0.5], [1.0, 0.5]], dtype=dt, requires_grad=True)
+    # analytic: dIS/du = 1 - (2/a) 1{y > u}, dIS/dl = -1 + (2/a) 1{y < l}
+    sr.interval_score(obs, lower, upper, alpha).sum().backward()
+    y, a = obs[:, None], alpha
+    expected_u = 1 - (2 / a) * (y > upper.detach())
+    expected_l = -1 + (2 / a) * (y < lower.detach())
+    torch.testing.assert_close(upper.grad, expected_u)
+    torch.testing.assert_close(lower.grad, expected_l)
+    # WIS with the default weights alpha/2, divided by K + 1/2
+    lower.grad = upper.grad = None
     sr.weighted_interval_score(obs, obs, lower, upper, alpha).sum().backward()
-    assert torch.isfinite(lower.grad).all() and torch.isfinite(upper.grad).all()
-    sr.interval_score(obs[:, None], lower, upper, alpha).sum().backward()
-    assert torch.isfinite(lower.grad).all() and torch.isfinite(upper.grad).all()
+    torch.testing.assert_close(upper.grad, expected_u * (a / 2) / 2.5)
+    torch.testing.assert_close(lower.grad, expected_l * (a / 2) / 2.5)
+    # finite differences, also through the median term
+    median = torch.tensor([0.3, 1.0], dtype=dt, requires_grad=True)
+    assert torch.autograd.gradcheck(
+        lambda m, lo, up: sr.weighted_interval_score(obs, m, lo, up, alpha),
+        (median, lower, upper),
+    )
+
+
+def test_interval_score_numba_arg_infers(backend, to_backend):
+    # no gufunc: backend="numba" means "infer", also for jax/torch inputs
+    fa = to_backend
+    res = sr.interval_score(fa(0.1), fa(0.0), fa(0.4), fa(0.5), backend="numba")
+    assert_inferred(res, backend)
+
+
+def test_weighted_interval_score_numba_dispatch(backend, to_backend):
+    args = [to_backend(x) for x in _wis_inputs("default")[0]]
+    if backend in ("jax", "torch"):
+        with pytest.raises(ValueError, match="numpy-compatible"):
+            sr.weighted_interval_score(*args, backend="numba")
+    else:
+        assert_inferred(sr.weighted_interval_score(*args, backend="numba"), backend)
+
+
+def test_weighted_interval_score_set_active_numba(requires_numba, monkeypatch):
+    from scoringrules.backend import backends
+    from scoringrules.core import interval
+
+    calls = []
+    gufunc = interval._weighted_interval_score_gufunc
+
+    def spy(*args):
+        calls.append(args)
+        return gufunc(*args)
+
+    monkeypatch.setattr(interval, "_weighted_interval_score_gufunc", spy)
+    monkeypatch.setattr(backends, "_active", "numba")
+    args, _ = _wis_inputs("default")
+    sr.weighted_interval_score(*args)
+    assert len(calls) == 1
+    torch = pytest.importorskip("torch")
+    res = sr.weighted_interval_score(*map(torch.as_tensor, args))
+    assert len(calls) == 1 and isinstance(res, torch.Tensor)
 
 
 # The array path adds ``w_median * median`` where the gufunc adds

@@ -45,9 +45,13 @@ def test_quantile_score_float32(backend, to_backend_float32, backend_kwargs):
     obs = to_backend_float32(np.random.randn(5))
     fct = to_backend_float32(np.random.randn(5))
     alpha = to_backend_float32(np.full(5, 0.3))
-    res = sr.quantile_score(obs, fct, alpha, **backend_kwargs)
-    assert_inferred(res, backend)
-    assert res.dtype == fct.dtype
+    for res in (
+        sr.quantile_score(obs, fct, alpha, **backend_kwargs),
+        sr.quantile_score(obs, fct, 0.3, **backend_kwargs),
+        sr.quantile_score(0.5, fct, alpha, **backend_kwargs),
+    ):
+        assert_inferred(res, backend)
+        assert res.dtype == fct.dtype
 
 
 def test_quantile_score_legacy_backend_string_deprecated():
@@ -60,5 +64,16 @@ def test_quantile_score_grad_torch():
     obs = torch.tensor([0.3, 0.6], dtype=torch.float64)
     fct = torch.tensor([0.5, 0.1], dtype=torch.float64, requires_grad=True)
     sr.quantile_score(obs, fct, 0.2).sum().backward()
-    # d/dfct = 1{obs < fct} - alpha
-    assert torch.allclose(fct.grad, torch.tensor([0.8, -0.2], dtype=torch.float64))
+    # d/dfct = 1{obs < fct} - alpha, exact in float64: the Python-float alpha
+    # takes the tensors' dtype instead of torch's float32 default
+    expected = torch.tensor([1.0 - 0.2, -0.2], dtype=torch.float64)
+    torch.testing.assert_close(fct.grad, expected, rtol=0, atol=0)
+    assert torch.autograd.gradcheck(lambda f: sr.quantile_score(obs, f, 0.2), (fct,))
+
+
+def test_quantile_score_numba_arg_infers(backend, to_backend):
+    # no gufunc: backend="numba" means "infer", also for jax/torch inputs
+    res = sr.quantile_score(
+        to_backend([0.3]), to_backend([0.5]), to_backend(0.2), backend="numba"
+    )
+    assert_inferred(res, backend)

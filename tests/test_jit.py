@@ -57,8 +57,8 @@ def test_interval_scores_jit():
     half = jnp.asarray(np.random.uniform(0.1, 2.0, (5, 3)))
     lower, upper = obs[:, None] - half, obs[:, None] + half
     np.testing.assert_allclose(
-        jax.jit(sr.interval_score)(obs[:, None], lower, upper, alpha),
-        sr.interval_score(obs[:, None], lower, upper, alpha),
+        jax.jit(sr.interval_score)(obs, lower, upper, alpha),
+        sr.interval_score(obs, lower, upper, alpha),
         rtol=1e-6,
     )
     np.testing.assert_allclose(
