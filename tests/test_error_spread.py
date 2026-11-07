@@ -36,8 +36,7 @@ def test_error_spread_score(backend, to_backend, backend_kwargs):
     obs = 0.5
     fct = np.sqrt(np.arange(ENSEMBLE_SIZE))
     res = sr.error_spread_score(to_backend(obs), to_backend(fct), **backend_kwargs)
-    if backend != "numba":  # the lazy gufunc returns a Python float for 0-d obs
-        assert_inferred(res, backend)
+    assert_inferred(res, backend)
     assert np.isclose(np.asarray(res), 1.7942340)
 
     # approx zero when perfect forecast
@@ -51,10 +50,16 @@ def test_error_spread_score(backend, to_backend, backend_kwargs):
     assert not np.any(res - 0.0 > 0.0001)
 
 
+# error_spread_score has no nan_policy: NaN inputs propagate, so of the nan cases
+# only the propagate data applies (with the kwarg dropped).
+ESS_CASES = [c for c in UV_CASES if not c.startswith("nan_")] + ["nan_propagate"]
+
+
 @pytest.mark.parametrize("M", (6, 7))
-@pytest.mark.parametrize("case", UV_CASES)
+@pytest.mark.parametrize("case", ESS_CASES)
 def test_error_spread_score_paths_agree(case, M, paths_agree):
     obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted=False)
+    kwargs.pop("nan_policy", None)
     paths_agree(sr.error_spread_score, obs, fct, **kwargs)
 
 

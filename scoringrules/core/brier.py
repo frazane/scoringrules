@@ -19,9 +19,7 @@ def rps_score(obs: "ArrayLike", fct: "ArrayLike", *, xp) -> "Array":
 
 def log_score(obs: "ArrayLike", fct: "ArrayLike", *, xp) -> "Array":
     """Compute the Log Score for predicted probabilities of binary events."""
-    # asarray: for 0-d numpy input the namespace's scalar-tolerant log/abs
-    # return a Python float
-    return xp.asarray(-xp.log(xp.abs(fct + obs - 1.0)))
+    return -xp.log(xp.abs(fct + obs - 1.0))
 
 
 def rls_score(obs: "ArrayLike", fct: "ArrayLike", *, xp) -> "Array":
