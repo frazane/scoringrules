@@ -5,7 +5,7 @@ the follow-on migration consolidates them."""
 
 import typing as tp
 
-from array_api_compat import is_array_api_obj
+from array_api_compat import array_namespace, is_array_api_obj
 
 from .utils import (
     EPSILON,
@@ -206,15 +206,34 @@ def apply_nan_policy_ens_uv(
     )
 
 
+def asarray_like(x, ref, *, xp):
+    """``x`` as an ``xp`` array of ``xp.float_dtype(ref)`` on ``ref``'s device.
+
+    Lists and arrays of another framework or device (e.g. numpy weights for
+    CUDA tensors) are converted with ``device=``. Arrays that already match go
+    through ``astype`` only: torch's ``asarray`` with keywords turns off
+    ``requires_grad`` on its input.
+    """
+    device = xp.device(ref)
+    native = (
+        is_array_api_obj(x)
+        and array_namespace(x) is array_namespace(ref)
+        and xp.device(x) == device
+    )
+    if not native:
+        x = xp.asarray(x, device=device)
+    return xp.astype(x, xp.float_dtype(ref))
+
+
 def _mv_weights_ensemble_last(ens_w, fct, m_axis, v_axis, *, xp):
     """``ens_w`` as ``xp.float_dtype(fct)`` with its ensemble axis last.
 
     ``m_axis`` and ``v_axis`` describe the forecast layout the weights follow:
     ``ens_w`` is that layout without the variables axis, so its ensemble axis
     shifts down by one when ``v_axis`` comes before ``m_axis``. ``fct`` is
-    only used for its rank and dtype.
+    only used for its rank, dtype and device.
     """
-    ens_w = xp.astype(xp.asarray(ens_w), xp.float_dtype(fct))
+    ens_w = asarray_like(ens_w, fct, xp=xp)
     if ens_w.ndim != fct.ndim - 1:
         raise ValueError(
             f"Shape of weights {ens_w.shape} is not compatible with forecast "

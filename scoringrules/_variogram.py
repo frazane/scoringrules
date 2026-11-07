@@ -5,6 +5,7 @@ from scoringrules.backend import get_namespace
 from scoringrules.core import variogram
 from scoringrules.core.utils import estimator_check, mv_weighted_score_chain
 from scoringrules.core.utils_xp import (
+    asarray_like,
     multivariate_array_check,
     multivariate_weight_check,
     mv_weighted_score_weights,
@@ -15,11 +16,14 @@ if tp.TYPE_CHECKING:
 
 
 def _dimension_weights(w, obs, fct, *, xp):
-    """``w`` as an array, or equal weights of shape ``(..., D, D)``."""
+    """``w`` as an array like ``fct`` (float dtype, device), or equal weights of
+    shape ``(..., D, D)``."""
     if w is None:
         D = fct.shape[-1]
-        return xp.ones(obs.shape + (D,), dtype=fct.dtype, device=xp.device(fct))
-    return xp.asarray(w)
+        return xp.ones(
+            obs.shape + (D,), dtype=xp.float_dtype(fct), device=xp.device(fct)
+        )
+    return asarray_like(w, fct, xp=xp)
 
 
 def vs_ensemble(

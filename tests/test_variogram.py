@@ -231,3 +231,27 @@ def test_variogram_grad_torch(estimator):
         fct.grad = None
         sr.vs_ensemble(obs, fct, p=1.0, estimator=estimator, **kwargs).sum().backward()
         assert fct.grad is not None and torch.isfinite(fct.grad).all()
+
+
+def test_mv_numpy_weights_follow_torch_inputs():
+    """numpy ``ens_w`` / ``w`` with torch forecasts are converted to the forecast's
+    framework, device and float dtype (they used to raise on the array path)."""
+    torch = pytest.importorskip("torch")
+    rng = np.random.default_rng(7)
+    obs, fct = rng.normal(size=(4, 3)), rng.normal(size=(4, 6, 3))
+    ens_w, w = rng.uniform(0.1, 1.0, (4, 6)), rng.uniform(0.1, 1.0, (4, 3, 3))
+    for dtype in (torch.float32, torch.float64):
+        o, f = torch.as_tensor(obs, dtype=dtype), torch.as_tensor(fct, dtype=dtype)
+        for res, ref in (
+            (sr.es_ensemble(o, f, ens_w=ens_w), sr.es_ensemble(obs, fct, ens_w=ens_w)),
+            (
+                sr.vs_ensemble(o, f, w, ens_w=ens_w),
+                sr.vs_ensemble(obs, fct, w, ens_w=ens_w),
+            ),
+            (
+                sr.owvs_ensemble(o, f, lambda x: x.mean() + 5.0, w, ens_w=ens_w),
+                sr.owvs_ensemble(obs, fct, lambda x: x.mean() + 5.0, w, ens_w=ens_w),
+            ),
+        ):
+            assert isinstance(res, torch.Tensor) and res.dtype == dtype
+            np.testing.assert_allclose(res.numpy(), ref, rtol=1e-5)
