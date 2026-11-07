@@ -330,3 +330,10 @@ def test_quantile_keeps_float32(backend, q):
 
     x = as_float32(np.random.default_rng(1).normal(size=(3, 8)), backend)
     assert get_namespace(x).quantile(x, q, axis=-1).dtype == x.dtype
+
+
+def test_factorial_comb_keep_float32_numpy():
+    x = np.asarray([5.0, 6.0], dtype=np.float32)
+    assert ext.factorial(NP, x).dtype == np.float32
+    assert ext.comb(NP, x, x - 2).dtype == np.float32
+    assert ext.factorial(NP, np.asarray([5, 6])).dtype == np.float64

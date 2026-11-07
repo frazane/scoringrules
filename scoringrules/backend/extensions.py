@@ -159,7 +159,9 @@ def factorial(xp, n):
     if k == "torch":
         t = _ts()
         return t.exp(t.lgamma(n + 1))
-    return sp.factorial(n)
+    # sp.factorial always returns float64; keep float32 inputs in float32.
+    out = sp.factorial(n)
+    return out.astype(np.result_type(np.asarray(n).dtype, np.float32), copy=False)
 
 
 def comb(xp, n, k):
@@ -176,7 +178,7 @@ def comb(xp, n, k):
     # divide by zero (factorial of a negative integer is 0) nor produce inf/nan;
     # the result for those entries is masked to 0 below.
     valid = (k >= 0) & (k <= n)
-    zero = xp.asarray(0.0)
+    zero = 0.0  # a Python scalar, so it does not upcast float32 inputs
     safe_k = xp.where(valid, k, zero)
     safe_nk = xp.where(valid, n - k, zero)
     ratio = factorial(xp, n) / (factorial(xp, safe_k) * factorial(xp, safe_nk))
