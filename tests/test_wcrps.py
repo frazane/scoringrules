@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 import scoringrules as sr
+from ._parity import UV_CASES, uv_ensemble_inputs
 from .conftest import assert_inferred
 
 
@@ -535,3 +536,23 @@ def test_vrcrps_score_correctness(backend, to_backend, backend_kwargs):
     res = sr.vrcrps_ensemble(obs, fct, b=1.85, **backend_kwargs)
     assert_inferred(res, backend)
     np.testing.assert_allclose(np.mean(np.asarray(res)), 0.1950857, rtol=rtol)
+
+
+@pytest.mark.parametrize("case", UV_CASES)
+@pytest.mark.parametrize("M", [6, 7])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("score", ["owcrps_ensemble", "vrcrps_ensemble"])
+def test_weighted_crps_paths_agree(score, weighted, M, case, paths_agree, request):
+    if score == "vrcrps_ensemble" and not weighted and case in ("scalar_obs", "batch"):
+        # fct must be 2-d: the array path raises for 1-d/3-d fct (and is silently
+        # wrong for 3-d fct whose last two axes have equal length).
+        request.applymarker(
+            pytest.mark.xfail(
+                raises=ValueError,
+                strict=True,
+                reason="unweighted vr_ensemble averages fw over axis=1, not -1 "
+                "(core/crps/_approx.py:156); not filed yet, see PR 0 notes",
+            )
+        )
+    obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted)
+    paths_agree(getattr(sr, score), obs, fct, -0.5, 1.0, **kwargs)

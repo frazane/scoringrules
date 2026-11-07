@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 import scipy.stats as st
 import scoringrules as sr
+from ._parity import UV_CASES, uv_ensemble_inputs
 from .conftest import assert_inferred
 
 ENSEMBLE_SIZE = 11
@@ -413,6 +414,56 @@ def test_crps_ensemble_correctness(backend, to_backend, backend_kwargs):
         )
         res = sr.crps_ensemble(obs_known, fct_known, estimator="qd")
         assert np.isclose(res, 0.6126602)
+
+
+def _ensemble_parity_params():
+    for estimator in ESTIMATORS:
+        for weighted in (False, True):
+            for M in (6, 7):
+                for case in UV_CASES:
+                    marks = ()
+                    if estimator == "akr_circperm" and weighted and M % 2 == 0:
+                        marks = pytest.mark.xfail(
+                            raises=AssertionError,
+                            strict=True,
+                            reason="#149, fixed in PR 1",
+                        )
+                    yield pytest.param(
+                        estimator,
+                        weighted,
+                        M,
+                        case,
+                        id=f"{estimator}-{'w' if weighted else 'uw'}-M{M}-{case}",
+                        marks=marks,
+                    )
+
+
+@pytest.mark.parametrize("estimator,weighted,M,case", _ensemble_parity_params())
+def test_crps_ensemble_paths_agree(estimator, weighted, M, case, paths_agree):
+    obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted)
+    paths_agree(sr.crps_ensemble, obs, fct, estimator=estimator, **kwargs)
+
+
+@pytest.mark.parametrize("case", UV_CASES)
+def test_crps_quantile_paths_agree(case, paths_agree):
+    obs, fct, kwargs = uv_ensemble_inputs(case, 7, weighted=False)
+    fct = np.sort(fct, axis=kwargs.get("m_axis", -1))
+    alpha = np.linspace(0.1, 0.9, 7)
+    paths_agree(sr.crps_quantile, obs, fct, alpha, **kwargs)
+
+
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+def test_crps_ensemble_float32(estimator, backend, to_backend_float32, backend_kwargs):
+    obs = to_backend_float32(np.random.randn(N))
+    fct = to_backend_float32(np.random.randn(N, ENSEMBLE_SIZE))
+    ens_w = to_backend_float32(np.random.uniform(0.1, 1.0, (N, ENSEMBLE_SIZE)))
+    kwargs = {"estimator": estimator, **backend_kwargs}
+    for res in (
+        sr.crps_ensemble(obs, fct, **kwargs),
+        sr.crps_ensemble(obs, fct, ens_w=ens_w, **kwargs),
+    ):
+        assert_inferred(res, backend)
+        assert res.dtype == fct.dtype
 
 
 def test_crps_quantile(backend, to_backend, backend_kwargs):

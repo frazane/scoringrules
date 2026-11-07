@@ -42,3 +42,34 @@ def as_float32(x, backend):
 
         return torch.as_tensor(x, dtype=torch.float32)
     raise ValueError(backend)
+
+
+UV_CASES = ("default", "m_axis", "n1", "int_obs", "scalar_obs", "batch")
+
+
+def uv_ensemble_inputs(case, M, weighted, seed=0, N=5):
+    """``(obs, fct, kwargs)`` for a univariate ensemble parity case.
+
+    ``case`` is one of ``UV_CASES``: ``"default"`` (``fct`` of shape ``(N, M)``),
+    ``"m_axis"`` (``fct`` of shape ``(M, N)`` with ``m_axis=0``), ``"n1"``
+    (``N=1``), ``"int_obs"`` (integer ``obs``), ``"scalar_obs"`` (a Python
+    float ``obs`` with ``fct`` of shape ``(M,)``) and ``"batch"`` (an extra
+    leading axis, ``fct`` of shape ``(2, N, M)``). With ``weighted``, ``kwargs``
+    holds non-uniform ``ens_w`` laid out like ``fct``.
+    """
+    rng = np.random.default_rng(seed)
+    batch = {"n1": (1,), "batch": (2, N)}.get(case, (N,))
+    obs = rng.normal(size=batch)
+    fct = rng.normal(size=(*batch, M))
+    w = rng.uniform(0.1, 2.0, size=(*batch, M))
+    kwargs = {}
+    if case == "m_axis":
+        fct, w = fct.T.copy(), w.T.copy()
+        kwargs["m_axis"] = 0
+    elif case == "int_obs":
+        obs = rng.integers(-2, 3, size=batch)
+    elif case == "scalar_obs":
+        obs, fct, w = float(obs[0]), fct[0], w[0]
+    if weighted:
+        kwargs["ens_w"] = w
+    return obs, fct, kwargs
