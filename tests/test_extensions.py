@@ -337,3 +337,43 @@ def test_factorial_comb_keep_float32_numpy():
     assert ext.factorial(NP, x).dtype == np.float32
     assert ext.comb(NP, x, x - 2).dtype == np.float32
     assert ext.factorial(NP, np.asarray([5, 6])).dtype == np.float64
+
+
+def _comb_inputs(framework, dtype):
+    n = [5.0, 171.0, 35.0, 5.5, 5.0, 5.0, -1.0]
+    k = [2.0, 50.0, 14.0, 2.5, 7.0, -1.0, 0.0]
+    if dtype == "float32":  # comb(171, 50) ~ 1e43 does not fit float32
+        n[1], k[1] = 60.0, 30.0
+    if framework == "numpy":
+        return NP, np.asarray(n, dtype=dtype), np.asarray(k, dtype=dtype)
+    if framework == "jax":
+        jnp = pytest.importorskip("jax.numpy")
+        return array_namespace(jnp.zeros(1)), jnp.asarray(n), jnp.asarray(k)
+    torch = pytest.importorskip("torch")
+    dt = getattr(torch, dtype)
+    t = torch.tensor
+    return array_namespace(t(0.0)), t(n, dtype=dt), t(k, dtype=dt)
+
+
+@pytest.mark.parametrize(
+    "framework, dtype",
+    [("numpy", "float64"), ("numpy", "float32"), ("torch", "float64")]
+    + [("torch", "float32"), ("jax", "float32")],
+)
+def test_comb_matches_scipy(framework, dtype):
+    # scipy.special.comb(exact=False): real arguments, 0 outside 0 <= k <= n, and no
+    # overflow for large n (the old factorial-based comb gave inf/nan from 171).
+    import scipy.special as sp
+
+    xp, n, k = _comb_inputs(framework, dtype)
+    out = ext.comb(xp, n, k)
+    assert str(out.dtype).endswith(dtype)
+    expected = sp.comb(np.asarray(n, dtype=float), np.asarray(k, dtype=float))
+    rtol = 1e-12 if dtype == "float64" else 1e-5
+    np.testing.assert_allclose(np.asarray(out, dtype=float), expected, rtol=rtol)
+
+
+def test_comb_grad_torch():
+    torch = pytest.importorskip("torch")
+    n = torch.tensor([10.0, 20.0], dtype=torch.float64, requires_grad=True)
+    assert torch.autograd.gradcheck(lambda x: ext.comb(torch, x, x - 3.0), (n,))

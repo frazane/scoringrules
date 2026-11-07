@@ -9,7 +9,12 @@ import math
 
 import numpy as np
 import scipy.special as sp
-from array_api_compat import is_jax_namespace, is_numpy_namespace, is_torch_namespace
+from array_api_compat import (
+    is_array_api_obj,
+    is_jax_namespace,
+    is_numpy_namespace,
+    is_torch_namespace,
+)
 
 # NOTE: the scipy branches below only ever receive numpy arrays (jax/torch
 # dispatch natively or raise), so SCIPY_ARRAY_API is irrelevant here.
@@ -165,24 +170,30 @@ def factorial(xp, n):
 
 
 def comb(xp, n, k):
-    # Compose from factorial. Use floating division + round rather than floor
-    # division: jax's factorial is float32, and ``120.0001 // 12.00001`` floors
-    # to 9.0 instead of 10.0. Rounding the exact-in-float ratio is robust on
-    # numpy/jax/torch. comb is integer-valued, so this is not differentiable
-    # (matching the old floor-division form).
-    n = xp.asarray(n)
-    k = xp.asarray(k)
-    # ``comb`` is 0 outside ``0 <= k <= n`` (matches scipy.special.comb, the
-    # behaviour the old backends relied on). Clamp ``k`` and ``n - k`` to
-    # non-negative values before taking factorials so invalid entries neither
-    # divide by zero (factorial of a negative integer is 0) nor produce inf/nan;
-    # the result for those entries is masked to 0 below.
+    """Binomial coefficient for real ``n`` and ``k``, as ``scipy.special.comb``
+    with ``exact=False``: 0 outside ``0 <= k <= n``, not rounded.
+
+    numpy calls scipy (the legacy values). jax and torch work in log space,
+    ``exp(lgamma(n + 1) - lgamma(k + 1) - lgamma(n - k + 1))``, so large ``n``
+    neither overflows (factorials overflow float32 from 35! and float64 from
+    171!) nor loses the float32 dtype, and the result is differentiable.
+    """
+    kind = _kind(xp)
+    if kind == "numpy":
+        out = sp.comb(n, k)
+        dtype = np.result_type(np.asarray(n).dtype, np.asarray(k).dtype, np.float32)
+        return out.astype(dtype, copy=False)
+    lgamma = _jsp().gammaln if kind == "jax" else _ts().lgamma
+    # Coerce scalars only: the compat ``torch.asarray`` drops ``requires_grad``.
+    n = n if is_array_api_obj(n) else xp.asarray(n)
+    k = k if is_array_api_obj(k) else xp.asarray(k)
     valid = (k >= 0) & (k <= n)
-    zero = 0.0  # a Python scalar, so it does not upcast float32 inputs
-    safe_k = xp.where(valid, k, zero)
-    safe_nk = xp.where(valid, n - k, zero)
-    ratio = factorial(xp, n) / (factorial(xp, safe_k) * factorial(xp, safe_nk))
-    return xp.where(valid, xp.round(ratio), zero)
+    # Evaluate the masked entries at n = k = 0 so they give a finite value
+    # (and gradient) before being set to 0.
+    safe_n = xp.where(valid, n, 0.0)
+    safe_k = xp.where(valid, k, 0.0)
+    log_comb = lgamma(safe_n + 1) - lgamma(safe_k + 1) - lgamma(safe_n - safe_k + 1)
+    return xp.where(valid, xp.exp(log_comb), 0.0)
 
 
 # --- non-standard helpers ---

@@ -43,11 +43,11 @@ Notes from the probe that shaped the implementation:
   commented out): `hyp2f1(1,1,2,0.5) = 1.386294`, matching scipy.
 - `jax.scipy.special.expi` accepts **0-d input** fine (`expi(1.0) = 1.895118`),
   so no scalar-reshape workaround is needed.
-- jax has **no** `comb`, and composing it as `factorial(n) // (factorial(k)·
-  factorial(n-k))` is wrong: jax `factorial` is float32, and floor-division of
-  `120.0001 // 12.00001` rounds to **9.0** instead of 10. The layer therefore
-  composes `comb` with floating division and `round`, which gives 10.0 on numpy,
-  jax, and torch.
+- jax and torch have **no** `comb`. Composing it from factorials overflows (35!
+  in float32, 171! in float64), so the layer works in log space:
+  `exp(lgamma(n+1) - lgamma(k+1) - lgamma(n-k+1))` (`jax.scipy.special.gammaln`,
+  `torch.lgamma`), 0 outside `0 <= k <= n`, not rounded. numpy uses
+  `scipy.special.comb` (`exact=False`), the legacy values.
 - torch has no `gamma`/`beta`/`factorial`, but all three are built from the
   native, differentiable `torch.lgamma`, so they are PASS (forward + grad).
 
@@ -67,13 +67,12 @@ Notes from the probe that shaped the implementation:
 | `hypergeometric` (`hyp2f1`) | PASS | PASS | PASS | BLOCKED | BLOCKED | jax: `jax.scipy.special.hyp2f1`; torch: none |
 | `expi` | PASS | PASS | PASS | BLOCKED | BLOCKED | no torch native; jax 0-d works |
 | `factorial` | PASS | PASS | PASS | PASS | PASS | torch via `exp(lgamma(n+1))` |
-| `comb` | PASS | PASS | n/a | PASS | n/a | composed from `factorial` with `/ + round`; discrete, so gradient is not meaningful |
+| `comb` | PASS | PASS | PASS | PASS | PASS | `scipy.special.comb` (`exact=False`) for numpy; jax/torch via `exp` of `lgamma` differences (no overflow for large `n`, keeps float32, not rounded); grad w.r.t. real `n`, `k` |
 | `quantile` | PASS | PASS | PASS | PASS | PASS | `np.quantile` / `jnp.quantile` / `torch.quantile` (linear interpolation); torch gets `q` as a tensor of `x`'s dtype and device; `axis` is an int or `None` |
 
-`n/a` for `comb` grad: `comb` is integer-valued and routed through `round`, so it
-has no meaningful gradient (this matched the old `//` form, which was also
-non-differentiable). `factorial` itself, built from the smooth `lgamma`, *is*
-differentiable.
+`comb` is not rounded, so for integer arguments jax/torch return the exact value
+up to rounding (about 1e-13 relative in float64). Unlike the old `round`ed
+factorial form it is differentiable in `n` and `k`.
 
 ## Non-standard helpers
 

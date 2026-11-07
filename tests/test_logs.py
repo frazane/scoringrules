@@ -136,6 +136,15 @@ def test_binomial(backend, fa, backend_kwargs):
     assert_inferred(res, backend)
     assert_close(res, 2.518839, backend)
 
+    # large n: comb(171, 50) overflows a factorial-based comb (171! > 1e308).
+    # -scipy.stats.binom.logpmf(50, 171, 0.4)
+    res = sr.logs_binomial(fa(50), fa(171), fa(0.4), **backend_kwargs)
+    assert_inferred(res, backend)
+    # comb(171, 50) ~ 1e43 does not fit jax's float32 (x64 off), so only the
+    # numeric comparison is skipped on jax.
+    if backend != "jax":
+        assert_close(res, 6.995656745750523, backend)
+
 
 def test_exponential(backend, fa, backend_kwargs):
     res = sr.logs_exponential(fa(0.3), fa(0.1), **backend_kwargs)
@@ -228,6 +237,11 @@ def test_hypergeometric(backend, fa, backend_kwargs):
     res = sr.logs_hypergeometric(fa(5), fa(7), fa(13), fa(12), **backend_kwargs)
     assert_inferred(res, backend)
     assert_close(res, 1.251525, backend)
+
+    # large population: -scipy.stats.hypergeom.logpmf(5, 171, 100, 20)
+    res = sr.logs_hypergeometric(fa(5), fa(100), fa(71), fa(20), **backend_kwargs)
+    assert_inferred(res, backend)
+    assert_close(res, 6.755243793500753, backend)
 
     res = sr.logs_hypergeometric(
         fa(5 * np.ones((2, 2))), fa(7), fa(13), fa(12), **backend_kwargs
@@ -545,6 +559,7 @@ FLOAT32_CASES = [
     ),
     ("logs_beta", ([0.3, 0.6], 0.7, 1.1, 0.0, 1.0)),
     ("logs_binomial", ([8.0, 3.0], 10.0, 0.6)),
+    ("logs_binomial", ([20.0, 14.0], 35.0, 0.4)),
     ("logs_exponential", ([0.3, 1.2], 0.9)),
     ("logs_exponential2", ([0.3, 1.2], 0.1, 2.0)),
     ("logs_2pexponential", ([0.3, -1.2], 0.5, 2.0, 0.1)),
@@ -570,7 +585,10 @@ FLOAT32_CASES = [
 ]
 
 
-@pytest.mark.parametrize("name, args", FLOAT32_CASES, ids=[c[0] for c in FLOAT32_CASES])
+FLOAT32_IDS = [f"{c[0]}-{i}" for i, c in enumerate(FLOAT32_CASES)]
+
+
+@pytest.mark.parametrize("name, args", FLOAT32_CASES, ids=FLOAT32_IDS)
 def test_float32(name, args, backend, to_backend_float32, backend_kwargs):
     if backend == "torch" and name == "logs_tt":
         pytest.skip(

@@ -624,6 +624,15 @@ def test_crps_binomial(backend, to_backend, backend_kwargs):
     assert_inferred(res, backend)
     assert_close(res, 8.498957, backend)
 
+    # large n: a factorial-based comb gave nan here (200! overflows float64).
+    # Expected: sum_k (scipy.stats.binom.cdf(k, 200, 0.4) - 1{50 <= k})^2.
+    res = sr.crps_binomial(fa(50), fa(200), fa(0.4), **backend_kwargs)
+    assert_inferred(res, backend)
+    # comb(200, 100) ~ 9e58 does not fit jax's float32 (x64 off), so only the
+    # numeric comparison is skipped on jax.
+    if backend != "jax":
+        assert_close(res, 26.0938367772019, backend)
+
     # test broadcasting
     ones = np.ones(2)
     k, n, p = 8, 10, 0.9
