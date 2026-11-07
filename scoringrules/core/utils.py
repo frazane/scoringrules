@@ -1,7 +1,5 @@
 import numpy as np
 
-from scoringrules.backend import backends
-
 _V_AXIS = -1  # variable index for multivariate forecasts
 _M_AXIS = -2  # ensemble index for multivariate forecasts
 _M_AXIS_UV = -1  # ensemble index for univariate forecasts
@@ -17,21 +15,6 @@ def _shape_compatibility_check(obs, fct, m_axis) -> None:
         raise ValueError(
             f"Forecasts shape {f_shape} and observations shape {o_shape} are not compatible for broadcasting!"
         )
-
-
-def univariate_array_check(obs, fct, m_axis, backend=None):
-    """Check and adapt the shapes of univariate forecasts and observations arrays.
-
-    Legacy ``backend=`` version, kept for the logs family until it moves to
-    ``utils_xp.univariate_array_check``.
-    """
-    B = backends.active if backend is None else backends[backend]
-    obs, fct = map(B.asarray, (obs, fct))
-    m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
-    _shape_compatibility_check(obs, fct, m_axis)
-    if m_axis != _M_AXIS_UV:
-        fct = B.moveaxis(fct, m_axis, _M_AXIS_UV)
-    return obs, fct
 
 
 def estimator_check(estimator, gufuncs):
