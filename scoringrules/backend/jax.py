@@ -141,18 +141,27 @@ class JaxBackend(ArrayBackend):
         step: int | float = 1,
         *,
         dtype: Dtype | None = None,
+        device: tp.Any = None,
     ) -> "Array":
-        return jnp.arange(start, stop, step, dtype=dtype)
+        return jnp.arange(start, stop, step, dtype=dtype, device=device)
 
     def zeros(
-        self, shape: int | tuple[int, ...], *, dtype: Dtype | None = None
+        self,
+        shape: int | tuple[int, ...],
+        *,
+        dtype: Dtype | None = None,
+        device: tp.Any = None,
     ) -> "Array":
-        return jnp.zeros(shape, dtype=dtype)
+        return jnp.zeros(shape, dtype=dtype, device=device)
 
     def ones(
-        self, shape: int | tuple[int, ...], *, dtype: Dtype | None = None
+        self,
+        shape: int | tuple[int, ...],
+        *,
+        dtype: Dtype | None = None,
+        device: tp.Any = None,
     ) -> "Array":
-        return jnp.ones(shape, dtype=dtype)
+        return jnp.ones(shape, dtype=dtype, device=device)
 
     def abs(self, x: "Array") -> "Array":
         return jnp.abs(x)
@@ -283,8 +292,14 @@ class JaxBackend(ArrayBackend):
     def size(self, x: "Array") -> int:
         return x.size
 
-    def indices(self, dimensions: tuple) -> "Array":
-        return jnp.indices(dimensions)
+    def device(self, x: "Array") -> tp.Any:
+        # Traced arrays (under jit) have no committed device: ``None`` means
+        # "default device" to the creation functions.
+        return getattr(x, "device", None)
+
+    def indices(self, dimensions: tuple, *, device: tp.Any = None) -> "Array":
+        out = jnp.indices(dimensions)
+        return out if device is None else jax.device_put(out, device)
 
     def gather(self, x: "Array", ind: "Array", axis: int) -> "Array":
         return jnp.take_along_axis(x, ind, axis=axis)

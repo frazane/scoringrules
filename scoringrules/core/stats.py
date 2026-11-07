@@ -237,9 +237,18 @@ def _hypergeo_cdf(k, M, n, N, backend=None):
     # else:
     k, M, n, N = B.broadcast_arrays(k, M, n, N)
     _iter = zip(k.ravel(), M.ravel(), n.ravel(), N.ravel(), strict=True)
-    return B.asarray(
-        [_inner(B.arange(0, _args[0] + 1), *_args[1:]) for _args in _iter]
-    ).reshape(k.shape)
+    dev = B.device(k)
+    # stack (not asarray): asarray on a list of torch tensors goes through
+    # ``.item()``, i.e. a host round-trip that lands the result on the CPU.
+    return B.reshape(
+        B.stack(
+            [
+                _inner(B.arange(0, _args[0] + 1, device=dev), *_args[1:])
+                for _args in _iter
+            ]
+        ),
+        k.shape,
+    )
 
 
 def _negbinom_pdf(

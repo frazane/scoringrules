@@ -53,6 +53,24 @@ def test_elementwise_math_coerces_scalars_torch():
     assert float(xp.sqrt(xp.pi)) == pytest.approx(float(np.sqrt(np.pi)))
 
 
+def test_scalar_constants_follow_array_dtype():
+    # Scalar constants must not change the dtype or precision of array math:
+    # a float64 0-d array would upcast numpy float32, and a float32 0-d tensor
+    # would round ``1/sqrt(2*pi)`` to float32 for torch float64 inputs.
+    x32 = np.ones(2, dtype=np.float32)
+    xp = get_namespace(x32)
+    assert (x32 * xp.sqrt(2.0)).dtype == np.float32
+    assert (x32 / xp.log(2)).dtype == np.float32
+    assert xp.isnan(float("nan")) is True
+
+    torch = pytest.importorskip("torch")
+    x64 = torch.ones(2, dtype=torch.float64)
+    xp = get_namespace(x64)
+    c = x64 / xp.sqrt(2.0 * xp.pi)
+    assert c.dtype == torch.float64
+    assert float(c[0]) == 1 / np.sqrt(2.0 * np.pi)
+
+
 def test_missing_xp_raises_attributeerror_not_recursion():
     from scoringrules.backend.namespace import ArrayAPINamespace
 

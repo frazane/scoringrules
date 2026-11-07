@@ -48,7 +48,8 @@ def _exp_pdf(x: "ArrayLike", rate: "ArrayLike", *, xp) -> "Array":
 
 def _exp_cdf(x: "ArrayLike", rate: "ArrayLike", *, xp) -> "Array":
     """Cumulative distribution function for the exponential distribution."""
-    return xp.maximum(1 - xp.exp(-rate * x), xp.asarray(0.0))
+    cdf = 1 - xp.exp(-rate * x)
+    return xp.maximum(cdf, xp.zeros_like(cdf))
 
 
 def _gamma_pdf(
@@ -71,8 +72,9 @@ def _gamma_cdf(
     xp,
 ) -> "Array":
     """Cumulative distribution function for the gamma distribution."""
-    zero = xp.asarray(0.0)
-    return xp.maximum(xp.gammainc(shape, rate * xp.maximum(x, zero)), zero)
+    x = xp.asarray(x)
+    cdf = xp.gammainc(shape, rate * xp.maximum(x, xp.zeros_like(x)))
+    return xp.maximum(cdf, xp.zeros_like(cdf))
 
 
 def _pois_pdf(x: "ArrayLike", mean: "ArrayLike", *, xp) -> "Array":
@@ -172,7 +174,8 @@ def _hypergeo_pdf(k, M, n, N, *, xp):
     n: number of success states in the population.
     N: sample size (number of draws).
     """
-    ind = (k >= xp.maximum(xp.asarray(0), N - M + n)) & (k <= xp.minimum(n, N))
+    lo = N - M + n
+    ind = (k >= xp.maximum(xp.zeros_like(lo), lo)) & (k <= xp.minimum(n, N))
     return ind * xp.comb(n, k) * xp.comb(M - n, N - k) / xp.comb(M, N)
 
 
@@ -189,9 +192,18 @@ def _hypergeo_cdf(k, M, n, N, *, xp):
     # else:
     k, M, n, N = xp.broadcast_arrays(k, M, n, N)
     _iter = zip(k.ravel(), M.ravel(), n.ravel(), N.ravel(), strict=True)
-    return xp.asarray(
-        [_inner(xp.arange(0, _args[0] + 1), *_args[1:]) for _args in _iter]
-    ).reshape(k.shape)
+    dev = xp.device(k)
+    # stack (not asarray): asarray on a list of torch tensors goes through
+    # ``.item()``, i.e. a host round-trip that lands the result on the CPU.
+    return xp.reshape(
+        xp.stack(
+            [
+                _inner(xp.arange(0, _args[0] + 1, device=dev), *_args[1:])
+                for _args in _iter
+            ]
+        ),
+        k.shape,
+    )
 
 
 def _negbinom_cdf(x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", *, xp) -> "Array":

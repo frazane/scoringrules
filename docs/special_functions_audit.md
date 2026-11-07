@@ -19,9 +19,9 @@ on this branch, not from memory.
   forward value is correct and, where the *grad* column says PASS, the gradient
   is finite.
 - **PARTIAL (numpy round-trip)** — only reachable by detouring through
-  numpy/scipy, which breaks the framework's native array type and autograd. No
-  special function currently needs this; the only numpy round-trip in the layer
-  is the `apply_along_axis` helper on torch (see *Non-standard helpers* below).
+  numpy/scipy, which breaks the framework's native array type, autograd and
+  non-CPU devices. Nothing in the layer uses this: there are no numpy
+  round-trips for jax or torch (see also *Non-standard helpers* below).
 - **BLOCKED** — no native and no differentiable path. The scipy fallback cannot
   be used because, on that framework, calling scipy raises (torch refuses
   `numpy()` on grad-requiring tensors; see probe output). These functions must
@@ -79,11 +79,19 @@ differentiable.
 These are not special functions but are also provided by the extension layer:
 
 - `apply_along_axis` — numpy/jax have native paths (jax via `vmap` with a
-  `jnp.apply_along_axis` fallback); **torch has no native equivalent**, so it is
-  the one **numpy round-trip** in the layer (PARTIAL): the per-slice callable is
-  evaluated through `numpy.apply_along_axis` and the result re-wrapped as a
-  tensor. This breaks autograd on torch and should be avoided in grad-sensitive
-  code paths; it also requires CPU tensors, since `numpy()` raises on CUDA
-  tensors.
+  `jnp.apply_along_axis` fallback). Torch has no `apply_along_axis`, so the
+  layer builds one natively: it moves `axis` last, applies `torch.vmap(func1d)`
+  over the flattened slices, and falls back to a Python loop over the slices
+  (`torch.unbind` + `torch.stack`) when vmap cannot trace `func1d`
+  (data-dependent control flow, `.item()`). Both paths keep autograd and the
+  input's device.
 - `cov` — `jnp.cov` / `torch.cov` (with `correction` mapped from `bias`) / `np.cov`.
-- `indices` — `jnp.indices` / `np.indices` (torch wraps `np.indices`).
+- `indices` — `jnp.indices` / `np.indices` / torch `arange` + `meshgrid`.
+  It takes `device=` (and `dtype=`), so pass `xp.device(x)` to create the grid
+  next to the data.
+
+Array creation (`arange`/`zeros`/`ones`/`full`/…) in the core passes
+`device=xp.device(x)` and, for fractional values, `dtype=xp.float_dtype(x)`
+taken from an input array. Otherwise torch creates on the default (CPU) device,
+which fails for CUDA inputs, and numpy/torch fall back to their default float
+dtype.

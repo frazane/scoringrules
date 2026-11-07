@@ -105,7 +105,8 @@ def _crps_ensemble_int_w(obs: "Array", fct: "Array", w: "Array", *, xp) -> "Arra
     fct_exp = xp.concat((fct, obs[..., None]), axis=-1)
     fct_exp = xp.sort(fct_exp, axis=-1)
     fct_dif = fct_exp[..., 1:] - fct_exp[..., :M]
-    obs_cdf = (obs[..., None] <= fct_exp) * 1.0
+    # astype, not ``* 1.0``: bool * float defaults to float64 (numpy) / float32 (torch)
+    obs_cdf = xp.astype(obs[..., None] <= fct_exp, xp.float_dtype(fct_exp))
     out = fct_dif * (fct_cdf[..., :M] - obs_cdf[..., :M]) ** 2
     return xp.sum(out, axis=-1)
 

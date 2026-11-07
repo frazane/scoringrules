@@ -55,7 +55,7 @@ def categorical_array_check(obs, fct, k_axis, onehot, backend=None):
             raise ValueError(
                 f"Forecasts shape {fct.shape} and observations shape {obs.shape} are not compatible for broadcasting!"
             )
-        categories = B.arange(1, fct.shape[-1] + 1)
+        categories = B.arange(1, fct.shape[-1] + 1, device=B.device(obs))
         obs = B.where(B.expand_dims(obs, -1) == categories, 1, 0)
     return obs, fct
 

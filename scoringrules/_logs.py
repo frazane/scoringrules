@@ -64,7 +64,7 @@ def logs_ensemble(
         bw = 1.06 * B.minimum(sigmahat, iqr / 1.34) * (M ** (-1 / 5))
     bw = B.stack([bw] * M, axis=-1)
 
-    w = B.ones(fct.shape) / M
+    w = B.ones(fct.shape, dtype=fct.dtype, device=B.device(fct)) / M
 
     return logarithmic.mixnorm(obs, fct, bw, w, backend=backend)
 
@@ -702,7 +702,7 @@ def logs_mixnorm(
 
     if w is None:
         M: int = m.shape[mc_axis]
-        w = B.ones(m.shape) / M
+        w = B.ones(m.shape, dtype=m.dtype, device=B.device(m)) / M
     else:
         w = B.asarray(w)
 

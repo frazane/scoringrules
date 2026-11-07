@@ -148,6 +148,7 @@ class ArrayBackend(abc.ABC):
         step: int | float = 1,
         *,
         dtype: Dtype | None = None,
+        device: tp.Any = None,
     ) -> "Array":
         """Return evenly spaced values within the half-open interval ``[start, stop)`` as a one-dimensional array."""
 
@@ -157,6 +158,7 @@ class ArrayBackend(abc.ABC):
         shape: int | tuple[int, ...],
         *,
         dtype: Dtype | None = None,
+        device: tp.Any = None,
     ) -> "Array":
         """Return a new array having a specified ``shape`` and filled with zeros."""
 
@@ -166,6 +168,7 @@ class ArrayBackend(abc.ABC):
         shape: int | tuple[int, ...],
         *,
         dtype: Dtype | None = None,
+        device: tp.Any = None,
     ) -> "Array":
         """Return a new array having a specified ``shape`` and filled with ones."""
 
@@ -316,8 +319,16 @@ class ArrayBackend(abc.ABC):
         """Return the number of elements in the input array."""
 
     @abc.abstractmethod
-    def indices(self, x: "Array") -> int:
+    def indices(self, dimensions: tuple, *, device: tp.Any = None) -> "Array":
         """Return an array representing the indices of a grid."""
+
+    @abc.abstractmethod
+    def device(self, x: "Array") -> tp.Any:
+        """Return the device ``x`` lives on.
+
+        Pass it as ``device=`` to ``arange``/``zeros``/``ones``/``indices`` so
+        new arrays are created next to the inputs (e.g. on a GPU) rather than on
+        the default device."""
 
     @abc.abstractmethod
     def gather(self, x: "Array", ind: "Array", axis: int) -> "Array":

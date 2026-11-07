@@ -77,7 +77,7 @@ def binomial(
 
     def _inner(params):
         obs, n, prob = params
-        x = xp.arange(0, n + 1)
+        x = xp.arange(0, n + 1, device=xp.device(n))
         w = _binom_pdf(x, n, prob, xp=xp)
         a = _binom_cdf(x, n, prob, xp=xp) - 0.5 * w
         s = 2 * xp.sum(w * ((obs < x) - a) * (x - obs))
@@ -86,7 +86,7 @@ def binomial(
     # if n is a scalar, then if needed we must broadcast k and p to the same shape as n
     # TODO: implement xp.broadcast() for backends
     if n.size == 1:
-        x = xp.arange(0, n + 1)
+        x = xp.arange(0, n + 1, device=xp.device(n))
         need_broadcast = not (obs.size == 1 and prob.size == 1)
 
         if need_broadcast:
@@ -187,7 +187,8 @@ def gamma(
     s = (
         obs * (2 * F_ab - 1)
         - (shape / rate) * (2 * F_ab1 - 1)
-        - 1 / (rate * xp.beta(xp.asarray(0.5), shape))
+        - 1
+        / (rate * xp.beta(xp.full_like(shape, 0.5, dtype=xp.float_dtype(shape)), shape))
     )
     return s
 
@@ -211,7 +212,7 @@ def csg0(
     s = (
         obs_shifted * (2 * F_ab_shifted - 1)
         - (shape / (rate * xp.pi))
-        * xp.beta(xp.asarray(0.5), shape + 0.5)
+        * xp.beta(xp.full_like(shape, 0.5, dtype=xp.float_dtype(shape)), shape + 0.5)
         * (1 - F_2ab_2d)
         + shape / rate * (1 + 2 * F_ab_d * F_ab1_d - F_ab_d**2 - 2 * F_ab1_shifted)
         - shift * F_ab_d**2
@@ -501,7 +502,7 @@ def hypergeometric(
 
     # if n is a scalar, x always has the same shape, which simplifies the computation
     if xp.size(n) == 1:
-        x = xp.arange(0, n + 1)
+        x = xp.arange(0, n + 1, device=xp.device(n))
         out_ndims = xp.max(
             xp.asarray([_input.ndim for _input in [obs, M, m, N]]), axis=0
         )
@@ -518,7 +519,7 @@ def hypergeometric(
         obs, M, m, N = xp.broadcast_arrays(obs, M, m, N)
         s = []
         for i, _n in enumerate(n.reshape(-1)):
-            x = xp.arange(_n + 1)
+            x = xp.arange(_n + 1, device=xp.device(_n))
             f_np = _hypergeo_pdf(
                 x, M.reshape(-1)[i], m.reshape(-1)[i], N.reshape(-1)[i], xp=xp
             )
@@ -538,7 +539,9 @@ def hypergeometric(
                     axis=0,
                 )
             )
-        s = xp.asarray(s).reshape(obs.shape)
+        # stack (not asarray): asarray on a list of torch tensors goes through
+        # ``.item()``, i.e. a host round-trip that lands the result on the CPU.
+        s = xp.reshape(xp.stack(s), obs.shape)
     return s
 
 
@@ -631,9 +634,7 @@ def lognormal(
     ω = (xp.log(obs) - mulog) / sigmalog
     ex = 2 * xp.exp(mulog + sigmalog**2 / 2)
     return obs * (2.0 * _norm_cdf(ω, xp=xp) - 1) - ex * (
-        _norm_cdf(ω - sigmalog, xp=xp)
-        + _norm_cdf(sigmalog / xp.sqrt(xp.asarray(2.0)), xp=xp)
-        - 1
+        _norm_cdf(ω - sigmalog, xp=xp) + _norm_cdf(sigmalog / xp.sqrt(2.0), xp=xp) - 1
     )
 
 
@@ -755,7 +756,7 @@ def uniform(
     """Compute the CRPS for the uniform distribution."""
     min, max, lmass, umass, obs = map(xp.asarray, (min, max, lmass, umass, obs))
     ω = (obs - min) / (max - min)
-    F_ω = xp.minimum(xp.maximum(ω, xp.asarray(0)), xp.asarray(1))
+    F_ω = xp.minimum(xp.maximum(ω, xp.zeros_like(ω)), xp.ones_like(ω))
     s = (
         xp.abs(ω - F_ω)
         + (F_ω**2) * (1 - lmass - umass)

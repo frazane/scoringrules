@@ -9,12 +9,26 @@ import math
 
 import numpy as np
 from array_api_compat import array_namespace, is_array_api_obj
+from array_api_compat import device as _device
 
 # Elementwise math functions that the core may call on Python-scalar constants
 # (e.g. ``xp.sqrt(2.0)``, ``xp.log(2)``). The array-API standard requires array
 # arguments and torch's namespace rejects bare Python floats, whereas the old
 # backend methods coerced them. We restore that leniency by wrapping these so a
-# Python-scalar first argument is converted to an array (a no-op for arrays).
+# Python-scalar argument is evaluated in double precision and returned as a
+# Python scalar (a no-op for arrays). A Python scalar is "weak" in numpy (NEP 50),
+# jax and torch: it adopts the dtype of the array it is combined with, whereas a
+# 0-d array of the framework's default dtype would upcast numpy float32 inputs
+# to float64 and round constants like ``1/sqrt(2*pi)`` to float32 for torch
+# float64 inputs.
+_NUMPY_NAMES = {
+    "asin": "arcsin",
+    "acos": "arccos",
+    "atan": "arctan",
+    "asinh": "arcsinh",
+    "acosh": "arccosh",
+    "atanh": "arctanh",
+}
 _SCALAR_COERCE_FUNCS = frozenset(
     {
         "sqrt",
@@ -72,6 +86,9 @@ class ArrayAPINamespace:
 
             def _scalar_tolerant(x, *args, **kwargs):
                 if isinstance(x, (bool, int, float, complex)):
+                    if not args and not kwargs:
+                        np_func = getattr(np, _NUMPY_NAMES.get(name, name))
+                        return np_func(x).item()
                     x = xp.asarray(x)
                 return attr(x, *args, **kwargs)
 
@@ -87,6 +104,24 @@ class ArrayAPINamespace:
         if is_array_api_obj(obj) and not kwargs:
             return obj
         return self._xp.asarray(obj, **kwargs)
+
+    def device(self, x):
+        """The device ``x`` lives on, for passing as ``device=`` to array-creation
+        functions (``arange``/``zeros``/``ones``/``full``/``linspace``/...) so new
+        arrays land next to the input instead of on the default (CPU) device.
+        ``None`` for inputs without a device (e.g. traced jax arrays), which
+        array creation treats as "default device"."""
+        return _device(x)
+
+    def float_dtype(self, x):
+        """``x.dtype`` if it is real floating, else the framework's default real
+        floating dtype. Use it as ``dtype=`` for created arrays that hold
+        fractional values (weights, cdf levels, ...), so they follow the input's
+        precision instead of silently defaulting to float32/float64."""
+        if self._xp.isdtype(x.dtype, "real floating"):
+            return x.dtype
+        info = self._xp.__array_namespace_info__()
+        return info.default_dtypes(device=self.device(x))["real floating"]
 
     def size(self, x):
         # The array-API standard does not expose a ``size`` free function and
@@ -120,10 +155,10 @@ class ArrayAPINamespace:
 
         return extensions.cov(self._xp, x, rowvar=rowvar, bias=bias)
 
-    def indices(self, dimensions):
+    def indices(self, dimensions, *, dtype=None, device=None):
         from . import extensions
 
-        return extensions.indices(self._xp, dimensions)
+        return extensions.indices(self._xp, dimensions, dtype=dtype, device=device)
 
     # --- special functions (native-first, scipy fallback) ---
     def erf(self, x):

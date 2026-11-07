@@ -56,7 +56,9 @@ def uv_weighted_score_weights(
     if w_func is None:
 
         def w_func(x):
-            return ((a <= x) & (x <= b)) * 1.0
+            # astype, not ``* 1.0``: bool * float defaults to float64 (numpy) /
+            # float32 (torch) instead of following the input's precision.
+            return xp.astype((a <= x) & (x <= b), xp.float_dtype(x))
 
     obs_w, fct_w = map(w_func, (obs, fct))
     obs_w, fct_w = xp.asarray(obs_w), xp.asarray(fct_w)
@@ -110,11 +112,11 @@ def apply_nan_policy_ens_uv(
                 f"NaN handling with nan_policy='omit' is not implemented for "
                 f"estimator '{estimator}'."
             )
-        fct = xp.where(xp.isnan(fct), xp.asarray(0.0), fct)
+        fct = xp.where(xp.isnan(fct), 0.0, fct)
         if ens_w is None:
             ens_w = xp.asarray(~nan_mask, dtype=fct.dtype)
         else:
-            ens_w = xp.where(nan_mask, xp.asarray(0.0), ens_w)
+            ens_w = xp.where(nan_mask, 0.0, ens_w)
         return obs, fct, ens_w
 
     raise ValueError(
