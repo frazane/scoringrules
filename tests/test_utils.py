@@ -24,12 +24,11 @@ def test_xp_helpers_match_original_numpy():
     obs = np.random.randn(4)
     fct = np.random.randn(4, 7)
     xp = get_namespace(obs, fct)
-    # weight normalisation (the legacy helper is gone; compare with the formula)
+    # weight normalisation, compared with the formula
     w = np.abs(np.random.randn(4, 7)) + 0.1
     w_xp = utils.univariate_weight_check(w.copy(), fct, -1, xp=xp)
     assert np.asarray(w_xp) == pytest.approx(w / w.sum(axis=-1, keepdims=True))
-    # nan omit mask building (the legacy numpy helper is gone, the numba path
-    # uses this one too)
+    # nan omit mask building (the numba path uses this helper too)
     fct_nan = fct.copy()
     fct_nan[0, [1, 3]] = np.nan
     _, f_xp, m_xp = utils.apply_nan_policy_ens_uv(

@@ -1,17 +1,12 @@
 """Input checks and pre-processing shared by the scoring rules.
 
-The array helpers take a keyword-only ``xp`` augmented array-API namespace (see
+The array helpers take an ``xp`` augmented array-API namespace (see
 ``scoringrules.backend.get_namespace``). ``lazy_gufunc_wrapper_uv`` and
 ``lazy_gufunc_wrapper_mv`` wrap the numba gufuncs and work on numpy arrays.
 """
 
-import typing as tp
-
 import numpy as np
 from array_api_compat import array_namespace, is_array_api_obj
-
-if tp.TYPE_CHECKING:
-    from scoringrules.core.typing import Array, NanPolicy  # noqa: F401
 
 _V_AXIS = -1  # variable index for multivariate forecasts
 _M_AXIS = -2  # ensemble index for multivariate forecasts
