@@ -74,6 +74,9 @@ def dssmv_ensemble(
 
     where :math:`\bar{mathbf{x}}` is the mean of the ensemble members (along each dimension),
     and :math:`\Sigma` is the sample covariance matrix estimated from the ensemble members.
+    The covariance matrix is only invertible when the ensemble has more members than
+    variables (``m > d``); otherwise the result is undefined and, depending on the
+    array framework, an error is raised or a NaN or meaningless value is returned.
 
     Parameters
     ----------

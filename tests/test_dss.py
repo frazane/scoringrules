@@ -100,7 +100,7 @@ def test_dss_legacy_backend_string_deprecated():
 
 
 @pytest.mark.parametrize("bias", [False, True])
-@pytest.mark.parametrize("M", [6, 7])
+@pytest.mark.parametrize("M", [2, 3, 6, 7])
 @pytest.mark.parametrize("case", UV_CASES)
 def test_dssuv_paths_agree(case, M, bias, paths_agree):
     obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted=False)
@@ -138,10 +138,11 @@ def mv_ensemble_inputs(case, M, D=3, seed=0, N=5):
 
 
 @pytest.mark.parametrize("bias", [False, True])
-@pytest.mark.parametrize("M", [6, 7])
+@pytest.mark.parametrize("M", [2, 3, 6, 7])
 @pytest.mark.parametrize("case", MV_CASES)
 def test_dssmv_paths_agree(case, M, bias, paths_agree):
-    obs, fct, kwargs = mv_ensemble_inputs(case, M)
+    # the covariance is singular unless M > D, so tiny ensembles get fewer variables
+    obs, fct, kwargs = mv_ensemble_inputs(case, M, D=min(3, M - 1))
     paths_agree(sr.dssmv_ensemble, obs, fct, bias=bias, **kwargs)
 
 
