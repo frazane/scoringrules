@@ -597,6 +597,13 @@ def test_crps_exponentialM(backend, to_backend, backend_kwargs):
     assert_close(res, 0.751013, backend)
 
 
+def test_crps_exponentialM_does_not_modify_obs(backend, to_backend, backend_kwargs):
+    # #153: the location shift used to be applied in place to the caller's obs
+    obs = to_backend(np.asarray([1.0, 2.0]))
+    sr.crps_exponentialM(obs, 0.1, 0.5, 1.0, **backend_kwargs)
+    np.testing.assert_array_equal(np.asarray(obs), [1.0, 2.0])
+
+
 def test_crps_2pexponential(backend, to_backend, backend_kwargs):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))

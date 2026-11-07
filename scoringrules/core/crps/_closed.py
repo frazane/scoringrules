@@ -139,7 +139,7 @@ def exponentialM(
     obs, location, scale, mass = map(xp.asarray, (obs, location, scale, mass))
 
     if not _is_scalar_value(location, 0.0):
-        obs -= location
+        obs = obs - location
 
     a = 1.0 if _is_scalar_value(mass, 0.0) else 1 - mass
     s = xp.abs(obs)
