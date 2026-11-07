@@ -1,13 +1,11 @@
 """Transitional copy of ``core/stats.py`` for the array-API migration.
 
-These are ``xp``-parameterised copies of the statistics helpers needed by the
-CRPS closed-form scores (``core/crps/_closed.py``). They are a faithful
-translation of the corresponding helpers in ``core/stats.py``: instead of
-resolving a backend object ``B`` from the registry, they take a keyword-only
-``xp`` augmented array-API namespace (see ``scoringrules.backend.get_namespace``).
-
-``core/stats.py`` is intentionally left untouched because it is still shared by
-the not-yet-migrated logarithmic-score family.
+``xp``-parameterised statistics helpers used by the CRPS closed-form scores
+(``core/crps/_closed.py``) and the logarithmic scores (``core/logarithmic.py``).
+They take a keyword-only ``xp`` augmented array-API namespace (see
+``scoringrules.backend.get_namespace``) instead of resolving a backend object
+from the registry. The legacy ``core/stats.py`` lost its last caller with the
+logarithmic-score migration and was deleted.
 """
 
 import typing as tp
@@ -99,7 +97,10 @@ def _t_pdf(x: "ArrayLike", df: "ArrayLike", *, xp) -> "Array":
     """Probability density function for the standard Student's t distribution."""
     x_inf = xp.abs(x) == float("inf")
     x = xp.where(x_inf, xp.nan, x)
-    s = ((1 + x**2 / df) ** (-(df + 1) / 2)) / (xp.sqrt(df) * xp.beta(1 / 2, df / 2))
+    half_df = df / 2
+    # beta(1/2, df/2) with 1/2 as an array: torch's lgamma rejects Python floats.
+    beta = xp.beta(xp.full_like(half_df, 0.5), half_df)
+    s = ((1 + x**2 / df) ** (-(df + 1) / 2)) / (xp.sqrt(df) * beta)
     return xp.where(x_inf, 0.0, s)
 
 
@@ -109,6 +110,23 @@ def _t_cdf(x: "ArrayLike", df: "ArrayLike", *, xp) -> "Array":
     ibeta = xp.betainc(df / 2.0, 0.5, t)
     s = xp.where(x >= 0, 1 - 0.5 * ibeta, 0.5 * ibeta)
     return s
+
+
+def _gev_pdf(s: "ArrayLike", xi: "ArrayLike", *, xp) -> "Array":
+    """Probability density function for the standard GEV distribution."""
+    xi_0 = xi == 0.0
+    supp = (xi != 0.0) & (s * xi > -1)
+    supp = supp | xi_0
+    xi = xp.where(xi_0, xp.nan, xi)
+    s = xp.where(supp, s, xp.nan)
+    power = -(xi + 1) / xi
+
+    pdf0 = xp.exp(-s) * xp.exp(-xp.exp(-s))
+    pdf = (1 + s * xi) ** power * xp.exp(-((1 + s * xi) ** (-1 / xi)))
+    pdf = xp.where(xi_0, pdf0, pdf)
+    pdf = xp.where(supp, pdf, 0.0)
+
+    return pdf
 
 
 def _gev_cdf(s: "ArrayLike", xi: "ArrayLike", *, xp) -> "Array":
@@ -126,6 +144,23 @@ def _gev_cdf(s: "ArrayLike", xi: "ArrayLike", *, xp) -> "Array":
     cdf = xp.where((xi > 0) & (s <= -1 / xi), 0, cdf)  # Lower bound CDF
     cdf = xp.where((xi < 0) & (s >= 1 / xp.abs(xi)), 1, cdf)  # Upper bound CDF
     return cdf
+
+
+def _gpd_pdf(x: "ArrayLike", shape: "ArrayLike", *, xp) -> "Array":
+    """Probability density function for the standard GPD distribution."""
+    pos_supp = (shape >= 0.0) & (x >= 0.0)
+    shape_0 = shape == 0
+    shape = xp.where(shape_0, xp.nan, shape)
+    neg_supp = (shape < 0.0) & (x >= 0.0) & (x <= -1 / shape)
+    supp = pos_supp | neg_supp
+    x = xp.where(supp, x, xp.nan)
+    power = -(shape + 1) / shape
+
+    pdf = xp.exp(-x)
+    pdf = xp.where(shape_0, pdf, (1 + shape * x) ** power)
+    pdf = xp.where(supp, pdf, 0.0)
+
+    return pdf
 
 
 def _gpd_cdf(x: "ArrayLike", shape: "ArrayLike", *, xp) -> "Array":
@@ -204,6 +239,27 @@ def _hypergeo_cdf(k, M, n, N, *, xp):
         ),
         k.shape,
     )
+
+
+def _negbinom_pdf(x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", *, xp) -> "Array":
+    """Probability mass function for the negative binomial distribution."""
+    x_plus = xp.abs(x)
+    # comb(n + x - 1, x) as 1 / ((n + x) * B(n, x + 1)), which is what
+    # scipy.special.comb computes for real arguments (``xp.comb`` rounds to an
+    # integer, wrong for a real-valued size ``n``). Like scipy's comb it is 0
+    # when k > N or N < 0, i.e. for n < 1, which matches the legacy helper.
+    big_n = n + x_plus - 1
+    coef = xp.where(
+        (x_plus <= big_n) & (big_n >= 0),
+        1 / ((n + x_plus) * xp.beta(n, x_plus + 1)),
+        0.0,
+    )
+    d = xp.where(
+        xp.floor(x_plus) < x_plus,
+        0.0,
+        coef * prob**n * (1 - prob) ** x_plus,
+    )
+    return xp.where(x < 0.0, 0.0, d)
 
 
 def _negbinom_cdf(x: "ArrayLike", n: "ArrayLike", prob: "ArrayLike", *, xp) -> "Array":
