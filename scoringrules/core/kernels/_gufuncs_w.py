@@ -264,6 +264,7 @@ def _owks_ensemble_mv_w_gufunc(
     out[0] = -(e_1 / wbar - 0.5 * e_2 / (wbar**2) - 0.5 * e_3)
 
 
+@guvectorize("(d),(m,d),(),(m),(m)->()")
 def _vrks_ensemble_mv_w_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -274,7 +275,6 @@ def _vrks_ensemble_mv_w_gufunc(
 ):
     """Vertically re-scaled kernel score for multivariate ensembles."""
     M = fct.shape[0]
-    ow = ow[0]
 
     e_1 = 0.0
     e_2 = 0.0
