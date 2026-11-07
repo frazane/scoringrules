@@ -68,6 +68,7 @@ Notes from the probe that shaped the implementation:
 | `expi` | PASS | PASS | PASS | BLOCKED | BLOCKED | no torch native; jax 0-d works |
 | `factorial` | PASS | PASS | PASS | PASS | PASS | torch via `exp(lgamma(n+1))` |
 | `comb` | PASS | PASS | n/a | PASS | n/a | composed from `factorial` with `/ + round`; discrete, so gradient is not meaningful |
+| `quantile` | PASS | PASS | PASS | PASS | PASS | `np.quantile` / `jnp.quantile` / `torch.quantile` (linear interpolation); torch gets `q` as a tensor of `x`'s dtype and device; `axis` is an int or `None` |
 
 `n/a` for `comb` grad: `comb` is integer-valued and routed through `round`, so it
 has no meaningful gradient (this matched the old `//` form, which was also

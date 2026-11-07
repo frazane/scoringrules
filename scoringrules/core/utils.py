@@ -187,95 +187,11 @@ def mv_weighted_score_chain(obs, fct, v_func=None):
     return obs, fct
 
 
-def univariate_sort_ens(
-    fct, ens_w=None, m_axis=-1, estimator=None, sorted_ensemble=False, backend=None
-):
-    """Sort ensemble members and weights if not already sorted."""
-    B = backends.active if backend is None else backends[backend]
-    sort_ensemble = not sorted_ensemble and estimator in ["qd", "pwm", "int"]
-    if sort_ensemble:
-        ind = B.argsort(fct, axis=-1)
-        fct = B.gather(fct, ind, axis=-1)
-    if ens_w is not None:
-        ens_w = univariate_weight_check(ens_w, fct, m_axis, backend=backend)
-        if sort_ensemble:
-            ens_w = B.gather(ens_w, ind, axis=-1)
-    return fct, ens_w
-
-
 def nan_policy_check(nan_policy: str) -> None:
     """Validate the nan_policy argument."""
     valid = ("propagate", "omit", "raise")
     if nan_policy not in valid:
         raise ValueError(f"Invalid nan_policy '{nan_policy}'. Must be one of {valid}.")
-
-
-def apply_nan_policy_ens_uv(
-    obs: "Array",
-    fct: "Array",
-    nan_policy: "NanPolicy" = "propagate",
-    ens_w: "Array | None" = None,
-    estimator: str | None = None,
-    m_axis: int = -1,
-    backend: "Backend" = None,
-) -> "tuple[Array, Array, Array | None]":
-    """Apply a NaN policy to univariate ensemble forecasts (``fct`` shape ``..., M``).
-
-    A member is treated as invalid if its forecast value **or** its weight
-    (``ens_w``) is NaN. All policies return the same ``(obs, fct, ens_w)`` tuple
-    so the caller can keep a fixed signature regardless of the policy. When
-    supplied, ``ens_w`` is cast to float and returned with its ensemble axis
-    (``m_axis``) moved to the last position, aligned with ``fct``.
-
-    - ``'propagate'``: no-op; NaN members/weights flow through to a NaN result.
-    - ``'raise'``: raise ``ValueError`` if any NaN is present in ``obs``,
-      ``fct`` or ``ens_w``.
-    - ``'omit'``: invalid members are given zero weight. NaN forecast values are
-      replaced with ``0.0`` purely to keep them out of the arithmetic — their
-      value is irrelevant once the corresponding weight is zero. ``ens_w`` is
-      returned as a 0/1 mask when no weights were supplied, otherwise with the
-      invalid entries zeroed.
-    """
-    B = backends.active if backend is None else backends[backend]
-
-    if ens_w is not None:
-        # align the ensemble axis with the (already permuted) forecasts — whose
-        # ensemble axis is last — and cast to float so isnan works on integer
-        # weights. Doing this here means the axis is moved exactly once.
-        ens_w = B.moveaxis(B.asarray(ens_w, dtype=fct.dtype), m_axis, -1)
-
-    if nan_policy == "propagate":
-        return obs, fct, ens_w
-
-    nan_mask = B.isnan(fct)
-    if ens_w is not None:
-        nan_mask = nan_mask | B.isnan(ens_w)
-
-    if nan_policy == "raise":
-        if B.any(nan_mask) or B.any(B.isnan(obs)):
-            raise ValueError(
-                "NaN values encountered in input. "
-                "Use nan_policy='propagate' or nan_policy='omit' to handle NaN values."
-            )
-        return obs, fct, ens_w
-
-    if nan_policy == "omit":
-        if estimator in ["int", "akr", "akr_circperm"]:
-            raise NotImplementedError(
-                f"NaN handling with nan_policy='omit' is not implemented for estimator '{estimator}'."
-            )
-        # zero only the NaN forecast values; zero-weighted members never
-        # contribute, so their (now 0.0) value does not affect the score.
-        fct = B.where(B.isnan(fct), B.asarray(0.0), fct)
-        if ens_w is None:
-            ens_w = B.asarray(~nan_mask, dtype=fct.dtype)
-        else:
-            ens_w = B.where(nan_mask, B.asarray(0.0), ens_w)
-        return obs, fct, ens_w
-
-    raise ValueError(
-        f"Invalid nan_policy '{nan_policy}'. Must be one of 'propagate', 'omit', 'raise'."
-    )
 
 
 def apply_nan_policy_ens_mv(
@@ -360,6 +276,14 @@ def apply_nan_policy_ens_mv(
     )
 
 
+def _gufunc_out(args, shape):
+    """Output buffer for a lazy gufunc: the result dtype of ``obs`` and ``fct``
+    (the first two arguments), at least float, so integer observations still
+    give float scores. Auxiliary arguments (weights, exponents, constants built
+    by the caller) do not take part, matching the dtype of the array path."""
+    return np.empty(shape, dtype=np.result_type(args[0], args[1], np.float32))
+
+
 def lazy_gufunc_wrapper_uv(func):
     """
     Wrapper for lazy/dynamic generalized universal functions so
@@ -369,10 +293,10 @@ def lazy_gufunc_wrapper_uv(func):
     """
 
     def wrapper(*args):
-        out = np.empty_like(args[0])
+        out = _gufunc_out(args, np.shape(args[0]))
         func(*args, out)
         if out.shape == ():
-            return out.item()
+            return out[()]  # a numpy scalar of out's dtype
         else:
             return out
 
@@ -389,10 +313,10 @@ def lazy_gufunc_wrapper_mv(func):
     """
 
     def wrapper(*args):
-        out = np.empty_like(args[0][..., 0])
+        out = _gufunc_out(args, np.shape(args[0])[:-1])
         func(*args, out)
         if out.shape == ():
-            return out.item()
+            return out[()]  # a numpy scalar of out's dtype
         else:
             return out
 

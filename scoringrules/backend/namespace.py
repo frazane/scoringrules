@@ -8,7 +8,7 @@ special functions and a few non-standard helpers (see ``extensions``)."""
 import math
 
 import numpy as np
-from array_api_compat import array_namespace, is_array_api_obj
+from array_api_compat import array_namespace, is_array_api_obj, is_numpy_namespace
 from array_api_compat import device as _device
 
 # Elementwise math functions that the core may call on Python-scalar constants
@@ -83,9 +83,14 @@ class ArrayAPINamespace:
         attr = getattr(self._xp, name)
         if name in _SCALAR_COERCE_FUNCS and callable(attr):
             xp = self._xp
+            keep_np_scalars = is_numpy_namespace(xp)
 
             def _scalar_tolerant(x, *args, **kwargs):
-                if isinstance(x, (bool, int, float, complex)):
+                # np.float64 subclasses float: on numpy, keep numpy scalars as
+                # they are so 0-d results stay numpy scalars (with .shape/.dtype).
+                if isinstance(x, (bool, int, float, complex)) and not (
+                    keep_np_scalars and isinstance(x, np.generic)
+                ):
                     if not args and not kwargs:
                         np_func = getattr(np, _NUMPY_NAMES.get(name, name))
                         return np_func(x).item()
@@ -154,6 +159,11 @@ class ArrayAPINamespace:
         from . import extensions
 
         return extensions.cov(self._xp, x, rowvar=rowvar, bias=bias)
+
+    def quantile(self, x, q, /, *, axis=None, keepdims=False):
+        from . import extensions
+
+        return extensions.quantile(self._xp, x, q, axis=axis, keepdims=keepdims)
 
     def indices(self, dimensions, *, dtype=None, device=None):
         from . import extensions

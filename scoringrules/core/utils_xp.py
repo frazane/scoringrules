@@ -89,7 +89,7 @@ def apply_nan_policy_ens_uv(
     obs, fct, nan_policy="propagate", ens_w=None, estimator=None, m_axis=-1, *, xp
 ):
     if ens_w is not None:
-        ens_w = xp.moveaxis(xp.asarray(ens_w, dtype=fct.dtype), m_axis, -1)
+        ens_w = xp.moveaxis(xp.asarray(ens_w, dtype=xp.float_dtype(fct)), m_axis, -1)
 
     if nan_policy == "propagate":
         return obs, fct, ens_w
@@ -114,7 +114,7 @@ def apply_nan_policy_ens_uv(
             )
         fct = xp.where(xp.isnan(fct), 0.0, fct)
         if ens_w is None:
-            ens_w = xp.asarray(~nan_mask, dtype=fct.dtype)
+            ens_w = xp.asarray(~nan_mask, dtype=xp.float_dtype(fct))
         else:
             ens_w = xp.where(nan_mask, 0.0, ens_w)
         return obs, fct, ens_w

@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 import scipy.stats as st
 import scoringrules as sr
+from ._parity import UV_CASES, uv_ensemble_inputs
 from .conftest import assert_inferred
 
 ENSEMBLE_SIZE = 11
@@ -415,6 +416,89 @@ def test_crps_ensemble_correctness(backend, to_backend, backend_kwargs):
         assert np.isclose(res, 0.6126602)
 
 
+def _expected_raise(case, estimator):
+    if case == "nan_raise":
+        return ValueError
+    if case.startswith("nan_omit") and estimator in ("int", "akr", "akr_circperm"):
+        return NotImplementedError
+    return None
+
+
+def _ensemble_parity_params():
+    for estimator in ESTIMATORS:
+        for weighted in (False, True):
+            for M in (6, 7):
+                for case in UV_CASES:
+                    marks = ()
+                    if (
+                        estimator == "akr_circperm"
+                        and weighted
+                        and M % 2 == 0
+                        and _expected_raise(case, estimator) is None
+                    ):
+                        marks = pytest.mark.xfail(
+                            raises=AssertionError,
+                            strict=True,
+                            reason="#149, fixed in PR 1",
+                        )
+                    yield pytest.param(
+                        estimator,
+                        weighted,
+                        M,
+                        case,
+                        id=f"{estimator}-{'w' if weighted else 'uw'}-M{M}-{case}",
+                        marks=marks,
+                    )
+
+
+@pytest.mark.parametrize("estimator,weighted,M,case", _ensemble_parity_params())
+def test_crps_ensemble_paths_agree(estimator, weighted, M, case, paths_agree):
+    obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted)
+    raises = _expected_raise(case, estimator)
+    paths_agree(
+        sr.crps_ensemble, obs, fct, estimator=estimator, raises=raises, **kwargs
+    )
+
+
+@pytest.mark.parametrize("case", [c for c in UV_CASES if not c.startswith("nan_")])
+def test_crps_quantile_paths_agree(case, paths_agree):
+    obs, fct, kwargs = uv_ensemble_inputs(case, 7, weighted=False)
+    fct = np.sort(fct, axis=kwargs.get("m_axis", -1))
+    alpha = np.linspace(0.1, 0.9, 7)
+    paths_agree(sr.crps_quantile, obs, fct, alpha, **kwargs)
+
+
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+def test_crps_ensemble_int_fct_float_weights(estimator, backend, backend_kwargs):
+    # integer fct must not truncate float ens_w (it used to be cast to fct.dtype)
+    mod = {"jax": "jax.numpy", "torch": "torch"}.get(backend, "numpy")
+    xp_mod = pytest.importorskip(mod)
+    rng = np.random.default_rng(3)
+    obs0 = rng.normal(size=N)
+    fct0 = rng.integers(-3, 4, size=(N, ENSEMBLE_SIZE))
+    w0 = rng.uniform(0.1, 2.0, size=(N, ENSEMBLE_SIZE))
+    kwargs = {"estimator": estimator, **backend_kwargs}
+    res = sr.crps_ensemble(
+        xp_mod.asarray(obs0), xp_mod.asarray(fct0), ens_w=xp_mod.asarray(w0), **kwargs
+    )
+    expected = sr.crps_ensemble(obs0, fct0.astype(float), ens_w=w0, **kwargs)
+    assert_close(res, expected, backend)
+
+
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+def test_crps_ensemble_float32(estimator, backend, to_backend_float32, backend_kwargs):
+    obs = to_backend_float32(np.random.randn(N))
+    fct = to_backend_float32(np.random.randn(N, ENSEMBLE_SIZE))
+    ens_w = to_backend_float32(np.random.uniform(0.1, 1.0, (N, ENSEMBLE_SIZE)))
+    kwargs = {"estimator": estimator, **backend_kwargs}
+    for res in (
+        sr.crps_ensemble(obs, fct, **kwargs),
+        sr.crps_ensemble(obs, fct, ens_w=ens_w, **kwargs),
+    ):
+        assert_inferred(res, backend)
+        assert res.dtype == fct.dtype
+
+
 def test_crps_quantile(backend, to_backend, backend_kwargs):
     # test shapes
     obs = np.random.randn(N)
@@ -595,6 +679,13 @@ def test_crps_exponentialM(backend, to_backend, backend_kwargs):
     res = sr.crps_exponentialM(fa(-1.2), fa(0.1), fa(-2.0), fa(3.0), **backend_kwargs)
     assert_inferred(res, backend)
     assert_close(res, 0.751013, backend)
+
+
+def test_crps_exponentialM_does_not_modify_obs(backend, to_backend, backend_kwargs):
+    # #153: the location shift used to be applied in place to the caller's obs
+    obs = to_backend(np.asarray([1.0, 2.0]))
+    sr.crps_exponentialM(obs, 0.1, 0.5, 1.0, **backend_kwargs)
+    np.testing.assert_array_equal(np.asarray(obs), [1.0, 2.0])
 
 
 def test_crps_2pexponential(backend, to_backend, backend_kwargs):

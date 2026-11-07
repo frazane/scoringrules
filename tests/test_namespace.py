@@ -85,3 +85,13 @@ def test_mixed_namespaces_raise():
     b = torch.tensor([1.0, 2.0])
     with pytest.raises(ValueError, match="single framework|multiple|mixed"):
         get_namespace(a, b)
+
+
+def test_numpy_scalars_stay_numpy_scalars():
+    # np.float64 subclasses float; a 0-d numpy result such as -xp.log(p) must stay
+    # a numpy scalar (with .shape and .dtype), not become a Python float.
+    xp = get_namespace(np.asarray(1.0))
+    out = xp.log(np.float64(2.0))
+    assert isinstance(out, np.generic)
+    assert out.shape == ()
+    assert xp.sqrt(2.0) == pytest.approx(np.sqrt(2.0))  # Python scalars unchanged
