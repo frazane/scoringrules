@@ -154,6 +154,21 @@ def test_registry_active_warns(restore_active):
     assert B._xp is get_namespace(np.zeros(1))._xp
 
 
+def test_registry_active_follows_set_active(restore_active, requires_numba):
+    numpy_xp = get_namespace(np.zeros(1))._xp
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        backends.set_active("numba")
+        assert backends.active is backends["numba"]
+        assert backends.active._xp is numpy_xp
+        jnp = pytest.importorskip("jax.numpy")
+        backends.set_active("jax")
+        assert backends.active._xp is get_namespace(jnp.zeros(1))._xp
+        backends.set_active("numpy")
+        assert backends.active._xp is numpy_xp
+    assert _dispatch._numba_active is False
+
+
 @pytest.mark.parametrize(
     "access",
     [
