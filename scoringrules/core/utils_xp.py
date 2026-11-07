@@ -124,7 +124,8 @@ def multivariate_array_check(obs, fct, m_axis, v_axis, *, xp):
 
 def univariate_weight_check(ens_w, fct, m_axis, xp):
     if ens_w is not None:
-        ens_w = xp.asarray(ens_w)
+        # float_dtype, not fct.dtype: integer forecasts keep fractional weights
+        ens_w = xp.astype(xp.asarray(ens_w), xp.float_dtype(fct))
         m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
         ens_w = xp.moveaxis(ens_w, m_axis, _M_AXIS_UV)
         if ens_w.shape != fct.shape:

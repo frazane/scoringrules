@@ -18,15 +18,6 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
 
 
-def _uv_ens_w(ens_w, fct, m_axis, *, xp):
-    """``ens_w`` as ``xp.float_dtype(fct)``, checked and normalised against the
-    permuted ``fct`` (ensemble last), or ``None``."""
-    if ens_w is None:
-        return None
-    ens_w = xp.astype(xp.asarray(ens_w), xp.float_dtype(fct))
-    return univariate_weight_check(ens_w, fct, m_axis, xp=xp)
-
-
 def _uv_outcome_weights(obs, fct, a, b, w_func, *, xp):
     """``w_func(obs)`` and ``w_func(fct)`` as ``xp.float_dtype(fct)``, so boolean
     or lower-precision weights follow the forecast precision."""
@@ -92,7 +83,8 @@ def gksuv_ensemble(
     numba = use_numba(backend, obs, fct)
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
-    ens_w = _uv_ens_w(ens_w, fct, m_axis, xp=xp)
+    if ens_w is not None:
+        ens_w = univariate_weight_check(ens_w, fct, m_axis, xp=xp)
 
     if numba:
         if ens_w is None:
@@ -261,7 +253,8 @@ def owgksuv_ensemble(
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs_w, fct_w = _uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
-    ens_w = _uv_ens_w(ens_w, fct, m_axis, xp=xp)
+    if ens_w is not None:
+        ens_w = univariate_weight_check(ens_w, fct, m_axis, xp=xp)
 
     if numba:
         if ens_w is None:
@@ -344,7 +337,8 @@ def vrgksuv_ensemble(
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs_w, fct_w = _uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
-    ens_w = _uv_ens_w(ens_w, fct, m_axis, xp=xp)
+    if ens_w is not None:
+        ens_w = univariate_weight_check(ens_w, fct, m_axis, xp=xp)
 
     if numba:
         if ens_w is None:
