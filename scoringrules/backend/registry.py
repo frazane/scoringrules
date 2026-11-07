@@ -122,7 +122,7 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
         return self._get(self._active)
 
 
-class BackendNotAvailable(Exception):
+class BackendNotAvailable(ImportError):
     """Raised if a backend library cannot be imported."""
 
 

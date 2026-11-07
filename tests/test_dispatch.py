@@ -96,6 +96,8 @@ def test_numba_missing_set_active_raises(numba_missing, restore_active):
     with pytest.raises(BackendNotAvailable, match=r"scoringrules\[numba\]"):
         backends.set_active("numba")
     assert _dispatch._numba_active is False
+    # both missing-numba paths are caught by ``except ImportError``
+    assert issubclass(BackendNotAvailable, ImportError)
 
 
 def test_numba_broken_reports_and_chains_import_error(numba_broken, restore_active):
