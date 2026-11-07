@@ -131,9 +131,8 @@ def crps_ensemble(
     obs, fct, ens_w = apply_nan_policy_ens_uv(
         obs, fct, nan_policy, ens_w, estimator=estimator, m_axis=m_axis, xp=xp
     )
+    # also checks and normalises ens_w
     fct, ens_w = univariate_sort_ens(fct, ens_w, -1, estimator, sorted_ensemble, xp=xp)
-    if ens_w is not None:
-        ens_w = univariate_weight_check(ens_w, fct, -1, xp=xp)
 
     if numba:
         if ens_w is None:
