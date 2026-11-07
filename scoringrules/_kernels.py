@@ -76,8 +76,13 @@ def gksuv_ensemble(
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scoringrules as sr
-    >>> sr.gks_ensemble(obs, pred)
+    >>> rng = np.random.default_rng(123)
+    >>> obs = rng.normal(size=3)
+    >>> fct = rng.normal(size=(3, 10))
+    >>> sr.gksuv_ensemble(obs, fct)
+    array([0.30799922, 0.17469789, 0.17174067])
     """
     resolve_backend_arg(backend)
     numba = use_numba(backend, obs, fct)
@@ -161,11 +166,13 @@ def twgksuv_ensemble(
     --------
     >>> import numpy as np
     >>> import scoringrules as sr
-    >>>
+    >>> rng = np.random.default_rng(123)
+    >>> obs = rng.normal(size=3)
+    >>> fct = rng.normal(size=(3, 10))
     >>> def v_func(x):
-    >>>    return np.maximum(x, -1.0)
-    >>>
-    >>> sr.twgksuv_ensemble(obs, pred, v_func=v_func)
+    ...     return np.maximum(x, -1.0)
+    >>> sr.twgksuv_ensemble(obs, fct, v_func=v_func)
+    array([0.31423505, 0.14243174, 0.17610499])
     """
     resolve_backend_arg(backend)
     # warned above, at the user's call: forward only the numba choice
@@ -244,11 +251,13 @@ def owgksuv_ensemble(
     --------
     >>> import numpy as np
     >>> import scoringrules as sr
-    >>>
+    >>> rng = np.random.default_rng(123)
+    >>> obs = rng.normal(size=3)
+    >>> fct = rng.normal(size=(3, 10))
     >>> def w_func(x):
-    >>>    return (x > -1).astype(float)
-    >>>
-    >>> sr.owgksuv_ensemble(obs, pred, w_func=w_func)
+    ...     return (x > -1).astype(float)
+    >>> sr.owgksuv_ensemble(obs, fct, w_func=w_func)
+    array([0.38847902, 0.17524147, 0.14577796])
     """
     resolve_backend_arg(backend)
     numba = use_numba(backend, obs, fct)
@@ -328,11 +337,13 @@ def vrgksuv_ensemble(
     --------
     >>> import numpy as np
     >>> import scoringrules as sr
-    >>>
+    >>> rng = np.random.default_rng(123)
+    >>> obs = rng.normal(size=3)
+    >>> fct = rng.normal(size=(3, 10))
     >>> def w_func(x):
-    >>>    return (x > -1).astype(float)
-    >>>
-    >>> sr.vrgksuv_ensemble(obs, pred, w_func=w_func)
+    ...     return (x > -1).astype(float)
+    >>> sr.vrgksuv_ensemble(obs, fct, w_func=w_func)
+    array([0.3652057 , 0.17914915, 0.14754764])
     """
     resolve_backend_arg(backend)
     numba = use_numba(backend, obs, fct)
