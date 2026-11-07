@@ -139,7 +139,17 @@ def uv_ensemble_inputs(case, M, weighted, seed=0, N=5):
     return obs, fct, kwargs
 
 
-MV_CASES = ("default", "m_axis", "v_axis", "n1", "int_obs", "single", "batch")
+MV_CASES = (
+    "default",
+    "m_axis",
+    "v_axis",
+    "n1",
+    "int_obs",
+    "int_fct",
+    "single",
+    "batch",
+    "list_inputs",
+)
 
 
 def mv_ensemble_inputs(case, M, weighted, seed=0, N=5, D=3):
@@ -149,9 +159,10 @@ def mv_ensemble_inputs(case, M, weighted, seed=0, N=5, D=3):
     ``fct`` of shape ``(N, M, D)``), ``"m_axis"`` (``fct`` of shape ``(M, N, D)``
     with ``m_axis=0``), ``"v_axis"`` (``fct`` of shape ``(N, D, M)`` with
     ``m_axis=-1, v_axis=-2``), ``"n1"`` (``N=1``), ``"int_obs"`` (integer
-    ``obs``), ``"single"`` (``obs`` of shape ``(D,)``, ``fct`` of shape
-    ``(M, D)``) and ``"batch"`` (an extra leading axis, ``fct`` of shape
-    ``(2, N, M, D)``). With ``weighted``, ``kwargs`` holds non-uniform ``ens_w``
+    ``obs``), ``"int_fct"`` (integer ``fct``, with ties), ``"single"`` (``obs``
+    of shape ``(D,)``, ``fct`` of shape ``(M, D)``), ``"batch"`` (an extra
+    leading axis, ``fct`` of shape ``(2, N, M, D)``) and ``"list_inputs"``
+    (``obs``, ``fct`` and ``ens_w`` as nested lists). With ``weighted``, ``kwargs`` holds non-uniform ``ens_w``
     laid out like ``fct`` without its variables axis.
     """
     rng = np.random.default_rng(seed)
@@ -168,6 +179,10 @@ def mv_ensemble_inputs(case, M, weighted, seed=0, N=5, D=3):
         kwargs["m_axis"], kwargs["v_axis"] = -1, -2
     elif case == "int_obs":
         obs = rng.integers(-2, 3, size=obs.shape)
+    elif case == "int_fct":
+        fct = rng.integers(-3, 4, size=fct.shape)
+    elif case == "list_inputs":
+        obs, fct, w = obs.tolist(), fct.tolist(), w.tolist()
     if weighted:
         kwargs["ens_w"] = w
     return obs, fct, kwargs

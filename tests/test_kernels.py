@@ -506,7 +506,11 @@ def test_vrgksmv(backend):
     np.testing.assert_allclose(res, res0, rtol=1e-6)
 
 
-@pytest.mark.parametrize("case", UV_CASES)
+# the univariate kernel scores have no nan_policy
+_KS_UV_CASES = [c for c in UV_CASES if not c.startswith("nan_")]
+
+
+@pytest.mark.parametrize("case", _KS_UV_CASES)
 @pytest.mark.parametrize("M", [6, 7])
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("estimator", ESTIMATORS)
@@ -517,7 +521,7 @@ def test_gksuv_paths_agree(score, estimator, weighted, M, case, paths_agree):
     paths_agree(getattr(sr, score), obs, fct, *args, estimator=estimator, **kwargs)
 
 
-@pytest.mark.parametrize("case", UV_CASES)
+@pytest.mark.parametrize("case", _KS_UV_CASES)
 @pytest.mark.parametrize("M", [6, 7])
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("score", ["owgksuv_ensemble", "vrgksuv_ensemble"])
