@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "numpy>=2.0.0",
     "scipy>=1.14.0",
+    "array-api-compat>=1.9",
 ]
 authors = [
     {name = "Francesco Zanetta", email = "zanetta.francesco@gmail.com"},
@@ -58,8 +59,10 @@ ignore = ["E741"]
 [tool.coverage.run]
 omit = [
     "**/_gufuncs.py", # numba gufuncs are not python code
+    "**/_gufuncs_w.py",
     "**/_gufunc.py",
-    "scoringrules/backend/*.py", # superfluous
+    "scoringrules/backend/base.py", # ABC, being removed
+    "scoringrules/backend/registry.py", # backend glue
     "scoringrules/core/typing.py" # only type hints
 ]
 
