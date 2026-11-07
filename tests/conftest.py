@@ -127,3 +127,29 @@ def to_backend_float32(backend):
     from ._parity import as_float32
 
     return lambda x: as_float32(x, backend)
+
+
+@pytest.fixture()
+def native(to_backend, backend):
+    """Wrap a score so numpy array arguments are converted with ``to_backend``
+    and shaped results are checked with ``assert_inferred``.
+
+    ``native(sr.es_ensemble)(obs, fct, ens_w=w)`` keeps tests that build their
+    inputs with numpy (NaN patterns, sub-ensembles) running on every framework.
+    """
+
+    def wrap(fn):
+        def call(*args, **kwargs):
+            args = [to_backend(a) if isinstance(a, np.ndarray) else a for a in args]
+            kwargs = {
+                k: to_backend(v) if isinstance(v, np.ndarray) else v
+                for k, v in kwargs.items()
+            }
+            res = fn(*args, **kwargs)
+            if getattr(res, "shape", ()) != ():
+                assert_inferred(res, backend)
+            return res
+
+        return call
+
+    return wrap
