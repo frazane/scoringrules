@@ -1,17 +1,25 @@
 import typing as tp
 
-from scoringrules.backend import backends
+from scoringrules._dispatch import resolve_backend_arg, use_numba
+from scoringrules.backend import get_namespace
 from scoringrules.core import variogram
-from scoringrules.core.utils import (
+from scoringrules.core.utils import estimator_check, mv_weighted_score_chain
+from scoringrules.core.utils_xp import (
     multivariate_array_check,
     multivariate_weight_check,
-    estimator_check,
-    mv_weighted_score_chain,
     mv_weighted_score_weights,
 )
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, Backend
+
+
+def _dimension_weights(w, obs, fct, *, xp):
+    """``w`` as an array, or equal weights of shape ``(..., D, D)``."""
+    if w is None:
+        D = fct.shape[-1]
+        return xp.ones(obs.shape + (D,), dtype=fct.dtype, device=xp.device(fct))
+    return xp.asarray(w)
 
 
 def vs_ensemble(
@@ -58,8 +66,9 @@ def vs_ensemble(
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 0.5.
     estimator : str
         The variogram score estimator to be used.
-    backend: str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -82,30 +91,24 @@ def vs_ensemble(
     >>> sr.vs_ensemble(obs, fct)
     array([ 8.65630139,  6.84693866, 19.52993307])
     """
-    B = backends.active if backend is None else backends[backend]
-    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
+    w = _dimension_weights(w, obs, fct, xp=xp)
+    if ens_w is not None:
+        # no nan-policy step moved the weights: pass the caller's layout
+        ens_w = multivariate_weight_check(ens_w, fct, m_axis, v_axis, xp=xp)
 
-    if w is None:
-        D = fct.shape[-1]
-        w = B.ones(obs.shape + (D,), dtype=fct.dtype, device=B.device(fct))
-    else:
-        w = B.asarray(w)
-
-    if ens_w is None:
-        if backend == "numba":
+    if numba:
+        if ens_w is None:
             estimator_check(estimator, variogram.estimator_gufuncs)
             return variogram.estimator_gufuncs[estimator](obs, fct, w, p)
-        else:
-            return variogram.vs(obs, fct, w, p, estimator=estimator, backend=backend)
-    else:
-        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
-        if backend == "numba":
-            estimator_check(estimator, variogram.estimator_gufuncs_w)
-            return variogram.estimator_gufuncs_w[estimator](obs, fct, w, ens_w, p)
-        else:
-            return variogram.vs_w(
-                obs, fct, w, ens_w, p, estimator=estimator, backend=backend
-            )
+        estimator_check(estimator, variogram.estimator_gufuncs_w)
+        return variogram.estimator_gufuncs_w[estimator](obs, fct, w, ens_w, p)
+    if ens_w is None:
+        return variogram.vs(obs, fct, w, p, estimator=estimator, xp=xp)
+    return variogram.vs_w(obs, fct, w, ens_w, p, estimator=estimator, xp=xp)
 
 
 def twvs_ensemble(
@@ -155,8 +158,9 @@ def twvs_ensemble(
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 0.5.
     estimator : str
         The variogram score estimator to be used.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -180,6 +184,7 @@ def twvs_ensemble(
     >>> sr.twvs_ensemble(obs, fct, lambda x: np.maximum(x, -0.2))
     array([5.94996894, 4.72029765, 6.08947229])
     """
+    resolve_backend_arg(backend)
     obs, fct = mv_weighted_score_chain(obs, fct, v_func)
     return vs_ensemble(
         obs,
@@ -243,8 +248,9 @@ def owvs_ensemble(
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     p : float
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 0.5.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -261,29 +267,24 @@ def owvs_ensemble(
     >>> sr.owvs_ensemble(obs, fct, lambda x: x.mean() + 1.0)
     array([ 9.86816636,  6.75532522, 19.59353723])
     """
-    B = backends.active if backend is None else backends[backend]
-    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
+    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    w = _dimension_weights(w, obs, fct, xp=xp)
+    if ens_w is not None:
+        ens_w = multivariate_weight_check(ens_w, fct, m_axis, v_axis, xp=xp)
 
-    if w is None:
-        D = fct.shape[-1]
-        w = B.ones(obs.shape + (D,), dtype=fct.dtype, device=B.device(fct))
-
-    if ens_w is None:
-        if backend == "numba":
+    if numba:
+        if ens_w is None:
             return variogram.estimator_gufuncs["ownrg"](obs, fct, w, obs_w, fct_w, p)
-        else:
-            return variogram.owvs(obs, fct, w, obs_w, fct_w, p=p, backend=backend)
-    else:
-        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
-        if backend == "numba":
-            return variogram.estimator_gufuncs_w["ownrg"](
-                obs, fct, w, obs_w, fct_w, ens_w, p
-            )
-        else:
-            return variogram.owvs_w(
-                obs, fct, w, obs_w, fct_w, ens_w=ens_w, p=p, backend=backend
-            )
+        return variogram.estimator_gufuncs_w["ownrg"](
+            obs, fct, w, obs_w, fct_w, ens_w, p
+        )
+    if ens_w is None:
+        return variogram.owvs(obs, fct, w, obs_w, fct_w, p=p, xp=xp)
+    return variogram.owvs_w(obs, fct, w, obs_w, fct_w, ens_w, p=p, xp=xp)
 
 
 def vrvs_ensemble(
@@ -337,8 +338,9 @@ def vrvs_ensemble(
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     p : float
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 0.5.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
@@ -355,26 +357,21 @@ def vrvs_ensemble(
     >>> sr.vrvs_ensemble(obs, fct, lambda x: x.max() + 1.0)
     array([46.48256493, 57.90759816, 92.37153472])
     """
-    B = backends.active if backend is None else backends[backend]
-    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, backend=backend)
-    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func=w_func, backend=backend)
+    resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct)
+    xp = get_namespace(obs, fct)
+    obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
+    obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    w = _dimension_weights(w, obs, fct, xp=xp)
+    if ens_w is not None:
+        ens_w = multivariate_weight_check(ens_w, fct, m_axis, v_axis, xp=xp)
 
-    if w is None:
-        D = fct.shape[-1]
-        w = B.ones(obs.shape + (D,), dtype=fct.dtype, device=B.device(fct))
-
-    if ens_w is None:
-        if backend == "numba":
+    if numba:
+        if ens_w is None:
             return variogram.estimator_gufuncs["vrnrg"](obs, fct, w, obs_w, fct_w, p)
-        else:
-            return variogram.vrvs(obs, fct, w, obs_w, fct_w, p=p, backend=backend)
-    else:
-        ens_w = multivariate_weight_check(ens_w, fct, m_axis, backend=backend)
-        if backend == "numba":
-            return variogram.estimator_gufuncs_w["vrnrg"](
-                obs, fct, w, obs_w, fct_w, ens_w, p
-            )
-        else:
-            return variogram.vrvs_w(
-                obs, fct, w, obs_w, fct_w, ens_w=ens_w, p=p, backend=backend
-            )
+        return variogram.estimator_gufuncs_w["vrnrg"](
+            obs, fct, w, obs_w, fct_w, ens_w, p
+        )
+    if ens_w is None:
+        return variogram.vrvs(obs, fct, w, obs_w, fct_w, p=p, xp=xp)
+    return variogram.vrvs_w(obs, fct, w, obs_w, fct_w, ens_w, p=p, xp=xp)
