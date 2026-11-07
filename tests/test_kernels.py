@@ -544,3 +544,86 @@ def test_weighted_gksmv_paths_agree(score, weighted, M, case, paths_agree, reque
     mark_known_mv_failures(request, case, weighted)
     obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
     paths_agree(getattr(sr, score), obs, fct, mv_w_func, **kwargs)
+
+
+def _uv_w_func(x):
+    return 1.0 / (1.0 + x**2)
+
+
+def _mv_w_func(x):
+    return 1.0 / (1.0 + x.mean() ** 2)
+
+
+def _gks_ens_w_inputs(mv, seed=0):
+    """Inputs plus integer member counts and the ensemble with duplicated members."""
+    rng = np.random.default_rng(seed)
+    M = 6
+    obs = rng.normal(size=(N, N_VARS) if mv else (N,))
+    fct = rng.normal(size=(N, M, N_VARS) if mv else (N, M))
+    counts = np.array([1, 3, 1, 2, 1, 1])
+    fct_dup = np.repeat(fct, counts, axis=1)
+    ens_w = np.broadcast_to(counts, (N, M)).astype(float)
+    return obs, fct, counts, fct_dup, ens_w
+
+
+_GKS_W_SCORES = [
+    *[("gksuv_ensemble", est) for est in ESTIMATORS],
+    *[("gksmv_ensemble", est) for est in ESTIMATORS],
+    ("owgksuv_ensemble", None),
+    ("vrgksuv_ensemble", None),
+    ("owgksmv_ensemble", None),
+    ("vrgksmv_ensemble", None),
+]
+
+
+def _gks_call(score, estimator, obs, fct, **kwargs):
+    fn = getattr(sr, score)
+    if estimator is not None:
+        return np.asarray(fn(obs, fct, estimator=estimator, **kwargs))
+    if score.endswith("uv_ensemble"):
+        return np.asarray(fn(obs, fct, w_func=_uv_w_func, **kwargs))
+    return np.asarray(fn(obs, fct, _mv_w_func, **kwargs))
+
+
+@pytest.mark.parametrize("score,estimator", _GKS_W_SCORES)
+def test_gks_uniform_ens_w(score, estimator, backend):
+    """Uniform ens_w reproduces the unweighted score."""
+    obs, fct, _, _, ens_w = _gks_ens_w_inputs(score.endswith("mv_ensemble"))
+    ens_w = np.ones_like(ens_w)
+    res = _gks_call(score, estimator, obs, fct, backend=backend)
+    res_w = _gks_call(score, estimator, obs, fct, ens_w=ens_w, backend=backend)
+    np.testing.assert_allclose(res_w, res, rtol=1e-5, atol=1e-6)
+
+
+@pytest.mark.parametrize(
+    "score,estimator", [s for s in _GKS_W_SCORES if s[1] in (None, "nrg")]
+)
+def test_gks_ens_w_duplicated_members(score, estimator, backend):
+    """Integer ens_w equals the unweighted score of the ensemble with each member
+    repeated that many times (holds for the energy form, not for fair or akr)."""
+    obs, fct, _, fct_dup, ens_w = _gks_ens_w_inputs(score.endswith("mv_ensemble"))
+    res_w = _gks_call(score, estimator, obs, fct, ens_w=ens_w, backend=backend)
+    res_dup = _gks_call(score, estimator, obs, fct_dup, backend=backend)
+    np.testing.assert_allclose(res_w, res_dup, rtol=1e-5, atol=1e-6)
+
+
+@pytest.mark.parametrize("score", ["gksuv_ensemble", "gksmv_ensemble"])
+def test_gks_fair_ens_w_known_value(score, backend):
+    """Weighted fair estimator excludes the i == j pairs (#150)."""
+    mv = score == "gksmv_ensemble"
+    obs = np.array([0.3, -0.1]) if mv else 0.3
+    fct = (
+        np.array([[0.1, 0.2], [-0.4, 0.0], [1.2, -0.5]])
+        if mv
+        else np.array([0.1, -0.4, 1.2])
+    )
+    w = np.array([0.5, 0.3, 0.2])
+    kern = lambda a, b: np.exp(-0.5 * np.sum((np.asarray(a) - b) ** 2))  # noqa: E731
+    e_1 = sum(w[i] * kern(fct[i], obs) for i in range(3))
+    e_2 = sum(
+        w[i] * w[j] * kern(fct[i], fct[j]) for i in range(3) for j in range(3) if i != j
+    )
+    expected = -(e_1 - 0.5 * e_2 / (1 - np.sum(w**2)) - 0.5)
+    res = getattr(sr, score)(obs, fct, ens_w=w, estimator="fair", backend=backend)
+    # rtol for jax, which runs in float32 here
+    np.testing.assert_allclose(np.asarray(res), expected, rtol=1e-5)

@@ -106,3 +106,45 @@ def test_weighted_variogram_paths_agree_w_p(score, weighted, paths_agree):
     obs, fct, kwargs = mv_ensemble_inputs("default", 7, weighted)
     w = np.random.default_rng(1).uniform(0.1, 2.0, size=(*obs.shape, obs.shape[-1]))
     paths_agree(getattr(sr, score), obs, fct, mv_w_func, w, p=1.0, **kwargs)
+
+
+def _vs_w_func(x):
+    return 1.0 / (1.0 + x.mean() ** 2)
+
+
+@pytest.mark.parametrize("score", ["owvs_ensemble", "vrvs_ensemble"])
+def test_weighted_variogram_uniform_ens_w(score, backend):
+    """Uniform ens_w reproduces the unweighted score."""
+    rng = np.random.default_rng(0)
+    obs = rng.normal(size=(N, N_VARS))
+    fct = rng.normal(size=(N, 6, N_VARS))
+    fn = getattr(sr, score)
+    res = np.asarray(fn(obs, fct, _vs_w_func, backend=backend))
+    res_w = np.asarray(fn(obs, fct, _vs_w_func, ens_w=np.ones((N, 6)), backend=backend))
+    np.testing.assert_allclose(res_w, res, rtol=1e-5, atol=1e-6)
+
+
+@pytest.mark.parametrize("score", ["owvs_ensemble", "vrvs_ensemble"])
+def test_weighted_variogram_ens_w_duplicated_members(score, backend):
+    """Integer ens_w equals the unweighted score of the ensemble with each member
+    repeated that many times, also with m_axis=0."""
+    rng = np.random.default_rng(0)
+    obs = rng.normal(size=(N, N_VARS))
+    fct = rng.normal(size=(N, 6, N_VARS))
+    counts = np.array([1, 3, 1, 2, 1, 1])
+    ens_w = np.broadcast_to(counts, (N, 6)).astype(float)
+    fn = getattr(sr, score)
+    res_dup = np.asarray(
+        fn(obs, np.repeat(fct, counts, axis=1), _vs_w_func, backend=backend)
+    )
+    res_w = np.asarray(fn(obs, fct, _vs_w_func, ens_w=ens_w, backend=backend))
+    np.testing.assert_allclose(res_w, res_dup, rtol=1e-5, atol=1e-6)
+    res_w = fn(
+        obs,
+        np.moveaxis(fct, 1, 0),
+        _vs_w_func,
+        m_axis=0,
+        ens_w=ens_w.T,
+        backend=backend,
+    )
+    np.testing.assert_allclose(np.asarray(res_w), res_dup, rtol=1e-5, atol=1e-6)
