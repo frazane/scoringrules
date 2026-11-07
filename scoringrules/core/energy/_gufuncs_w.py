@@ -90,7 +90,6 @@ def _owenergy_score_gufunc_w(
 ):
     """Compute the Outcome-Weighted Energy Score for a finite ensemble."""
     M = fct.shape[0]
-    ow = ow[0]
 
     e_1 = 0.0
     e_2 = 0.0
@@ -104,7 +103,7 @@ def _owenergy_score_gufunc_w(
                 * ens_w[j]
             )
 
-    wbar = np.mean(fw)
+    wbar = np.sum(fw * ens_w)
 
     out[0] = e_1 / (wbar) - 0.5 * e_2 / (wbar**2)
 
@@ -120,7 +119,6 @@ def _vrenergy_score_gufunc_w(
 ):
     """Compute the Vertically Re-scaled Energy Score for a finite ensemble."""
     M = fct.shape[0]
-    ow = ow[0]
 
     e_1 = 0.0
     e_2 = 0.0

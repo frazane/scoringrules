@@ -278,33 +278,86 @@ def apply_nan_policy_ens_uv(
     )
 
 
-def apply_nan_policy_ens_mv(obs, fct, nan_policy="propagate", backend=None):
-    """Apply NaN policy to multivariate ensemble forecasts (fct shape: ..., M, D).
+def apply_nan_policy_ens_mv(
+    obs: "Array",
+    fct: "Array",
+    nan_policy: "NanPolicy" = "propagate",
+    ens_w: "Array | None" = None,
+    estimator: str | None = None,
+    m_axis: int = -2,
+    backend: "Backend" = None,
+) -> "tuple[Array, Array, Array | None]":
+    """Apply a NaN policy to multivariate ensemble forecasts (``fct`` shape ``..., M, D``).
 
-    A NaN in any variable of an ensemble member marks the entire member as invalid.
+    A member is treated as invalid if **any** of its variables is NaN, or if its
+    weight (``ens_w``) is NaN. NaN in ``obs`` always propagates and is never
+    omitted. All policies return ``(obs, fct, ens_w)`` so the caller keeps a
+    fixed signature. When supplied or produced, ``ens_w`` has shape ``..., M``
+    with its ensemble axis (``m_axis``) moved to the last position, aligned with
+    the already-permuted ``fct`` (whose ensemble axis is at ``-2`` and variable
+    axis at ``-1``).
 
-    For 'propagate': no-op, returns (obs, fct, None).
-    For 'raise': raises ValueError if any NaN in fct or obs.
-    For 'omit': returns (obs, fct_zeroed, nan_mask) where nan_mask has shape
-    (..., M) — True for invalid members — and NaN members are replaced with 0.0.
+    - ``'propagate'``: no-op; NaN members/weights flow through to a NaN result.
+    - ``'raise'``: raise ``ValueError`` if any NaN is present in ``obs``, ``fct``
+      or ``ens_w``.
+    - ``'omit'``: invalid members are given zero weight and the caller routes the
+      score through the weighted path. NaN forecast values are replaced with
+      ``0.0`` purely to keep them out of the arithmetic (their value is
+      irrelevant once their weight is zero). ``ens_w`` is returned as a 0/1 mask
+      when no weights were supplied, otherwise with invalid entries zeroed. Not
+      implemented for the ``'akr'``/``'akr_circperm'`` estimators.
+
+    Note
+    ----
+    A user-supplied ``ens_w`` is assumed to have its ensemble axis at the same
+    position as in ``fct`` with the variable axis *after* it (the default
+    ``m_axis=-2, v_axis=-1``). Layouts that place the ensemble axis after the
+    variable axis are not supported for weighted inputs, matching the existing
+    assumption in :func:`multivariate_weight_check`.
     """
     B = backends.active if backend is None else backends[backend]
 
+    if ens_w is not None:
+        # The user passes ens_w with its ensemble axis at the original m_axis
+        # (one fewer axis than fct: no variable axis). Mirror multivariate_weight_check:
+        # convert m_axis to positive relative to fct.ndim, then move that axis to
+        # the last position of ens_w. For the default (m_axis=-2, v_axis=-1) this
+        # is a no-op. Cast to float so isnan works on integer weights.
+        m_axis_p = m_axis if m_axis >= 0 else fct.ndim + m_axis
+        ens_w = B.moveaxis(B.asarray(ens_w, dtype=fct.dtype), m_axis_p, -1)
+
+    if nan_policy == "propagate":
+        return obs, fct, ens_w
+
+    nan_mask = B.any(B.isnan(fct), axis=-1)  # (..., M)
+    if ens_w is not None:
+        nan_mask = nan_mask | B.isnan(ens_w)
+
     if nan_policy == "raise":
-        if B.any(B.isnan(fct)) or B.any(B.isnan(obs)):
+        if B.any(nan_mask) or B.any(B.isnan(obs)):
             raise ValueError(
                 "NaN values encountered in input. "
                 "Use nan_policy='propagate' or nan_policy='omit' to handle NaN values."
             )
-        return obs, fct, None
+        return obs, fct, ens_w
 
     if nan_policy == "omit":
-        nan_mask = B.any(B.isnan(fct), axis=-1)  # shape (..., M)
+        if estimator in ["akr", "akr_circperm"]:
+            raise NotImplementedError(
+                f"NaN handling with nan_policy='omit' is not implemented for estimator '{estimator}'."
+            )
+        # zero only the NaN forecast values; zero-weighted members never
+        # contribute, so their (now 0.0) value does not affect the score.
         fct = B.where(nan_mask[..., None], B.asarray(0.0), fct)
-        return obs, fct, nan_mask
+        if ens_w is None:
+            ens_w = B.asarray(~nan_mask, dtype=fct.dtype)
+        else:
+            ens_w = B.where(nan_mask, B.asarray(0.0), ens_w)
+        return obs, fct, ens_w
 
-    # propagate
-    return obs, fct, None
+    raise ValueError(
+        f"Invalid nan_policy '{nan_policy}'. Must be one of 'propagate', 'omit', 'raise'."
+    )
 
 
 def lazy_gufunc_wrapper_uv(func):
