@@ -154,5 +154,5 @@ def vr_ensemble(
         axis=(-1, -2),
     ) / (M**2)
     e_3 = xp.mean(xp.abs(fct) * fw, axis=-1) - xp.abs(obs) * ow
-    e_3 *= xp.mean(fw, axis=1) - ow
+    e_3 *= xp.mean(fw, axis=-1) - ow
     return e_1 - 0.5 * e_2 + e_3
