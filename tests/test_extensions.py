@@ -223,32 +223,6 @@ def test_apply_along_axis_torch_loop_fallback_keeps_grad():
     assert x.grad.tolist() == [[1.0, 1.0], [-1.0, -1.0]]
 
 
-def test_indices_torch_native_device_and_dtype():
-    torch = pytest.importorskip("torch")
-    x = torch.zeros(1, device="meta")
-    ns = array_namespace(x)
-    out = ext.indices(ns, (2, 3), device=x.device)
-    assert isinstance(out, torch.Tensor)
-    assert out.device.type == "meta"
-    assert out.shape == (2, 2, 3)
-    assert out.dtype == torch.int64
-
-    cpu = ext.indices(ns, (2, 3))
-    np.testing.assert_array_equal(cpu.numpy(), np.indices((2, 3)))
-    assert ext.indices(ns, ()).shape == (0,)
-    assert ext.indices(ns, (2,), dtype=torch.float64).dtype == torch.float64
-
-
-def test_indices_numpy_and_jax():
-    np.testing.assert_array_equal(ext.indices(NP, (2, 3)), np.indices((2, 3)))
-    jax = pytest.importorskip("jax")
-    import jax.numpy as jnp
-
-    ns = array_namespace(jnp.zeros(1))
-    out = ext.indices(ns, (2, 3), device=jax.devices()[0])
-    np.testing.assert_array_equal(np.asarray(out), np.indices((2, 3)))
-
-
 def test_apply_along_axis_torch_rejects_out_of_range_axis():
     torch = pytest.importorskip("torch")
     x = torch.ones(2, 3)

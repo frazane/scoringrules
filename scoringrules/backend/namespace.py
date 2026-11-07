@@ -155,20 +155,10 @@ class ArrayAPINamespace:
 
         return extensions.apply_along_axis(self._xp, func1d, x, axis)
 
-    def cov(self, x, rowvar=True, bias=False):
-        from . import extensions
-
-        return extensions.cov(self._xp, x, rowvar=rowvar, bias=bias)
-
     def quantile(self, x, q, /, *, axis=None, keepdims=False):
         from . import extensions
 
         return extensions.quantile(self._xp, x, q, axis=axis, keepdims=keepdims)
-
-    def indices(self, dimensions, *, dtype=None, device=None):
-        from . import extensions
-
-        return extensions.indices(self._xp, dimensions, dtype=dtype, device=device)
 
     # --- special functions (native-first, scipy fallback) ---
     def erf(self, x):
