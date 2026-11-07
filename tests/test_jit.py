@@ -156,8 +156,9 @@ def test_logs_jit(name, args):
 
 @pytest.mark.parametrize("estimator", ["nrg", "fair", "akr", "akr_circperm"])
 def test_energy_score_jit(estimator):
-    obs = jnp.asarray(np.random.randn(5, 3))
-    fct = jnp.asarray(np.random.randn(5, 11, 3))
+    rng = np.random.default_rng(0)  # float32 rounding: keep the draw fixed
+    obs = jnp.asarray(rng.normal(size=(5, 3)))
+    fct = jnp.asarray(rng.normal(size=(5, 11, 3)))
 
     @jax.jit
     def es(o, x):
@@ -177,8 +178,9 @@ def test_energy_score_jit(estimator):
 
 @pytest.mark.parametrize("estimator", ["nrg", "fair"])
 def test_variogram_score_jit(estimator):
-    obs = jnp.asarray(np.random.randn(5, 3))
-    fct = jnp.asarray(np.random.randn(5, 11, 3))
+    rng = np.random.default_rng(0)  # float32 rounding: keep the draw fixed
+    obs = jnp.asarray(rng.normal(size=(5, 3)))
+    fct = jnp.asarray(rng.normal(size=(5, 11, 3)))
 
     @jax.jit
     def vs(o, x):
