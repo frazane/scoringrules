@@ -1,8 +1,10 @@
 import typing as tp
 from typing import Optional
 
-from scoringrules.backend import backends
+from scoringrules._dispatch import resolve_backend_arg, use_numba
+from scoringrules.backend import get_namespace
 from scoringrules.core import interval
+from scoringrules.core.utils_xp import asarray_matching
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
@@ -42,8 +44,9 @@ def interval_score(
         The predicted upper bound of the PI as a scalar or array of values.
     alpha : array_like
         The 1 - alpha level for the PI as a scalar or array of values.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
 
     Returns
     -------
@@ -75,7 +78,7 @@ def interval_score(
     ...     upper=np.array([0.4, 0.3, 0.5]),
     ...     alpha=0.5,
     ... )
-    array([0.4, 0.2, 0.4])
+    array([0.4, 0.2, 0.3])
 
     >>> sr.interval_score(
     ...     obs=np.random.uniform(size=(10,)),
@@ -85,8 +88,9 @@ def interval_score(
     ... ).shape
     (10, 5)
     """
-    B = backends.active if backend is None else backends[backend]
-    obs, lower, upper, alpha = map(B.asarray, (obs, lower, upper, alpha))
+    resolve_backend_arg(backend)
+    xp = get_namespace(obs, lower, upper, alpha)
+    obs, lower, upper, alpha = asarray_matching(obs, lower, upper, alpha, xp=xp)
 
     if lower.shape != upper.shape:
         raise ValueError(
@@ -104,7 +108,9 @@ def interval_score(
             )
 
     res = interval.interval_score(obs, lower, upper, alpha)
-    return B.squeeze(res)
+    if alpha.ndim == 1 and alpha.shape[0] == 1:
+        res = xp.squeeze(res, axis=-1)
+    return res
 
 
 def weighted_interval_score(
@@ -156,26 +162,27 @@ def weighted_interval_score(
         The weight for the median prediction. Defaults to 0.5.
     w_alpha : array_like
         The weights for the PI. Defaults to `2/alpha`.
-    backend : str
-        The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
+    backend : str, optional
+        Computational backend. ``None`` (default) infers the array framework from
+        the inputs; pass ``"numba"`` for the numba fast path.
 
     Returns
     -------
     score:
         An array of interval scores with the same shape as `obs`.
     """
-    if w_median is None:
-        w_median = 0.5
+    resolve_backend_arg(backend)
+    arrays = (obs, median, lower, upper, alpha, w_median, w_alpha)
+    numba = use_numba(backend, *arrays)
+    xp = get_namespace(*arrays)
+    w_median = 0.5 if w_median is None else w_median
+    obs, median, lower, upper, alpha, w_median, w_alpha = asarray_matching(
+        obs, median, lower, upper, alpha, w_median, w_alpha, xp=xp
+    )
     if w_alpha is None:
         w_alpha = alpha / 2
+    args = (obs, median, lower, upper, alpha, w_median, w_alpha)
 
-    B = backends.active if backend is None else backends[backend]
-    args = map(
-        B.asarray,
-        (obs, median, lower, upper, alpha, w_median, w_alpha),
-    )
-
-    if B.name == "numba":
+    if numba:
         return interval._weighted_interval_score_gufunc(*args)
-    else:
-        return interval.weighted_interval_score(*args, backend=backend)
+    return interval.weighted_interval_score(*args, xp=xp)

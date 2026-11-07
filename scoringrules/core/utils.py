@@ -24,42 +24,6 @@ def _shape_compatibility_check(obs, fct, m_axis) -> None:
         )
 
 
-def binary_array_check(obs, fct, backend=None):
-    """Check and adapt the shapes of binary forecasts and observations arrays."""
-    B = backends.active if backend is None else backends[backend]
-    obs, fct = map(B.asarray, (obs, fct))
-    if B.any(fct < 0.0) or B.any(fct > 1.0 + EPSILON):
-        raise ValueError("Forecasted probabilities must be within 0 and 1.")
-    if not set(v.item() for v in B.unique_values(obs)) <= {0, 1}:
-        raise ValueError("Observations must be 0, 1, or NaN.")
-    return obs, fct
-
-
-def categorical_array_check(obs, fct, k_axis, onehot, backend=None):
-    """Check and adapt the shapes of categorical forecasts and observations arrays."""
-    B = backends.active if backend is None else backends[backend]
-    obs, fct = map(B.asarray, (obs, fct))
-    if B.any(fct < 0.0) or B.any(fct > 1.0 + EPSILON):
-        raise ValueError("Forecasted probabilities must be within 0 and 1.")
-    if k_axis != -1:
-        fct = B.moveaxis(fct, k_axis, _K_AXIS)
-        if onehot:
-            obs = B.moveaxis(obs, k_axis, _K_AXIS)
-    if onehot:
-        if obs.shape != fct.shape:
-            raise ValueError(
-                f"Forecasts shape {fct.shape} and observations shape {obs.shape} are not compatible for broadcasting!"
-            )
-    else:
-        if obs.shape != fct.shape[:-1]:
-            raise ValueError(
-                f"Forecasts shape {fct.shape} and observations shape {obs.shape} are not compatible for broadcasting!"
-            )
-        categories = B.arange(1, fct.shape[-1] + 1, device=B.device(obs))
-        obs = B.where(B.expand_dims(obs, -1) == categories, 1, 0)
-    return obs, fct
-
-
 def univariate_array_check(obs, fct, m_axis, backend=None):
     """Check and adapt the shapes of univariate forecasts and observations arrays."""
     B = backends.active if backend is None else backends[backend]
