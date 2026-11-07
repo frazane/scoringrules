@@ -78,7 +78,7 @@ def interval_score(
     ...     upper=np.array([0.4, 0.3, 0.5]),
     ...     alpha=0.5,
     ... )
-    array([0.4, 0.2, 0.4])
+    array([0.4, 0.2, 0.3])
 
     >>> sr.interval_score(
     ...     obs=np.random.uniform(size=(10,)),

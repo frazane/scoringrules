@@ -3,8 +3,6 @@ import typing as tp
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike
 
-EPSILON = 1e-5
-
 
 def brier_score(obs: "ArrayLike", fct: "ArrayLike") -> "Array":
     """Compute the Brier Score for predicted probabilities of events."""
