@@ -294,6 +294,7 @@ def test_quantile_matches_numpy(backend, q, axis, keepdims):
     assert get_namespace(out)._xp is get_namespace(x)._xp
     expected = np.quantile(ref, q, axis=axis, keepdims=keepdims)
     assert np.asarray(out).shape == expected.shape
+    assert out.dtype == x.dtype
     atol = 1e-6 if backend == "jax" else 0  # jax runs in float32 in the tests
     np.testing.assert_allclose(np.asarray(out), expected, rtol=1e-6, atol=atol)
 
@@ -320,3 +321,12 @@ def test_quantile_jax_grad_and_jit():
     g = jax.grad(f)(x)
     assert jnp.all(jnp.isfinite(g))
     np.testing.assert_allclose(jax.jit(f)(x), np.quantile(np.asarray(x), 0.75))
+
+
+@pytest.mark.parametrize("q", [0.3, [0.25, 0.75]])
+def test_quantile_keeps_float32(backend, q):
+    from ._parity import as_float32
+    from scoringrules.backend import get_namespace
+
+    x = as_float32(np.random.default_rng(1).normal(size=(3, 8)), backend)
+    assert get_namespace(x).quantile(x, q, axis=-1).dtype == x.dtype

@@ -203,6 +203,9 @@ def quantile(xp, x, q, axis=None, keepdims=False):
         # torch.quantile wants q as a tensor of x's dtype and device.
         q = t.as_tensor(q, dtype=x.dtype, device=x.device)
         return t.quantile(x, q, dim=axis, keepdim=keepdims)
+    if xp.isdtype(x.dtype, "real floating"):
+        # an array q would otherwise promote float32 x to float64
+        q = np.asarray(q, dtype=x.dtype)
     return np.quantile(x, q, axis=axis, keepdims=keepdims)
 
 
