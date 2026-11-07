@@ -168,6 +168,8 @@ def twgksuv_ensemble(
     >>> sr.twgksuv_ensemble(obs, pred, v_func=v_func)
     """
     resolve_backend_arg(backend)
+    # warned above, at the user's call: forward only the numba choice
+    backend = "numba" if backend == "numba" else None
     xp = get_namespace(obs, fct)
     obs, fct = uv_weighted_score_chain(obs, fct, a=a, b=b, v_func=v_func, xp=xp)
     return gksuv_ensemble(
@@ -478,6 +480,8 @@ def twgksmv_ensemble(
         The computed Threshold-Weighted Gaussian Kernel Score.
     """
     resolve_backend_arg(backend)
+    # warned above, at the user's call: forward only the numba choice
+    backend = "numba" if backend == "numba" else None
     obs, fct = mv_weighted_score_chain(obs, fct, v_func)
     return gksmv_ensemble(
         obs,

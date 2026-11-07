@@ -594,8 +594,10 @@ def test_kernels_legacy_backend_string_deprecated():
         lambda: sr.vrgksmv_ensemble(obs_mv, fct_mv, _mv_w_func, backend="numpy"),
     ]
     for call in calls:
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(DeprecationWarning) as record:
             call()
+        # one warning, pointing at the caller (this file), not at the wrapper
+        assert len(record) == 1 and record[0].filename == __file__
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
