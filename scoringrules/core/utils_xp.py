@@ -35,7 +35,8 @@ def asarray_matching(*args, xp):
 
     Plain ``xp.asarray`` would make a Python float float64 on numpy (upcasting
     float32 inputs) and float32 on torch (losing precision next to float64
-    inputs). Arrays are returned unchanged and ``None`` is passed through.
+    inputs). Arrays are returned unchanged and ``None`` is passed through. For
+    weights that must follow one reference array, see ``asarray_like``.
     """
     arrays = [a for a in args if is_array_api_obj(a)]
     if not arrays:
@@ -48,6 +49,26 @@ def asarray_matching(*args, xp):
         else xp.asarray(a, dtype=dtype, device=device)
         for a in args
     )
+
+
+def asarray_like(x, ref, *, xp):
+    """``x`` as an ``xp`` array of ``xp.float_dtype(ref)`` on ``ref``'s device.
+
+    The weights' form of ``asarray_matching`` (``ens_w``, the variogram ``w``):
+    lists and scalars get ``ref``'s float dtype and device as there, and on top
+    of that arrays of another framework or device (e.g. numpy weights for CUDA
+    tensors) are converted and every result is cast to the float dtype, so the
+    weights follow the forecast precision. Matching arrays only go through
+    ``astype``: torch's ``asarray`` with keywords turns off ``requires_grad``.
+    """
+    foreign = is_array_api_obj(x) and (
+        array_namespace(x) is not array_namespace(ref) or xp.device(x) != xp.device(ref)
+    )
+    if foreign:
+        x = xp.asarray(x, device=xp.device(ref))
+    else:
+        x, _ = asarray_matching(x, ref, xp=xp)
+    return xp.astype(x, xp.float_dtype(ref))
 
 
 def binary_array_check(obs, fct, *, xp):
@@ -94,7 +115,7 @@ def _multivariate_shape_permute(obs, fct, m_axis, v_axis, *, xp):
 
 def multivariate_array_check(obs, fct, m_axis, v_axis, *, xp):
     """Check and adapt the shapes of multivariate forecasts and observations arrays."""
-    obs, fct = xp.asarray(obs), xp.asarray(fct)
+    obs, fct = asarray_matching(obs, fct, xp=xp)
     m_axis = m_axis if m_axis >= 0 else fct.ndim + m_axis
     v_axis = v_axis if v_axis >= 0 else fct.ndim + v_axis
     _shape_compatibility_check(obs, fct, m_axis)
@@ -204,25 +225,6 @@ def apply_nan_policy_ens_uv(
         f"Invalid nan_policy '{nan_policy}'. Must be one of 'propagate', 'omit', "
         "'raise'."
     )
-
-
-def asarray_like(x, ref, *, xp):
-    """``x`` as an ``xp`` array of ``xp.float_dtype(ref)`` on ``ref``'s device.
-
-    Lists and arrays of another framework or device (e.g. numpy weights for
-    CUDA tensors) are converted with ``device=``. Arrays that already match go
-    through ``astype`` only: torch's ``asarray`` with keywords turns off
-    ``requires_grad`` on its input.
-    """
-    device = xp.device(ref)
-    native = (
-        is_array_api_obj(x)
-        and array_namespace(x) is array_namespace(ref)
-        and xp.device(x) == device
-    )
-    if not native:
-        x = xp.asarray(x, device=device)
-    return xp.astype(x, xp.float_dtype(ref))
 
 
 def _mv_weights_ensemble_last(ens_w, fct, m_axis, v_axis, *, xp):
