@@ -5,6 +5,8 @@ the follow-on migration consolidates them."""
 
 import typing as tp
 
+from array_api_compat import is_array_api_obj
+
 from .utils import EPSILON, _K_AXIS, _M_AXIS_UV, _shape_compatibility_check
 
 if tp.TYPE_CHECKING:
@@ -20,9 +22,30 @@ def univariate_array_check(obs, fct, m_axis, xp):
     return obs, fct
 
 
+def asarray_matching(*args, xp):
+    """``xp.asarray`` each of ``args``, giving non-array ones (Python scalars,
+    lists) the promoted float dtype and the device of the array ones.
+
+    Plain ``xp.asarray`` would make a Python float float64 on numpy (upcasting
+    float32 inputs) and float32 on torch (losing precision next to float64
+    inputs). Arrays are returned unchanged and ``None`` is passed through.
+    """
+    arrays = [a for a in args if is_array_api_obj(a)]
+    if not arrays:
+        return tuple(None if a is None else xp.asarray(a) for a in args)
+    dtype = xp.result_type(*(xp.float_dtype(a) for a in arrays))
+    device = xp.device(arrays[0])
+    return tuple(
+        a
+        if a is None or is_array_api_obj(a)
+        else xp.asarray(a, dtype=dtype, device=device)
+        for a in args
+    )
+
+
 def binary_array_check(obs, fct, *, xp):
     """Check binary observations (0 or 1) and forecast probabilities (in [0, 1])."""
-    obs, fct = xp.asarray(obs), xp.asarray(fct)
+    obs, fct = asarray_matching(obs, fct, xp=xp)
     if xp.any(fct < 0.0) or xp.any(fct > 1.0 + EPSILON):
         raise ValueError("Forecasted probabilities must be within 0 and 1.")
     if not xp.all((obs == 0) | (obs == 1)):
@@ -33,7 +56,7 @@ def binary_array_check(obs, fct, *, xp):
 def categorical_array_check(obs, fct, k_axis, onehot, *, xp):
     """Check categorical forecasts, move the category axis last and one-hot encode
     ``obs`` (categories ``1..K``) unless it already is."""
-    obs, fct = xp.asarray(obs), xp.asarray(fct)
+    obs, fct = asarray_matching(obs, fct, xp=xp)
     if xp.any(fct < 0.0) or xp.any(fct > 1.0 + EPSILON):
         raise ValueError("Forecasted probabilities must be within 0 and 1.")
     if k_axis != -1:

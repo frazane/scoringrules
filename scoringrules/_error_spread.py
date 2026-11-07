@@ -3,7 +3,7 @@ import typing as tp
 from scoringrules._dispatch import resolve_backend_arg, use_numba
 from scoringrules.backend import get_namespace
 from scoringrules.core import error_spread
-from scoringrules.core.utils_xp import univariate_array_check
+from scoringrules.core.utils_xp import asarray_matching, univariate_array_check
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
@@ -39,6 +39,7 @@ def error_spread_score(
     resolve_backend_arg(backend)
     numba = use_numba(backend, obs, fct)
     xp = get_namespace(obs, fct)
+    obs, fct = asarray_matching(obs, fct, xp=xp)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     if numba:
         return error_spread._ess_gufunc(obs, fct)

@@ -4,6 +4,7 @@ from typing import Optional
 from scoringrules._dispatch import resolve_backend_arg, use_numba
 from scoringrules.backend import get_namespace
 from scoringrules.core import interval
+from scoringrules.core.utils_xp import asarray_matching
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
@@ -89,7 +90,7 @@ def interval_score(
     """
     resolve_backend_arg(backend)
     xp = get_namespace(obs, lower, upper, alpha)
-    obs, lower, upper, alpha = map(xp.asarray, (obs, lower, upper, alpha))
+    obs, lower, upper, alpha = asarray_matching(obs, lower, upper, alpha, xp=xp)
 
     if lower.shape != upper.shape:
         raise ValueError(
@@ -174,15 +175,12 @@ def weighted_interval_score(
     arrays = (obs, median, lower, upper, alpha, w_median, w_alpha)
     numba = use_numba(backend, *arrays)
     xp = get_namespace(*arrays)
-    obs, median, lower, upper, alpha = map(xp.asarray, arrays[:5])
-    if w_median is None:
-        # a float64 default would upcast float32 inputs on numpy
-        dtype = xp.result_type(
-            *(xp.float_dtype(x) for x in (obs, median, lower, upper, alpha))
-        )
-        w_median = xp.asarray(0.5, dtype=dtype, device=xp.device(obs))
-    w_median = xp.asarray(w_median)
-    w_alpha = alpha / 2 if w_alpha is None else xp.asarray(w_alpha)
+    w_median = 0.5 if w_median is None else w_median
+    obs, median, lower, upper, alpha, w_median, w_alpha = asarray_matching(
+        obs, median, lower, upper, alpha, w_median, w_alpha, xp=xp
+    )
+    if w_alpha is None:
+        w_alpha = alpha / 2
     args = (obs, median, lower, upper, alpha, w_median, w_alpha)
 
     if numba:
