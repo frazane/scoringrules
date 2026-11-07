@@ -5,6 +5,8 @@ from scoringrules.backend import get_namespace
 from scoringrules.core import kernels
 from scoringrules.core.utils import estimator_check, mv_weighted_score_chain
 from scoringrules.core.utils_xp import (
+    asarray_like,
+    asarray_matching,
     multivariate_array_check,
     multivariate_weight_check,
     mv_weighted_score_weights,
@@ -22,8 +24,7 @@ def _uv_outcome_weights(obs, fct, a, b, w_func, *, xp):
     """``w_func(obs)`` and ``w_func(fct)`` as ``xp.float_dtype(fct)``, so boolean
     or lower-precision weights follow the forecast precision."""
     obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
-    dtype = xp.float_dtype(fct)
-    return xp.astype(obs_w, dtype), xp.astype(fct_w, dtype)
+    return asarray_like(obs_w, fct, xp=xp), asarray_like(fct_w, fct, xp=xp)
 
 
 def gksuv_ensemble(
@@ -178,6 +179,9 @@ def twgksuv_ensemble(
     # warned above, at the user's call: forward only the numba choice
     backend = "numba" if backend == "numba" else None
     xp = get_namespace(obs, fct)
+    # the bounds follow the forecast precision (a float64 0-d array would upcast
+    # float32 numpy inputs, a float32 tensor would round them for float64 torch)
+    a, b = asarray_matching(a, b, obs, fct, xp=xp)[:2]
     obs, fct = uv_weighted_score_chain(obs, fct, a=a, b=b, v_func=v_func, xp=xp)
     return gksuv_ensemble(
         obs,

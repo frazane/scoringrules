@@ -227,6 +227,19 @@ def test_twgksuv(estimator, backend, to_backend, backend_kwargs):
         assert_close(np.mean(np.asarray(res)), expected, backend, rtol=1e-6)
 
 
+def test_twgksuv_bounds_follow_fct_precision(backend, to_backend, backend_kwargs):
+    """Python-float a/b take the forecast dtype: on float64 torch they are not
+    rounded to float32 (B12), so all frameworks match the numpy value."""
+    rng = np.random.default_rng(9)
+    obs, fct = rng.normal(size=N), rng.normal(size=(N, ENSEMBLE_SIZE))
+    expected = sr.twgksuv_ensemble(obs, fct, -0.3, 1.85)
+    res = sr.twgksuv_ensemble(
+        to_backend(obs), to_backend(fct), -0.3, 1.85, **backend_kwargs
+    )
+    assert_inferred(res, backend)
+    assert_close(res, expected, backend, rtol=1e-12, atol=1e-14)
+
+
 def test_twgksmv(backend, to_backend, backend_kwargs):
     obs, fct = _mv_inputs()
     obs, fct = to_backend(obs), to_backend(fct)
@@ -613,6 +626,7 @@ def test_kernels_float32(estimator, backend, to_backend_float32, backend_kwargs)
         sr.gksuv_ensemble(obs, fct, **kwargs),
         sr.gksuv_ensemble(obs, fct, ens_w=ens_w, **kwargs),
         sr.twgksuv_ensemble(obs, fct, v_func=lambda x: x.clip(min=-0.5), **kwargs),
+        sr.twgksuv_ensemble(obs, fct, -0.5, 1.0, **kwargs),
         sr.owgksuv_ensemble(obs, fct, w_func=_uv_w_func, **backend_kwargs),
         sr.owgksuv_ensemble(obs, fct, b=0.5, ens_w=ens_w, **backend_kwargs),
         sr.owgksuv_ensemble(obs, fct, w_func=lambda x: x > 0.0, **backend_kwargs),
