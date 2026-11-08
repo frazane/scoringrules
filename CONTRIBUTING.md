@@ -22,6 +22,11 @@ cover all four locally you must `uv sync --all-extras` first.
 The `numpy` parameter runs the array path (`config_context(numba=False)`) and `numba` the
 default `numba="auto"` dispatch; the `paths_agree` parity tests force both paths.
 
+The numba gufuncs are cached on disk. After a `git checkout`, `git stash` or rebase that
+changes the gufunc files, a stale cache can crash the interpreter with a segfault. If that
+happens, delete the cache (`__pycache__` folders under `scoringrules/core`) or set
+`NUMBA_CACHE_DIR` to a separate directory per worktree.
+
 ## CI overview
 
 `.github/workflows/ci.yaml` runs on every push and PR to `main` (and on demand via
