@@ -51,6 +51,9 @@ jobs:
             uv sync --extra ${{ matrix.backend }}
           fi
 
+      # --backend numpy tests the array path (numba is not installed there);
+      # --backend numba runs the suite in the default numba="auto" mode, and the
+      # parity tests force both paths (tests/conftest.py)
       - name: Run tests
         if: matrix.backend != 'all'
         run: uv run pytest tests/ --backend ${{ matrix.backend }}

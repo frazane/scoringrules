@@ -19,6 +19,8 @@ uvx pre-commit run --all-files      # ruff, codespell, whitespace — the hooks 
 `--backend` (see `tests/conftest.py`) filters which backends a run exercises. Without it,
 tests parametrize over whichever of numpy/numba/jax/torch are importable — so to genuinely
 cover all four locally you must `uv sync --all-extras` first.
+The `numpy` parameter runs the array path (`config_context(numba=False)`) and `numba` the
+default `numba="auto"` dispatch; the `paths_agree` parity tests force both paths.
 
 ## CI overview
 
