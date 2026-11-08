@@ -6,12 +6,16 @@ from scoringrules.core.utils import (
     estimator_check,
     univariate_array_check,
     univariate_weight_check,
-    uv_weighted_score_weights,
+    uv_outcome_weights,
     uv_weighted_score_chain,
     univariate_sort_ens,
     apply_nan_policy_ens_uv,
 )
-from scoringrules._dispatch import use_numba, resolve_backend_arg
+from scoringrules._dispatch import (
+    gufunc_inputs_supported,
+    resolve_backend_arg,
+    use_numba,
+)
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend, NanPolicy
@@ -355,7 +359,8 @@ def owcrps_ensemble(
     numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
-    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
+    obs_w, fct_w = uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     obs, fct, ens_w = apply_nan_policy_ens_uv(
         obs, fct, nan_policy, ens_w, m_axis=m_axis, xp=xp
     )
@@ -468,7 +473,8 @@ def vrcrps_ensemble(
     numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
-    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
+    obs_w, fct_w = uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     obs, fct, ens_w = apply_nan_policy_ens_uv(
         obs, fct, nan_policy, ens_w, m_axis=m_axis, xp=xp
     )

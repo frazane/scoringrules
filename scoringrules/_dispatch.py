@@ -110,13 +110,14 @@ def gufunc_inputs_supported(*arrays):
     """Whether the numba gufuncs handle ``arrays`` exactly like the array path.
 
     True iff every entry is ``None``, a Python bool, int or float, a list or
-    tuple, an exact ``np.ndarray`` or a numpy scalar, and its numpy dtype (after
-    ``np.asarray`` for the Python ones) is bool, integer, float32 or float64, in
-    any byte order (the gufunc wrapper casts to native order). Everything else
-    takes the array path:
+    tuple, an exact ``np.ndarray`` or ``np.memmap`` or a numpy scalar, and its
+    numpy dtype (after ``np.asarray`` for the Python ones) is bool, integer,
+    float32 or float64, in any byte order (the gufunc wrapper casts to native
+    order). Everything else takes the array path:
 
-    - ``np.ndarray`` subclasses (masked arrays, ``np.matrix``), whose semantics
-      the gufuncs would drop, and objects that only implement ``__array__``;
+    - other ``np.ndarray`` subclasses (masked arrays, ``np.matrix``), whose
+      semantics the gufuncs would drop, and objects that only implement
+      ``__array__``;
     - float16: the gufuncs compute and return float32, the array path float16;
     - long double, complex, object, string and datetime dtypes, and Python ints
       outside the int64/uint64 range, which numba has no loops for.
@@ -126,7 +127,7 @@ def gufunc_inputs_supported(*arrays):
     """
     for a in arrays:
         t = type(a)
-        if t is np.ndarray or isinstance(a, np.generic):
+        if t is np.ndarray or t is np.memmap or isinstance(a, np.generic):
             dtype = a.dtype
         elif a is None or t is float or t is bool:
             continue

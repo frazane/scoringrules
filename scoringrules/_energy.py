@@ -1,6 +1,10 @@
 import typing as tp
 
-from scoringrules._dispatch import resolve_backend_arg, use_numba
+from scoringrules._dispatch import (
+    gufunc_inputs_supported,
+    resolve_backend_arg,
+    use_numba,
+)
 from scoringrules.backend import get_namespace
 from scoringrules.core import energy
 from scoringrules.core.utils import (
@@ -257,6 +261,7 @@ def owes_ensemble(
         obs, fct, nan_policy, ens_w, m_axis=m_axis, v_axis=v_axis, xp=xp
     )
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     if ens_w is not None:
         ens_w = multivariate_weight_check(ens_w, fct, -2, -1, xp=xp)
 
@@ -338,6 +343,7 @@ def vres_ensemble(
         obs, fct, nan_policy, ens_w, m_axis=m_axis, v_axis=v_axis, xp=xp
     )
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     if ens_w is not None:
         ens_w = multivariate_weight_check(ens_w, fct, -2, -1, xp=xp)
 

@@ -139,9 +139,10 @@ def _masked(a):
     return np.ma.array(a, mask=a > 1.0)
 
 
-# one call per score family. The threshold-weighted scores are left out: they
-# call the guard on the chained inputs, which their chains turn into plain
-# ndarrays (float64 for the default chain of twcrps).
+# one call per score family. The threshold-weighted scores are left out: the
+# guard sees their chained inputs, which keep a MaskedArray (so the guard sends
+# it to the array path) but are float64 for float16 data with the default
+# twcrps chain (its bounds are float64 0-d arrays).
 UV_SCORES = {
     "crps": (sr.crps_ensemble, (), {}),
     "crps_w": (sr.crps_ensemble, (), {"ens_w": ENS_W}),
@@ -247,6 +248,63 @@ def test_unsupported_auxiliary_inputs_take_the_array_path(
     assert gufunc_calls == []
 
 
+def _sigmoid(x):
+    return 1.0 / (1.0 + np.exp(-x))
+
+
+# w_func outputs the weighted univariate scores cast to the forecast dtype
+W_FUNC_OUTPUTS = {
+    "float16": lambda x: _sigmoid(x).astype(np.float16),
+    "longdouble": lambda x: _sigmoid(x).astype(np.longdouble),
+    "int": lambda x: (x > 0).astype(int),
+    "bool": lambda x: x > -0.5,
+    "float64": lambda x: _sigmoid(np.asarray(x, dtype=np.float64)),
+}
+UV_WEIGHTED = [
+    "owcrps_ensemble",
+    "vrcrps_ensemble",
+    "owgksuv_ensemble",
+    "vrgksuv_ensemble",
+]
+
+
+@pytest.mark.parametrize("data", ["float64", "float32"])
+@pytest.mark.parametrize("out", list(W_FUNC_OUTPUTS))
+@pytest.mark.parametrize("score", UV_WEIGHTED)
+def test_w_func_output_follows_the_forecast_dtype(score, out, data, paths_agree):
+    # the outcome weights are cast to fct's float dtype on both paths, so a
+    # float64 w_func on float32 data gives float32, as for the kernel scores
+    obs, fct = OBS.astype(data), FCT.astype(data)
+    res = paths_agree(getattr(sr, score), obs, fct, w_func=W_FUNC_OUTPUTS[out])[1]
+    assert res.dtype == data
+
+
+@pytest.mark.parametrize("score", UV_WEIGHTED)
+def test_masked_w_func_output_takes_the_array_path(score, gufunc_calls):
+    fn = getattr(sr, score)
+
+    def w_func(x):
+        return np.ma.masked_less(_sigmoid(x), 0.3)
+
+    ref = _outcome(fn, OBS, FCT, w_func=w_func)
+    _assert_same(_outcome(fn, OBS, FCT, w_func=w_func, backend="numba"), ref)
+    with global_numba():
+        _assert_same(_outcome(fn, OBS, FCT, w_func=w_func), ref)
+    assert gufunc_calls == []
+
+
+def test_memmap_takes_the_gufunc_path(tmp_path, gufunc_calls, paths_agree):
+    obs = np.memmap(tmp_path / "obs", dtype=np.float64, mode="w+", shape=OBS.shape)
+    fct = np.memmap(tmp_path / "fct", dtype=np.float64, mode="w+", shape=FCT.shape)
+    obs[:], fct[:] = OBS, FCT
+    assert gufunc_inputs_supported(obs, fct)
+    paths_agree(sr.crps_ensemble, obs, fct, check_dtype=True)
+    mfct = np.memmap(tmp_path / "mfct", dtype=np.float64, mode="w+", shape=MFCT.shape)
+    mfct[:] = MFCT
+    paths_agree(sr.es_ensemble, MOBS, mfct)
+    assert len(gufunc_calls) == 4
+
+
 def test_explicit_numba_with_torch_ens_w_takes_the_array_path(gufunc_calls):
     torch = pytest.importorskip("torch")
     ens_w = torch.as_tensor(ENS_W)
@@ -272,9 +330,8 @@ def _supported_cases():
 
 _UNSIGNED_WRAPS = pytest.mark.xfail(
     strict=True,
-    reason="the array path takes differences of unsigned integers in their own "
-    "dtype, which wraps around; the gufuncs cast to float first (found in PR 5, "
-    "not fixed, see notes)",
+    reason="#176: the array path takes differences of unsigned integers in "
+    "their own dtype, which wraps around; the gufuncs cast to float first",
 )
 
 
@@ -298,7 +355,7 @@ def test_supported_inputs_take_the_gufunc_path(score, case, gufunc_calls, paths_
     tol = {}
     if score == "quantile" and np.asarray(fct).dtype.itemsize == 4:
         # float32 data with float64 alpha: float64 out, partly float32 inside
-        tol = {"rtol": 1e-6}
+        tol = {"rtol": 1e-7}
     paths_agree(fn, obs, fct, *args, **tol, **kwargs)
     assert len(gufunc_calls) == 2  # backend="numba" and the global switch
 
@@ -398,3 +455,11 @@ def test_bad_nan_policy_raises(name, weighted, paths_agree):
     fn, obs, fct, args = NAN_POLICY_SCORES[name]
     kwargs = {"ens_w": ENS_W if obs.ndim == 1 else MENS_W} if weighted else {}
     paths_agree(fn, obs, fct, *args, nan_policy="bogus", raises=ValueError, **kwargs)
+
+
+def test_paths_agree_requires_a_gufunc_call(paths_agree):
+    # a diverted call fails the parity check unless the test opts out
+    obs, fct = OBS.astype(np.float16), FCT.astype(np.float16)
+    with pytest.raises(AssertionError, match="did not call a gufunc"):
+        paths_agree(sr.crps_ensemble, obs, fct)
+    paths_agree(sr.crps_ensemble, obs, fct, expect_gufunc=False)

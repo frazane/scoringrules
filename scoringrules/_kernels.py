@@ -1,10 +1,13 @@
 import typing as tp
 
-from scoringrules._dispatch import resolve_backend_arg, use_numba
+from scoringrules._dispatch import (
+    gufunc_inputs_supported,
+    resolve_backend_arg,
+    use_numba,
+)
 from scoringrules.backend import get_namespace
 from scoringrules.core import kernels
 from scoringrules.core.utils import (
-    asarray_like,
     asarray_matching,
     estimator_check,
     multivariate_array_check,
@@ -13,19 +16,12 @@ from scoringrules.core.utils import (
     mv_weighted_score_weights,
     univariate_array_check,
     univariate_weight_check,
+    uv_outcome_weights,
     uv_weighted_score_chain,
-    uv_weighted_score_weights,
 )
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend
-
-
-def _uv_outcome_weights(obs, fct, a, b, w_func, *, xp):
-    """``w_func(obs)`` and ``w_func(fct)`` as ``xp.float_dtype(fct)``, so boolean
-    or lower-precision weights follow the forecast precision."""
-    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
-    return asarray_like(obs_w, fct, xp=xp), asarray_like(fct_w, fct, xp=xp)
 
 
 _KS_ESTIMATORS = ("nrg", "fair", "akr", "akr_circperm")
@@ -270,7 +266,8 @@ def owgksuv_ensemble(
     numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
-    obs_w, fct_w = _uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
+    obs_w, fct_w = uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     if ens_w is not None:
         ens_w = univariate_weight_check(ens_w, fct, m_axis, xp=xp)
 
@@ -356,7 +353,8 @@ def vrgksuv_ensemble(
     numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
-    obs_w, fct_w = _uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
+    obs_w, fct_w = uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     if ens_w is not None:
         ens_w = univariate_weight_check(ens_w, fct, m_axis, xp=xp)
 
@@ -581,6 +579,7 @@ def owgksmv_ensemble(
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     if ens_w is not None:
         ens_w = multivariate_weight_check(ens_w, fct, m_axis, v_axis, xp=xp)
 
@@ -653,6 +652,7 @@ def vrgksmv_ensemble(
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     if ens_w is not None:
         ens_w = multivariate_weight_check(ens_w, fct, m_axis, v_axis, xp=xp)
 
