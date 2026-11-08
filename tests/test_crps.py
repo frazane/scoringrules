@@ -518,7 +518,7 @@ def _quantile_alpha_inputs(case):
 def test_crps_quantile_alpha_paths_agree(case, paths_agree):
     obs, fct, alpha, kwargs = _quantile_alpha_inputs(case)
     if case == "float32_alpha":  # float64 out, partly float32 inside
-        kwargs["rtol"] = 1e-6
+        kwargs["rtol"] = 1e-7
     paths_agree(sr.crps_quantile, obs, fct, alpha, **kwargs)
 
 
@@ -1544,5 +1544,5 @@ def test_crps_quantile_float32_data_float64_alpha(paths_agree):
     obs = rng.normal(size=N).astype("f4")
     fct = np.sort(rng.normal(size=(N, 7)), axis=-1).astype("f4")
     alpha = np.linspace(0.1, 0.9, 7)
-    res_numba, res_numpy = paths_agree(sr.crps_quantile, obs, fct, alpha, rtol=1e-6)
+    res_numba, res_numpy = paths_agree(sr.crps_quantile, obs, fct, alpha, rtol=1e-7)
     assert res_numba.dtype == res_numpy.dtype == np.float64

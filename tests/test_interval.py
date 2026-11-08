@@ -270,7 +270,7 @@ def _wis_parity_params():
 def test_weighted_interval_score_paths_agree(case, paths_agree):
     args, kwargs = _wis_inputs(case)
     if case == "float32_alpha":  # the array path computes the alpha terms in float32
-        kwargs["rtol"] = 1e-6
+        kwargs["rtol"] = 1e-7
     paths_agree(sr.weighted_interval_score, *args, **kwargs)
 
 
@@ -309,6 +309,6 @@ def test_weighted_interval_score_float32_data_float64_alpha(paths_agree):
         upper,
         alpha,
         w_median=0.0,
-        rtol=1e-6,
+        rtol=1e-7,
     )
     assert res_numba.dtype == res_numpy.dtype == np.float64

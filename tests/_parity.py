@@ -30,6 +30,26 @@ def global_numba():
         _dispatch._numba_active, backends._active = saved
 
 
+@contextlib.contextmanager
+def count_gufunc_calls():
+    """Yield a list that gets one entry (the gufunc name) per numba gufunc call
+    made inside the block; every gufunc goes through ``GufuncWrapper``."""
+    from scoringrules.core.utils import GufuncWrapper
+
+    calls = []
+    call = GufuncWrapper.__call__
+
+    def counting(self, *args):
+        calls.append(self.__name__)
+        return call(self, *args)
+
+    GufuncWrapper.__call__ = counting
+    try:
+        yield calls
+    finally:
+        GufuncWrapper.__call__ = call
+
+
 def assert_paths_agree(
     fn,
     *args,
@@ -38,6 +58,7 @@ def assert_paths_agree(
     check_dtype=True,
     allow_all_nan=False,
     raises=None,
+    expect_gufunc=True,
     **kwargs,
 ):
     """Assert ``fn(*args, backend="numba", **kwargs)`` matches the inferred
@@ -53,7 +74,12 @@ def assert_paths_agree(
     for float64, 1e-5/1e-6 for float32). An all-NaN result fails unless
     ``allow_all_nan=True``, so that two paths that both break cannot agree by
     accident. With ``raises``, all three must raise that exception instead.
-    Returns the numba and numpy results as numpy arrays.
+
+    The numba and global-switch calls must each call a numba gufunc and the
+    numpy call none, so a guard regression cannot turn a parity test into a
+    comparison of the array path with itself. Pass ``expect_gufunc=False`` for
+    inputs that ``use_numba`` sends to the array path. Returns the numba and
+    numpy results as numpy arrays.
     """
     inputs = [a for a in (*args, *kwargs.values()) if isinstance(a, np.ndarray)]
     snapshot = [a.copy() for a in inputs]
@@ -75,13 +101,21 @@ def assert_paths_agree(
             fn(*args, **kwargs)
         check_unchanged("numpy")
         return None
-    raw_numba = fn(*args, backend="numba", **kwargs)
+    with count_gufunc_calls() as calls_numba:
+        raw_numba = fn(*args, backend="numba", **kwargs)
     check_unchanged("numba")
-    with global_numba():
+    with global_numba(), count_gufunc_calls() as calls_global:
         raw_global = fn(*args, **kwargs)
     check_unchanged("global numba")
-    raw_numpy = fn(*args, **kwargs)
+    with count_gufunc_calls() as calls_numpy:
+        raw_numpy = fn(*args, **kwargs)
     check_unchanged("numpy")
+    assert not calls_numpy, f"the numpy path called {calls_numpy}"
+    if expect_gufunc:
+        assert calls_numba, "backend='numba' did not call a gufunc"
+        assert calls_global, "the global numba switch did not call a gufunc"
+    else:
+        assert not calls_numba and not calls_global, (calls_numba, calls_global)
     assert type(raw_numba) is type(raw_numpy), (type(raw_numba), type(raw_numpy))
     assert type(raw_global) is type(raw_numba), (type(raw_global), type(raw_numba))
     res_numba, res_numpy = np.asarray(raw_numba), np.asarray(raw_numpy)
