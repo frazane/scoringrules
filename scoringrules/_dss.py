@@ -39,8 +39,9 @@ def dssuv_ensemble(
         Logical specifying whether the biased or unbiased estimator of the standard deviation
         should be used to calculate the score. Default is the unbiased estimator (`bias=False`).
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -95,8 +96,9 @@ def dssmv_ensemble(
         Logical specifying whether the biased or unbiased estimator of the covariance matrix
         should be used to calculate the score. Default is the unbiased estimator (`bias=False`).
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------

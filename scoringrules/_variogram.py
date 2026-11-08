@@ -79,8 +79,9 @@ def vs_ensemble(
     estimator : str
         The variogram score estimator to be used.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -170,8 +171,9 @@ def twvs_ensemble(
     estimator : str
         The variogram score estimator to be used.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -261,8 +263,9 @@ def owvs_ensemble(
     p : float
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 0.5.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -352,8 +355,9 @@ def vrvs_ensemble(
     p : float
         The order of the Variogram Score. Typical values are 0.5, 1.0 or 2.0. Defaults to 0.5.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------

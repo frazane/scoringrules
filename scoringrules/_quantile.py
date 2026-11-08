@@ -37,8 +37,9 @@ def quantile_score(
     alpha : array_like
         The quantile level.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------

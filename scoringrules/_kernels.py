@@ -67,8 +67,9 @@ def gksuv_ensemble(
     estimator : str
         Indicates the estimator to be used.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -154,8 +155,9 @@ def twgksuv_ensemble(
         only considers values above a certain threshold :math:`t` by projecting forecasts and observations
         to :math:`[t, \inf)`.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -241,8 +243,9 @@ def owgksuv_ensemble(
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -328,8 +331,9 @@ def vrgksuv_ensemble(
     w_func : callable, array_like -> array_like
         Weight function used to emphasise particular outcomes.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -413,8 +417,9 @@ def gksmv_ensemble(
     estimator : str
         Indicates the estimator to be used.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -485,8 +490,9 @@ def twgksmv_ensemble(
     estimator : str
         Indicates the estimator to be used.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -564,8 +570,9 @@ def owgksmv_ensemble(
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -637,8 +644,9 @@ def vrgksmv_ensemble(
         Weights assigned to the ensemble members. Array with one less dimension than fct (without the v_axis dimension).
         Default is equal weighting. Weights are normalised so that they sum to one across the ensemble members.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------

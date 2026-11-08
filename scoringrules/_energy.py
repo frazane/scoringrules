@@ -67,8 +67,9 @@ def es_ensemble(
         zero-weighting them. 'omit' is not implemented for the 'akr' and
         'akr_circperm' estimators. NaN in `obs` always propagates.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -169,8 +170,9 @@ def twes_ensemble(
         zero-weighting them. 'omit' is not implemented for the 'akr' and
         'akr_circperm' estimators. NaN in `obs` always propagates.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -242,8 +244,9 @@ def owes_ensemble(
         score; 'raise' errors on any NaN; 'omit' drops invalid members by
         zero-weighting them. NaN in `obs` always propagates.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -324,8 +327,9 @@ def vres_ensemble(
         score; 'raise' errors on any NaN; 'omit' drops invalid members by
         zero-weighting them. NaN in `obs` always propagates.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------

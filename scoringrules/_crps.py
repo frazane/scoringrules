@@ -89,8 +89,9 @@ def crps_ensemble(
         ``'omit'`` the ``int``, ``akr`` and ``akr_circperm`` estimators are not
         supported and raise ``NotImplementedError``.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -210,8 +211,9 @@ def twcrps_ensemble(
         Defines how to handle NaN values in the ensemble members. Forwarded to
         :func:`crps_ensemble`. See its documentation for details.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -321,8 +323,9 @@ def owcrps_ensemble(
         weight computation so NaN members do not contribute to the mean weight.
         See :func:`crps_ensemble` for details.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -435,8 +438,9 @@ def vrcrps_ensemble(
         weight computation so NaN members do not contribute to the mean weight.
         See :func:`crps_ensemble` for details.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -532,8 +536,9 @@ def crps_quantile(
     m_axis : int
         The axis corresponding to the ensemble. Default is the last axis.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -605,8 +610,9 @@ def crps_beta(
     upper : array_like
         Upper bound of the forecast beta distribution.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -658,8 +664,9 @@ def crps_binomial(
     prob : array_like
         Probability parameter of the forecast binomial distribution as a float or array of floats.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -706,8 +713,9 @@ def crps_exponential(
     rate : array_like
         Rate parameter of the forecast exponential distribution.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -774,8 +782,9 @@ def crps_exponentialM(
     scale : array_like
         Scale parameter of the forecast exponential distribution.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -832,8 +841,9 @@ def crps_2pexponential(
     location : array_like
         Location parameter of the forecast two-piece exponential distribution.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -892,8 +902,9 @@ def crps_gamma(
         Scale parameter of the forecast scale distribution, where ``scale = 1 / rate``.
         Either ``rate`` or ``scale`` must be provided.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -970,8 +981,9 @@ def crps_csg0(
     shift : array_like
         Shift parameter of the forecast CSG distribution.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1039,8 +1051,9 @@ def crps_gev(
     scale : array_like, optional
         Scale parameter of the forecast GEV distribution.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1146,8 +1159,9 @@ def crps_gpd(
     mass : array_like
         Mass parameter at the lower boundary of the forecast GPD distribution.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1228,6 +1242,10 @@ def crps_gtclogistic(
         Point mass assigned to the lower boundary of the forecast distribution.
     umass : array_like
         Point mass assigned to the upper boundary of the forecast distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1280,6 +1298,10 @@ def crps_tlogistic(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1323,6 +1345,10 @@ def crps_clogistic(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1381,6 +1407,32 @@ def crps_gtcnormal(
     lower and upper boundaries, respectively, and location and scale parameters :math:`\mu` and :math:`\sigma > 0`.
     :math:`F_{l, L}^{u, U} = F_{l, L, 0, 1}^{u, U}`.
 
+    Parameters
+    ----------
+    obs : array_like
+        The observed values.
+    location : array_like
+        Location parameter of the forecast distribution.
+    scale : array_like
+        Scale parameter of the forecast distribution.
+    lower : array_like
+        Lower boundary of the truncated forecast distribution.
+    upper : array_like
+        Upper boundary of the truncated forecast distribution.
+    lmass : array_like
+        Point mass assigned to the lower boundary of the forecast distribution.
+    umass : array_like
+        Point mass assigned to the upper boundary of the forecast distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
+
+    Returns
+    -------
+    crps : array_like
+        The CRPS between gtcNormal(location, scale, lower, upper, lmass, umass) and obs.
+
     References
     ----------
     .. [1] Jordan, A., Krüger, F., & Lerch, S. (2019).
@@ -1434,6 +1486,10 @@ def crps_tnormal(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1477,6 +1533,10 @@ def crps_cnormal(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1560,6 +1620,10 @@ def crps_gtct(
         Point mass assigned to the lower boundary of the forecast distribution.
     umass : array_like
         Point mass assigned to the upper boundary of the forecast distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1623,6 +1687,10 @@ def crps_tt(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1679,6 +1747,10 @@ def crps_ct(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1739,8 +1811,9 @@ def crps_hypergeometric(
     k : array_like
         Number of draws, without replacement. Must be in 0, 1, ..., m + n.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1792,8 +1865,9 @@ def crps_laplace(
     scale : array_like
         Scale parameter of the forecast laplace distribution.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1843,6 +1917,10 @@ def crps_logistic(
         Location parameter of the forecast logistic distribution.
     sigma: array_like
         Scale parameter of the forecast logistic distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1904,8 +1982,9 @@ def crps_loglaplace(
     scalelog : array_like
         Scale parameter of the forecast log-laplace distribution.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1966,8 +2045,9 @@ def crps_loglogistic(
     sigmalog : array_like
         Scale parameter of the log-logistic distribution.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
 
     Returns
@@ -2022,6 +2102,10 @@ def crps_lognormal(
         Mean of the normal underlying distribution.
     sigmalog : array_like
         Standard deviation of the underlying normal distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -2077,8 +2161,9 @@ def crps_mixnorm(
     m_axis : int
         The axis corresponding to the mixture components. Default is the last axis.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -2145,6 +2230,10 @@ def crps_negbinom(
         Probability parameter of the forecast negative binomial distribution.
     mu: array_like
         Mean of the forecast negative binomial distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -2206,6 +2295,10 @@ def crps_normal(
         Mean of the forecast normal distribution.
     sigma: array_like
         Standard deviation of the forecast normal distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -2260,6 +2353,10 @@ def crps_2pnormal(
         Scale parameter of the upper half of the forecast two-piece normal distribution.
     mu: array_like
         Location parameter of the forecast two-piece normal distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -2322,6 +2419,10 @@ def crps_poisson(
         The observed values.
     mean : array_like
         Mean parameter of the forecast poisson distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -2378,6 +2479,10 @@ def crps_t(
         Location parameter of the forecast t distribution.
     sigma : array_like
         Scale parameter of the forecast t distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -2437,6 +2542,10 @@ def crps_uniform(
         Point mass on the lower bound of the forecast uniform distribution.
     umass : array_like
         Point mass on the upper bound of the forecast uniform distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------

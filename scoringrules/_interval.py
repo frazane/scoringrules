@@ -45,8 +45,9 @@ def interval_score(
     alpha : array_like
         The 1 - alpha level for the PI as a scalar or array of values.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -163,8 +164,9 @@ def weighted_interval_score(
     w_alpha : array_like
         The weights for the PI. Defaults to `2/alpha`.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------

@@ -39,9 +39,9 @@ def logs_ensemble(
         The bandwidth parameter for each forecast ensemble. If not given, estimated using
         Silverman's rule of thumb.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -123,9 +123,9 @@ def clogs_ensemble(
         Boolean specifying whether to return the conditional ('cens = False') or the censored
         likelihood score ('cens = True').
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -180,9 +180,9 @@ def logs_beta(
     upper : array_like
         Upper bound of the forecast beta distribution.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -220,9 +220,9 @@ def logs_binomial(
     prob : array_like
         Probability parameter of the forecast binomial distribution as a float or array of floats.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -257,9 +257,9 @@ def logs_exponential(
     rate : array_like
         Rate parameter of the forecast exponential distribution.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -297,9 +297,9 @@ def logs_exponential2(
     scale : array_like
         Scale parameter of the forecast exponential distribution.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -340,9 +340,9 @@ def logs_2pexponential(
     location : array_like
         Location parameter of the forecast two-piece exponential distribution.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -384,6 +384,10 @@ def logs_gamma(
         Rate parameter of the forecast gamma distribution.
     scale : array_like
         Scale parameter of the forecast gamma distribution, where `scale = 1 / rate`.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -437,9 +441,9 @@ def logs_gev(
     scale : array_like
         Scale parameter of the forecast GEV distribution.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -481,9 +485,9 @@ def logs_gpd(
     scale : array_like
         Scale parameter of the forecast GPD distribution.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -524,9 +528,9 @@ def logs_hypergeometric(
     k : array_like
         Number of draws, without replacement. Must be in 0, 1, ..., m + n.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -565,6 +569,10 @@ def logs_laplace(
     scale : array_like
         Scale parameter of the forecast laplace distribution.
         The LS between obs and Laplace(location, scale).
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -601,6 +609,10 @@ def logs_loglaplace(
         Location parameter of the forecast log-laplace distribution.
     scalelog : array_like
         Scale parameter of the forecast log-laplace distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -637,6 +649,10 @@ def logs_logistic(
         Location parameter of the forecast logistic distribution.
     sigma : array_like
         Scale parameter of the forecast logistic distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -673,9 +689,9 @@ def logs_loglogistic(
     sigmalog : array_like
         Scale parameter of the log-logistic distribution.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -711,6 +727,10 @@ def logs_lognormal(
         Mean of the normal underlying distribution.
     sigmalog : array_like
         Standard deviation of the underlying normal distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -754,9 +774,9 @@ def logs_mixnorm(
     mc_axis : int
         The axis corresponding to the mixture components. Default is the last axis.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -806,6 +826,10 @@ def logs_negbinom(
         Probability parameter of the forecast negative binomial distribution.
     mu : array_like
         Mean of the forecast negative binomial distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -857,7 +881,9 @@ def logs_normal(
     sigma : array_like
         Standard deviation of the forecast normal distribution.
     backend : str, optional
-        The backend used for computations.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -898,9 +924,9 @@ def logs_2pnormal(
     location : array_like
         Location parameter of the forecast two-piece normal distribution.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -937,9 +963,9 @@ def logs_poisson(
     mean : array_like
         Mean parameter of the forecast poisson distribution.
     backend : str, optional
-        The array framework is inferred from the inputs, so this is only kept for
-        compatibility: ``"numba"`` is accepted (the logarithmic scores have no
-        numba fast path) and the legacy framework names are deprecated.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -979,6 +1005,10 @@ def logs_t(
         Location parameter of the forecast t distribution.
     sigma : array_like
         Scale parameter of the forecast t distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1021,6 +1051,10 @@ def logs_tlogistic(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1065,6 +1099,10 @@ def logs_tnormal(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1112,6 +1150,10 @@ def logs_tt(
         Lower boundary of the truncated forecast distribution.
     upper : array_like
         Upper boundary of the truncated forecast distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -1150,6 +1192,10 @@ def logs_uniform(
         Lower bound of the forecast uniform distribution.
     max : array_like
         Upper bound of the forecast uniform distribution.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
