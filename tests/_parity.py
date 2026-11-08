@@ -6,48 +6,58 @@ selected, rather than importing ``assert_paths_agree`` directly.
 """
 
 import contextlib
+import inspect
 
 import numpy as np
 import pytest
+
+import scoringrules as sr
+from scoringrules._dispatch import AUTO_EXCLUDED
+from scoringrules.core.utils import GufuncWrapper
 
 # default (rtol, atol) of ``assert_paths_agree`` by result dtype
 _TOLERANCES = {np.dtype(np.float64): (1e-10, 1e-12), np.dtype(np.float32): (1e-5, 1e-6)}
 
 
-@contextlib.contextmanager
-def global_numba():
-    """Turn the global numba switch on with ``backends.set_active("numba")``
-    and restore the previous state on exit (without the deprecation warning
-    of ``set_active("numpy")``)."""
-    from scoringrules import _dispatch
-    from scoringrules.backend import backends
+# the score that a threshold-weighted score chains to, whose key it uses
+_CHAINED_TO = {
+    "twcrps_ensemble": "crps_ensemble",
+    "twgksuv_ensemble": "gksuv_ensemble",
+    "twgksmv_ensemble": "gksmv_ensemble",
+    "twes_ensemble": "es_ensemble",
+    "twvs_ensemble": "vs_ensemble",
+}
+# the scores whose ``use_numba`` key is ``(name, estimator)``
+_ESTIMATOR_KEYED = {
+    "crps_ensemble",
+    "gksuv_ensemble",
+    "gksmv_ensemble",
+    "es_ensemble",
+    "vs_ensemble",
+}
 
-    saved = _dispatch._numba_active, backends._active
-    backends.set_active("numba")
-    try:
-        yield
-    finally:
-        _dispatch._numba_active, backends._active = saved
 
-
-@contextlib.contextmanager
-def count_gufunc_calls():
-    """Yield a list that gets one entry (the gufunc name) per numba gufunc call
-    made inside the block; every gufunc goes through ``GufuncWrapper``."""
-    from scoringrules.core.utils import GufuncWrapper
-
-    calls = []
-    call = GufuncWrapper.__call__
-
-    def counting(self, *args):
-        calls.append(self.__name__)
-        return call(self, *args)
-
-    GufuncWrapper.__call__ = counting
-    try:
-        yield calls
-    finally:
-        GufuncWrapper.__call__ = call
+def auto_uses_the_gufunc(fn, args, kwargs):
+    """Whether ``numba="auto"`` should run the gufunc of ``fn(*args, **kwargs)``
+    (for inputs the guard accepts): not if its key is in
+    ``_dispatch.AUTO_EXCLUDED`` for the float dtype numpy promotes ``obs`` and
+    ``fct`` to (float64 for integers). Recomputed here rather than asked from
+    ``use_numba``, so that the dispatch is checked against the table."""
+    name = getattr(fn, "__name__", "")
+    name = _CHAINED_TO.get(name, name)
+    key = name
+    if name in _ESTIMATOR_KEYED:
+        default = inspect.signature(fn).parameters["estimator"].default
+        key = (name, kwargs.get("estimator", default))
+    if key not in AUTO_EXCLUDED:
+        return True
+    dtypes = AUTO_EXCLUDED[key]
+    if dtypes is None:
+        return False
+    dtype = np.result_type(*(np.asarray(a) for a in args[:2]))
+    if dtype.kind != "f":
+        dtype = np.dtype(np.float64)
+    return dtype.newbyteorder("=") not in dtypes
 
 
 def assert_paths_agree(
@@ -59,12 +69,13 @@ def assert_paths_agree(
     allow_all_nan=False,
     raises=None,
     expect_gufunc=True,
+    auto_gufunc=None,
     **kwargs,
 ):
-    """Assert ``fn(*args, backend="numba", **kwargs)`` matches the inferred
-    numpy path ``fn(*args, **kwargs)``, that the default dispatch with the
-    global numba switch on (``global_numba``) gives exactly the numba result,
-    and that none of them modifies its inputs.
+    """Assert that ``fn(*args, **kwargs)`` under ``config_context(numba=True)``
+    (the gufunc) matches it under ``config_context(numba=False)`` (the array
+    path), that the default ``numba="auto"`` gives exactly the result of the
+    path it should take, and that none of them modifies its inputs.
 
     The results must have the same Python type (numpy scalars for 0-d results,
     plain ndarrays otherwise) and, through ``np.asarray``, the same shape, the
@@ -75,11 +86,13 @@ def assert_paths_agree(
     ``allow_all_nan=True``, so that two paths that both break cannot agree by
     accident. With ``raises``, all three must raise that exception instead.
 
-    The numba and global-switch calls must each call a numba gufunc and the
-    numpy call none, so a guard regression cannot turn a parity test into a
+    The ``numba=True`` call must call a numba gufunc and the ``numba=False``
+    call none, so a guard regression cannot turn a parity test into a
     comparison of the array path with itself. Pass ``expect_gufunc=False`` for
-    inputs that ``use_numba`` sends to the array path. Returns the numba and
-    numpy results as numpy arrays.
+    inputs that ``use_numba`` sends to the array path (then no call may run a
+    gufunc). With ``expect_gufunc``, ``numba="auto"`` must call a gufunc iff
+    ``auto_gufunc`` (by default ``auto_uses_the_gufunc``, from the exclusion
+    table). Returns the numba and numpy results as numpy arrays.
     """
     inputs = [a for a in (*args, *kwargs.values()) if isinstance(a, np.ndarray)]
     snapshot = [a.copy() for a in inputs]
@@ -90,40 +103,43 @@ def assert_paths_agree(
                 after, before, f"{path} path modified an input in place"
             )
 
-    if raises is not None:
-        with pytest.raises(raises):
-            fn(*args, backend="numba", **kwargs)
-        check_unchanged("numba")
-        with global_numba(), pytest.raises(raises):
-            fn(*args, **kwargs)
-        check_unchanged("global numba")
-        with pytest.raises(raises):
-            fn(*args, **kwargs)
-        check_unchanged("numpy")
-        return None
-    with count_gufunc_calls() as calls_numba:
-        raw_numba = fn(*args, backend="numba", **kwargs)
+    def run(numba):
+        with sr.config_context(numba=numba), count_gufunc_calls() as calls:
+            if raises is None:
+                return fn(*args, **kwargs), calls
+            with pytest.raises(raises):
+                fn(*args, **kwargs)
+            return None, calls
+
+    raw_numba, numba_calls = run(True)
     check_unchanged("numba")
-    with global_numba(), count_gufunc_calls() as calls_global:
-        raw_global = fn(*args, **kwargs)
-    check_unchanged("global numba")
-    with count_gufunc_calls() as calls_numpy:
-        raw_numpy = fn(*args, **kwargs)
+    raw_auto, auto_calls = run("auto")
+    check_unchanged("auto")
+    raw_numpy, numpy_calls = run(False)
     check_unchanged("numpy")
-    assert not calls_numpy, f"the numpy path called {calls_numpy}"
+    if raises is not None:
+        return None
+    assert not numpy_calls, f"numba=False called {numpy_calls}"
     if expect_gufunc:
-        assert calls_numba, "backend='numba' did not call a gufunc"
-        assert calls_global, "the global numba switch did not call a gufunc"
+        assert numba_calls, "numba=True did not call a gufunc"
+        if auto_gufunc is None:
+            auto_gufunc = auto_uses_the_gufunc(fn, args, kwargs)
+        if auto_gufunc:
+            assert auto_calls, "numba='auto' did not call a gufunc"
+        else:
+            assert not auto_calls, f"numba='auto' called {auto_calls} (excluded)"
     else:
-        assert not calls_numba and not calls_global, (calls_numba, calls_global)
-    assert type(raw_numba) is type(raw_numpy), (type(raw_numba), type(raw_numpy))
-    assert type(raw_global) is type(raw_numba), (type(raw_global), type(raw_numba))
-    res_numba, res_numpy = np.asarray(raw_numba), np.asarray(raw_numpy)
-    res_global = np.asarray(raw_global)
-    assert res_global.dtype == res_numba.dtype, (res_global.dtype, res_numba.dtype)
+        assert not numba_calls and not auto_calls, (numba_calls, auto_calls)
+    # the result of the path auto mode took, bit for bit
+    raw_ref, ref_name = (raw_numba, "True") if auto_calls else (raw_numpy, "False")
+    assert type(raw_auto) is type(raw_ref), (type(raw_auto), type(raw_ref))
+    res_auto, res_ref = np.asarray(raw_auto), np.asarray(raw_ref)
+    assert res_auto.dtype == res_ref.dtype, (res_auto.dtype, res_ref.dtype)
     np.testing.assert_array_equal(
-        res_global, res_numba, "the global numba switch differs from backend='numba'"
+        res_auto, res_ref, f"numba='auto' differs from numba={ref_name}"
     )
+    assert type(raw_numba) is type(raw_numpy), (type(raw_numba), type(raw_numpy))
+    res_numba, res_numpy = np.asarray(raw_numba), np.asarray(raw_numpy)
     assert res_numba.shape == res_numpy.shape, (res_numba.shape, res_numpy.shape)
     assert res_numba.dtype.kind == "f", f"numba path returned {res_numba.dtype}"
     assert res_numpy.dtype.kind == "f", f"numpy path returned {res_numpy.dtype}"
@@ -141,6 +157,24 @@ def assert_paths_agree(
         atol=default_atol if atol is None else atol,
     )
     return res_numba, res_numpy
+
+
+@contextlib.contextmanager
+def count_gufunc_calls():
+    """Yield a list that gets one entry (the gufunc name) per numba gufunc call
+    made inside the block; every gufunc goes through ``GufuncWrapper``."""
+    calls = []
+    original = GufuncWrapper.__call__
+
+    def counting(self, *args):
+        calls.append(self.__name__)
+        return original(self, *args)
+
+    GufuncWrapper.__call__ = counting
+    try:
+        yield calls
+    finally:
+        GufuncWrapper.__call__ = original
 
 
 def as_float32(x, backend):

@@ -132,7 +132,7 @@ def crps_ensemble(
     """
 
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(ens_w,))
+    numba = use_numba(("crps_ensemble", estimator), backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs, fct, ens_w = apply_nan_policy_ens_uv(
@@ -248,7 +248,8 @@ def twcrps_ensemble(
     >>> sr.twcrps_ensemble(obs, fct, v_func=v_func)
     array([0.69605316, 0.32865417, 0.39048665])
     """
-    resolve_backend_arg(backend)
+    # warns here, at the user's call; crps_ensemble below does not
+    backend = resolve_backend_arg(backend)
     xp = get_namespace(obs, fct)
     obs, fct = uv_weighted_score_chain(obs, fct, a=a, b=b, v_func=v_func, xp=xp)
     return crps_ensemble(
@@ -356,7 +357,7 @@ def owcrps_ensemble(
     """
 
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(ens_w,))
+    numba = use_numba("owcrps_ensemble", backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs_w, fct_w = uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
@@ -470,7 +471,7 @@ def vrcrps_ensemble(
     """
 
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(ens_w,))
+    numba = use_numba("vrcrps_ensemble", backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs_w, fct_w = uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
@@ -548,7 +549,7 @@ def crps_quantile(
     # TODO: add example
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(alpha,))
+    numba = use_numba("crps_quantile", backend, obs, fct, aux=(alpha,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     alpha = xp.asarray(alpha)

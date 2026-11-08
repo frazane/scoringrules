@@ -104,7 +104,7 @@ def vs_ensemble(
     array([ 8.65630139,  6.84693866, 19.52993307])
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(w, ens_w, p))
+    numba = use_numba(("vs_ensemble", estimator), backend, obs, fct, aux=(w, ens_w, p))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     w = _dimension_weights(w, obs, fct, xp=xp)
@@ -195,9 +195,8 @@ def twvs_ensemble(
     >>> sr.twvs_ensemble(obs, fct, lambda x: np.maximum(x, -0.2))
     array([5.94996894, 4.72029765, 6.08947229])
     """
-    resolve_backend_arg(backend)
-    # warned above, at the user's call: forward only the numba choice
-    backend = "numba" if backend == "numba" else None
+    # warns here, at the user's call; the score called below does not
+    backend = resolve_backend_arg(backend)
     obs, fct = mv_weighted_score_chain(obs, fct, v_func)
     return vs_ensemble(
         obs,
@@ -281,7 +280,7 @@ def owvs_ensemble(
     array([ 9.86816636,  6.75532522, 19.59353723])
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(w, ens_w, p))
+    numba = use_numba("owvs_ensemble", backend, obs, fct, aux=(w, ens_w, p))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
@@ -372,7 +371,7 @@ def vrvs_ensemble(
     array([46.48256493, 57.90759816, 92.37153472])
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(w, ens_w, p))
+    numba = use_numba("vrvs_ensemble", backend, obs, fct, aux=(w, ens_w, p))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)

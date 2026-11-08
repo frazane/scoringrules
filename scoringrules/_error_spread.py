@@ -37,7 +37,7 @@ def error_spread_score(
         An array of error spread scores for each ensemble forecast, which should be averaged to get meaningful values.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba("error_spread_score", backend, obs, fct)
     xp = get_namespace(obs, fct)
     obs, fct = asarray_matching(obs, fct, xp=xp)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)

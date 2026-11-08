@@ -5,23 +5,21 @@ import scoringrules as sr
 from .conftest import assert_inferred
 
 
-def test_quantile_score(backend, to_backend, backend_kwargs):
+def test_quantile_score(backend, to_backend):
     obs = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
     fct = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
     alpha = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
-    res = sr.quantile_score(
-        to_backend(obs), to_backend(fct), to_backend(alpha), **backend_kwargs
-    )
+    res = sr.quantile_score(to_backend(obs), to_backend(fct), to_backend(alpha))
     assert_inferred(res, backend)
     assert res.shape == (5,)
     assert np.allclose(np.asarray(res), 0.0)
 
     # correctness
     fa = to_backend
-    res = sr.quantile_score(fa(0.3), fa(0.5), fa(0.2), **backend_kwargs)
+    res = sr.quantile_score(fa(0.3), fa(0.5), fa(0.2))
     assert_inferred(res, backend)
     assert np.isclose(np.asarray(res), 0.16)
-    res = sr.quantile_score(fa(0.3), fa(0.1), fa(0.2), **backend_kwargs)
+    res = sr.quantile_score(fa(0.3), fa(0.1), fa(0.2))
     assert_inferred(res, backend)
     assert np.isclose(np.asarray(res), 0.04)
 
@@ -29,26 +27,26 @@ def test_quantile_score(backend, to_backend, backend_kwargs):
     obs = np.array([0.0, 1.0])
     fct = np.array([[-1.0, 0.5], [2.0, 0.0]])
     alpha = np.array([0.25, 0.75])
-    res = sr.quantile_score(fa(obs[:, None]), fa(fct), fa(alpha), **backend_kwargs)
+    res = sr.quantile_score(fa(obs[:, None]), fa(fct), fa(alpha))
     assert_inferred(res, backend)
     expected = np.where(obs[:, None] < fct, 1 - alpha, -alpha) * (fct - obs[:, None])
     assert np.allclose(np.asarray(res), expected)
 
     # value checks
     with pytest.raises(ValueError):
-        sr.quantile_score(fa(0.3), fa(0.5), fa(-0.2), **backend_kwargs)
+        sr.quantile_score(fa(0.3), fa(0.5), fa(-0.2))
     with pytest.raises(ValueError):
-        sr.quantile_score(fa(0.3), fa(0.5), fa([0.2, 1.2]), **backend_kwargs)
+        sr.quantile_score(fa(0.3), fa(0.5), fa([0.2, 1.2]))
 
 
-def test_quantile_score_float32(backend, to_backend_float32, backend_kwargs):
+def test_quantile_score_float32(backend, to_backend_float32):
     obs = to_backend_float32(np.random.randn(5))
     fct = to_backend_float32(np.random.randn(5))
     alpha = to_backend_float32(np.full(5, 0.3))
     for res in (
-        sr.quantile_score(obs, fct, alpha, **backend_kwargs),
-        sr.quantile_score(obs, fct, 0.3, **backend_kwargs),
-        sr.quantile_score(0.5, fct, alpha, **backend_kwargs),
+        sr.quantile_score(obs, fct, alpha),
+        sr.quantile_score(obs, fct, 0.3),
+        sr.quantile_score(0.5, fct, alpha),
     ):
         assert_inferred(res, backend)
         assert res.dtype == fct.dtype
@@ -72,8 +70,9 @@ def test_quantile_score_grad_torch():
 
 
 def test_quantile_score_numba_arg_infers(backend, to_backend):
-    # no gufunc: backend="numba" means "infer", also for jax/torch inputs
-    res = sr.quantile_score(
-        to_backend([0.3]), to_backend([0.5]), to_backend(0.2), backend="numba"
-    )
+    # no gufunc: the deprecated backend="numba" means "infer", also for jax/torch
+    with pytest.warns(DeprecationWarning, match="backend='numba'"):
+        res = sr.quantile_score(
+            to_backend([0.3]), to_backend([0.5]), to_backend(0.2), backend="numba"
+        )
     assert_inferred(res, backend)

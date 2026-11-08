@@ -12,8 +12,8 @@ def register_backend(backend):
     The array framework is inferred from the inputs, so registering ``"numpy"``,
     ``"jax"`` or ``"torch"`` is deprecated and removed in 1.0. Registering
     ``"numba"`` checks that numba can be imported and registers the numpy
-    namespace under ``"numba"``; it does not enable the numba fast path, use
-    ``backend="numba"`` or ``scoringrules.backends.set_active("numba")`` for that.
+    namespace under ``"numba"``; it does not change whether the numba gufuncs
+    are used, ``scoringrules.set_config(numba=...)`` does.
 
     Parameters
     ----------

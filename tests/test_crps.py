@@ -27,10 +27,10 @@ def assert_close(result, expected, backend, *, rtol=1e-5, atol=1e-8):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_crps_ensemble(estimator, backend, to_backend, backend_kwargs):
+def test_crps_ensemble(estimator, backend, to_backend):
     """Test general behavior of scoringrules.crps_ensemble."""
 
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
 
     # test data
     obs0 = np.random.randn(N)
@@ -40,7 +40,7 @@ def test_crps_ensemble(estimator, backend, to_backend, backend_kwargs):
 
     # test exceptions: undefined estimator
     with pytest.raises(ValueError):
-        sr.crps_ensemble(obs, fct, estimator="undefined_estimator", **backend_kwargs)
+        sr.crps_ensemble(obs, fct, estimator="undefined_estimator")
 
     # test shapes: default case
     res = sr.crps_ensemble(obs, fct, **kwargs)
@@ -85,10 +85,10 @@ def test_crps_ensemble(estimator, backend, to_backend, backend_kwargs):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_crps_ensemble_nan_policy(estimator, backend, to_backend, backend_kwargs):
+def test_crps_ensemble_nan_policy(estimator, backend, to_backend):
     """Test behavior of scoringrules.crps_ensemble with NaN values."""
 
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
 
     # test data
     obs0 = np.random.randn(N)
@@ -144,9 +144,9 @@ def test_crps_ensemble_nan_policy(estimator, backend, to_backend, backend_kwargs
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_crps_ensemble_w_ens(estimator, backend, to_backend, backend_kwargs):
+def test_crps_ensemble_w_ens(estimator, backend, to_backend):
     """Test behavior of scoringrules.crps_ensemble with ensemble weights."""
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
 
     # test data
     obs0 = np.random.randn(N)
@@ -179,8 +179,8 @@ def test_crps_ensemble_w_ens(estimator, backend, to_backend, backend_kwargs):
 
     # estimator equivalence with weights
     w = to_backend(np.abs(np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None]))
-    res_nrg = sr.crps_ensemble(obs, fct, ens_w=w, estimator="nrg", **backend_kwargs)
-    res_qd = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd", **backend_kwargs)
+    res_nrg = sr.crps_ensemble(obs, fct, ens_w=w, estimator="nrg")
+    res_qd = sr.crps_ensemble(obs, fct, ens_w=w, estimator="qd")
     assert_inferred(res_nrg, backend)
     assert_inferred(res_qd, backend)
     if backend in ["torch", "jax"]:
@@ -213,10 +213,10 @@ def test_crps_ensemble_w_ens(estimator, backend, to_backend, backend_kwargs):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_crps_ensemble_w_ens_nan_policy(estimator, backend, to_backend, backend_kwargs):
+def test_crps_ensemble_w_ens_nan_policy(estimator, backend, to_backend):
     """Test behavior of scoringrules.crps_ensemble with ensemble weights and NaN values."""
 
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
 
     # test data
     obs0 = np.random.randn(N)
@@ -307,13 +307,13 @@ def test_crps_ensemble_w_ens_nan_policy(estimator, backend, to_backend, backend_
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_crps_ensemble_nan_weights(estimator, backend, to_backend, backend_kwargs):
+def test_crps_ensemble_nan_weights(estimator, backend, to_backend):
     """Test crps_ensemble when the ensemble weights (ens_w) contain NaN.
 
     A member is invalid if its forecast value OR its weight is NaN:
     'propagate' -> NaN, 'raise' -> error, 'omit' -> zero weight (dropped).
     """
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
 
     obs0 = np.random.randn(N)
     fct0 = np.random.randn(N, ENSEMBLE_SIZE)
@@ -371,7 +371,7 @@ def test_crps_ensemble_nan_weights(estimator, backend, to_backend, backend_kwarg
     assert np.allclose(np.asarray(res_axis).ravel(), res, rtol=rtol)
 
 
-def test_crps_ensemble_correctness(backend, to_backend, backend_kwargs):
+def test_crps_ensemble_correctness(backend, to_backend):
     obs0 = np.random.randn(N)
     mu = obs0 + np.random.randn(N) * 0.3
     sigma = abs(np.random.randn(N)) * 0.5
@@ -380,10 +380,10 @@ def test_crps_ensemble_correctness(backend, to_backend, backend_kwargs):
     fct = to_backend(fct0)
 
     # test equivalence of different estimators
-    res_nrg = sr.crps_ensemble(obs, fct, estimator="nrg", **backend_kwargs)
-    res_qd = sr.crps_ensemble(obs, fct, estimator="qd", **backend_kwargs)
-    res_fair = sr.crps_ensemble(obs, fct, estimator="fair", **backend_kwargs)
-    res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm", **backend_kwargs)
+    res_nrg = sr.crps_ensemble(obs, fct, estimator="nrg")
+    res_qd = sr.crps_ensemble(obs, fct, estimator="qd")
+    res_fair = sr.crps_ensemble(obs, fct, estimator="fair")
+    res_pwm = sr.crps_ensemble(obs, fct, estimator="pwm")
     for r in (res_nrg, res_qd, res_fair, res_pwm):
         assert_inferred(r, backend)
     res_nrg, res_qd = np.asarray(res_nrg), np.asarray(res_qd)
@@ -460,8 +460,6 @@ def test_crps_ensemble_tied_members_order(estimator, weighted, backend, to_backe
     w = rng.uniform(0.1, 2.0, size=fct.shape)
     perm = rng.permutation(fct.shape[-1])
     kwargs = {"estimator": estimator}
-    if backend == "numba":
-        kwargs["backend"] = "numba"
     res = sr.crps_ensemble(
         to_backend(obs),
         to_backend(fct),
@@ -544,7 +542,7 @@ def test_crps_ensemble_sorted_paths_agree(estimator, weighted, paths_agree):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_crps_ensemble_int_fct_float_weights(estimator, backend, backend_kwargs):
+def test_crps_ensemble_int_fct_float_weights(estimator, backend):
     # integer fct must not truncate float ens_w (it used to be cast to fct.dtype)
     mod = {"jax": "jax.numpy", "torch": "torch"}.get(backend, "numpy")
     xp_mod = pytest.importorskip(mod)
@@ -552,7 +550,7 @@ def test_crps_ensemble_int_fct_float_weights(estimator, backend, backend_kwargs)
     obs0 = rng.normal(size=N)
     fct0 = rng.integers(-3, 4, size=(N, ENSEMBLE_SIZE))
     w0 = rng.uniform(0.1, 2.0, size=(N, ENSEMBLE_SIZE))
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
     res = sr.crps_ensemble(
         xp_mod.asarray(obs0), xp_mod.asarray(fct0), ens_w=xp_mod.asarray(w0), **kwargs
     )
@@ -561,11 +559,11 @@ def test_crps_ensemble_int_fct_float_weights(estimator, backend, backend_kwargs)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_crps_ensemble_float32(estimator, backend, to_backend_float32, backend_kwargs):
+def test_crps_ensemble_float32(estimator, backend, to_backend_float32):
     obs = to_backend_float32(np.random.randn(N))
     fct = to_backend_float32(np.random.randn(N, ENSEMBLE_SIZE))
     ens_w = to_backend_float32(np.random.uniform(0.1, 1.0, (N, ENSEMBLE_SIZE)))
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
     for res in (
         sr.crps_ensemble(obs, fct, **kwargs),
         sr.crps_ensemble(obs, fct, ens_w=ens_w, **kwargs),
@@ -574,14 +572,12 @@ def test_crps_ensemble_float32(estimator, backend, to_backend_float32, backend_k
         assert res.dtype == fct.dtype
 
 
-def test_crps_quantile(backend, to_backend, backend_kwargs):
+def test_crps_quantile(backend, to_backend):
     # test shapes
     obs = np.random.randn(N)
     fct = np.random.randn(N, ENSEMBLE_SIZE)
     alpha = np.linspace(0.1, 0.9, ENSEMBLE_SIZE)
-    res = sr.crps_quantile(
-        to_backend(obs), to_backend(fct), to_backend(alpha), **backend_kwargs
-    )
+    res = sr.crps_quantile(to_backend(obs), to_backend(fct), to_backend(alpha))
     assert_inferred(res, backend)
     assert np.asarray(res).shape == (N,)
 
@@ -591,7 +587,6 @@ def test_crps_quantile(backend, to_backend, backend_kwargs):
         to_backend(fct_t),
         to_backend(alpha),
         m_axis=0,
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     assert np.asarray(res).shape == (N,)
@@ -610,13 +605,12 @@ def test_crps_quantile(backend, to_backend, backend_kwargs):
             alphaq = np.linspace(a0, a1, A)
             obsq = np.repeat(mu, N)
             qcrps = sr.crps_quantile(
-                to_backend(obsq), to_backend(fctq), to_backend(alphaq), **backend_kwargs
+                to_backend(obsq), to_backend(fctq), to_backend(alphaq)
             )
             ncrps = sr.crps_normal(
                 to_backend(obsq),
                 to_backend(np.repeat(mu, N)),
                 to_backend(np.ones(N)),
-                **backend_kwargs,
             )
             assert_inferred(qcrps, backend)
             assert_inferred(ncrps, backend)
@@ -629,12 +623,10 @@ def test_crps_quantile(backend, to_backend, backend_kwargs):
 
     # Test raise valueerror if array sizes don't match
     with pytest.raises(ValueError):
-        sr.crps_quantile(
-            to_backend(obs), to_backend(fct_t), to_backend(alpha), **backend_kwargs
-        )
+        sr.crps_quantile(to_backend(obs), to_backend(fct_t), to_backend(alpha))
 
 
-def test_crps_beta(backend, to_backend, backend_kwargs):
+def test_crps_beta(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
@@ -652,7 +644,6 @@ def test_crps_beta(backend, to_backend, backend_kwargs):
         fa(np.random.uniform(0, 1, (3, 3))),
         fa(np.random.uniform(0, 3, (3, 3))),
         fa(1.1),
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     res_np = np.asarray(res)
@@ -661,18 +652,14 @@ def test_crps_beta(backend, to_backend, backend_kwargs):
 
     # test exceptions
     with pytest.raises(ValueError):
-        sr.crps_beta(
-            fa(0.3), fa(0.7), fa(1.1), lower=fa(1.0), upper=fa(0.0), **backend_kwargs
-        )
+        sr.crps_beta(fa(0.3), fa(0.7), fa(1.1), lower=fa(1.0), upper=fa(0.0))
 
     # correctness tests
-    res = sr.crps_beta(fa(0.3), fa(0.7), fa(1.1), **backend_kwargs)
+    res = sr.crps_beta(fa(0.3), fa(0.7), fa(1.1))
     assert_inferred(res, backend)
     assert_close(res, 0.0850102437, backend)
 
-    res = sr.crps_beta(
-        fa(-3.0), fa(0.7), fa(1.1), lower=fa(-5.0), upper=fa(4.0), **backend_kwargs
-    )
+    res = sr.crps_beta(fa(-3.0), fa(0.7), fa(1.1), lower=fa(-5.0), upper=fa(4.0))
     assert_inferred(res, backend)
     assert_close(res, 0.883206751, backend)
 
@@ -683,13 +670,12 @@ def test_crps_beta(backend, to_backend, backend_kwargs):
         fa(1.1),
         lower=fa([-5.0, -5.0]),
         upper=fa([4.0, 4.0]),
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     assert_close(res, np.array([0.883206751, 0.883206751]), backend)
 
 
-def test_crps_binomial(backend, to_backend, backend_kwargs):
+def test_crps_binomial(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
@@ -700,21 +686,21 @@ def test_crps_binomial(backend, to_backend, backend_kwargs):
         return
 
     # test correctness
-    res = sr.crps_binomial(fa(8), fa(10), fa(0.9), **backend_kwargs)
+    res = sr.crps_binomial(fa(8), fa(10), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 0.6685115, backend)
 
-    res = sr.crps_binomial(fa(-8), fa(10), fa(0.9), **backend_kwargs)
+    res = sr.crps_binomial(fa(-8), fa(10), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 16.49896, backend)
 
-    res = sr.crps_binomial(fa(18), fa(10), fa(0.9), **backend_kwargs)
+    res = sr.crps_binomial(fa(18), fa(10), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 8.498957, backend)
 
     # large n: a factorial-based comb gave nan here (200! overflows float64).
     # Expected: sum_k (scipy.stats.binom.cdf(k, 200, 0.4) - 1{50 <= k})^2.
-    res = sr.crps_binomial(fa(50), fa(200), fa(0.4), **backend_kwargs)
+    res = sr.crps_binomial(fa(50), fa(200), fa(0.4))
     assert_inferred(res, backend)
     # comb(200, 100) ~ 9e58 does not fit jax's float32 (x64 off), so only the
     # numeric comparison is skipped on jax.
@@ -732,102 +718,94 @@ def test_crps_binomial(backend, to_backend, backend_kwargs):
         (fa(k), fa(n * ones), fa(p * ones)),
         (fa(k * ones), fa(n), fa(p * ones)),
     ]:
-        s = sr.crps_binomial(*args, **backend_kwargs)
+        s = sr.crps_binomial(*args)
         assert_inferred(s, backend)
         assert_close(s, expected, backend)
 
 
-def test_crps_exponential(backend, to_backend, backend_kwargs):
+def test_crps_exponential(backend, to_backend):
     # TODO: add and test exception handling
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
     # test correctness
-    res = sr.crps_exponential(fa(3), fa(0.7), **backend_kwargs)
+    res = sr.crps_exponential(fa(3), fa(0.7))
     assert_inferred(res, backend)
     assert_close(res, 1.20701837, backend)
 
 
-def test_crps_exponentialM(backend, to_backend, backend_kwargs):
+def test_crps_exponentialM(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
-    res = sr.crps_exponentialM(fa(0.3), fa(0.1), fa(0.0), fa(1.0), **backend_kwargs)
+    res = sr.crps_exponentialM(fa(0.3), fa(0.1), fa(0.0), fa(1.0))
     assert_inferred(res, backend)
     assert_close(res, 0.2384728, backend)
 
-    res = sr.crps_exponentialM(fa(0.3), fa(0.1), fa(-2.0), fa(3.0), **backend_kwargs)
+    res = sr.crps_exponentialM(fa(0.3), fa(0.1), fa(-2.0), fa(3.0))
     assert_inferred(res, backend)
     assert_close(res, 0.6236187, backend)
 
-    res = sr.crps_exponentialM(fa(-1.2), fa(0.1), fa(-2.0), fa(3.0), **backend_kwargs)
+    res = sr.crps_exponentialM(fa(-1.2), fa(0.1), fa(-2.0), fa(3.0))
     assert_inferred(res, backend)
     assert_close(res, 0.751013, backend)
 
 
-def test_crps_exponentialM_does_not_modify_obs(backend, to_backend, backend_kwargs):
+def test_crps_exponentialM_does_not_modify_obs(backend, to_backend):
     # #153: the location shift used to be applied in place to the caller's obs
     obs = to_backend(np.asarray([1.0, 2.0]))
-    sr.crps_exponentialM(obs, 0.1, 0.5, 1.0, **backend_kwargs)
+    sr.crps_exponentialM(obs, 0.1, 0.5, 1.0)
     np.testing.assert_array_equal(np.asarray(obs), [1.0, 2.0])
 
 
-def test_crps_2pexponential(backend, to_backend, backend_kwargs):
+def test_crps_2pexponential(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
-    res = sr.crps_2pexponential(fa(0.3), fa(0.1), fa(4.3), fa(0.0), **backend_kwargs)
+    res = sr.crps_2pexponential(fa(0.3), fa(0.1), fa(4.3), fa(0.0))
     assert_inferred(res, backend)
     assert_close(res, 1.787032, backend)
 
-    res = sr.crps_2pexponential(
-        fa(-20.8), fa(7.1), fa(2.0), fa(-25.4), **backend_kwargs
-    )
+    res = sr.crps_2pexponential(fa(-20.8), fa(7.1), fa(2.0), fa(-25.4))
     assert_inferred(res, backend)
     assert_close(res, 6.018359, backend)
 
 
-def test_crps_gamma(backend, to_backend, backend_kwargs):
+def test_crps_gamma(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
     obs, shape, rate = 0.2, 1.1, 0.7
     expected = 0.6343718
 
-    res = sr.crps_gamma(fa(obs), fa(shape), fa(rate), **backend_kwargs)
+    res = sr.crps_gamma(fa(obs), fa(shape), fa(rate))
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
-    res = sr.crps_gamma(fa(obs), fa(shape), scale=fa(1 / rate), **backend_kwargs)
+    res = sr.crps_gamma(fa(obs), fa(shape), scale=fa(1 / rate))
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
     with pytest.raises(ValueError):
-        sr.crps_gamma(
-            fa(obs), fa(shape), fa(rate), scale=fa(1 / rate), **backend_kwargs
-        )
+        sr.crps_gamma(fa(obs), fa(shape), fa(rate), scale=fa(1 / rate))
 
     with pytest.raises(ValueError):
-        sr.crps_gamma(fa(obs), fa(shape), **backend_kwargs)
+        sr.crps_gamma(fa(obs), fa(shape))
 
 
-def test_crps_csg0(backend, to_backend, backend_kwargs):
+def test_crps_csg0(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
     obs, shape, rate, shift = 0.7, 0.5, 2.0, 0.3
     expected = 0.5411044
 
-    expected_gamma = sr.crps_gamma(fa(obs), fa(shape), fa(rate), **backend_kwargs)
-    res_gamma = sr.crps_csg0(
-        fa(obs), shape=fa(shape), rate=fa(rate), shift=fa(0.0), **backend_kwargs
-    )
+    expected_gamma = sr.crps_gamma(fa(obs), fa(shape), fa(rate))
+    res_gamma = sr.crps_csg0(fa(obs), shape=fa(shape), rate=fa(rate), shift=fa(0.0))
     assert_inferred(res_gamma, backend)
     assert_close(res_gamma, np.asarray(expected_gamma), backend)
 
-    res = sr.crps_csg0(
-        fa(obs), shape=fa(shape), rate=fa(rate), shift=fa(shift), **backend_kwargs
-    )
+    res = sr.crps_csg0(fa(obs), shape=fa(shape), rate=fa(rate), shift=fa(shift))
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
@@ -836,7 +814,6 @@ def test_crps_csg0(backend, to_backend, backend_kwargs):
         shape=fa(shape),
         scale=fa(1.0 / rate),
         shift=fa(shift),
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
@@ -848,14 +825,13 @@ def test_crps_csg0(backend, to_backend, backend_kwargs):
             rate=fa(rate),
             scale=fa(1.0 / rate),
             shift=fa(shift),
-            **backend_kwargs,
         )
 
     with pytest.raises(ValueError):
-        sr.crps_csg0(fa(obs), shape=fa(shape), shift=fa(shift), **backend_kwargs)
+        sr.crps_csg0(fa(obs), shape=fa(shape), shift=fa(shift))
 
 
-def test_crps_gev(backend, to_backend, backend_kwargs):
+def test_crps_gev(backend, to_backend):
     def fa(x):
         return to_backend(np.full(2, float(x)))
 
@@ -866,79 +842,79 @@ def test_crps_gev(backend, to_backend, backend_kwargs):
         return
 
     obs, xi = 0.3, 0.0
-    res = sr.crps_gev(fa(obs), fa(xi), **backend_kwargs)
+    res = sr.crps_gev(fa(obs), fa(xi))
     assert_inferred(res, backend)
     assert_close(res, 0.276440963, backend)
-    res = sr.crps_gev(fa(obs + 0.1), fa(xi), location=fa(0.1), **backend_kwargs)
+    res = sr.crps_gev(fa(obs + 0.1), fa(xi), location=fa(0.1))
     assert_inferred(res, backend)
     assert_close(res, 0.276440963, backend)
-    res = sr.crps_gev(fa(obs * 0.9), fa(xi), scale=fa(0.9), **backend_kwargs)
+    res = sr.crps_gev(fa(obs * 0.9), fa(xi), scale=fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 0.276440963 * 0.9, backend)
 
     obs, xi = 0.3, 0.7
-    res = sr.crps_gev(fa(obs), fa(xi), **backend_kwargs)
+    res = sr.crps_gev(fa(obs), fa(xi))
     assert_inferred(res, backend)
     assert_close(res, 0.458044365, backend)
-    res = sr.crps_gev(fa(obs + 0.1), fa(xi), location=fa(0.1), **backend_kwargs)
+    res = sr.crps_gev(fa(obs + 0.1), fa(xi), location=fa(0.1))
     assert_inferred(res, backend)
     assert_close(res, 0.458044365, backend)
-    res = sr.crps_gev(fa(obs * 0.9), fa(xi), scale=fa(0.9), **backend_kwargs)
+    res = sr.crps_gev(fa(obs * 0.9), fa(xi), scale=fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 0.458044365 * 0.9, backend)
 
     obs, xi = 0.3, -0.7
-    res = sr.crps_gev(fa(obs), fa(xi), **backend_kwargs)
+    res = sr.crps_gev(fa(obs), fa(xi))
     assert_inferred(res, backend)
     assert_close(res, 0.207621488, backend)
-    res = sr.crps_gev(fa(obs + 0.1), fa(xi), location=fa(0.1), **backend_kwargs)
+    res = sr.crps_gev(fa(obs + 0.1), fa(xi), location=fa(0.1))
     assert_inferred(res, backend)
     assert_close(res, 0.207621488, backend)
-    res = sr.crps_gev(fa(obs * 0.9), fa(xi), scale=fa(0.9), **backend_kwargs)
+    res = sr.crps_gev(fa(obs * 0.9), fa(xi), scale=fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 0.207621488 * 0.9, backend)
 
 
-def test_crps_gpd(backend, to_backend, backend_kwargs):
+def test_crps_gpd(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
-    res = sr.crps_gpd(fa(0.3), fa(0.9), **backend_kwargs)
+    res = sr.crps_gpd(fa(0.3), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 0.6849332, backend)
-    res = sr.crps_gpd(fa(-0.3), fa(0.9), **backend_kwargs)
+    res = sr.crps_gpd(fa(-0.3), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 1.209091, backend)
-    res = sr.crps_gpd(fa(0.3), fa(-0.9), **backend_kwargs)
+    res = sr.crps_gpd(fa(0.3), fa(-0.9))
     assert_inferred(res, backend)
     assert_close(res, 0.1338672, backend)
-    res = sr.crps_gpd(fa(-0.3), fa(-0.9), **backend_kwargs)
+    res = sr.crps_gpd(fa(-0.3), fa(-0.9))
     assert_inferred(res, backend)
     assert_close(res, 0.6448276, backend)
 
-    res = sr.crps_gpd(fa(0.3), fa(1.0), **backend_kwargs)
+    res = sr.crps_gpd(fa(0.3), fa(1.0))
     assert_inferred(res, backend)
     assert np.isnan(np.asarray(res))
-    res = sr.crps_gpd(fa(0.3), fa(1.2), **backend_kwargs)
+    res = sr.crps_gpd(fa(0.3), fa(1.2))
     assert_inferred(res, backend)
     assert np.isnan(np.asarray(res))
-    res = sr.crps_gpd(fa(0.3), fa(0.9), mass=fa(-0.1), **backend_kwargs)
+    res = sr.crps_gpd(fa(0.3), fa(0.9), mass=fa(-0.1))
     assert_inferred(res, backend)
     assert np.isnan(np.asarray(res))
-    res = sr.crps_gpd(fa(0.3), fa(0.9), mass=fa(1.1), **backend_kwargs)
+    res = sr.crps_gpd(fa(0.3), fa(0.9), mass=fa(1.1))
     assert_inferred(res, backend)
     assert np.isnan(np.asarray(res))
 
     expected = 0.281636441
-    res = sr.crps_gpd(fa(0.3 + 0.1), fa(0.0), location=fa(0.1), **backend_kwargs)
+    res = sr.crps_gpd(fa(0.3 + 0.1), fa(0.0), location=fa(0.1))
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
-    res = sr.crps_gpd(fa(0.3 * 0.9), fa(0.0), scale=fa(0.9), **backend_kwargs)
+    res = sr.crps_gpd(fa(0.3 * 0.9), fa(0.0), scale=fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, expected * 0.9, backend)
 
 
-def test_crps_gtclogis(backend, to_backend, backend_kwargs):
+def test_crps_gtclogis(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
@@ -960,67 +936,58 @@ def test_crps_gtclogis(backend, to_backend, backend_kwargs):
         fa(upper),
         fa(lmass),
         fa(umass),
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
     # aligns with crps_logistic
-    res0 = sr.crps_logistic(fa(obs), fa(location), fa(scale), **backend_kwargs)
-    res = sr.crps_gtclogistic(fa(obs), fa(location), fa(scale), **backend_kwargs)
+    res0 = sr.crps_logistic(fa(obs), fa(location), fa(scale))
+    res = sr.crps_gtclogistic(fa(obs), fa(location), fa(scale))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
     # aligns with crps_tlogistic
-    res0 = sr.crps_tlogistic(
-        fa(obs), fa(location), fa(scale), fa(lower), fa(upper), **backend_kwargs
-    )
-    res = sr.crps_gtclogistic(
-        fa(obs), fa(location), fa(scale), fa(lower), fa(upper), **backend_kwargs
-    )
+    res0 = sr.crps_tlogistic(fa(obs), fa(location), fa(scale), fa(lower), fa(upper))
+    res = sr.crps_gtclogistic(fa(obs), fa(location), fa(scale), fa(lower), fa(upper))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_crps_tlogis(backend, to_backend, backend_kwargs):
+def test_crps_tlogis(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
     obs, location, scale, lower, upper = 4.9, 3.5, 2.3, 0.0, 20.0
     expected = 0.7658979
-    res = sr.crps_tlogistic(
-        fa(obs), fa(location), fa(scale), fa(lower), fa(upper), **backend_kwargs
-    )
+    res = sr.crps_tlogistic(fa(obs), fa(location), fa(scale), fa(lower), fa(upper))
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
     # aligns with crps_logistic
-    res0 = sr.crps_logistic(fa(obs), fa(location), fa(scale), **backend_kwargs)
-    res = sr.crps_tlogistic(fa(obs), fa(location), fa(scale), **backend_kwargs)
+    res0 = sr.crps_logistic(fa(obs), fa(location), fa(scale))
+    res = sr.crps_tlogistic(fa(obs), fa(location), fa(scale))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_crps_clogis(backend, to_backend, backend_kwargs):
+def test_crps_clogis(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
     obs, location, scale, lower, upper = -0.9, 0.4, 1.1, 0.0, 1.0
     expected = 1.13237
-    res = sr.crps_clogistic(
-        fa(obs), fa(location), fa(scale), fa(lower), fa(upper), **backend_kwargs
-    )
+    res = sr.crps_clogistic(fa(obs), fa(location), fa(scale), fa(lower), fa(upper))
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
     # aligns with crps_logistic
-    res0 = sr.crps_logistic(fa(obs), fa(location), fa(scale), **backend_kwargs)
-    res = sr.crps_clogistic(fa(obs), fa(location), fa(scale), **backend_kwargs)
+    res0 = sr.crps_logistic(fa(obs), fa(location), fa(scale))
+    res = sr.crps_clogistic(fa(obs), fa(location), fa(scale))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_crps_gtcnormal(backend, to_backend, backend_kwargs):
+def test_crps_gtcnormal(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
@@ -1042,70 +1009,61 @@ def test_crps_gtcnormal(backend, to_backend, backend_kwargs):
         fa(upper),
         fa(lmass),
         fa(umass),
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
     # aligns with crps_normal
-    res0 = sr.crps_normal(fa(obs), fa(location), fa(scale), **backend_kwargs)
-    res = sr.crps_gtcnormal(fa(obs), fa(location), fa(scale), **backend_kwargs)
+    res0 = sr.crps_normal(fa(obs), fa(location), fa(scale))
+    res = sr.crps_gtcnormal(fa(obs), fa(location), fa(scale))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
     # aligns with crps_tnormal
-    res0 = sr.crps_tnormal(
-        fa(obs), fa(location), fa(scale), fa(lower), fa(upper), **backend_kwargs
-    )
-    res = sr.crps_gtcnormal(
-        fa(obs), fa(location), fa(scale), fa(lower), fa(upper), **backend_kwargs
-    )
+    res0 = sr.crps_tnormal(fa(obs), fa(location), fa(scale), fa(lower), fa(upper))
+    res = sr.crps_gtcnormal(fa(obs), fa(location), fa(scale), fa(lower), fa(upper))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_crps_tnormal(backend, to_backend, backend_kwargs):
+def test_crps_tnormal(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
     obs, location, scale, lower, upper = -1.0, 2.9, 2.2, 1.5, 17.3
     expected = 3.982434
-    res = sr.crps_tnormal(
-        fa(obs), fa(location), fa(scale), fa(lower), fa(upper), **backend_kwargs
-    )
+    res = sr.crps_tnormal(fa(obs), fa(location), fa(scale), fa(lower), fa(upper))
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
     # aligns with crps_normal
-    res0 = sr.crps_normal(fa(obs), fa(location), fa(scale), **backend_kwargs)
-    res = sr.crps_tnormal(fa(obs), fa(location), fa(scale), **backend_kwargs)
+    res0 = sr.crps_normal(fa(obs), fa(location), fa(scale))
+    res = sr.crps_tnormal(fa(obs), fa(location), fa(scale))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_crps_cnormal(backend, to_backend, backend_kwargs):
+def test_crps_cnormal(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
     obs, location, scale, lower, upper = 1.8, 0.4, 1.1, 0.0, 2.0
     expected = 0.8296078
-    res = sr.crps_cnormal(
-        fa(obs), fa(location), fa(scale), fa(lower), fa(upper), **backend_kwargs
-    )
+    res = sr.crps_cnormal(fa(obs), fa(location), fa(scale), fa(lower), fa(upper))
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
     # aligns with crps_normal (default unbounded). The infinite-bound arithmetic
     # overflows to NaN in jax's float32; it is correct under float64 (jax x64), so
     # only the numeric comparison is skipped on jax -- inference is still asserted.
-    res0 = sr.crps_normal(fa(obs), fa(location), fa(scale), **backend_kwargs)
-    res = sr.crps_cnormal(fa(obs), fa(location), fa(scale), **backend_kwargs)
+    res0 = sr.crps_normal(fa(obs), fa(location), fa(scale))
+    res = sr.crps_cnormal(fa(obs), fa(location), fa(scale))
     assert_inferred(res, backend)
     if backend != "jax":
         assert_close(res, np.asarray(res0), backend)
 
 
-def test_crps_gtct(backend, to_backend, backend_kwargs):
+def test_crps_gtct(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
@@ -1144,29 +1102,24 @@ def test_crps_gtct(backend, to_backend, backend_kwargs):
         fa(upper),
         fa(lmass),
         fa(umass),
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
     # aligns with crps_t
-    res0 = sr.crps_t(fa(obs), fa(df), fa(location), fa(scale), **backend_kwargs)
-    res = sr.crps_gtct(fa(obs), fa(df), fa(location), fa(scale), **backend_kwargs)
+    res0 = sr.crps_t(fa(obs), fa(df), fa(location), fa(scale))
+    res = sr.crps_gtct(fa(obs), fa(df), fa(location), fa(scale))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
     # aligns with crps_tt
-    res0 = sr.crps_tt(
-        fa(obs), fa(df), fa(location), fa(scale), fa(lower), fa(upper), **backend_kwargs
-    )
-    res = sr.crps_gtct(
-        fa(obs), fa(df), fa(location), fa(scale), fa(lower), fa(upper), **backend_kwargs
-    )
+    res0 = sr.crps_tt(fa(obs), fa(df), fa(location), fa(scale), fa(lower), fa(upper))
+    res = sr.crps_gtct(fa(obs), fa(df), fa(location), fa(scale), fa(lower), fa(upper))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_crps_tt(backend, to_backend, backend_kwargs):
+def test_crps_tt(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
@@ -1178,20 +1131,18 @@ def test_crps_tt(backend, to_backend, backend_kwargs):
 
     obs, df, location, scale, lower, upper = -1.0, 2.9, 3.1, 4.2, 1.5, 17.3
     expected = 5.084272
-    res = sr.crps_tt(
-        fa(obs), fa(df), fa(location), fa(scale), fa(lower), fa(upper), **backend_kwargs
-    )
+    res = sr.crps_tt(fa(obs), fa(df), fa(location), fa(scale), fa(lower), fa(upper))
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
     # aligns with crps_t
-    res0 = sr.crps_t(fa(obs), fa(df), fa(location), fa(scale), **backend_kwargs)
-    res = sr.crps_tt(fa(obs), fa(df), fa(location), fa(scale), **backend_kwargs)
+    res0 = sr.crps_t(fa(obs), fa(df), fa(location), fa(scale))
+    res = sr.crps_tt(fa(obs), fa(df), fa(location), fa(scale))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_crps_ct(backend, to_backend, backend_kwargs):
+def test_crps_ct(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
@@ -1203,88 +1154,80 @@ def test_crps_ct(backend, to_backend, backend_kwargs):
 
     obs, df, location, scale, lower, upper = 1.8, 5.4, 0.4, 1.1, 0.0, 2.0
     expected = 0.8028996
-    res = sr.crps_ct(
-        fa(obs), fa(df), fa(location), fa(scale), fa(lower), fa(upper), **backend_kwargs
-    )
+    res = sr.crps_ct(fa(obs), fa(df), fa(location), fa(scale), fa(lower), fa(upper))
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
     # aligns with crps_t
-    res0 = sr.crps_t(fa(obs), fa(df), fa(location), fa(scale), **backend_kwargs)
-    res = sr.crps_ct(fa(obs), fa(df), fa(location), fa(scale), **backend_kwargs)
+    res0 = sr.crps_t(fa(obs), fa(df), fa(location), fa(scale))
+    res = sr.crps_ct(fa(obs), fa(df), fa(location), fa(scale))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_crps_hypergeometric(backend, to_backend, backend_kwargs):
+def test_crps_hypergeometric(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
     # test shapes
-    res = sr.crps_hypergeometric(
-        fa(5 * np.ones((2, 2))), fa(7), fa(13), fa(12), **backend_kwargs
-    )
+    res = sr.crps_hypergeometric(fa(5 * np.ones((2, 2))), fa(7), fa(13), fa(12))
     assert_inferred(res, backend)
     assert np.asarray(res).shape == (2, 2)
 
-    res = sr.crps_hypergeometric(
-        fa(5), fa(7 * np.ones((2, 2))), fa(13), fa(12), **backend_kwargs
-    )
+    res = sr.crps_hypergeometric(fa(5), fa(7 * np.ones((2, 2))), fa(13), fa(12))
     assert_inferred(res, backend)
     assert np.asarray(res).shape == (2, 2)
 
-    res = sr.crps_hypergeometric(
-        fa(5), fa(7), fa(13 * np.ones((2, 2))), fa(12), **backend_kwargs
-    )
+    res = sr.crps_hypergeometric(fa(5), fa(7), fa(13 * np.ones((2, 2))), fa(12))
     assert_inferred(res, backend)
     assert np.asarray(res).shape == (2, 2)
 
     # test correctness
-    res = sr.crps_hypergeometric(fa(5), fa(7), fa(13), fa(12), **backend_kwargs)
+    res = sr.crps_hypergeometric(fa(5), fa(7), fa(13), fa(12))
     assert_inferred(res, backend)
     assert_close(res, 0.4469742, backend)
 
 
-def test_crps_laplace(backend, to_backend, backend_kwargs):
+def test_crps_laplace(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
-    res = sr.crps_laplace(fa(-3), **backend_kwargs)
+    res = sr.crps_laplace(fa(-3))
     assert_inferred(res, backend)
     assert_close(res, 2.29978707, backend)
 
-    res = sr.crps_laplace(fa(-3 + 0.1), location=fa(0.1), **backend_kwargs)
+    res = sr.crps_laplace(fa(-3 + 0.1), location=fa(0.1))
     assert_inferred(res, backend)
     assert_close(res, 2.29978707, backend)
 
-    res = sr.crps_laplace(fa(-3 * 0.9), scale=fa(0.9), **backend_kwargs)
+    res = sr.crps_laplace(fa(-3 * 0.9), scale=fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 0.9 * 2.29978707, backend)
 
 
-def test_crps_logis(backend, to_backend, backend_kwargs):
+def test_crps_logis(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
-    res = sr.crps_logistic(fa(17.1), fa(13.8), fa(3.3), **backend_kwargs)
+    res = sr.crps_logistic(fa(17.1), fa(13.8), fa(3.3))
     assert_inferred(res, backend)
     assert_close(res, 2.067527, backend)
 
-    res = sr.crps_logistic(fa(3.1), fa(4.0), fa(0.5), **backend_kwargs)
+    res = sr.crps_logistic(fa(3.1), fa(4.0), fa(0.5))
     assert_inferred(res, backend)
     assert_close(res, 0.5529776, backend)
 
 
-def test_crps_loglaplace(backend, to_backend, backend_kwargs):
+def test_crps_loglaplace(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
-    res = sr.crps_loglaplace(fa(3.0), fa(0.1), fa(0.9), **backend_kwargs)
+    res = sr.crps_loglaplace(fa(3.0), fa(0.1), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 1.16202051, backend)
 
 
-def test_crps_loglogistic(backend, to_backend, backend_kwargs):
+def test_crps_loglogistic(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
@@ -1295,20 +1238,18 @@ def test_crps_loglogistic(backend, to_backend, backend_kwargs):
         return
 
     # JAX results differ slightly from other backends -> looser atol
-    res = sr.crps_loglogistic(fa(3.0), fa(0.1), fa(0.9), **backend_kwargs)
+    res = sr.crps_loglogistic(fa(3.0), fa(0.1), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 1.13295277, backend, atol=1e-4)
 
 
-def test_crps_lognormal(backend, to_backend, backend_kwargs):
+def test_crps_lognormal(backend, to_backend):
     obs0 = np.exp(np.random.randn(N))
     mulog = np.log(obs0) + np.random.randn(N) * 0.1
     sigmalog = abs(np.random.randn(N)) * 0.3
 
     # non-negative values
-    res = sr.crps_lognormal(
-        to_backend(obs0), to_backend(mulog), to_backend(sigmalog), **backend_kwargs
-    )
+    res = sr.crps_lognormal(to_backend(obs0), to_backend(mulog), to_backend(sigmalog))
     assert_inferred(res, backend)
     res = np.asarray(res)
     assert not np.any(np.isnan(res))
@@ -1317,47 +1258,45 @@ def test_crps_lognormal(backend, to_backend, backend_kwargs):
     # approx zero when perfect forecast
     mulog = np.log(obs0) + np.random.randn(N) * 1e-6
     sigmalog = abs(np.random.randn(N)) * 1e-6
-    res = sr.crps_lognormal(
-        to_backend(obs0), to_backend(mulog), to_backend(sigmalog), **backend_kwargs
-    )
+    res = sr.crps_lognormal(to_backend(obs0), to_backend(mulog), to_backend(sigmalog))
     assert_inferred(res, backend)
     res = np.asarray(res)
     assert not np.any(np.isnan(res))
     assert not np.any(res - 0.0 > 0.0001)
 
 
-def test_crps_mixnorm(backend, to_backend, backend_kwargs):
+def test_crps_mixnorm(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
     obs, m, s, w = 0.3, [0.0, -2.9, 0.9], [0.5, 1.4, 0.7], [1 / 3, 1 / 3, 1 / 3]
-    res = sr.crps_mixnorm(fa(obs), fa(m), fa(s), fa(w), **backend_kwargs)
+    res = sr.crps_mixnorm(fa(obs), fa(m), fa(s), fa(w))
     assert_inferred(res, backend)
     assert_close(res, 0.4510451, backend)
 
-    res0 = sr.crps_mixnorm(fa(obs), fa(m), fa(s), **backend_kwargs)
+    res0 = sr.crps_mixnorm(fa(obs), fa(m), fa(s))
     assert_inferred(res0, backend)
     assert_close(res, np.asarray(res0), backend)
 
     w = [0.3, 0.1, 0.6]
-    res = sr.crps_mixnorm(fa(obs), fa(m), fa(s), fa(w), **backend_kwargs)
+    res = sr.crps_mixnorm(fa(obs), fa(m), fa(s), fa(w))
     assert_inferred(res, backend)
     assert_close(res, 0.2354619, backend)
 
     obs = [-1.6, 0.3]
     m = [[0.0, -2.9], [0.6, 0.0], [-1.1, -2.3]]
     s = [[0.5, 1.7], [1.1, 0.7], [1.4, 1.5]]
-    res1 = sr.crps_mixnorm(fa(obs), fa(m), fa(s), m_axis=0, **backend_kwargs)
+    res1 = sr.crps_mixnorm(fa(obs), fa(m), fa(s), m_axis=0)
     assert_inferred(res1, backend)
 
     m = [[0.0, 0.6, -1.1], [-2.9, 0.0, -2.3]]
     s = [[0.5, 1.1, 1.4], [1.7, 0.7, 1.5]]
-    res2 = sr.crps_mixnorm(fa(obs), fa(m), fa(s), **backend_kwargs)
+    res2 = sr.crps_mixnorm(fa(obs), fa(m), fa(s))
     assert_inferred(res2, backend)
     assert_close(res1, np.asarray(res2), backend)
 
 
-def test_crps_negbinom(backend, to_backend, backend_kwargs):
+def test_crps_negbinom(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
@@ -1369,38 +1308,36 @@ def test_crps_negbinom(backend, to_backend, backend_kwargs):
 
     # test exceptions
     with pytest.raises(ValueError):
-        sr.crps_negbinom(fa(0.3), fa(7.0), fa(0.8), mu=fa(7.3), **backend_kwargs)
+        sr.crps_negbinom(fa(0.3), fa(7.0), fa(0.8), mu=fa(7.3))
 
     # test correctness
-    res = sr.crps_negbinom(fa(2.0), fa(7.0), fa(0.8), **backend_kwargs)
+    res = sr.crps_negbinom(fa(2.0), fa(7.0), fa(0.8))
     assert_inferred(res, backend)
     assert_close(res, 0.3834322, backend)
 
-    res = sr.crps_negbinom(fa(1.5), fa(2.0), fa(0.5), **backend_kwargs)
+    res = sr.crps_negbinom(fa(1.5), fa(2.0), fa(0.5))
     assert_inferred(res, backend)
     assert_close(res, 0.462963, backend)
 
     # large-magnitude case: overflows to NaN in jax's float32 but is correct under
     # float64 (jax x64), so only the numeric comparison is skipped on jax.
-    res = sr.crps_negbinom(fa(-1.0), fa(17.0), fa(0.1), **backend_kwargs)
+    res = sr.crps_negbinom(fa(-1.0), fa(17.0), fa(0.1))
     assert_inferred(res, backend)
     if backend != "jax":
         assert_close(res, 132.0942, backend)
 
-    res = sr.crps_negbinom(fa(2.3), fa(11.0), mu=fa(7.3), **backend_kwargs)
+    res = sr.crps_negbinom(fa(2.3), fa(11.0), mu=fa(7.3))
     assert_inferred(res, backend)
     assert_close(res, 3.149218, backend)
 
 
-def test_crps_normal(backend, to_backend, backend_kwargs):
+def test_crps_normal(backend, to_backend):
     obs0 = np.random.randn(N)
     mu = obs0 + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N)) * 0.3
 
     # non-negative values
-    res = sr.crps_normal(
-        to_backend(obs0), to_backend(mu), to_backend(sigma), **backend_kwargs
-    )
+    res = sr.crps_normal(to_backend(obs0), to_backend(mu), to_backend(sigma))
     assert_inferred(res, backend)
     res = np.asarray(res)
     assert not np.any(np.isnan(res))
@@ -1409,16 +1346,14 @@ def test_crps_normal(backend, to_backend, backend_kwargs):
     # approx zero when perfect forecast
     mu = obs0 + np.random.randn(N) * 1e-6
     sigma = abs(np.random.randn(N)) * 1e-6
-    res = sr.crps_normal(
-        to_backend(obs0), to_backend(mu), to_backend(sigma), **backend_kwargs
-    )
+    res = sr.crps_normal(to_backend(obs0), to_backend(mu), to_backend(sigma))
     assert_inferred(res, backend)
     res = np.asarray(res)
     assert not np.any(np.isnan(res))
     assert not np.any(res - 0.0 > 0.0001)
 
 
-def test_crps_2pnormal(backend, to_backend, backend_kwargs):
+def test_crps_2pnormal(backend, to_backend):
     obs0 = np.random.randn(N)
     mu = obs0 + np.random.randn(N) * 0.1
     sigma1 = abs(np.random.randn(N)) * 0.3
@@ -1429,7 +1364,6 @@ def test_crps_2pnormal(backend, to_backend, backend_kwargs):
         to_backend(sigma1),
         to_backend(sigma2),
         to_backend(mu),
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     res = np.asarray(res)
@@ -1437,24 +1371,24 @@ def test_crps_2pnormal(backend, to_backend, backend_kwargs):
     assert not np.any(res < 0.0)
 
 
-def test_crps_poisson(backend, to_backend, backend_kwargs):
+def test_crps_poisson(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
-    res = sr.crps_poisson(fa(1.0), fa(3.0), **backend_kwargs)
+    res = sr.crps_poisson(fa(1.0), fa(3.0))
     assert_inferred(res, backend)
     assert_close(res, 1.143447, backend)
 
-    res = sr.crps_poisson(fa(1.5), fa(2.3), **backend_kwargs)
+    res = sr.crps_poisson(fa(1.5), fa(2.3))
     assert_inferred(res, backend)
     assert_close(res, 0.5001159, backend)
 
-    res = sr.crps_poisson(fa(-1.0), fa(1.5), **backend_kwargs)
+    res = sr.crps_poisson(fa(-1.0), fa(1.5))
     assert_inferred(res, backend)
     assert_close(res, 1.840259, backend)
 
 
-def test_crps_t(backend, to_backend, backend_kwargs):
+def test_crps_t(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
@@ -1464,30 +1398,28 @@ def test_crps_t(backend, to_backend, backend_kwargs):
             sr.crps_t(fa(11.1), fa(5.2), fa(13.8), fa(2.3))
         return
 
-    res = sr.crps_t(fa(11.1), fa(5.2), fa(13.8), fa(2.3), **backend_kwargs)
+    res = sr.crps_t(fa(11.1), fa(5.2), fa(13.8), fa(2.3))
     assert_inferred(res, backend)
     assert_close(res, 1.658226, backend)
 
-    res = sr.crps_t(fa(0.7), fa(4.0), **backend_kwargs)
+    res = sr.crps_t(fa(0.7), fa(4.0))
     assert_inferred(res, backend)
     assert_close(res, 0.4387929, backend)
 
 
-def test_crps_uniform(backend, to_backend, backend_kwargs):
+def test_crps_uniform(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))
 
-    res = sr.crps_uniform(
-        fa(0.3), fa(-1.0), fa(2.1), fa(0.3), fa(0.1), **backend_kwargs
-    )
+    res = sr.crps_uniform(fa(0.3), fa(-1.0), fa(2.1), fa(0.3), fa(0.1))
     assert_inferred(res, backend)
     assert_close(res, 0.3960968, backend)
 
-    res = sr.crps_uniform(fa(-17.9), fa(-15.2), fa(-8.7), fa(0.2), **backend_kwargs)
+    res = sr.crps_uniform(fa(-17.9), fa(-15.2), fa(-8.7), fa(0.2))
     assert_inferred(res, backend)
     assert_close(res, 4.086667, backend)
 
-    res = sr.crps_uniform(fa(2.2), fa(0.1), fa(3.1), **backend_kwargs)
+    res = sr.crps_uniform(fa(2.2), fa(0.1), fa(3.1))
     assert_inferred(res, backend)
     assert_close(res, 0.37, backend)
 
@@ -1518,9 +1450,7 @@ def test_crps_normal_grad_torch():
     assert torch.isfinite(mu.grad).all() and torch.isfinite(sigma.grad).all()
 
 
-def test_crps_ensemble_akr_circperm_ens_w_known_value(
-    backend, to_backend, backend_kwargs
-):
+def test_crps_ensemble_akr_circperm_ens_w_known_value(backend, to_backend):
     """Weighted akr_circperm pairs member i with (i + M // 2) % M and uses w_i (#149).
 
     M = 3, partners [1, 2, 0]:
@@ -1531,9 +1461,7 @@ def test_crps_ensemble_akr_circperm_ens_w_known_value(
     obs = to_backend(np.array([0.3]))
     fct = to_backend(np.array([[0.1, -0.4, 1.2]]))
     ens_w = to_backend(np.array([[0.5, 0.3, 0.2]]))
-    res = sr.crps_ensemble(
-        obs, fct, ens_w=ens_w, estimator="akr_circperm", **backend_kwargs
-    )
+    res = sr.crps_ensemble(obs, fct, ens_w=ens_w, estimator="akr_circperm")
     assert_inferred(res, backend)
     assert_close(res, [0.015], backend)
 

@@ -1,36 +1,62 @@
-# scoringrules/_dispatch.py
-"""Backend-argument handling for the array-API era.
+"""Choice between the numba gufuncs and the array-API path of a score.
 
-``backend`` historically chose both the array library and numba. The library is
-now inferred from the input, so the only meaningful values are ``None`` (infer)
-and ``"numba"`` (gufunc fast-path). The legacy framework strings and the
-registry remain accepted, with a DeprecationWarning, until 1.0.
+The array framework is inferred from the input. For numpy inputs, scores with
+a numba gufunc use it according to the ``numba`` option of ``set_config`` /
+``config_context`` (``scoringrules._config``): ``"auto"`` (default) whenever
+numba is installed except for the entries of ``AUTO_EXCLUDED``, ``True``
+always, ``False`` never. ``use_numba`` makes that choice for each call.
 
-The global numba switch lives here as a private flag. Its public setter is
-``scoringrules.backends.set_active("numba")`` (and ``set_active("numpy")`` to
-reset it), which refuses to enable it when numba cannot be imported."""
+``backend`` historically chose both the array library and numba. Every value
+is deprecated and removed in 1.0: ``backend="numba"`` still forces the gufuncs
+for that call, the other values are ignored."""
 
+import os
 import warnings
 from importlib.util import find_spec
 
 import numpy as np
 from array_api_compat import is_array_api_obj
 
-_LEGACY_ARRAY_API_BACKENDS = {"numpy", "jax", "torch"}
+from scoringrules import _config
 
 NUMBA_INSTALL_HINT = (
     "Install it with `pip install numba` (or `pip install scoringrules[numba]`)."
 )
 
-# Set by ``backends.set_active``; read only by ``use_numba``.
-_numba_active = False
+# Deprecation warnings skip the frames of this package, so that they point at
+# the user's call also when a score forwards ``backend`` to another score.
+_PACKAGE_PREFIX = (os.path.dirname(os.path.abspath(__file__)) + os.sep,)
+
 _UNSET = object()
 _numba_import_cache = _UNSET
+_broken_numba_warned = False
+
+# Scores that ``numba="auto"`` sends to the array path even for numpy inputs
+# the gufunc supports (``numba=True`` and ``backend="numba"`` still use the
+# gufunc). Keys are what the score passes to ``use_numba``: its name, or
+# ``(name, estimator)`` for the scores that take an estimator. Values are the
+# float dtypes (native byte order) in which ``obs`` and ``fct`` are excluded,
+# ``None`` for all.
+AUTO_EXCLUDED = {
+    # the gufunc's median term differs from the array path (#140, fix in #141)
+    "weighted_interval_score": None,
+    # numpy's float32 exp beats the gufunc on this O(M) work (0.4x)
+    ("gksuv_ensemble", "akr"): frozenset({np.dtype(np.float32)}),
+    ("gksuv_ensemble", "akr_circperm"): frozenset({np.dtype(np.float32)}),
+}
 
 
-def _set_numba_active(flag):
-    global _numba_active
-    _numba_active = bool(flag)
+class _ForwardedNumba:
+    """``backend="numba"`` after ``resolve_backend_arg`` warned about it.
+
+    A score that forwards ``backend`` to another score passes this instead,
+    so that the deprecation warning is not raised a second time."""
+
+    def __repr__(self):
+        return "'numba'"
+
+
+FORWARDED_NUMBA = _ForwardedNumba()
 
 
 def _numba_import_error():
@@ -84,17 +110,36 @@ def numba_unavailable_error(what, cls=ImportError):
     return exc
 
 
+def warn_at_caller(message, category=DeprecationWarning):
+    """Warn at the first caller outside scoringrules."""
+    warnings.warn(message, category, skip_file_prefixes=_PACKAGE_PREFIX)
+
+
 def resolve_backend_arg(backend):
-    """Warn on deprecated backend strings; return the value unchanged."""
-    if backend in _LEGACY_ARRAY_API_BACKENDS:
-        warnings.warn(
-            f"Passing backend={backend!r} is deprecated and will be removed in "
-            "1.0. The array framework is now inferred from the input; remove the "
-            "backend argument (use backend='numba' only for the numba fast-path).",
-            DeprecationWarning,
-            stacklevel=3,
+    """Warn if ``backend`` was passed; return what a forwarding score passes on.
+
+    Every value but ``None`` is deprecated. The return value is
+    ``FORWARDED_NUMBA`` for ``backend="numba"`` (``use_numba`` treats it as
+    ``"numba"`` without warning again) and ``None`` otherwise."""
+    if backend is None:
+        return None
+    if backend is FORWARDED_NUMBA:
+        return backend
+    if backend == "numba":
+        warn_at_caller(
+            "Passing backend='numba' is deprecated and will be removed in 1.0. "
+            "The numba gufuncs are used automatically for numpy inputs when numba "
+            "is installed; use scoringrules.set_config(numba=True) or "
+            "scoringrules.config_context(numba=True) to force them."
         )
-    return backend
+        return FORWARDED_NUMBA
+    warn_at_caller(
+        f"Passing backend={backend!r} is deprecated and will be removed in 1.0. "
+        "The array framework is inferred from the input; remove the backend "
+        "argument, and use scoringrules.set_config(numba=...) or "
+        "scoringrules.config_context(numba=...) to choose whether numba is used."
+    )
+    return None
 
 
 def _is_numpy_compatible(*arrays):
@@ -109,15 +154,18 @@ def _is_numpy_compatible(*arrays):
 def gufunc_inputs_supported(*arrays):
     """Whether the numba gufuncs handle ``arrays`` exactly like the array path.
 
-    True iff every entry is ``None``, a Python bool, int or float, a list or
-    tuple, an exact ``np.ndarray`` or ``np.memmap`` or a numpy scalar, and its
-    numpy dtype (after ``np.asarray`` for the Python ones) is bool, integer,
-    float32 or float64, in any byte order (the gufunc wrapper casts to native
-    order). Everything else takes the array path:
+    True iff every entry is ``None``, a Python int or float, a list or tuple,
+    an exact ``np.ndarray`` or ``np.memmap`` or a numpy scalar, and its numpy
+    dtype (after ``np.asarray`` for the Python ones) is integer, float32 or
+    float64, in any byte order (the gufunc wrapper casts to native order).
+    Everything else takes the array path:
 
     - other ``np.ndarray`` subclasses (masked arrays, ``np.matrix``), whose
       semantics the gufuncs would drop, and objects that only implement
       ``__array__``;
+    - bool data (arrays, Python and numpy bools): most array paths refuse it
+      (``TypeError``), and the result must not depend on whether numba is
+      installed. Flags such as ``bias`` are not passed here;
     - float16: the gufuncs compute and return float32, the array path float16;
     - long double, complex, object, string and datetime dtypes, and Python ints
       outside the int64/uint64 range, which numba has no loops for.
@@ -129,7 +177,7 @@ def gufunc_inputs_supported(*arrays):
         t = type(a)
         if t is np.ndarray or t is np.memmap or isinstance(a, np.generic):
             dtype = a.dtype
-        elif a is None or t is float or t is bool:
+        elif a is None or t is float:
             continue
         elif t is int or t is list or t is tuple:
             try:
@@ -139,30 +187,78 @@ def gufunc_inputs_supported(*arrays):
         else:
             return False
         # "e" is float16, "g" long double (8 bytes on some platforms)
-        if dtype.kind not in "biuf" or dtype.itemsize > 8 or dtype.char in "eg":
+        if dtype.kind not in "iuf" or dtype.itemsize > 8 or dtype.char in "eg":
             return False
     return True
 
 
-def use_numba(backend, *arrays, aux=()):
-    """Decide whether to use the numba gufunc path for this call.
+def _numba_usable_quietly():
+    """``numba="auto"``: whether numba imports (imported on the first call).
 
-    True iff ``backend == "numba"`` (explicit), or ``backend is None`` and the
-    user globally selected numba via ``set_active("numba")``, AND the inputs
-    are numpy-compatible AND the gufuncs support them
-    (``gufunc_inputs_supported``). A numba request with non-numpy ``arrays``
-    is an error, and so is a numba request when numba cannot be imported
-    (``ImportError``). Inputs the gufuncs do not support (masked arrays,
-    float16, ...) take the array path, also with ``backend="numba"``.
+    A missing numba is silent. A numba that is installed but fails to import
+    warns once per process, since the user probably expects it to be used."""
+    global _broken_numba_warned
+    err = _numba_import_error()
+    if err is None:
+        return True
+    missing = isinstance(err, ModuleNotFoundError) and err.name == "numba"
+    if not missing and not _broken_numba_warned:
+        _broken_numba_warned = True
+        warn_at_caller(
+            f"numba is installed but could not be imported ({err}); the scores "
+            "use the array path. Use scoringrules.set_config(numba=False) to "
+            "silence this warning.",
+            RuntimeWarning,
+        )
+    return False
 
-    ``aux`` holds the auxiliary inputs that reach the gufunc next to ``obs``
-    and ``fct`` (ensemble and dimension weights, ``alpha``, ``p``). They only
-    go through ``gufunc_inputs_supported``: a jax or torch one takes the array
-    path instead of raising for ``backend="numba"``.
+
+def _float_dtype(arrays):
+    """The float dtype (native byte order) the gufunc computes ``arrays`` in."""
+    dtypes = {getattr(a, "dtype", None) for a in arrays}
+    if len(dtypes) == 1 and None not in dtypes:  # the common case, ~10x faster
+        (dtype,) = dtypes
+    else:
+        dtype = np.result_type(
+            *(np.asarray(a) if type(a) in (list, tuple) else a for a in arrays)
+        )
+    if dtype.kind != "f":
+        return np.dtype(np.float64)
+    return dtype if dtype.isnative else dtype.newbyteorder("=")
+
+
+def _auto_excluded(key, arrays):
+    dtypes = AUTO_EXCLUDED[key]
+    return dtypes is None or _float_dtype(arrays) in dtypes
+
+
+def use_numba(key, backend, *arrays, aux=()):
+    """Whether this call of the score ``key`` uses its numba gufunc.
+
+    ``key`` names the score (``"vs_ensemble"``), or the score and estimator
+    (``("gksuv_ensemble", "akr")``) for the scores that take an estimator; it
+    is looked up in ``AUTO_EXCLUDED``. ``arrays`` are ``obs`` and ``fct`` (or
+    all the data inputs), ``aux`` the auxiliary inputs that reach the gufunc
+    next to them (ensemble and dimension weights, ``alpha``, ``p``).
+
+    The numba mode is ``True`` for ``backend="numba"`` (deprecated) and the
+    ``numba`` option of the configuration otherwise. Then:
+
+    - ``False``: no gufunc.
+    - Inputs that are not numpy-compatible (jax, torch) take their framework's
+      array path; with ``backend="numba"`` that is a ``ValueError``. Only
+      ``arrays`` are checked: a jax or torch auxiliary input takes the array
+      path through the input guard below.
+    - Inputs the gufuncs do not support (``gufunc_inputs_supported``: masked
+      arrays, float16, bool, ...) take the array path, also with ``True``.
+    - ``True``: a call that would use a gufunc raises ``ImportError`` if numba
+      cannot be imported.
+    - ``"auto"``: no gufunc for the ``AUTO_EXCLUDED`` entries, or if numba is
+      missing (silently; numba is imported by the first call that gets here).
     """
-    explicit = backend == "numba"
-    global_numba = backend is None and _numba_active
-    if not (explicit or global_numba):
+    explicit = backend is FORWARDED_NUMBA or backend == "numba"
+    mode = True if explicit else _config._numba_mode()
+    if mode is False:
         return False
     if not _is_numpy_compatible(*arrays):
         if explicit:
@@ -170,8 +266,14 @@ def use_numba(backend, *arrays, aux=()):
                 "backend='numba' requires numpy-compatible inputs; pass numpy "
                 "arrays or drop backend='numba' to use the input's framework."
             )
-        return False  # global numba default does not apply to jax/torch inputs
-    if _numba_import_error() is not None:
-        how = "backend='numba'" if explicit else "set_active('numba')"
-        raise numba_unavailable_error(how)
-    return gufunc_inputs_supported(*arrays, *aux)
+        return False  # the numba option does not apply to jax/torch inputs
+    if not gufunc_inputs_supported(*arrays, *aux):
+        return False
+    if mode is True:
+        if _numba_import_error() is not None:
+            how = "backend='numba'" if explicit else "numba=True"
+            raise numba_unavailable_error(how)
+        return True
+    if key in AUTO_EXCLUDED and _auto_excluded(key, arrays):
+        return False
+    return _numba_usable_quietly()

@@ -1,6 +1,5 @@
 from importlib.metadata import version
 import functools
-import warnings
 
 from scoringrules._brier import (
     brier_score,
@@ -8,6 +7,7 @@ from scoringrules._brier import (
     log_score,
     rls_score,
 )
+from scoringrules._dispatch import warn_at_caller as _warn_at_caller
 from scoringrules._crps import (
     crps_beta,
     crps_binomial,
@@ -101,6 +101,7 @@ from scoringrules._kernels import (
 )
 from scoringrules._quantile import quantile_score
 from scoringrules.backend import backends, register_backend
+from scoringrules._config import config_context, get_config, set_config
 
 
 def _deprecated_alias(new_func, old_func_name, remove_version):
@@ -108,10 +109,10 @@ def _deprecated_alias(new_func, old_func_name, remove_version):
 
     @functools.wraps(new_func)
     def wrapper(*args, **kwargs):
-        warnings.warn(
+        # at the user's call, like the other deprecation warnings
+        _warn_at_caller(
             f"{old_func_name} is deprecated and will be removed in {remove_version}. "
-            f"Use {new_func.__name__} instead.",
-            DeprecationWarning,
+            f"Use {new_func.__name__} instead."
         )
         return new_func(*args, **kwargs)
 
@@ -133,6 +134,9 @@ __version__ = version("scoringrules")
 __all__ = [
     "register_backend",
     "backends",
+    "config_context",
+    "get_config",
+    "set_config",
     "crps_ensemble",
     "crps_beta",
     "crps_binomial",

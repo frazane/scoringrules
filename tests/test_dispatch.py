@@ -8,6 +8,25 @@ from scoringrules import _dispatch
 from scoringrules._dispatch import resolve_backend_arg, use_numba
 from scoringrules.backend import ArrayAPINamespace, backends, get_namespace
 from scoringrules.backend.registry import BackendNotAvailable
+from scoringrules.core.utils import GufuncWrapper
+
+rng = np.random.default_rng(0)
+OBS, FCT = rng.normal(size=4), rng.normal(size=(4, 6))
+MOBS, MFCT = rng.normal(size=(4, 3)), rng.normal(size=(4, 8, 3))
+
+
+@pytest.fixture()
+def gufunc_calls(monkeypatch):
+    """The gufunc calls (every gufunc goes through ``GufuncWrapper``)."""
+    calls = []
+    call = GufuncWrapper.__call__
+
+    def counting(self, *args):
+        calls.append(self.__name__)
+        return call(self, *args)
+
+    monkeypatch.setattr(GufuncWrapper, "__call__", counting)
+    return calls
 
 
 @pytest.fixture()
@@ -28,91 +47,139 @@ def numba_broken(monkeypatch):
     return err
 
 
-def test_default_numba_flag_is_off():
-    # the global numba switch can only be turned on by an explicit set_active call
-    assert _dispatch._numba_active is False
-    assert backends._active == "numpy"
-
-
 def test_use_numba_explicit(requires_numba):
-    assert use_numba("numba", np.asarray([1.0])) is True
-
-
-def test_use_numba_none_default_is_false():
-    assert use_numba(None, np.asarray([1.0])) is False
+    assert use_numba("crps_ensemble", "numba", np.asarray([1.0])) is True
+    # backend="numba" wins over the configuration
+    with sr.config_context(numba=False):
+        assert use_numba("crps_ensemble", "numba", np.asarray([1.0])) is True
 
 
 def test_use_numba_numba_with_non_numpy_raises():
     torch = pytest.importorskip("torch")
     with pytest.raises(ValueError, match="numpy-compatible"):
-        use_numba("numba", torch.tensor([1.0]))
+        use_numba("crps_ensemble", "numba", torch.tensor([1.0]))
 
 
-def test_use_numba_reads_only_the_dispatch_flag(monkeypatch, requires_numba):
-    monkeypatch.setattr(_dispatch, "_numba_active", True)
-    assert use_numba(None, np.asarray([1.0])) is True
-    # the registry's name is not consulted any more
-    monkeypatch.setattr(_dispatch, "_numba_active", False)
-    monkeypatch.setattr(backends, "_active", "numba")
-    assert use_numba(None, np.asarray([1.0])) is False
-
-
-def test_use_numba_global_numba_with_non_numpy_returns_false(monkeypatch):
-    # set_active("numba") globally must NOT force the gufunc path on jax/torch
-    # inputs (it only applies to numpy inputs); it returns False, not a raise.
+@pytest.mark.parametrize("mode", ["auto", True, False])
+def test_use_numba_config_with_non_numpy_returns_false(mode):
+    # the numba option only applies to numpy inputs: jax/torch take their own
+    # array path silently, also with numba=True
     jnp = pytest.importorskip("jax.numpy")
-    monkeypatch.setattr(_dispatch, "_numba_active", True)
-    assert use_numba(None, jnp.asarray([1.0])) is False
+    with sr.config_context(numba=mode):
+        assert use_numba("crps_ensemble", None, jnp.asarray([1.0])) is False
 
 
-def test_set_active_numba_toggles_flag(restore_active, requires_numba, recwarn):
-    backends.set_active("numba")
-    assert _dispatch._numba_active is True
-    assert not any(isinstance(w.message, DeprecationWarning) for w in recwarn)
-    with pytest.warns(DeprecationWarning, match="set_active"):
+@pytest.mark.parametrize("value", ["numpy", "jax", "torch", "foo"])
+def test_use_numba_ignores_other_backend_strings(value, requires_numba):
+    for mode, expected in (("auto", True), (True, True), (False, False)):
+        with sr.config_context(numba=mode):
+            assert use_numba("crps_ensemble", value, np.zeros(3)) is expected
+
+
+def test_registry_active_name_is_not_consulted(monkeypatch, requires_numba):
+    monkeypatch.setattr(backends, "_active", "numba")
+    with sr.config_context(numba=False):
+        assert use_numba("crps_ensemble", None, np.asarray([1.0])) is False
+
+
+def test_set_active_numba_maps_to_set_config(requires_numba):
+    with pytest.warns(DeprecationWarning, match=r"set_config\(numba=True\)") as rec:
+        backends.set_active("numba")
+    assert rec[0].filename == __file__
+    assert sr.get_config()["numba"] is True
+    assert backends._active == "numba"
+    with pytest.warns(DeprecationWarning, match="set_active") as rec:
         backends.set_active("numpy")
-    assert _dispatch._numba_active is False
+    assert rec[0].filename == __file__
+    assert sr.get_config()["numba"] is False
 
 
-@pytest.mark.parametrize("name", ["numpy", "jax", "torch"])
-def test_set_active_array_api_backend_warns_and_clears_flag(
-    name, restore_active, monkeypatch
-):
-    monkeypatch.setattr(_dispatch, "_numba_active", True)
-    with pytest.warns(DeprecationWarning, match="set_active"):
+def test_set_active_numpy_maps_to_numba_false():
+    # what a 0.11 script asking for numpy meant: no numba
+    with pytest.warns(DeprecationWarning, match=r"set_config\(numba=False\)"):
+        backends.set_active("numpy")
+    assert sr.get_config()["numba"] is False
+
+
+@pytest.mark.parametrize("name", ["jax", "torch"])
+def test_set_active_jax_torch_warn_and_map_to_auto(name):
+    sr.set_config(numba=False)
+    with pytest.warns(DeprecationWarning, match="numba='auto'"):
         backends.set_active(name)
-    assert _dispatch._numba_active is False
+    assert sr.get_config()["numba"] == "auto"
 
 
 def test_numba_missing_explicit_raises_import_error(numba_missing):
-    with pytest.raises(ImportError, match=r"scoringrules\[numba\]"):
+    with (
+        pytest.warns(DeprecationWarning),
+        pytest.raises(ImportError, match=r"scoringrules\[numba\]"),
+    ):
         sr.crps_ensemble(np.zeros(3), np.zeros((3, 5)), backend="numba")
 
 
-def test_numba_missing_global_flag_raises_import_error(numba_missing, monkeypatch):
-    monkeypatch.setattr(_dispatch, "_numba_active", True)
-    with pytest.raises(ImportError, match="set_active"):
-        use_numba(None, np.asarray([1.0]))
+def test_numba_missing_numba_true_raises_import_error(numba_missing):
+    with sr.config_context(numba=True):
+        with pytest.raises(ImportError, match=r"numba=True requires numba"):
+            sr.crps_ensemble(np.zeros(3), np.zeros((3, 5)))
+        # scores without a gufunc, inputs the guard sends to the array path and
+        # non-numpy inputs do not need numba
+        assert sr.crps_normal(0.0, 0.0, 1.0) > 0
+        sr.crps_ensemble(np.zeros(3, np.float16), np.zeros((3, 5), np.float16))
+        sr.dssuv_ensemble(np.zeros(3, bool), np.arange(15).reshape(3, 5) % 2 == 0)
+        torch = pytest.importorskip("torch")
+        sr.crps_ensemble(torch.zeros(3), torch.zeros((3, 5)))
 
 
-def test_numba_missing_set_active_raises(numba_missing, restore_active):
-    with pytest.raises(BackendNotAvailable, match=r"scoringrules\[numba\]"):
+def test_numba_missing_set_active_raises(numba_missing):
+    with (
+        pytest.warns(DeprecationWarning),
+        pytest.raises(BackendNotAvailable, match=r"scoringrules\[numba\]"),
+    ):
         backends.set_active("numba")
-    assert _dispatch._numba_active is False
+    assert sr.get_config()["numba"] == "auto"
     # both missing-numba paths are caught by ``except ImportError``
     assert issubclass(BackendNotAvailable, ImportError)
 
 
-def test_numba_broken_reports_and_chains_import_error(numba_broken, restore_active):
-    with pytest.raises(ImportError, match="could not be imported") as info:
+def test_numba_missing_auto_is_silent(numba_missing, recwarn, gufunc_calls):
+    with sr.config_context(numba="auto"):
+        assert use_numba("crps_ensemble", None, np.zeros(3), np.zeros((3, 5))) is False
+        out = sr.crps_ensemble(np.zeros(3), np.zeros((3, 5)))
+        sr.es_ensemble(np.zeros((3, 2)), np.zeros((3, 5, 2)))
+    np.testing.assert_allclose(out, 0.0)
+    assert gufunc_calls == []
+    assert len(recwarn) == 0
+
+
+def test_numba_broken_reports_and_chains_import_error(numba_broken):
+    with (
+        pytest.warns(DeprecationWarning),
+        pytest.raises(ImportError, match="could not be imported") as info,
+    ):
         sr.crps_ensemble(np.zeros(3), np.zeros((3, 5)), backend="numba")
     assert "NumPy 2.0" in str(info.value)
     assert "pip install" not in str(info.value)
     assert info.value.__cause__ is numba_broken
-    with pytest.raises(BackendNotAvailable, match="could not be imported") as info:
+    with (
+        pytest.warns(DeprecationWarning),
+        pytest.raises(BackendNotAvailable, match="could not be imported") as info,
+    ):
         backends.set_active("numba")
     assert info.value.__cause__ is numba_broken
-    assert _dispatch._numba_active is False
+    assert sr.get_config()["numba"] == "auto"
+
+
+def test_numba_broken_auto_warns_once(numba_broken, monkeypatch):
+    monkeypatch.setattr(_dispatch, "_broken_numba_warned", False)
+    obs, fct = np.zeros(3), np.zeros((3, 5))
+    with sr.config_context(numba="auto"):
+        with pytest.warns(RuntimeWarning, match="NumPy 2.0") as rec:
+            out = sr.crps_ensemble(obs, fct)
+        assert rec[0].filename == __file__
+        np.testing.assert_allclose(out, 0.0)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            sr.crps_ensemble(obs, fct)
 
 
 def test_numba_broken_not_listed(numba_broken):
@@ -150,11 +217,6 @@ def test_failed_numba_import_unlists_numba(monkeypatch):
             dict.__setitem__(backends, "numba", had)
 
 
-def test_numba_missing_default_path_unaffected(numba_missing):
-    out = sr.crps_ensemble(np.zeros(3), np.zeros((3, 5)))
-    np.testing.assert_allclose(out, 0.0)
-
-
 # --- the deprecated registry shim ---------------------------------------------
 
 
@@ -178,13 +240,13 @@ def test_registry_numba_maps_to_numpy(requires_numba):
         assert sr.backends["numba"] is sr.backends["numpy"]
 
 
-def test_registry_active_warns(restore_active):
+def test_registry_active_warns():
     with pytest.warns(DeprecationWarning, match="active"):
         B = backends.active
     assert B._xp is get_namespace(np.zeros(1))._xp
 
 
-def test_registry_active_follows_set_active(restore_active, requires_numba):
+def test_registry_active_follows_set_active(requires_numba):
     numpy_xp = get_namespace(np.zeros(1))._xp
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
@@ -196,7 +258,7 @@ def test_registry_active_follows_set_active(restore_active, requires_numba):
         assert backends.active._xp is get_namespace(jnp.zeros(1))._xp
         backends.set_active("numpy")
         assert backends.active._xp is numpy_xp
-    assert _dispatch._numba_active is False
+    assert sr.get_config()["numba"] is False
 
 
 @pytest.mark.parametrize(
@@ -243,12 +305,68 @@ def test_register_backend_numba_does_not_warn(requires_numba, recwarn):
     assert not any(isinstance(w.message, DeprecationWarning) for w in recwarn)
 
 
-def test_legacy_backend_string_warns():
-    with pytest.warns(DeprecationWarning):
-        resolve_backend_arg("jax")
+# --- the deprecated backend argument ---------------------------------------------
 
 
-def test_numba_arg_does_not_warn(recwarn):
-    resolve_backend_arg("numba")
-    resolve_backend_arg(None)
-    assert not any(isinstance(w.message, DeprecationWarning) for w in recwarn)
+@pytest.mark.parametrize("value", ["numpy", "jax", "torch", "numba", "foo"])
+def test_backend_arg_warns(value):
+    with pytest.warns(DeprecationWarning, match="removed in 1.0"):
+        out = resolve_backend_arg(value)
+    assert out is (_dispatch.FORWARDED_NUMBA if value == "numba" else None)
+
+
+def test_backend_arg_none_and_forwarded_do_not_warn():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert resolve_backend_arg(None) is None
+        forwarded = _dispatch.FORWARDED_NUMBA
+        assert resolve_backend_arg(forwarded) is forwarded
+
+
+_DEPRECATION_CALLS = {
+    "crps_ensemble": lambda b: sr.crps_ensemble(OBS, FCT, backend=b),
+    "twcrps_ensemble": lambda b: sr.twcrps_ensemble(OBS, FCT, backend=b),
+    "twgksuv_ensemble": lambda b: sr.twgksuv_ensemble(OBS, FCT, backend=b),
+    "twes_ensemble": lambda b: sr.twes_ensemble(MOBS, MFCT, lambda x: x, backend=b),
+    "twvs_ensemble": lambda b: sr.twvs_ensemble(MOBS, MFCT, lambda x: x, backend=b),
+    "twgksmv_ensemble": lambda b: sr.twgksmv_ensemble(
+        MOBS, MFCT, lambda x: x, backend=b
+    ),
+    "crps_normal": lambda b: sr.crps_normal(0.0, 0.0, 1.0, backend=b),
+    "energy_score": lambda b: sr.energy_score(MOBS, MFCT, backend=b),
+}
+
+
+@pytest.mark.parametrize("value", ["numba", "numpy"])
+@pytest.mark.parametrize("name", list(_DEPRECATION_CALLS))
+def test_backend_arg_warns_once_at_the_user_call(name, value, request):
+    # the threshold-weighted scores forward backend to the score they chain to
+    # without a second warning; the warning points at this file, also through
+    # the deprecated aliases
+    if value == "numba":
+        request.getfixturevalue("requires_numba")
+    with warnings.catch_warnings(record=True) as rec:
+        warnings.simplefilter("always")
+        _DEPRECATION_CALLS[name](value)
+    backend_warnings = [w for w in rec if "backend=" in str(w.message)]
+    assert len(backend_warnings) == 1, [str(w.message) for w in rec]
+    assert issubclass(backend_warnings[0].category, DeprecationWarning)
+    assert f"backend={value!r}" in str(backend_warnings[0].message)
+    assert backend_warnings[0].filename == __file__
+
+
+@pytest.mark.parametrize(
+    "name", ["twcrps_ensemble", "twgksuv_ensemble", "twes_ensemble", "twvs_ensemble"]
+)
+def test_backend_numba_forwarded_runs_the_gufunc(name, gufunc_calls, requires_numba):
+    with pytest.warns(DeprecationWarning), sr.config_context(numba=False):
+        _DEPRECATION_CALLS[name]("numba")
+    assert len(gufunc_calls) == 1
+
+
+def test_backend_numba_is_a_per_call_numba_true(gufunc_calls, requires_numba):
+    with sr.config_context(numba=False), pytest.warns(DeprecationWarning):
+        res = sr.crps_ensemble(OBS, FCT, backend="numba")
+    assert len(gufunc_calls) == 1
+    with sr.config_context(numba=True):
+        np.testing.assert_array_equal(res, sr.crps_ensemble(OBS, FCT))

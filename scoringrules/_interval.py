@@ -173,7 +173,7 @@ def weighted_interval_score(
     """
     resolve_backend_arg(backend)
     arrays = (obs, median, lower, upper, alpha, w_median, w_alpha)
-    numba = use_numba(backend, *arrays)
+    numba = use_numba("weighted_interval_score", backend, *arrays)
     xp = get_namespace(*arrays)
     w_median = 0.5 if w_median is None else w_median
     obs, median, lower, upper, alpha, w_median, w_alpha = asarray_matching(

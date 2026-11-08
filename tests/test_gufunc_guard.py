@@ -1,6 +1,6 @@
 """The input guard of ``use_numba``: the numba gufuncs run only for plain numpy
-data, everything else takes the array path, also with ``backend="numba"`` and
-under the global numba switch. Also parity cases that cut across the families
+data, everything else takes the array path, in every numba mode (also with
+``numba=True``). Also parity cases that cut across the families
 (M=1, bad ``nan_policy``)."""
 
 import numpy as np
@@ -10,7 +10,7 @@ import scoringrules as sr
 from scoringrules._dispatch import gufunc_inputs_supported, use_numba
 from scoringrules.core.utils import GufuncWrapper
 
-from ._parity import global_numba, mv_v_func, mv_w_func, uv_w_func
+from ._parity import mv_v_func, mv_w_func, uv_w_func
 
 rng = np.random.default_rng(0)
 OBS, FCT = rng.normal(size=4), rng.normal(size=(4, 6))
@@ -43,12 +43,10 @@ SUPPORTED = {
     "None": None,
     "float": 0.5,
     "int": 3,
-    "bool": True,
     "f8": np.zeros(3),
     "f4": np.zeros(3, np.float32),
     "i1": np.zeros(3, np.int8),
     "u8": np.zeros(3, np.uint64),
-    "bool array": np.zeros(3, bool),
     "big-endian": np.zeros(3, ">f8"),
     "fortran": np.zeros((3, 2), order="F"),
     "strided": np.zeros(6)[::2],
@@ -63,6 +61,10 @@ SUPPORTED = {
 }
 
 UNSUPPORTED = {
+    "bool": True,
+    "np.bool_": np.True_,
+    "bool array": np.zeros(3, bool),
+    "bool list": [True, False],
     "masked": np.ma.array(np.zeros(3)),
     "matrix": np.asmatrix(np.zeros((2, 2))),
     "duck": Duck(np.zeros(3)),
@@ -92,17 +94,18 @@ def test_gufunc_inputs_unsupported(name):
     assert gufunc_inputs_supported(np.zeros(3), UNSUPPORTED[name]) is False
 
 
-def test_use_numba_guard(monkeypatch, requires_numba):
+@pytest.mark.parametrize("mode", ["auto", True])
+def test_use_numba_guard(mode, requires_numba):
     masked = np.ma.array(np.zeros(3))
-    assert use_numba("numba", np.zeros(3), np.zeros((3, 2))) is True
-    assert use_numba("numba", masked, np.zeros((3, 2))) is False
-    assert use_numba("numba", np.zeros(3), np.zeros((3, 2)), aux=(None,)) is True
-    assert use_numba("numba", np.zeros(3), np.zeros((3, 2)), aux=(masked,)) is False
-    with global_numba():
-        assert use_numba(None, np.zeros(3)) is True
-        assert use_numba(None, np.zeros(3, np.float16)) is False
-    # the switch is off again
-    assert use_numba(None, np.zeros(3)) is False
+    obs, fct = np.zeros(3), np.zeros((3, 2))
+    with sr.config_context(numba=mode):
+        assert use_numba("crps_ensemble", None, obs, fct) is True
+        assert use_numba("crps_ensemble", None, masked, fct) is False
+        assert use_numba("crps_ensemble", None, obs, fct, aux=(None,)) is True
+        assert use_numba("crps_ensemble", None, obs, fct, aux=(masked,)) is False
+        assert use_numba("crps_ensemble", None, obs.astype(np.float16)) is False
+    with sr.config_context(numba=False):
+        assert use_numba("crps_ensemble", None, obs, fct) is False
 
 
 def test_use_numba_framework_check_before_guard(requires_numba):
@@ -110,12 +113,12 @@ def test_use_numba_framework_check_before_guard(requires_numba):
     # they only send the call to the array path
     torch = pytest.importorskip("torch")
     with pytest.raises(ValueError, match="numpy-compatible"):
-        use_numba("numba", torch.zeros(3), np.zeros((3, 2)))
-    assert (
-        use_numba("numba", np.zeros(3), np.zeros((3, 2)), aux=(torch.ones(3),)) is False
-    )
-    with global_numba():
-        assert use_numba(None, torch.zeros(3)) is False
+        use_numba("crps_ensemble", "numba", torch.zeros(3), np.zeros((3, 2)))
+    aux = (torch.ones(3),)
+    assert use_numba("crps_ensemble", "numba", np.zeros(3), aux=aux) is False
+    for mode in ("auto", True):
+        with sr.config_context(numba=mode):
+            assert use_numba("crps_ensemble", None, torch.zeros(3)) is False
 
 
 # --- the public scores take the array path for unsupported inputs ---------------
@@ -173,6 +176,8 @@ def _cases(obs, fct):
         "longdouble": (obs.astype(np.longdouble), fct.astype(np.longdouble)),
         "complex_obs": (obs.astype(complex), fct),
         "duck": (Duck(obs), Duck(fct)),
+        "bool": (obs > 0, fct > 0),
+        "bool_obs": (obs > 0, fct),
     }
 
 
@@ -206,10 +211,11 @@ def _assert_same(res, ref):
 def test_unsupported_inputs_take_the_array_path(spec, obs, fct, case, gufunc_calls):
     fn, args, kwargs = spec
     o, f = _cases(obs, fct)[case]
-    ref = _outcome(fn, o, f, *args, **kwargs)
-    _assert_same(_outcome(fn, o, f, *args, backend="numba", **kwargs), ref)
-    with global_numba():
-        _assert_same(_outcome(fn, o, f, *args, **kwargs), ref)
+    with sr.config_context(numba=False):
+        ref = _outcome(fn, o, f, *args, **kwargs)
+    for mode in ("auto", True):
+        with sr.config_context(numba=mode):
+            _assert_same(_outcome(fn, o, f, *args, **kwargs), ref)
     assert gufunc_calls == []
 
 
@@ -241,10 +247,11 @@ def test_unsupported_inputs_take_the_array_path(spec, obs, fct, case, gufunc_cal
 def test_unsupported_auxiliary_inputs_take_the_array_path(
     fn, args, kwargs, gufunc_calls
 ):
-    ref = _outcome(fn, *args, **kwargs)
-    _assert_same(_outcome(fn, *args, backend="numba", **kwargs), ref)
-    with global_numba():
-        _assert_same(_outcome(fn, *args, **kwargs), ref)
+    with sr.config_context(numba=False):
+        ref = _outcome(fn, *args, **kwargs)
+    for mode in ("auto", True):
+        with sr.config_context(numba=mode):
+            _assert_same(_outcome(fn, *args, **kwargs), ref)
     assert gufunc_calls == []
 
 
@@ -286,10 +293,11 @@ def test_masked_w_func_output_takes_the_array_path(score, gufunc_calls):
     def w_func(x):
         return np.ma.masked_less(_sigmoid(x), 0.3)
 
-    ref = _outcome(fn, OBS, FCT, w_func=w_func)
-    _assert_same(_outcome(fn, OBS, FCT, w_func=w_func, backend="numba"), ref)
-    with global_numba():
-        _assert_same(_outcome(fn, OBS, FCT, w_func=w_func), ref)
+    with sr.config_context(numba=False):
+        ref = _outcome(fn, OBS, FCT, w_func=w_func)
+    for mode in ("auto", True):
+        with sr.config_context(numba=mode):
+            _assert_same(_outcome(fn, OBS, FCT, w_func=w_func), ref)
     assert gufunc_calls == []
 
 
@@ -305,12 +313,14 @@ def test_memmap_takes_the_gufunc_path(tmp_path, gufunc_calls, paths_agree):
     assert len(gufunc_calls) == 4
 
 
-def test_explicit_numba_with_torch_ens_w_takes_the_array_path(gufunc_calls):
+def test_forced_numba_with_torch_ens_w_takes_the_array_path(gufunc_calls):
     torch = pytest.importorskip("torch")
     ens_w = torch.as_tensor(ENS_W)
-    res = sr.crps_ensemble(OBS, FCT, ens_w=ens_w, backend="numba")
-    np.testing.assert_allclose(res, sr.crps_ensemble(OBS, FCT, ens_w=ENS_W))
+    with sr.config_context(numba=True):
+        res = sr.crps_ensemble(OBS, FCT, ens_w=ens_w)
     assert gufunc_calls == []
+    with sr.config_context(numba=False):
+        np.testing.assert_allclose(res, sr.crps_ensemble(OBS, FCT, ens_w=ENS_W))
 
 
 def _supported_cases():
@@ -357,7 +367,7 @@ def test_supported_inputs_take_the_gufunc_path(score, case, gufunc_calls, paths_
         # float32 data with float64 alpha: float64 out, partly float32 inside
         tol = {"rtol": 1e-7}
     paths_agree(fn, obs, fct, *args, **tol, **kwargs)
-    assert len(gufunc_calls) == 2  # backend="numba" and the global switch
+    assert len(gufunc_calls) == 2  # numba=True and numba="auto"
 
 
 @pytest.mark.parametrize(
@@ -369,10 +379,15 @@ def test_supported_inputs_take_the_gufunc_path(score, case, gufunc_calls, paths_
     ],
     ids=["dssuv", "dssuv-bias", "ess"],
 )
-def test_bool_inputs_take_the_gufunc_path(fn, kwargs, gufunc_calls, paths_agree):
-    # the array path accepts bool here (float64 out), so both paths must agree
+def test_bool_inputs_take_the_array_path(fn, kwargs, gufunc_calls, paths_agree):
+    # bool data takes the array path in every mode (most array paths refuse it,
+    # so the gufuncs must not accept it only when numba is installed); these
+    # array paths accept it (float64 out)
     obs, fct = OBS > 0, np.concatenate([FCT > 0, FCT > -1], axis=-1)
-    paths_agree(fn, obs, fct, allow_all_nan=True, **kwargs)
+    paths_agree(fn, obs, fct, allow_all_nan=True, expect_gufunc=False, **kwargs)
+    assert gufunc_calls == []
+    # a bool flag is not data: bias=True still runs the gufunc
+    paths_agree(fn, OBS, FCT, **kwargs)
     assert len(gufunc_calls) == 2
 
 
