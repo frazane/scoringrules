@@ -35,13 +35,14 @@ _broken_numba_warned = False
 # the gufunc supports (``numba=True`` and ``backend="numba"`` still use the
 # gufunc). Keys are what the score passes to ``use_numba``: its name, or
 # ``(name, estimator)`` for the scores that take an estimator. Values are the
-# float dtypes of ``obs`` and ``fct`` that are excluded, ``None`` for all.
+# float dtypes (native byte order) in which ``obs`` and ``fct`` are excluded,
+# ``None`` for all.
 AUTO_EXCLUDED = {
     # the gufunc's median term differs from the array path (#140, fix in #141)
     "weighted_interval_score": None,
     # numpy's float32 exp beats the gufunc on this O(M) work (0.4x)
-    ("gksuv_ensemble", "akr"): frozenset({"float32"}),
-    ("gksuv_ensemble", "akr_circperm"): frozenset({"float32"}),
+    ("gksuv_ensemble", "akr"): frozenset({np.dtype(np.float32)}),
+    ("gksuv_ensemble", "akr_circperm"): frozenset({np.dtype(np.float32)}),
 }
 
 
@@ -209,17 +210,23 @@ def _numba_usable_quietly():
     return False
 
 
-def _float_dtype_name(arrays):
-    """The name of the float dtype the gufunc would compute ``arrays`` in."""
-    dtype = np.result_type(
-        *(np.asarray(a) if type(a) in (list, tuple) else a for a in arrays)
-    )
-    return dtype.name if dtype.kind == "f" else "float64"
+def _float_dtype(arrays):
+    """The float dtype (native byte order) the gufunc computes ``arrays`` in."""
+    dtypes = {getattr(a, "dtype", None) for a in arrays}
+    if len(dtypes) == 1 and None not in dtypes:  # the common case, ~10x faster
+        (dtype,) = dtypes
+    else:
+        dtype = np.result_type(
+            *(np.asarray(a) if type(a) in (list, tuple) else a for a in arrays)
+        )
+    if dtype.kind != "f":
+        return np.dtype(np.float64)
+    return dtype if dtype.isnative else dtype.newbyteorder("=")
 
 
 def _auto_excluded(key, arrays):
     dtypes = AUTO_EXCLUDED[key]
-    return dtypes is None or _float_dtype_name(arrays) in dtypes
+    return dtypes is None or _float_dtype(arrays) in dtypes
 
 
 def use_numba(key, backend, *arrays, aux=()):

@@ -344,6 +344,12 @@ _EXCLUSION_CASES = {
         {"estimator": "akr"},
         True,
     ),
+    "gksuv_akr_f32_big_endian": (
+        sr.gksuv_ensemble,
+        (OBS.astype(">f4"), FCT.astype(">f4")),
+        {"estimator": "akr"},
+        True,
+    ),
     "gksuv_akr_mixed": (
         sr.gksuv_ensemble,
         (OBS, FCT.astype(np.float32)),
