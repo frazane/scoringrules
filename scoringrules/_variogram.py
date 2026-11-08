@@ -27,6 +27,9 @@ def _dimension_weights(w, obs, fct, *, xp):
     return asarray_like(w, fct, xp=xp)
 
 
+_VS_ESTIMATORS = ("nrg", "fair")
+
+
 def vs_ensemble(
     obs: "Array",
     fct: "Array",
@@ -106,10 +109,9 @@ def vs_ensemble(
         ens_w = multivariate_weight_check(ens_w, fct, m_axis, v_axis, xp=xp)
 
     if numba:
+        estimator_check(estimator, _VS_ESTIMATORS)
         if ens_w is None:
-            estimator_check(estimator, variogram.estimator_gufuncs)
             return variogram.estimator_gufuncs[estimator](obs, fct, w, p)
-        estimator_check(estimator, variogram.estimator_gufuncs_w)
         return variogram.estimator_gufuncs_w[estimator](obs, fct, w, ens_w, p)
     if ens_w is None:
         return variogram.vs(obs, fct, w, p, estimator=estimator, xp=xp)

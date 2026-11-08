@@ -29,7 +29,7 @@ def estimator_check(estimator, gufuncs):
     """Check that the estimator is valid for the given score."""
     if estimator not in gufuncs:
         raise ValueError(
-            f"{estimator} is not a valid estimator. " f"Must be one of {gufuncs.keys()}"
+            f"{estimator} is not a valid estimator. Must be one of {tuple(gufuncs)}"
         )
 
 

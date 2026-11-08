@@ -249,3 +249,43 @@ def _wis_parity_params():
 def test_weighted_interval_score_paths_agree(case, paths_agree):
     args, kwargs = _wis_inputs(case)
     paths_agree(sr.weighted_interval_score, *args, **kwargs)
+
+
+def test_weighted_interval_score_batched_alpha(paths_agree):
+    # alpha of shape (N, K) with N != K: K is the number of intervals (#168)
+    rng = np.random.default_rng(1)
+    n, k = 7, 3
+    obs = rng.normal(size=n)
+    median = rng.normal(size=n)
+    alpha = np.sort(rng.uniform(0.1, 0.9, size=(n, k)), axis=-1)
+    lower = obs[:, None] - rng.uniform(0.1, 2.0, size=(n, k))
+    upper = obs[:, None] + rng.uniform(0.1, 2.0, size=(n, k))
+    res = paths_agree(
+        sr.weighted_interval_score, obs, median, lower, upper, alpha, w_median=0.0
+    )[1]
+    for i in range(n):
+        expected = sr.weighted_interval_score(
+            obs[i], median[i], lower[i], upper[i], alpha[i], w_median=0.0
+        )
+        np.testing.assert_allclose(res[i], expected, rtol=1e-12)
+
+
+def test_weighted_interval_score_float32_data_float64_alpha(paths_agree):
+    # the numba path follows the array path's promotion (float64 here)
+    rng = np.random.default_rng(2)
+    obs = rng.normal(size=5).astype("f4")
+    lower, upper = (
+        obs[:, None] + s for s in (-np.ones((5, 3), "f4"), np.ones((5, 3), "f4"))
+    )
+    alpha = np.array([0.2, 0.5, 0.8])
+    res_numba, res_numpy = paths_agree(
+        sr.weighted_interval_score,
+        obs,
+        obs,
+        lower,
+        upper,
+        alpha,
+        w_median=0.0,
+        rtol=1e-6,
+    )
+    assert res_numba.dtype == res_numpy.dtype == np.float64

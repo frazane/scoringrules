@@ -184,5 +184,8 @@ def weighted_interval_score(
     args = (obs, median, lower, upper, alpha, w_median, w_alpha)
 
     if numba:
+        # the array path promotes every operand, so do the same before the gufunc
+        dtype = xp.result_type(*(xp.float_dtype(a) for a in args))
+        args = tuple(xp.astype(a, dtype) for a in args)
         return interval._weighted_interval_score_gufunc(*args)
     return interval.weighted_interval_score(*args, xp=xp)
