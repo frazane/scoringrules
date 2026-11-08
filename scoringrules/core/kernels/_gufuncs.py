@@ -6,14 +6,14 @@ from numba import njit, guvectorize
 from scoringrules.core.utils import lazy_gufunc_wrapper_uv, lazy_gufunc_wrapper_mv
 
 
-@njit(["float32(float32, float32)", "float64(float64, float64)"])
+@njit(cache=True)
 def _gauss_kern_uv(x1: float, x2: float) -> float:
     """Gaussian kernel evaluated at x1 and x2."""
     out: float = math.exp(-0.5 * (x1 - x2) ** 2)
     return out
 
 
-@njit(["float32(float32[:], float32[:])", "float64(float64[:], float64[:])"])
+@njit(cache=True)
 def _gauss_kern_mv(x1: float, x2: float) -> float:
     """Gaussian kernel evaluated at x1 and x2."""
     # sum of squares, like the array path (gauss_kern_mv in _approx.py)
@@ -22,7 +22,7 @@ def _gauss_kern_mv(x1: float, x2: float) -> float:
     return out
 
 
-@guvectorize("(),(n)->()")
+@guvectorize("(),(n)->()", cache=True)
 def _ks_ensemble_uv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Standard version of the kernel score."""
     M = fct.shape[-1]
@@ -43,7 +43,7 @@ def _ks_ensemble_uv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
     out[0] = -((e_1 / M) - 0.5 * (e_2 / (M**2)) - 0.5 * e_3)
 
 
-@guvectorize("(),(n)->()")
+@guvectorize("(),(n)->()", cache=True)
 def _ks_ensemble_uv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Fair version of the kernel score."""
     M = fct.shape[-1]
@@ -64,7 +64,7 @@ def _ks_ensemble_uv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarra
     out[0] = -((e_1 / M) - e_2 / (M * (M - 1)) - 0.5 * e_3)
 
 
-@guvectorize("(),(n)->()")
+@guvectorize("(),(n)->()", cache=True)
 def _ks_ensemble_uv_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Approximate kernel representation estimator of the kernel score."""
     M = fct.shape[-1]
@@ -83,7 +83,7 @@ def _ks_ensemble_uv_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
     out[0] = -(e_1 / M - 0.5 * e_2 / M - 0.5 * e_3)
 
 
-@guvectorize("(),(n)->()")
+@guvectorize("(),(n)->()", cache=True)
 def _ks_ensemble_uv_akr_circperm_gufunc(
     obs: np.ndarray, fct: np.ndarray, out: np.ndarray
 ):
@@ -105,7 +105,7 @@ def _ks_ensemble_uv_akr_circperm_gufunc(
     out[0] = -(e_1 / M - 0.5 * e_2 / M - 0.5 * e_3)
 
 
-@guvectorize("(),(n),(),(n)->()")
+@guvectorize("(),(n),(),(n)->()", cache=True)
 def _owks_ensemble_uv_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -134,7 +134,7 @@ def _owks_ensemble_uv_gufunc(
     out[0] = -(e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2) - 0.5 * e_3)
 
 
-@guvectorize("(),(n),(),(n)->()")
+@guvectorize("(),(n),(),(n)->()", cache=True)
 def _vrks_ensemble_uv_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -161,7 +161,7 @@ def _vrks_ensemble_uv_gufunc(
     out[0] = -((e_1 / M) - 0.5 * (e_2 / (M**2)) - 0.5 * e_3)
 
 
-@guvectorize("(d),(m,d)->()")
+@guvectorize("(d),(m,d)->()", cache=True)
 def _ks_ensemble_mv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Standard version of the multivariate kernel score."""
     M = fct.shape[0]
@@ -177,7 +177,7 @@ def _ks_ensemble_mv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
     out[0] = -((e_1 / M) - 0.5 * (e_2 / (M**2)) - 0.5 * e_3)
 
 
-@guvectorize("(d),(m,d)->()")
+@guvectorize("(d),(m,d)->()", cache=True)
 def _ks_ensemble_mv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Fair version of the multivariate kernel score."""
     M = fct.shape[0]
@@ -193,7 +193,7 @@ def _ks_ensemble_mv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarra
     out[0] = -(e_1 / M - e_2 / (M * (M - 1)) - 0.5 * e_3)
 
 
-@guvectorize("(d),(m,d)->()")
+@guvectorize("(d),(m,d)->()", cache=True)
 def _ks_ensemble_mv_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Approximate kernel representation estimator of the multivariate kernel score."""
     M = fct.shape[0]
@@ -208,7 +208,7 @@ def _ks_ensemble_mv_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
     out[0] = -(e_1 / M - 0.5 * e_2 / M - 0.5 * e_3)
 
 
-@guvectorize("(d),(m,d)->()")
+@guvectorize("(d),(m,d)->()", cache=True)
 def _ks_ensemble_mv_akr_circperm_gufunc(
     obs: np.ndarray, fct: np.ndarray, out: np.ndarray
 ):
@@ -226,7 +226,7 @@ def _ks_ensemble_mv_akr_circperm_gufunc(
     out[0] = -(e_1 / M - 0.5 * e_2 / M - 0.5 * e_3)
 
 
-@guvectorize("(d),(m,d),(),(m)->()")
+@guvectorize("(d),(m,d),(),(m)->()", cache=True)
 def _owks_ensemble_mv_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -250,7 +250,7 @@ def _owks_ensemble_mv_gufunc(
     out[0] = -(e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2) - 0.5 * e_3)
 
 
-@guvectorize("(d),(m,d),(),(m)->()")
+@guvectorize("(d),(m,d),(),(m)->()", cache=True)
 def _vrks_ensemble_mv_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,

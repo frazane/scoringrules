@@ -15,6 +15,8 @@ def numba_missing(monkeypatch):
     """Pretend numba is not installed."""
     err = ModuleNotFoundError("No module named 'numba'", name="numba")
     monkeypatch.setattr(_dispatch, "_numba_import_error", lambda: err)
+    # as after the first numba request tried the import
+    monkeypatch.setattr(_dispatch, "_numba_import_cache", err)
 
 
 @pytest.fixture()
@@ -22,6 +24,7 @@ def numba_broken(monkeypatch):
     """Pretend numba is installed but fails to import (e.g. numpy mismatch)."""
     err = ImportError("Numba needs NumPy 2.0 or less")
     monkeypatch.setattr(_dispatch, "_numba_import_error", lambda: err)
+    monkeypatch.setattr(_dispatch, "_numba_import_cache", err)
     return err
 
 
@@ -113,11 +116,38 @@ def test_numba_broken_reports_and_chains_import_error(numba_broken, restore_acti
 
 
 def test_numba_broken_not_listed(numba_broken):
-    # the registry uses the same availability check as ``backend="numba"``
+    # once the import failed, the registry uses its result like ``backend="numba"``
     assert "numba" not in backends.available_backends
     assert "numba" not in type(backends)()
     with pytest.raises(BackendNotAvailable, match="could not be imported"):
         backends.register_backend("numba")
+
+
+def test_numba_available_before_import_only_checks_installed(monkeypatch):
+    # ``import scoringrules`` lists numba without importing it
+    monkeypatch.setattr(_dispatch, "_numba_import_cache", _dispatch._UNSET)
+    monkeypatch.setattr(_dispatch, "find_spec", lambda name: None)
+    assert _dispatch._numba_available() is False
+    monkeypatch.setattr(_dispatch, "find_spec", lambda name: object())
+    assert _dispatch._numba_available() is True
+
+
+def test_failed_numba_import_unlists_numba(monkeypatch):
+    # the registry lists numba at import without importing it; a failed import
+    # on the first numba request takes it out again
+    import sys
+
+    monkeypatch.setattr(_dispatch, "_numba_import_cache", _dispatch._UNSET)
+    monkeypatch.setitem(sys.modules, "numba", None)  # ``import numba`` fails
+    had = dict.get(backends, "numba")
+    dict.__setitem__(backends, "numba", backends._get("numpy"))
+    try:
+        assert isinstance(_dispatch._numba_import_error(), ImportError)
+        assert "numba" not in backends
+        assert "numba" not in backends.available_backends
+    finally:
+        if had is not None:
+            dict.__setitem__(backends, "numba", had)
 
 
 def test_numba_missing_default_path_unaffected(numba_missing):

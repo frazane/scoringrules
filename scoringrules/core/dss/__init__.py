@@ -1,8 +1,13 @@
-try:
-    from ._gufuncs import _dss_mv_gufunc, _dss_uv_gufunc
-except ImportError:
-    _dss_uv_gufunc = None
-    _dss_mv_gufunc = None
+from scoringrules.core.utils import lazy_gufunc_getattr
+
+# numba gufuncs, imported on first access (``import scoringrules`` must not import numba)
+__getattr__ = lazy_gufunc_getattr(
+    __name__,
+    {
+        "_dss_uv_gufunc": "._gufuncs",
+        "_dss_mv_gufunc": "._gufuncs",
+    },
+)
 
 from ._score import ds_score_uv, ds_score_mv
 

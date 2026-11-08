@@ -5,7 +5,7 @@ from scoringrules.core.utils import lazy_gufunc_wrapper_uv, lazy_gufunc_wrapper_
 
 
 @lazy_gufunc_wrapper_uv
-@guvectorize("(),(n),()->()")
+@guvectorize("(),(n),()->()", cache=True)
 def _dss_uv_gufunc(obs: np.ndarray, fct: np.ndarray, bias: bool, out: np.ndarray):
     ens_mean = np.mean(fct)
     fact = len(fct) - 1.0
@@ -19,12 +19,13 @@ def _dss_uv_gufunc(obs: np.ndarray, fct: np.ndarray, bias: bool, out: np.ndarray
 
 
 @lazy_gufunc_wrapper_mv
-@guvectorize("(d),(m,d),()->()")
+@guvectorize("(d),(m,d),()->()", cache=True)
 def _dss_mv_gufunc(obs: np.ndarray, fct: np.ndarray, bias: bool, out: np.ndarray):
     M = fct.shape[0]
     ens_mean = np.sum(fct, axis=0) / M
-    obs_cent = obs - ens_mean
     cov = np.cov(fct, rowvar=False, bias=bias)
+    # numba's np.cov is float64 for float32 input and ``@`` needs matching dtypes
+    obs_cent = (obs - ens_mean).astype(cov.dtype)
     prec = np.linalg.inv(cov)
     log_det = np.log(np.linalg.det(cov))
     bias_precision = np.transpose(obs_cent) @ prec @ obs_cent

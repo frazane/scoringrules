@@ -4,14 +4,7 @@ from numba import guvectorize
 from scoringrules.core.utils import lazy_gufunc_wrapper_mv
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:])",
-    ],
-    "(d),(m,d)->()",
-    cache=True,
-)
+@guvectorize("(d),(m,d)->()", cache=True)
 def _energy_score_nrg_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -29,14 +22,7 @@ def _energy_score_nrg_gufunc(
     out[0] = e_1 / M - 0.5 / (M**2) * e_2
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:,:], float32[:])",
-        "void(float64[:], float64[:,:], float64[:])",
-    ],
-    "(d),(m,d)->()",
-    cache=True,
-)
+@guvectorize("(d),(m,d)->()", cache=True)
 def _energy_score_fair_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -54,7 +40,7 @@ def _energy_score_fair_gufunc(
     out[0] = e_1 / M - 0.5 / (M * (M - 1)) * e_2
 
 
-@guvectorize("(d),(m,d)->()")
+@guvectorize("(d),(m,d)->()", cache=True)
 def _energy_score_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Compute the Energy Score for a finite ensemble using the approximate kernel representation."""
     M = fct.shape[0]
@@ -67,7 +53,7 @@ def _energy_score_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
-@guvectorize("(d),(m,d)->()")
+@guvectorize("(d),(m,d)->()", cache=True)
 def _energy_score_akr_circperm_gufunc(
     obs: np.ndarray, fct: np.ndarray, out: np.ndarray
 ):
@@ -83,7 +69,7 @@ def _energy_score_akr_circperm_gufunc(
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
-@guvectorize("(d),(m,d),(),(m)->()")
+@guvectorize("(d),(m,d),(),(m)->()", cache=True)
 def _owenergy_score_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -105,7 +91,7 @@ def _owenergy_score_gufunc(
     out[0] = e_1 / (M * wbar) - 0.5 * e_2 / (M**2 * wbar**2)
 
 
-@guvectorize("(d),(m,d),(),(m)->()")
+@guvectorize("(d),(m,d),(),(m)->()", cache=True)
 def _vrenergy_score_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,

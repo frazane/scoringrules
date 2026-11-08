@@ -27,16 +27,17 @@ from ._closed import (
     uniform,
 )
 
-try:
-    from ._gufuncs import (
-        estimator_gufuncs,
-        quantile_pinball_gufunc,
-    )
-    from ._gufuncs_w import estimator_gufuncs_w
-except ImportError:
-    estimator_gufuncs = None
-    estimator_gufuncs_w = None
-    quantile_pinball_gufunc = None
+from scoringrules.core.utils import lazy_gufunc_getattr
+
+# numba gufuncs, imported on first access (``import scoringrules`` must not import numba)
+__getattr__ = lazy_gufunc_getattr(
+    __name__,
+    {
+        "estimator_gufuncs": "._gufuncs",
+        "quantile_pinball_gufunc": "._gufuncs",
+        "estimator_gufuncs_w": "._gufuncs_w",
+    },
+)
 
 __all__ = [
     "ensemble",

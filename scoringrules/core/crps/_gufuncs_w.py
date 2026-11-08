@@ -7,7 +7,7 @@ INV_SQRT_PI = 1 / np.sqrt(np.pi)
 EPSILON = 1e-6
 
 
-@guvectorize("(),(n),(n)->()")
+@guvectorize("(),(n),(n)->()", cache=True)
 def _crps_ensemble_akr_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -22,7 +22,7 @@ def _crps_ensemble_akr_w_gufunc(
     out[0] = e_1 - 0.5 * e_2
 
 
-@guvectorize("(),(n),(n)->()")
+@guvectorize("(),(n),(n)->()", cache=True)
 def _crps_ensemble_akr_circperm_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -37,7 +37,7 @@ def _crps_ensemble_akr_circperm_w_gufunc(
     out[0] = e_1 - 0.5 * e_2
 
 
-@guvectorize("(),(n),(n)->()")
+@guvectorize("(),(n),(n)->()", cache=True)
 def _crps_ensemble_fair_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -66,7 +66,7 @@ def _crps_ensemble_fair_w_gufunc(
     out[0] = e_1 - e_2 / fair_c
 
 
-@guvectorize("(),(n),(n)->()")
+@guvectorize("(),(n),(n)->()", cache=True)
 def _crps_ensemble_int_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -103,7 +103,7 @@ def _crps_ensemble_int_w_gufunc(
     out[0] = integral
 
 
-@guvectorize("(),(n),(n)->()")
+@guvectorize("(),(n),(n)->()", cache=True)
 def _crps_ensemble_nrg_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -125,7 +125,7 @@ def _crps_ensemble_nrg_w_gufunc(
     out[0] = e_1 - e_2
 
 
-@guvectorize("(),(n),(n)->()")
+@guvectorize("(),(n),(n)->()", cache=True)
 def _crps_ensemble_pwm_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -151,7 +151,7 @@ def _crps_ensemble_pwm_w_gufunc(
     out[0] = expected_diff + β_0 - 2 * β_1 / fair_c
 
 
-@guvectorize("(),(n),(n)->()")
+@guvectorize("(),(n),(n)->()", cache=True)
 def _crps_ensemble_qd_w_gufunc(
     obs: np.ndarray, fct: np.ndarray, w: np.ndarray, out: np.ndarray
 ):
@@ -178,7 +178,7 @@ def _crps_ensemble_qd_w_gufunc(
     out[0] = 2 * integral
 
 
-@guvectorize("(),(n),(),(n),(n)->()")
+@guvectorize("(),(n),(),(n),(n)->()", cache=True)
 def _owcrps_ensemble_nrg_w_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -207,7 +207,7 @@ def _owcrps_ensemble_nrg_w_gufunc(
     out[0] = e_1 / wbar - 0.5 * e_2 / (wbar**2)
 
 
-@guvectorize("(),(n),(),(n),(n)->()")
+@guvectorize("(),(n),(),(n),(n)->()", cache=True)
 def _vrcrps_ensemble_nrg_w_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
