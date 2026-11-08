@@ -31,13 +31,18 @@ def _ks_ensemble_uv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
         out[0] = np.nan
         return
 
-    e_1 = 0
-    e_2 = 0
-
+    # the kernel matrix is symmetric: strict upper triangle twice plus the
+    # diagonal. The diagonal k(x, x) is evaluated, not set to 1, so a NaN or
+    # inf member still gives NaN.
+    e_1 = 0.0
+    e_d = 0.0
+    e_u = 0.0
     for i in range(M):
         e_1 += _gauss_kern_uv(fct[i], obs)
-        for j in range(M):
-            e_2 += _gauss_kern_uv(fct[i], fct[j])
+        e_d += _gauss_kern_uv(fct[i], fct[i])
+        for j in range(i + 1, M):
+            e_u += _gauss_kern_uv(fct[i], fct[j])
+    e_2 = e_d + 2.0 * e_u
     e_3 = _gauss_kern_uv(obs, obs)
 
     out[0] = -((e_1 / M) - 0.5 * (e_2 / (M**2)) - 0.5 * e_3)
