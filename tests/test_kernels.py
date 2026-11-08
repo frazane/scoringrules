@@ -398,6 +398,22 @@ def test_weighted_gksuv_paths_agree(score, weighted, M, case, paths_agree):
     paths_agree(getattr(sr, score), obs, fct, w_func=uv_w_func, **kwargs)
 
 
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("estimator", ["nrg", "akr", "akr_circperm"])
+def test_gksuv_nonfinite_members_paths_agree(estimator, weighted, paths_agree):
+    """NaN and +-inf members give the same NaN positions on both paths. nrg
+    evaluates k(x, x) on the diagonal, so an inf member gives NaN there.
+    fair is left out: its gufunc skips the diagonal and gives a finite score
+    for an inf member where the array path gives NaN (not yet filed)."""
+    obs, fct, kwargs = uv_ensemble_inputs("default", 7, weighted)
+    fct[0, 2] = np.nan
+    fct[1, 3] = np.inf
+    fct[2, 4] = -np.inf
+    res, _ = paths_agree(sr.gksuv_ensemble, obs, fct, estimator=estimator, **kwargs)
+    if estimator == "nrg":
+        np.testing.assert_array_equal(np.isnan(res), [True, True, True, False, False])
+
+
 @pytest.mark.parametrize("case", MV_CASES)
 @pytest.mark.parametrize("M", [6, 7])
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
