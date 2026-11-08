@@ -1,9 +1,16 @@
 """Global configuration: ``set_config``, ``get_config`` and ``config_context``.
 
 There is one process-wide configuration and an optional override per context
-(a ``contextvars.ContextVar``), set by ``config_context``. Each thread starts
-without an override and sees the process-wide values; an asyncio task starts
-with a copy of the override of the code that created it.
+(a ``contextvars.ContextVar``), set by ``config_context``. An asyncio task
+starts with a copy of the override of the code that created it. A new thread
+starts without it (unless the interpreter makes threads inherit the context,
+``sys.flags.thread_inherit_context``, the default on free-threaded builds), so
+work sent to other threads from inside a ``config_context`` block (a
+``ThreadPoolExecutor``, dask's threaded scheduler) sees the process-wide values:
+use ``set_config`` for those. Other processes only read ``SCORINGRULES_NUMBA``.
+As with ``decimal.localcontext``, a context opened in a generator that yields
+inside the block applies to the generator's caller until the generator resumes
+and exits it.
 
 The only option is ``numba``, whose initial process-wide value is read from the
 ``SCORINGRULES_NUMBA`` environment variable when scoringrules is imported."""
@@ -158,6 +165,14 @@ def config_context(*, numba=None):
     Other threads and tasks keep their own configuration. Contexts can be
     nested, and ``set_config`` inside a context changes only that context.
     Also usable as a function decorator.
+
+    Work sent to other threads from inside the block (a ``ThreadPoolExecutor``,
+    dask's threaded scheduler) does not see the context, except on interpreters
+    whose threads inherit it (``sys.flags.thread_inherit_context``): use
+    ``set_config`` for such work. Spawned processes only read the
+    ``SCORINGRULES_NUMBA`` environment variable. A context opened in a
+    generator that yields inside the block leaks to the generator's caller, as
+    with ``decimal.localcontext``.
 
     Parameters
     ----------

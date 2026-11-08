@@ -145,11 +145,16 @@ def _in_thread(fn):
     return out[0]
 
 
+# free-threaded builds (and -X thread_inherit_context=1) start threads with a
+# copy of the creating thread's context
+_THREADS_INHERIT = bool(getattr(sys.flags, "thread_inherit_context", False))
+
+
 def test_threads_see_the_global_value_not_other_contexts():
     sr.set_config(numba=False)
     with sr.config_context(numba=True):
-        # a new thread starts without this thread's context
-        assert _in_thread(_numba) is False
+        # a new thread starts without this thread's context (or with a copy)
+        assert _in_thread(_numba) is _THREADS_INHERIT
     # a thread's own context does not leak into this one
     started, release = threading.Event(), threading.Event()
 
@@ -389,10 +394,38 @@ def test_auto_exclusions(case, gufunc_calls, requires_numba):
     assert len(gufunc_calls) == (1 if excluded else 2)
 
 
+def _estimators():
+    """The estimators each estimator-keyed score validates its input against."""
+    from scoringrules import _crps, _energy, _kernels, _variogram
+
+    return {
+        "crps_ensemble": _crps._CRPS_ESTIMATORS,
+        "gksuv_ensemble": _kernels._KS_ESTIMATORS,
+        "gksmv_ensemble": _kernels._KS_ESTIMATORS,
+        "es_ensemble": _energy._ES_ESTIMATORS,
+        "vs_ensemble": _variogram._VS_ESTIMATORS,
+    }
+
+
 def test_exclusion_keys_are_scores_with_a_gufunc():
+    estimators = _estimators()
     for key in _dispatch.AUTO_EXCLUDED:
-        name = key if isinstance(key, str) else key[0]
+        if isinstance(key, str):
+            name = key
+            assert name not in estimators, f"{key}: key it by (name, estimator)"
+        else:
+            name, estimator = key
+            assert name in estimators, f"{name} does not take an estimator"
+            assert estimator in estimators[name], key
         assert callable(getattr(sr, name))
+
+
+def test_deprecated_alias_warns_at_the_caller():
+    obs, fct = rng.normal(size=(4, 3)), rng.normal(size=(4, 6, 3))
+    with pytest.warns(DeprecationWarning, match="energy_score is deprecated") as rec:
+        res = sr.energy_score(obs, fct)
+    assert [w.filename for w in rec] == [__file__]
+    np.testing.assert_array_equal(res, sr.es_ensemble(obs, fct))
 
 
 def test_use_numba_modes_unit(requires_numba):
