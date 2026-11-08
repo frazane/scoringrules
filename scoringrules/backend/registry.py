@@ -42,8 +42,10 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
 
     def __init__(self):
         self.register_backend("numpy")
+        # listed without importing numba (``import scoringrules`` must stay
+        # cheap); the import happens on the first numba request
         if _dispatch._numba_available():
-            self.register_backend("numba")
+            super().__setitem__("numba", _NUMPY_NS)
 
         # Name returned by ``active``; the numba switch itself is
         # ``scoringrules._dispatch._numba_active``.
@@ -53,9 +55,9 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
     def available_backends(self):
         """The backends whose library is installed.
 
-        jax and torch are looked up without importing them. numba must also
-        import, with the same check as ``backend="numba"``: the gufunc modules
-        import it with scoringrules anyway.
+        Neither of them is imported: jax, torch and numba are looked up with
+        ``find_spec``. Once numba was imported (by the first numba request), a
+        numba that failed to import is not listed.
         """
         return [
             b
@@ -65,7 +67,7 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
 
     def register_backend(self, backend_name: "Backend"):
         """Register a backend. Currently supported backends are numpy, numba, jax, and torch."""
-        if backend_name == "numba" and not _dispatch._numba_available():
+        if backend_name == "numba" and _dispatch._numba_import_error() is not None:
             raise _dispatch.numba_unavailable_error(
                 "The numba backend", BackendNotAvailable
             )
@@ -134,7 +136,7 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
                 DeprecationWarning,
                 stacklevel=2,
             )
-        elif backend == "numba" and not _dispatch._numba_available():
+        elif backend == "numba" and _dispatch._numba_import_error() is not None:
             raise _dispatch.numba_unavailable_error(
                 "set_active('numba')", BackendNotAvailable
             )

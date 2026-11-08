@@ -11,6 +11,7 @@ The global numba switch lives here as a private flag. Its public setter is
 reset it), which refuses to enable it when numba cannot be imported."""
 
 import warnings
+from importlib.util import find_spec
 
 from array_api_compat import is_array_api_obj
 
@@ -32,7 +33,9 @@ def _set_numba_active(flag):
 
 
 def _numba_import_error():
-    """``None`` if numba imports, else the ``ImportError`` it raised (cached)."""
+    """``None`` if numba imports, else the ``ImportError`` it raised (cached).
+
+    This is the real import (about 0.2 s), done on the first numba request."""
     global _numba_import_cache
     if _numba_import_cache is _UNSET:
         try:
@@ -45,7 +48,16 @@ def _numba_import_error():
 
 
 def _numba_available():
-    return _numba_import_error() is None
+    """Whether numba can be used, without importing it.
+
+    Until the first numba request imports it (``_numba_import_error``), this is
+    only a check that numba is installed; afterwards it is the import result."""
+    if _numba_import_cache is _UNSET:
+        try:
+            return find_spec("numba") is not None
+        except ValueError:  # numba in sys.modules without a spec
+            return True
+    return _numba_import_cache is None
 
 
 def numba_unavailable_error(what, cls=ImportError):
@@ -108,7 +120,7 @@ def use_numba(backend, *arrays):
                 "arrays or drop backend='numba' to use the input's framework."
             )
         return False  # global numba default does not apply to jax/torch inputs
-    if not _numba_available():
+    if _numba_import_error() is not None:
         how = "backend='numba'" if explicit else "set_active('numba')"
         raise numba_unavailable_error(how)
     return True
