@@ -1448,3 +1448,13 @@ def test_crps_ensemble_akr_circperm_ens_w_known_value(
     )
     assert_inferred(res, backend)
     assert_close(res, [0.015], backend)
+
+
+def test_crps_quantile_float32_data_float64_alpha(paths_agree):
+    # the numba path follows the array path's promotion (float64 here)
+    rng = np.random.default_rng(3)
+    obs = rng.normal(size=N).astype("f4")
+    fct = np.sort(rng.normal(size=(N, 7)), axis=-1).astype("f4")
+    alpha = np.linspace(0.1, 0.9, 7)
+    res_numba, res_numpy = paths_agree(sr.crps_quantile, obs, fct, alpha, rtol=1e-6)
+    assert res_numba.dtype == res_numpy.dtype == np.float64

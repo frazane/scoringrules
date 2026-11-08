@@ -550,6 +550,9 @@ def crps_quantile(
     if not fct.shape[-1] == alpha.shape[-1]:
         raise ValueError("Expected matching length of `fct` and `alpha` values.")
     if use_numba(backend, obs, fct):
+        # the array path promotes obs, fct and alpha, so do the same for the gufunc
+        dtype = xp.result_type(*(xp.float_dtype(a) for a in (obs, fct, alpha)))
+        obs, fct, alpha = (xp.astype(a, dtype) for a in (obs, fct, alpha))
         return crps.quantile_pinball_gufunc(obs, fct, alpha)
     return crps.quantile_pinball(obs, fct, alpha, xp=xp)
 
