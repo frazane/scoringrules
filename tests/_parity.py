@@ -6,15 +6,58 @@ selected, rather than importing ``assert_paths_agree`` directly.
 """
 
 import contextlib
+import inspect
 
 import numpy as np
 import pytest
 
 import scoringrules as sr
+from scoringrules._dispatch import AUTO_EXCLUDED
 from scoringrules.core.utils import GufuncWrapper
 
 # default (rtol, atol) of ``assert_paths_agree`` by result dtype
 _TOLERANCES = {np.dtype(np.float64): (1e-10, 1e-12), np.dtype(np.float32): (1e-5, 1e-6)}
+
+
+# the score that a threshold-weighted score chains to, whose key it uses
+_CHAINED_TO = {
+    "twcrps_ensemble": "crps_ensemble",
+    "twgksuv_ensemble": "gksuv_ensemble",
+    "twgksmv_ensemble": "gksmv_ensemble",
+    "twes_ensemble": "es_ensemble",
+    "twvs_ensemble": "vs_ensemble",
+}
+# the scores whose ``use_numba`` key is ``(name, estimator)``
+_ESTIMATOR_KEYED = {
+    "crps_ensemble",
+    "gksuv_ensemble",
+    "gksmv_ensemble",
+    "es_ensemble",
+    "vs_ensemble",
+}
+
+
+def auto_uses_the_gufunc(fn, args, kwargs):
+    """Whether ``numba="auto"`` should run the gufunc of ``fn(*args, **kwargs)``
+    (for inputs the guard accepts): not if its key is in
+    ``_dispatch.AUTO_EXCLUDED`` for the float dtype numpy promotes ``obs`` and
+    ``fct`` to (float64 for integers). Recomputed here rather than asked from
+    ``use_numba``, so that the dispatch is checked against the table."""
+    name = getattr(fn, "__name__", "")
+    name = _CHAINED_TO.get(name, name)
+    key = name
+    if name in _ESTIMATOR_KEYED:
+        default = inspect.signature(fn).parameters["estimator"].default
+        key = (name, kwargs.get("estimator", default))
+    if key not in AUTO_EXCLUDED:
+        return True
+    dtypes = AUTO_EXCLUDED[key]
+    if dtypes is None:
+        return False
+    dtype = np.result_type(*(np.asarray(a) for a in args[:2]))
+    if dtype.kind != "f":
+        dtype = np.dtype(np.float64)
+    return dtype.newbyteorder("=") not in dtypes
 
 
 def assert_paths_agree(
@@ -26,12 +69,13 @@ def assert_paths_agree(
     allow_all_nan=False,
     raises=None,
     expect_gufunc=True,
+    auto_gufunc=None,
     **kwargs,
 ):
     """Assert that ``fn(*args, **kwargs)`` under ``config_context(numba=True)``
     (the gufunc) matches it under ``config_context(numba=False)`` (the array
-    path), that the default ``numba="auto"`` gives exactly one of the two (the
-    one ``use_numba`` picks), and that none of them modifies its inputs.
+    path), that the default ``numba="auto"`` gives exactly the result of the
+    path it should take, and that none of them modifies its inputs.
 
     The results must have the same Python type (numpy scalars for 0-d results,
     plain ndarrays otherwise) and, through ``np.asarray``, the same shape, the
@@ -46,7 +90,9 @@ def assert_paths_agree(
     call none, so a guard regression cannot turn a parity test into a
     comparison of the array path with itself. Pass ``expect_gufunc=False`` for
     inputs that ``use_numba`` sends to the array path (then no call may run a
-    gufunc). Returns the numba and numpy results as numpy arrays.
+    gufunc). With ``expect_gufunc``, ``numba="auto"`` must call a gufunc iff
+    ``auto_gufunc`` (by default ``auto_uses_the_gufunc``, from the exclusion
+    table). Returns the numba and numpy results as numpy arrays.
     """
     inputs = [a for a in (*args, *kwargs.values()) if isinstance(a, np.ndarray)]
     snapshot = [a.copy() for a in inputs]
@@ -76,6 +122,12 @@ def assert_paths_agree(
     assert not numpy_calls, f"numba=False called {numpy_calls}"
     if expect_gufunc:
         assert numba_calls, "numba=True did not call a gufunc"
+        if auto_gufunc is None:
+            auto_gufunc = auto_uses_the_gufunc(fn, args, kwargs)
+        if auto_gufunc:
+            assert auto_calls, "numba='auto' did not call a gufunc"
+        else:
+            assert not auto_calls, f"numba='auto' called {auto_calls} (excluded)"
     else:
         assert not numba_calls and not auto_calls, (numba_calls, auto_calls)
     # the result of the path auto mode took, bit for bit
