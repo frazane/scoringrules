@@ -5,7 +5,7 @@ from scoringrules.core.utils import lazy_gufunc_wrapper_uv
 
 
 @lazy_gufunc_wrapper_uv
-@guvectorize("(),(n)->()")
+@guvectorize("(),(n)->()", cache=True)
 def _error_spread_score_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Error spread score."""
     M = fct.shape[0]

@@ -8,7 +8,7 @@ EPSILON = 1e-6
 
 
 @lazy_gufunc_wrapper_uv
-@guvectorize("(),(a),(a)->()")
+@guvectorize("(),(a),(a)->()", cache=True)
 def quantile_pinball_gufunc(
     obs: np.ndarray, fct: np.ndarray, alpha: np.ndarray, out: np.ndarray
 ):
@@ -20,7 +20,7 @@ def quantile_pinball_gufunc(
     out[0] = 2 * (pb / Q)
 
 
-@guvectorize("(),(n)->()")
+@guvectorize("(),(n)->()", cache=True)
 def _crps_ensemble_int_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimator based on the integral form."""
     M = fct.shape[0]
@@ -56,16 +56,9 @@ def _crps_ensemble_int_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
     out[0] = integral
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:])",
-    ],
-    "(),(n)->()",
-)
+@guvectorize("(),(n)->()", cache=True)
 def _crps_ensemble_qd_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimator based on the quantile decomposition form."""
-    obs = obs[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -88,16 +81,9 @@ def _crps_ensemble_qd_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     out[0] = (2 / M**2) * integral
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:])",
-    ],
-    "(),(n)->()",
-)
+@guvectorize("(),(n)->()", cache=True)
 def _crps_ensemble_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimator based on the energy form."""
-    obs = obs[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -115,16 +101,9 @@ def _crps_ensemble_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
     out[0] = e_1 / M - 0.5 * e_2 / (M**2)
 
 
-@guvectorize(
-    [
-        "void(float32[:], float32[:], float32[:])",
-        "void(float64[:], float64[:], float64[:])",
-    ],
-    "(),(n)->()",
-)
+@guvectorize("(),(n)->()", cache=True)
 def _crps_ensemble_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Fair version of the CRPS estimator based on the energy form."""
-    obs = obs[0]
     M = fct.shape[-1]
 
     if np.isnan(obs):
@@ -142,7 +121,7 @@ def _crps_ensemble_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
     out[0] = e_1 / M - 0.5 * e_2 / (M * (M - 1))
 
 
-@guvectorize("(),(n)->()")
+@guvectorize("(),(n)->()", cache=True)
 def _crps_ensemble_pwm_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimator based on the probability weighted moment (PWM) form."""
     M = fct.shape[-1]
@@ -163,7 +142,7 @@ def _crps_ensemble_pwm_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
     out[0] = expected_diff / M + β_0 / M - 2 * β_1 / (M * (M - 1))
 
 
-@guvectorize("(),(n)->()")
+@guvectorize("(),(n)->()", cache=True)
 def _crps_ensemble_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimaton based on the approximate kernel representation."""
     M = fct.shape[-1]
@@ -177,7 +156,7 @@ def _crps_ensemble_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
-@guvectorize("(),(n)->()")
+@guvectorize("(),(n)->()", cache=True)
 def _crps_ensemble_akr_circperm_gufunc(
     obs: np.ndarray, fct: np.ndarray, out: np.ndarray
 ):
@@ -192,7 +171,7 @@ def _crps_ensemble_akr_circperm_gufunc(
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
-@guvectorize("(),(n),(),(n)->()")
+@guvectorize("(),(n),(),(n)->()", cache=True)
 def _owcrps_ensemble_nrg_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -220,7 +199,7 @@ def _owcrps_ensemble_nrg_gufunc(
     out[0] = e_1 / (M * wbar) - 0.5 * e_2 / ((M * wbar) ** 2)
 
 
-@guvectorize("(),(n),(),(n)->()")
+@guvectorize("(),(n),(),(n)->()", cache=True)
 def _vrcrps_ensemble_nrg_gufunc(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -253,11 +232,11 @@ def _vrcrps_ensemble_nrg_gufunc(
 _estimator_gufuncs = {
     "akr_circperm": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_circperm_gufunc),
     "akr": lazy_gufunc_wrapper_uv(_crps_ensemble_akr_gufunc),
-    "fair": _crps_ensemble_fair_gufunc,
+    "fair": lazy_gufunc_wrapper_uv(_crps_ensemble_fair_gufunc),
     "int": lazy_gufunc_wrapper_uv(_crps_ensemble_int_gufunc),
-    "nrg": _crps_ensemble_nrg_gufunc,
+    "nrg": lazy_gufunc_wrapper_uv(_crps_ensemble_nrg_gufunc),
     "pwm": lazy_gufunc_wrapper_uv(_crps_ensemble_pwm_gufunc),
-    "qd": _crps_ensemble_qd_gufunc,
+    "qd": lazy_gufunc_wrapper_uv(_crps_ensemble_qd_gufunc),
     "ownrg": lazy_gufunc_wrapper_uv(_owcrps_ensemble_nrg_gufunc),
     "vrnrg": lazy_gufunc_wrapper_uv(_vrcrps_ensemble_nrg_gufunc),
 }

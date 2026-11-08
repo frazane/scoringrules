@@ -4,7 +4,7 @@ from numba import guvectorize
 from scoringrules.core.utils import lazy_gufunc_wrapper_mv
 
 
-@guvectorize("(d),(m,d),(m)->()")
+@guvectorize("(d),(m,d),(m)->()", cache=True)
 def _energy_score_nrg_gufunc_w(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -24,7 +24,7 @@ def _energy_score_nrg_gufunc_w(
     out[0] = e_1 - 0.5 * e_2
 
 
-@guvectorize("(d),(m,d),(m)->()")
+@guvectorize("(d),(m,d),(m)->()", cache=True)
 def _energy_score_fair_gufunc_w(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -46,7 +46,7 @@ def _energy_score_fair_gufunc_w(
     out[0] = e_1 - 0.5 * e_2 / fair_c
 
 
-@guvectorize("(d),(m,d),(m)->()")
+@guvectorize("(d),(m,d),(m)->()", cache=True)
 def _energy_score_akr_gufunc_w(
     obs: np.ndarray, fct: np.ndarray, ens_w: np.ndarray, out: np.ndarray
 ):
@@ -62,7 +62,7 @@ def _energy_score_akr_gufunc_w(
     out[0] = e_1 - 0.5 * e_2
 
 
-@guvectorize("(d),(m,d),(m)->()")
+@guvectorize("(d),(m,d),(m)->()", cache=True)
 def _energy_score_akr_circperm_gufunc_w(
     obs: np.ndarray, fct: np.ndarray, ens_w: np.ndarray, out: np.ndarray
 ):
@@ -79,7 +79,7 @@ def _energy_score_akr_circperm_gufunc_w(
     out[0] = e_1 - 0.5 * e_2
 
 
-@guvectorize("(d),(m,d),(),(m),(m)->()")
+@guvectorize("(d),(m,d),(),(m),(m)->()", cache=True)
 def _owenergy_score_gufunc_w(
     obs: np.ndarray,
     fct: np.ndarray,
@@ -108,7 +108,7 @@ def _owenergy_score_gufunc_w(
     out[0] = e_1 / (wbar) - 0.5 * e_2 / (wbar**2)
 
 
-@guvectorize("(d),(m,d),(),(m),(m)->()")
+@guvectorize("(d),(m,d),(),(m),(m)->()", cache=True)
 def _vrenergy_score_gufunc_w(
     obs: np.ndarray,
     fct: np.ndarray,
