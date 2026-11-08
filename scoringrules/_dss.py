@@ -75,9 +75,10 @@ def dssmv_ensemble(
     where :math:`\bar{mathbf{x}}` is the mean of the ensemble members (along each dimension),
     and :math:`\Sigma` is the sample covariance matrix estimated from the ensemble members.
     The covariance matrix is only invertible when the ensemble has more members than
-    variables (``m > d``). The score is NaN where the covariance is not positive
-    definite to the precision of the input: ``m <= d``, collinear members, or NaN or
-    infinite members.
+    variables (``m > d``). The score is NaN for ``m <= d``, for non-finite members
+    or observations, and for exactly dependent or constant variables; a numerically
+    rank-deficient ensemble can still give a very large finite value. Float32 input
+    is judged at float32 precision, so near-singular float32 ensembles give NaN.
 
     Parameters
     ----------
