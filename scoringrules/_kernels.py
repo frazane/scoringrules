@@ -90,7 +90,7 @@ def gksuv_ensemble(
     array([0.30799922, 0.17469789, 0.17174067])
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     if ens_w is not None:
@@ -267,7 +267,7 @@ def owgksuv_ensemble(
     array([0.38847902, 0.17524147, 0.14577796])
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs_w, fct_w = _uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
@@ -353,7 +353,7 @@ def vrgksuv_ensemble(
     array([0.3652057 , 0.17914915, 0.14754764])
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs_w, fct_w = _uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
@@ -425,7 +425,7 @@ def gksmv_ensemble(
         The GKS between the forecast ensemble and obs.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     if ens_w is not None:
@@ -577,7 +577,7 @@ def owgksmv_ensemble(
         The computed Outcome-Weighted GKS.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
@@ -649,7 +649,7 @@ def vrgksmv_ensemble(
         The computed Vertically Re-scaled Gaussian Kernel Score.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)

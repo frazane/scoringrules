@@ -13,6 +13,7 @@ reset it), which refuses to enable it when numba cannot be imported."""
 import warnings
 from importlib.util import find_spec
 
+import numpy as np
 from array_api_compat import is_array_api_obj
 
 _LEGACY_ARRAY_API_BACKENDS = {"numpy", "jax", "torch"}
@@ -105,13 +106,58 @@ def _is_numpy_compatible(*arrays):
     return True
 
 
-def use_numba(backend, *arrays):
+def gufunc_inputs_supported(*arrays):
+    """Whether the numba gufuncs handle ``arrays`` exactly like the array path.
+
+    True iff every entry is ``None``, a Python bool, int or float, a list or
+    tuple, an exact ``np.ndarray`` or a numpy scalar, and its numpy dtype (after
+    ``np.asarray`` for the Python ones) is bool, integer, float32 or float64, in
+    any byte order (the gufunc wrapper casts to native order). Everything else
+    takes the array path:
+
+    - ``np.ndarray`` subclasses (masked arrays, ``np.matrix``), whose semantics
+      the gufuncs would drop, and objects that only implement ``__array__``;
+    - float16: the gufuncs compute and return float32, the array path float16;
+    - long double, complex, object, string and datetime dtypes, and Python ints
+      outside the int64/uint64 range, which numba has no loops for.
+
+    Cheap for numpy input (a type and a dtype check per array); lists and
+    tuples are converted once to find their dtype.
+    """
+    for a in arrays:
+        t = type(a)
+        if t is np.ndarray or isinstance(a, np.generic):
+            dtype = a.dtype
+        elif a is None or t is float or t is bool:
+            continue
+        elif t is int or t is list or t is tuple:
+            try:
+                dtype = np.asarray(a).dtype
+            except (TypeError, ValueError):  # e.g. ragged lists
+                return False
+        else:
+            return False
+        # "e" is float16, "g" long double (8 bytes on some platforms)
+        if dtype.kind not in "biuf" or dtype.itemsize > 8 or dtype.char in "eg":
+            return False
+    return True
+
+
+def use_numba(backend, *arrays, aux=()):
     """Decide whether to use the numba gufunc path for this call.
 
     True iff ``backend == "numba"`` (explicit), or ``backend is None`` and the
-    user globally selected numba via ``set_active("numba")`` AND the inputs are
-    numpy-compatible. A numba request with non-numpy inputs is an error, and so
-    is a numba request when numba cannot be imported (``ImportError``).
+    user globally selected numba via ``set_active("numba")``, AND the inputs
+    are numpy-compatible AND the gufuncs support them
+    (``gufunc_inputs_supported``). A numba request with non-numpy ``arrays``
+    is an error, and so is a numba request when numba cannot be imported
+    (``ImportError``). Inputs the gufuncs do not support (masked arrays,
+    float16, ...) take the array path, also with ``backend="numba"``.
+
+    ``aux`` holds the auxiliary inputs that reach the gufunc next to ``obs``
+    and ``fct`` (ensemble and dimension weights, ``alpha``, ``p``). They only
+    go through ``gufunc_inputs_supported``: a jax or torch one takes the array
+    path instead of raising for ``backend="numba"``.
     """
     explicit = backend == "numba"
     global_numba = backend is None and _numba_active
@@ -127,4 +173,4 @@ def use_numba(backend, *arrays):
     if _numba_import_error() is not None:
         how = "backend='numba'" if explicit else "set_active('numba')"
         raise numba_unavailable_error(how)
-    return True
+    return gufunc_inputs_supported(*arrays, *aux)

@@ -84,7 +84,7 @@ def es_ensemble(
         Some theoretical background on scoring rules for multivariate forecasts.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     # apply the nan policy before normalising the weights, so NaN in a user ens_w
@@ -248,7 +248,7 @@ def owes_ensemble(
         The computed Outcome-Weighted Energy Score.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     # apply the nan policy before deriving the outcome weights, so the (now zeroed)
@@ -329,7 +329,7 @@ def vres_ensemble(
         The computed Vertically Re-scaled Energy Score.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     # apply the nan policy before deriving the outcome weights, so the (now zeroed)
