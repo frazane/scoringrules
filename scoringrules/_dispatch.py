@@ -42,6 +42,10 @@ def _numba_import_error():
             import numba  # noqa: F401
         except ImportError as err:
             _numba_import_cache = err
+            # the registry listed numba as installed at import: unlist it
+            from scoringrules.backend import backends
+
+            dict.pop(backends, "numba", None)
         else:
             _numba_import_cache = None
     return _numba_import_cache

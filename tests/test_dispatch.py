@@ -132,6 +132,24 @@ def test_numba_available_before_import_only_checks_installed(monkeypatch):
     assert _dispatch._numba_available() is True
 
 
+def test_failed_numba_import_unlists_numba(monkeypatch):
+    # the registry lists numba at import without importing it; a failed import
+    # on the first numba request takes it out again
+    import sys
+
+    monkeypatch.setattr(_dispatch, "_numba_import_cache", _dispatch._UNSET)
+    monkeypatch.setitem(sys.modules, "numba", None)  # ``import numba`` fails
+    had = dict.get(backends, "numba")
+    dict.__setitem__(backends, "numba", backends._get("numpy"))
+    try:
+        assert isinstance(_dispatch._numba_import_error(), ImportError)
+        assert "numba" not in backends
+        assert "numba" not in backends.available_backends
+    finally:
+        if had is not None:
+            dict.__setitem__(backends, "numba", had)
+
+
 def test_numba_missing_default_path_unaffected(numba_missing):
     out = sr.crps_ensemble(np.zeros(3), np.zeros((3, 5)))
     np.testing.assert_allclose(out, 0.0)
