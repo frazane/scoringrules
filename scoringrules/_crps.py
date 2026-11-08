@@ -3,6 +3,7 @@ import typing as tp
 from scoringrules.backend import get_namespace
 from scoringrules.core import crps, stats
 from scoringrules.core.utils import (
+    estimator_check,
     univariate_array_check,
     univariate_weight_check,
     uv_weighted_score_weights,
@@ -14,6 +15,8 @@ from scoringrules._dispatch import use_numba, resolve_backend_arg
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend, NanPolicy
+
+_CRPS_ESTIMATORS = ("nrg", "fair", "pwm", "qd", "akr", "akr_circperm", "int")
 
 
 def crps_ensemble(
@@ -135,6 +138,7 @@ def crps_ensemble(
     fct, ens_w = univariate_sort_ens(fct, ens_w, -1, estimator, sorted_ensemble, xp=xp)
 
     if numba:
+        estimator_check(estimator, _CRPS_ESTIMATORS)
         if ens_w is None:
             return crps.estimator_gufuncs(estimator)(obs, fct)
         return crps.estimator_gufuncs_w(estimator)(obs, fct, ens_w)

@@ -28,6 +28,9 @@ def _uv_outcome_weights(obs, fct, a, b, w_func, *, xp):
     return asarray_like(obs_w, fct, xp=xp), asarray_like(fct_w, fct, xp=xp)
 
 
+_KS_ESTIMATORS = ("nrg", "fair", "akr", "akr_circperm")
+
+
 def gksuv_ensemble(
     obs: "ArrayLike",
     fct: "Array",
@@ -94,10 +97,9 @@ def gksuv_ensemble(
         ens_w = univariate_weight_check(ens_w, fct, m_axis, xp=xp)
 
     if numba:
+        estimator_check(estimator, _KS_ESTIMATORS)
         if ens_w is None:
-            estimator_check(estimator, kernels.estimator_gufuncs_uv)
             return kernels.estimator_gufuncs_uv[estimator](obs, fct)
-        estimator_check(estimator, kernels.estimator_gufuncs_uv_w)
         return kernels.estimator_gufuncs_uv_w[estimator](obs, fct, ens_w)
     if ens_w is None:
         return kernels.ensemble_uv(obs, fct, estimator=estimator, xp=xp)
@@ -430,10 +432,9 @@ def gksmv_ensemble(
         ens_w = multivariate_weight_check(ens_w, fct, m_axis, v_axis, xp=xp)
 
     if numba:
+        estimator_check(estimator, _KS_ESTIMATORS)
         if ens_w is None:
-            estimator_check(estimator, kernels.estimator_gufuncs_mv)
             return kernels.estimator_gufuncs_mv[estimator](obs, fct)
-        estimator_check(estimator, kernels.estimator_gufuncs_mv_w)
         return kernels.estimator_gufuncs_mv_w[estimator](obs, fct, ens_w)
     if ens_w is None:
         return kernels.ensemble_mv(obs, fct, estimator=estimator, xp=xp)

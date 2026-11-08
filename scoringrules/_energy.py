@@ -15,6 +15,8 @@ from scoringrules.core.utils import (
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend, NanPolicy
 
+_ES_ESTIMATORS = ("nrg", "fair", "akr", "akr_circperm")
+
 
 def es_ensemble(
     obs: "Array",
@@ -103,10 +105,9 @@ def es_ensemble(
         ens_w = multivariate_weight_check(ens_w, fct, -2, -1, xp=xp)
 
     if numba:
+        estimator_check(estimator, _ES_ESTIMATORS)
         if ens_w is None:
-            estimator_check(estimator, energy.estimator_gufuncs)
             return energy.estimator_gufuncs[estimator](obs, fct)
-        estimator_check(estimator, energy.estimator_gufuncs_w)
         return energy.estimator_gufuncs_w[estimator](obs, fct, ens_w)
     if ens_w is None:
         return energy.es(obs, fct, estimator=estimator, xp=xp)
