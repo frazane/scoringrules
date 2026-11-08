@@ -3,7 +3,7 @@ import pytest
 
 import scoringrules as sr
 
-from ._parity import MV_CASES, mv_ensemble_inputs, mv_v_func
+from ._parity import MV_CASES, mv_ensemble_inputs, mv_v_func, mv_w_func
 from .conftest import assert_inferred
 
 
@@ -122,13 +122,15 @@ def test_variogram_score_correctness(estimator, backend_kwargs, native):
         np.testing.assert_allclose(res, expected, atol=1e-6)
 
 
-@pytest.mark.parametrize("case", MV_CASES)
+# the variogram scores have no nan_policy: "nan_propagate" checks that NaN propagates
+@pytest.mark.parametrize("case", [*MV_CASES, "nan_propagate"])
 @pytest.mark.parametrize("M", [6, 7])
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("estimator", ESTIMATORS)
 @pytest.mark.parametrize("score", ["vs_ensemble", "twvs_ensemble"])
 def test_variogram_paths_agree(score, estimator, weighted, M, case, paths_agree):
     obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
+    kwargs.pop("nan_policy", None)
     args = (mv_v_func,) if score == "twvs_ensemble" else ()
     paths_agree(getattr(sr, score), obs, fct, *args, estimator=estimator, **kwargs)
 
@@ -145,6 +147,44 @@ def test_variogram_paths_agree_w_p(nan, p, estimator, weighted, paths_agree):
         obs[3, 1] = np.nan
     w = np.random.default_rng(1).uniform(0.1, 2.0, size=(*obs.shape, obs.shape[-1]))
     paths_agree(sr.vs_ensemble, obs, fct, w, p=p, estimator=estimator, **kwargs)
+
+
+_VS_P = {
+    "int": 1,
+    "half": 0.5,
+    "small": 0.25,
+    "three": 3.0,
+    "np_float32": np.float32(1.5),
+    "zero_d": np.asarray(0.5),
+}
+
+
+def _vs_w(kind, D):
+    rng = np.random.default_rng(2)
+    w = rng.uniform(0.1, 2.0, size=(D, D))
+    w = (w + w.T) / 2
+    return {
+        "none": None,
+        "dd": w,  # broadcast over the samples
+        "list": w.tolist(),
+        "float32": w.astype(np.float32),
+        "int": np.ones((D, D), dtype=int) + np.eye(D, dtype=int),
+    }[kind]
+
+
+@pytest.mark.parametrize("p", list(_VS_P))
+@pytest.mark.parametrize("w", ["none", "dd", "list", "float32", "int"])
+@pytest.mark.parametrize(
+    "score", ["vs_ensemble", "twvs_ensemble", "owvs_ensemble", "vrvs_ensemble"]
+)
+def test_variogram_p_w_variants_paths_agree(score, w, p, paths_agree):
+    obs, fct, kwargs = mv_ensemble_inputs("default", 7, weighted=True)
+    args = () if score == "vs_ensemble" else (mv_v_func,)
+    if score in ("owvs_ensemble", "vrvs_ensemble"):
+        args = (mv_w_func,)
+    paths_agree(
+        getattr(sr, score), obs, fct, *args, w=_vs_w(w, 3), p=_VS_P[p], **kwargs
+    )
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)

@@ -374,8 +374,10 @@ def test_ref_kernel_score_mv_matches_r():
     )
 
 
-# the univariate kernel scores have no nan_policy
-_KS_UV_CASES = [c for c in UV_CASES if not c.startswith("nan_")]
+# the kernel scores have no nan_policy: "nan_propagate" (with the policy
+# dropped) checks that NaN propagates
+_KS_UV_CASES = [c for c in UV_CASES if not c.startswith("nan_")] + ["nan_propagate"]
+_KS_MV_CASES = [*MV_CASES, "nan_propagate"]
 
 
 @pytest.mark.parametrize("case", _KS_UV_CASES)
@@ -385,6 +387,7 @@ _KS_UV_CASES = [c for c in UV_CASES if not c.startswith("nan_")]
 @pytest.mark.parametrize("score", ["gksuv_ensemble", "twgksuv_ensemble"])
 def test_gksuv_paths_agree(score, estimator, weighted, M, case, paths_agree):
     obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted)
+    kwargs.pop("nan_policy", None)
     args = (-0.5, 1.0) if score == "twgksuv_ensemble" else ()
     paths_agree(getattr(sr, score), obs, fct, *args, estimator=estimator, **kwargs)
 
@@ -395,7 +398,33 @@ def test_gksuv_paths_agree(score, estimator, weighted, M, case, paths_agree):
 @pytest.mark.parametrize("score", ["owgksuv_ensemble", "vrgksuv_ensemble"])
 def test_weighted_gksuv_paths_agree(score, weighted, M, case, paths_agree):
     obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted)
+    kwargs.pop("nan_policy", None)
     paths_agree(getattr(sr, score), obs, fct, w_func=uv_w_func, **kwargs)
+
+
+@pytest.mark.parametrize("case", ["default", "batch", "float32", "nan_propagate"])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("score", ["owgksuv_ensemble", "vrgksuv_ensemble"])
+def test_weighted_gksuv_bounds_paths_agree(score, weighted, case, paths_agree):
+    obs, fct, kwargs = uv_ensemble_inputs(case, 7, weighted)
+    kwargs.pop("nan_policy", None)
+    paths_agree(getattr(sr, score), obs, fct, -0.5, 1.0, **kwargs)
+
+
+@pytest.mark.parametrize("case", ["default", "batch", "float32", "nan_propagate"])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+def test_twgksuv_v_func_paths_agree(estimator, weighted, case, paths_agree):
+    obs, fct, kwargs = uv_ensemble_inputs(case, 7, weighted)
+    kwargs.pop("nan_policy", None)
+    paths_agree(
+        sr.twgksuv_ensemble,
+        obs,
+        fct,
+        v_func=lambda x: np.maximum(x, -0.5),
+        estimator=estimator,
+        **kwargs,
+    )
 
 
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
@@ -414,23 +443,25 @@ def test_gksuv_nonfinite_members_paths_agree(estimator, weighted, paths_agree):
         np.testing.assert_array_equal(np.isnan(res), [True, True, True, False, False])
 
 
-@pytest.mark.parametrize("case", MV_CASES)
+@pytest.mark.parametrize("case", _KS_MV_CASES)
 @pytest.mark.parametrize("M", [6, 7])
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("estimator", ESTIMATORS)
 @pytest.mark.parametrize("score", ["gksmv_ensemble", "twgksmv_ensemble"])
 def test_gksmv_paths_agree(score, estimator, weighted, M, case, paths_agree):
     obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
+    kwargs.pop("nan_policy", None)
     args = (mv_v_func,) if score == "twgksmv_ensemble" else ()
     paths_agree(getattr(sr, score), obs, fct, *args, estimator=estimator, **kwargs)
 
 
-@pytest.mark.parametrize("case", MV_CASES)
+@pytest.mark.parametrize("case", _KS_MV_CASES)
 @pytest.mark.parametrize("M", [6, 7])
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("score", ["owgksmv_ensemble", "vrgksmv_ensemble"])
 def test_weighted_gksmv_paths_agree(score, weighted, M, case, paths_agree):
     obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
+    kwargs.pop("nan_policy", None)
     paths_agree(getattr(sr, score), obs, fct, mv_w_func, **kwargs)
 
 

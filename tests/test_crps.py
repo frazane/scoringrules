@@ -483,7 +483,64 @@ def test_crps_quantile_paths_agree(case, paths_agree):
     obs, fct, kwargs = uv_ensemble_inputs(case, 7, weighted=False)
     fct = np.sort(fct, axis=kwargs.get("m_axis", -1))
     alpha = np.linspace(0.1, 0.9, 7)
+    if case == "float32":  # float64 alpha would promote (see the alpha variants)
+        alpha = alpha.astype(np.float32)
     paths_agree(sr.crps_quantile, obs, fct, alpha, **kwargs)
+
+
+def _quantile_alpha_inputs(case):
+    """``(obs, fct, alpha, kwargs)`` for a ``crps_quantile`` alpha variant."""
+    rng = np.random.default_rng(4)
+    obs = rng.normal(size=N)
+    fct = np.sort(rng.normal(size=(N, 7)), axis=-1)
+    alpha = np.linspace(0.1, 0.9, 7)
+    kwargs = {}
+    if case == "list":
+        alpha = alpha.tolist()
+    elif case == "batched":  # one set of levels per sample
+        alpha = np.sort(rng.uniform(0.05, 0.95, size=(N, 7)), axis=-1)
+    elif case == "batched_m_axis":
+        alpha = np.sort(rng.uniform(0.05, 0.95, size=(N, 7)), axis=-1)
+        fct, kwargs["m_axis"] = fct.T.copy(), 0
+    elif case == "float32":
+        obs, fct, alpha = (x.astype(np.float32) for x in (obs, fct, alpha))
+    elif case == "float32_alpha":  # float64 data, float32 alpha
+        alpha = alpha.astype(np.float32)
+    elif case == "int_obs":
+        obs = rng.integers(-2, 3, size=N)
+    return obs, fct, alpha, kwargs
+
+
+@pytest.mark.parametrize(
+    "case",
+    ["list", "batched", "batched_m_axis", "float32", "float32_alpha", "int_obs"],
+)
+def test_crps_quantile_alpha_paths_agree(case, paths_agree):
+    obs, fct, alpha, kwargs = _quantile_alpha_inputs(case)
+    if case == "float32_alpha":  # float64 out, partly float32 inside
+        kwargs["rtol"] = 1e-6
+    paths_agree(sr.crps_quantile, obs, fct, alpha, **kwargs)
+
+
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+def test_crps_ensemble_sorted_paths_agree(estimator, weighted, paths_agree):
+    # sorted_ensemble=True skips the sort on both paths
+    obs, fct, kwargs = uv_ensemble_inputs("default", 7, weighted)
+    order = np.argsort(fct, axis=-1)
+    fct = np.take_along_axis(fct, order, axis=-1)
+    if weighted:
+        kwargs["ens_w"] = np.take_along_axis(kwargs["ens_w"], order, axis=-1)
+    res = paths_agree(
+        sr.crps_ensemble,
+        obs,
+        fct,
+        estimator=estimator,
+        sorted_ensemble=True,
+        **kwargs,
+    )[1]
+    expected = sr.crps_ensemble(obs, fct, estimator=estimator, **kwargs)
+    np.testing.assert_allclose(res, expected, rtol=1e-12)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
