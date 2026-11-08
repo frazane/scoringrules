@@ -91,11 +91,18 @@ def test_set_active_numba_maps_to_set_config(requires_numba):
     with pytest.warns(DeprecationWarning, match="set_active") as rec:
         backends.set_active("numpy")
     assert rec[0].filename == __file__
-    assert sr.get_config()["numba"] == "auto"
+    assert sr.get_config()["numba"] is False
 
 
-@pytest.mark.parametrize("name", ["numpy", "jax", "torch"])
-def test_set_active_array_api_backend_warns_and_maps_to_auto(name):
+def test_set_active_numpy_maps_to_numba_false():
+    # what a 0.11 script asking for numpy meant: no numba
+    with pytest.warns(DeprecationWarning, match=r"set_config\(numba=False\)"):
+        backends.set_active("numpy")
+    assert sr.get_config()["numba"] is False
+
+
+@pytest.mark.parametrize("name", ["jax", "torch"])
+def test_set_active_jax_torch_warn_and_map_to_auto(name):
     sr.set_config(numba=False)
     with pytest.warns(DeprecationWarning, match="numba='auto'"):
         backends.set_active(name)
@@ -114,8 +121,11 @@ def test_numba_missing_numba_true_raises_import_error(numba_missing):
     with sr.config_context(numba=True):
         with pytest.raises(ImportError, match=r"numba=True requires numba"):
             sr.crps_ensemble(np.zeros(3), np.zeros((3, 5)))
-        # scores without a gufunc and non-numpy inputs do not need numba
+        # scores without a gufunc, inputs the guard sends to the array path and
+        # non-numpy inputs do not need numba
         assert sr.crps_normal(0.0, 0.0, 1.0) > 0
+        sr.crps_ensemble(np.zeros(3, np.float16), np.zeros((3, 5), np.float16))
+        sr.dssuv_ensemble(np.zeros(3, bool), np.arange(15).reshape(3, 5) % 2 == 0)
         torch = pytest.importorskip("torch")
         sr.crps_ensemble(torch.zeros(3), torch.zeros((3, 5)))
 
@@ -248,7 +258,7 @@ def test_registry_active_follows_set_active(requires_numba):
         assert backends.active._xp is get_namespace(jnp.zeros(1))._xp
         backends.set_active("numpy")
         assert backends.active._xp is numpy_xp
-    assert sr.get_config()["numba"] == "auto"
+    assert sr.get_config()["numba"] is False
 
 
 @pytest.mark.parametrize(

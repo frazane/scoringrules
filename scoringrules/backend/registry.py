@@ -127,8 +127,9 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
         """Select the global default backend (deprecated, removed in 1.0).
 
         ``"numba"`` is ``scoringrules.set_config(numba=True)`` (raises
-        ``BackendNotAvailable`` if numba cannot be imported); any other name is
-        ``scoringrules.set_config(numba="auto")``.
+        ``BackendNotAvailable`` if numba cannot be imported), ``"numpy"`` is
+        ``scoringrules.set_config(numba=False)`` (plain numpy, as in 0.11), and
+        any other name is ``scoringrules.set_config(numba="auto")``.
         """
         if backend == "numba":
             _dispatch.warn_at_caller(
@@ -139,12 +140,14 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
                 raise _dispatch.numba_unavailable_error(
                     "set_active('numba')", BackendNotAvailable
                 )
+            numba = True
         else:
+            numba = False if backend == "numpy" else "auto"
             _dispatch.warn_at_caller(
                 f"set_active({backend!r}) {_REMOVAL_NOTE} It now means "
-                "scoringrules.set_config(numba='auto')."
+                f"scoringrules.set_config(numba={numba!r})."
             )
-        set_config(numba=True if backend == "numba" else "auto")
+        set_config(numba=numba)
         self._active = backend
 
     @property
