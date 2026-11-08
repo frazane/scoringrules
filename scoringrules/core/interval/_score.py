@@ -31,7 +31,7 @@ def weighted_interval_score(
     xp,
 ) -> "Array":
     """Weighted Interval Score for prediction interval PI[lower, upper]."""
-    K = w_alpha.shape[0]
+    K = alpha.shape[-1]
     IS = interval_score(obs[..., None], lower, upper, alpha)
     WIS = xp.sum(IS * w_alpha, axis=-1)
     WIS = WIS + w_median * median
