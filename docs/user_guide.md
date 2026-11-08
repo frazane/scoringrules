@@ -68,43 +68,63 @@ torch forecast) raises an error.
 
 ### The numba fast path
 
-For numpy inputs, opt into the compiled [numba](https://numba.pydata.org/) gufuncs
-with `backend="numba"` (numba is an optional dependency:
-`pip install scoringrules[numba]`):
+For numpy inputs, scoringrules uses compiled [numba](https://numba.pydata.org/)
+gufuncs when numba is installed (`pip install scoringrules[numba]`). Nothing needs to
+be configured:
 
 ```python
-sr.crps_ensemble(np.random.randn(5), np.random.randn(5, 11), backend="numba")
+sr.crps_ensemble(np.random.randn(5), np.random.randn(5, 11))  # numba gufunc if installed
 ```
 
-To use them by default for every numpy input, enable numba globally:
+Some inputs always take the array path, with or without numba: jax and torch arrays,
+masked arrays, float16, longdouble and complex data, and objects that only provide
+`__array__`. Scores that have no gufunc always take it too. In the default mode a few
+combinations also stay on the array path because it is faster or more accurate there.
+At the moment these are `weighted_interval_score`, and the `akr` and `akr_circperm`
+estimators of `gksuv_ensemble` for float32 data.
+
+Use `set_config` to change the mode for the whole process:
 
 ```python
-sr.backends.set_active("numba")
-sr.crps_ensemble(np.random.randn(5), np.random.randn(5, 11))  # numba gufunc
+sr.set_config(numba=False)    # never use numba
+sr.set_config(numba=True)     # always use a gufunc when the score has one
+sr.set_config(numba="auto")   # the default
+sr.get_config()               # {'numba': 'auto'}
 ```
 
-`backend="numba"` requires numpy-compatible inputs and raises an error for jax or
-torch arrays. The global setting only applies to numpy inputs: jax and torch inputs
-keep running in their own framework. Scores without a numba implementation ignore
-both. If numba is not installed, `sr.backends.set_active("numba")` and
-`backend="numba"` raise an `ImportError` that says how to install it; if it is
-installed but fails to import, the error includes the original import error.
+With `numba=True`, a score call that would use a gufunc raises an `ImportError` if
+numba is not installed. The excluded combinations above then use the gufunc as well.
+To change the mode for a block of code only, use `config_context`. It restores the
+previous value on exit and does not affect other threads:
+
+```python
+with sr.config_context(numba=False):
+    sr.crps_ensemble(obs, fct)  # array path
+```
+
+The initial mode is read from the environment variable `SCORINGRULES_NUMBA` when
+scoringrules is imported. It accepts `0`, `1` and `auto` (also `false` and `true`).
+
+Compiling a gufunc takes about 0.1 to 1.5 seconds per score the first time it runs on
+a machine. The compiled code is then cached on disk, and later processes only pay a
+few milliseconds. If the installation directory is read-only, set `NUMBA_CACHE_DIR`
+to a writable directory before the first call. Importing scoringrules does not import
+numba. The first score call that uses a gufunc does, which takes about 0.2 seconds.
 
 ### Deprecations
 
-Selecting an array-API backend explicitly is deprecated and will be removed in 1.0,
-since the framework is inferred from the input. This applies to:
+Selecting a backend explicitly is deprecated and will be removed in 1.0, since the
+array framework is inferred from the input and numba is controlled by `set_config`.
+This applies to:
 
-- the `backend="numpy"`, `backend="jax"`, and `backend="torch"` arguments,
-- `sr.register_backend(...)` and `sr.backends.set_active(...)` for those backends
-  (`sr.backends.set_active("numpy")` still switches the global numba setting off),
-  and
+- every value of the `backend` argument of the scores. `backend="numba"` still works
+  as `numba=True` for that call, the other values are ignored. All of them warn.
+- `sr.register_backend(...)` and `sr.backends.set_active(...)`.
+  `set_active("numba")` is the same as `set_config(numba=True)`, and any other name
+  is the same as `set_config(numba="auto")`.
 - reading values from the `sr.backends` registry: any `sr.backends[...]` lookup,
   `sr.backends.get(...)`, `.values()`, `.items()` and `.active` warn. It is a
   compatibility shim: its values are the array-API namespaces scoringrules uses
   internally, so standard array-API calls such as `sr.backends["torch"].sum(x, axis=-1)`
   keep working until 1.0. Checking for a backend (`"torch" in sr.backends`,
   `sr.backends.available_backends`) does not warn.
-
-`backend="numba"` and `sr.backends.set_active("numba")` are **not** deprecated; they
-remain the supported ways to reach the numba fast path.
