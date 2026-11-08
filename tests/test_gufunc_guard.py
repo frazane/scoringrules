@@ -43,12 +43,10 @@ SUPPORTED = {
     "None": None,
     "float": 0.5,
     "int": 3,
-    "bool": True,
     "f8": np.zeros(3),
     "f4": np.zeros(3, np.float32),
     "i1": np.zeros(3, np.int8),
     "u8": np.zeros(3, np.uint64),
-    "bool array": np.zeros(3, bool),
     "big-endian": np.zeros(3, ">f8"),
     "fortran": np.zeros((3, 2), order="F"),
     "strided": np.zeros(6)[::2],
@@ -63,6 +61,10 @@ SUPPORTED = {
 }
 
 UNSUPPORTED = {
+    "bool": True,
+    "np.bool_": np.True_,
+    "bool array": np.zeros(3, bool),
+    "bool list": [True, False],
     "masked": np.ma.array(np.zeros(3)),
     "matrix": np.asmatrix(np.zeros((2, 2))),
     "duck": Duck(np.zeros(3)),
@@ -174,6 +176,8 @@ def _cases(obs, fct):
         "longdouble": (obs.astype(np.longdouble), fct.astype(np.longdouble)),
         "complex_obs": (obs.astype(complex), fct),
         "duck": (Duck(obs), Duck(fct)),
+        "bool": (obs > 0, fct > 0),
+        "bool_obs": (obs > 0, fct),
     }
 
 
@@ -375,10 +379,15 @@ def test_supported_inputs_take_the_gufunc_path(score, case, gufunc_calls, paths_
     ],
     ids=["dssuv", "dssuv-bias", "ess"],
 )
-def test_bool_inputs_take_the_gufunc_path(fn, kwargs, gufunc_calls, paths_agree):
-    # the array path accepts bool here (float64 out), so both paths must agree
+def test_bool_inputs_take_the_array_path(fn, kwargs, gufunc_calls, paths_agree):
+    # bool data takes the array path in every mode (most array paths refuse it,
+    # so the gufuncs must not accept it only when numba is installed); these
+    # array paths accept it (float64 out)
     obs, fct = OBS > 0, np.concatenate([FCT > 0, FCT > -1], axis=-1)
-    paths_agree(fn, obs, fct, allow_all_nan=True, **kwargs)
+    paths_agree(fn, obs, fct, allow_all_nan=True, expect_gufunc=False, **kwargs)
+    assert gufunc_calls == []
+    # a bool flag is not data: bias=True still runs the gufunc
+    paths_agree(fn, OBS, FCT, **kwargs)
     assert len(gufunc_calls) == 2
 
 

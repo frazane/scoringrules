@@ -154,15 +154,18 @@ def _is_numpy_compatible(*arrays):
 def gufunc_inputs_supported(*arrays):
     """Whether the numba gufuncs handle ``arrays`` exactly like the array path.
 
-    True iff every entry is ``None``, a Python bool, int or float, a list or
-    tuple, an exact ``np.ndarray`` or ``np.memmap`` or a numpy scalar, and its
-    numpy dtype (after ``np.asarray`` for the Python ones) is bool, integer,
-    float32 or float64, in any byte order (the gufunc wrapper casts to native
-    order). Everything else takes the array path:
+    True iff every entry is ``None``, a Python int or float, a list or tuple,
+    an exact ``np.ndarray`` or ``np.memmap`` or a numpy scalar, and its numpy
+    dtype (after ``np.asarray`` for the Python ones) is integer, float32 or
+    float64, in any byte order (the gufunc wrapper casts to native order).
+    Everything else takes the array path:
 
     - other ``np.ndarray`` subclasses (masked arrays, ``np.matrix``), whose
       semantics the gufuncs would drop, and objects that only implement
       ``__array__``;
+    - bool data (arrays, Python and numpy bools): most array paths refuse it
+      (``TypeError``), and the result must not depend on whether numba is
+      installed. Flags such as ``bias`` are not passed here;
     - float16: the gufuncs compute and return float32, the array path float16;
     - long double, complex, object, string and datetime dtypes, and Python ints
       outside the int64/uint64 range, which numba has no loops for.
@@ -174,7 +177,7 @@ def gufunc_inputs_supported(*arrays):
         t = type(a)
         if t is np.ndarray or t is np.memmap or isinstance(a, np.generic):
             dtype = a.dtype
-        elif a is None or t is float or t is bool:
+        elif a is None or t is float:
             continue
         elif t is int or t is list or t is tuple:
             try:
@@ -184,7 +187,7 @@ def gufunc_inputs_supported(*arrays):
         else:
             return False
         # "e" is float16, "g" long double (8 bytes on some platforms)
-        if dtype.kind not in "biuf" or dtype.itemsize > 8 or dtype.char in "eg":
+        if dtype.kind not in "iuf" or dtype.itemsize > 8 or dtype.char in "eg":
             return False
     return True
 
@@ -246,9 +249,10 @@ def use_numba(key, backend, *arrays, aux=()):
       array path; with ``backend="numba"`` that is a ``ValueError``. Only
       ``arrays`` are checked: a jax or torch auxiliary input takes the array
       path through the input guard below.
-    - ``True``: ``ImportError`` if numba cannot be imported.
     - Inputs the gufuncs do not support (``gufunc_inputs_supported``: masked
-      arrays, float16, ...) take the array path in every mode.
+      arrays, float16, bool, ...) take the array path, also with ``True``.
+    - ``True``: a call that would use a gufunc raises ``ImportError`` if numba
+      cannot be imported.
     - ``"auto"``: no gufunc for the ``AUTO_EXCLUDED`` entries, or if numba is
       missing (silently; numba is imported by the first call that gets here).
     """
@@ -263,13 +267,13 @@ def use_numba(key, backend, *arrays, aux=()):
                 "arrays or drop backend='numba' to use the input's framework."
             )
         return False  # the numba option does not apply to jax/torch inputs
+    if not gufunc_inputs_supported(*arrays, *aux):
+        return False
     if mode is True:
         if _numba_import_error() is not None:
             how = "backend='numba'" if explicit else "numba=True"
             raise numba_unavailable_error(how)
-        return gufunc_inputs_supported(*arrays, *aux)
-    if not gufunc_inputs_supported(*arrays, *aux):
-        return False
+        return True
     if key in AUTO_EXCLUDED and _auto_excluded(key, arrays):
         return False
     return _numba_usable_quietly()
