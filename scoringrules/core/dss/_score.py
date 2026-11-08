@@ -45,8 +45,10 @@ def ds_score_mv(
     not finite, like the gufunc.
     """
     M, D = fct.shape[-2], fct.shape[-1]
+    # ``[()]`` below: numpy gives a numpy scalar for a single sample, like the
+    # gufunc and the other scores, instead of a 0-d array
     if M <= D:  # the centred members span at most M - 1 dimensions
-        return xp.full_like(obs[..., 0], xp.nan)
+        return xp.full_like(obs[..., 0], xp.nan)[()]
     ens_mean = xp.mean(fct, axis=-2, keepdims=True)  # (... 1 D)
     fct_cent = fct - ens_mean  # (... M D)
     # refined by the mean residual: a constant variable then has zero variance
@@ -67,4 +69,4 @@ def ds_score_mv(
     L = xp.where(ok[..., None, None], L, eye)
     z = xp.linalg.solve(L, obs_cent[..., None])[..., 0]  # (... D)
     log_det = 2 * xp.sum(xp.log(xp.linalg.diagonal(L)), axis=-1)  # (...)
-    return xp.where(ok, xp.sum(z * z, axis=-1) + log_det, xp.nan)
+    return xp.where(ok, xp.sum(z * z, axis=-1) + log_det, xp.nan)[()]
