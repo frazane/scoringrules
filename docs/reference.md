@@ -134,13 +134,24 @@ Categorical forecasts
     rls_score
 
 
+Configuration
+=============
+Numba use is controlled by ``set_config`` and ``config_context``; see the
+"The numba fast path" section of the user guide.
+
+.. autosummary::
+    :toctree: generated
+
+    set_config
+    get_config
+    config_context
+
 Backends
 ========
 The array framework is inferred from the inputs, so no backend needs to be
-selected. ``register_backend`` and the ``backends`` registry are deprecated
-compatibility shims, removed in 1.0; ``backend="numba"`` and
-``backends.set_active("numba")`` remain the way to reach the numba fast path.
-See the user guide for details.
+selected. The ``backend`` argument of the scores, ``register_backend`` and the
+``backends`` registry are deprecated, removed in 1.0. See the user guide for
+details.
 
 .. autosummary::
     :toctree: generated

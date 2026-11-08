@@ -33,8 +33,9 @@ def brier_score(
     fct : array_like
         Forecast probabilities, between 0 and 1.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -99,8 +100,9 @@ def rps_score(
         Boolean indicating whether the observation is the category that occurs or a onehot
         encoded vector of 0's and 1's. Default is False.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -155,8 +157,9 @@ def log_score(
     fct : array_like
         Forecasted probabilities between 0 and 1.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
@@ -204,8 +207,9 @@ def rls_score(
         Boolean indicating whether the observation is the category that occurs or a onehot
         encoded vector of 0's and 1's. Default is False.
     backend : str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs. This score has no numba fast path, so ``"numba"`` also infers.
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------

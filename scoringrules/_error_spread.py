@@ -27,9 +27,10 @@ def error_spread_score(
         represented by the last axis.
     m_axis: int
         The axis corresponding to the ensemble. Default is the last axis.
-    backend: str, optional
-        Computational backend. ``None`` (default) infers the array framework from
-        the inputs; pass ``"numba"`` for the numba fast path.
+    backend : str, optional
+        Deprecated, removed in 1.0. The array framework is inferred from the inputs;
+        use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
+        numba.
 
     Returns
     -------
