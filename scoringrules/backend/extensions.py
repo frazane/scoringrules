@@ -173,7 +173,7 @@ def comb(xp, n, k):
     """Binomial coefficient for real ``n`` and ``k``, as ``scipy.special.comb``
     with ``exact=False``: 0 outside ``0 <= k <= n``, not rounded.
 
-    numpy calls scipy (the legacy values). jax and torch work in log space,
+    numpy calls scipy, as in earlier releases. jax and torch work in log space,
     ``exp(lgamma(n + 1) - lgamma(k + 1) - lgamma(n - k + 1))``, so large ``n``
     neither overflows (factorials overflow float32 from 35! and float64 from
     171!) nor loses the float32 dtype, and the result is differentiable.
@@ -281,41 +281,3 @@ def _torch_apply_along_axis(func1d, x, axis):
             tuple(range(axis, axis + len(tail))),
         )
     return out
-
-
-def cov(xp, x, rowvar=True, bias=False):
-    k = _kind(xp)
-    if k == "jax":
-        import jax.numpy as jnp
-
-        return jnp.cov(x, rowvar=rowvar, bias=bias)
-    if k == "torch":
-        t = _ts()
-        if not rowvar:
-            x = x.T
-        return t.cov(x, correction=0 if bias else 1)
-    return np.cov(x, rowvar=rowvar, bias=bias)
-
-
-def indices(xp, dimensions, *, dtype=None, device=None):
-    """``numpy.indices`` for every framework.
-
-    ``device`` places the result (pass ``device(x)`` of an input array so it
-    lands next to the data); ``dtype`` defaults to the framework's default
-    integer type.
-    """
-    k = _kind(xp)
-    if k == "jax":
-        import jax
-        import jax.numpy as jnp
-
-        out = jnp.indices(dimensions, dtype=dtype or jnp.int_)
-        return out if device is None else jax.device_put(out, device)
-    if k == "torch":
-        t = _ts()
-        dtype = dtype or t.int64
-        ranges = [t.arange(n, dtype=dtype, device=device) for n in dimensions]
-        if not ranges:
-            return t.empty((0,), dtype=dtype, device=device)
-        return t.stack(t.meshgrid(*ranges, indexing="ij"))
-    return np.indices(dimensions, dtype=dtype or int)

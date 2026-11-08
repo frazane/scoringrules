@@ -39,15 +39,15 @@ jax   scipy-fallback under grad: PASS  (jax traces through scipy.special for the
 
 Notes from the probe that shaped the implementation:
 
-- `jax.scipy.special.hyp2f1` **exists and is correct** (the legacy backend had it
-  commented out): `hyp2f1(1,1,2,0.5) = 1.386294`, matching scipy.
+- `jax.scipy.special.hyp2f1` **exists and is correct**:
+  `hyp2f1(1,1,2,0.5) = 1.386294`, matching scipy.
 - `jax.scipy.special.expi` accepts **0-d input** fine (`expi(1.0) = 1.895118`),
   so no scalar-reshape workaround is needed.
 - jax and torch have **no** `comb`. Composing it from factorials overflows (35!
   in float32, 171! in float64), so the layer works in log space:
   `exp(lgamma(n+1) - lgamma(k+1) - lgamma(n-k+1))` (`jax.scipy.special.gammaln`,
   `torch.lgamma`), 0 outside `0 <= k <= n`, not rounded. numpy uses
-  `scipy.special.comb` (`exact=False`), the legacy values.
+  `scipy.special.comb` (`exact=False`), unchanged from earlier releases.
 - torch has no `gamma`/`beta`/`factorial`, but all three are built from the
   native, differentiable `torch.lgamma`, so they are PASS (forward + grad).
 
@@ -76,7 +76,7 @@ factorial form it is differentiable in `n` and `k`.
 
 ## Non-standard helpers
 
-These are not special functions but are also provided by the extension layer:
+This is not a special function but is also provided by the extension layer:
 
 - `apply_along_axis` — numpy/jax have native paths (jax via `vmap` with a
   `jnp.apply_along_axis` fallback). Torch has no `apply_along_axis`, so the
@@ -85,10 +85,6 @@ These are not special functions but are also provided by the extension layer:
   (`torch.unbind` + `torch.stack`) when vmap cannot trace `func1d`
   (data-dependent control flow, `.item()`). Both paths keep autograd and the
   input's device.
-- `cov` — `jnp.cov` / `torch.cov` (with `correction` mapped from `bias`) / `np.cov`.
-- `indices` — `jnp.indices` / `np.indices` / torch `arange` + `meshgrid`.
-  It takes `device=` (and `dtype=`), so pass `xp.device(x)` to create the grid
-  next to the data.
 
 Array creation (`arange`/`zeros`/`ones`/`full`/…) in the core passes
 `device=xp.device(x)` and, for fractional values, `dtype=xp.float_dtype(x)`
