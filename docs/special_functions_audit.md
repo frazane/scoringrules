@@ -69,6 +69,7 @@ Notes from the probe that shaped the implementation:
 | `factorial` | PASS | PASS | PASS | PASS | PASS | torch via `exp(lgamma(n+1))` |
 | `comb` | PASS | PASS | PASS | PASS | PASS | `scipy.special.comb` (`exact=False`) for numpy; jax/torch via `exp` of `lgamma` differences (no overflow for large `n`, keeps float32, not rounded); grad w.r.t. real `n`, `k` |
 | `quantile` | PASS | PASS | PASS | PASS | PASS | `np.quantile` / `jnp.quantile` / `torch.quantile` (linear interpolation); torch gets `q` as a tensor of `x`'s dtype and device; `axis` is an int or `None` |
+| `cholesky` | PASS | PASS | PASS | PASS | PASS | lower factor, NaN (no error) for matrices that are not positive definite or not finite: `jnp.linalg.cholesky` (NaN already), `torch.linalg.cholesky_ex` masked by `info`, `np.linalg.cholesky` with non-finite matrices masked and a failing stack split in halves; used by `dssmv` |
 
 `comb` is not rounded, so for integer arguments jax/torch return the exact value
 up to rounding (about 1e-13 relative in float64). Unlike the old `round`ed
