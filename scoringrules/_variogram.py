@@ -1,6 +1,10 @@
 import typing as tp
 
-from scoringrules._dispatch import resolve_backend_arg, use_numba
+from scoringrules._dispatch import (
+    gufunc_inputs_supported,
+    resolve_backend_arg,
+    use_numba,
+)
 from scoringrules.backend import get_namespace
 from scoringrules.core import variogram
 from scoringrules.core.utils import (
@@ -100,7 +104,7 @@ def vs_ensemble(
     array([ 8.65630139,  6.84693866, 19.52993307])
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(w, ens_w, p))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     w = _dimension_weights(w, obs, fct, xp=xp)
@@ -277,10 +281,11 @@ def owvs_ensemble(
     array([ 9.86816636,  6.75532522, 19.59353723])
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(w, ens_w, p))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     w = _dimension_weights(w, obs, fct, xp=xp)
     if ens_w is not None:
         ens_w = multivariate_weight_check(ens_w, fct, m_axis, v_axis, xp=xp)
@@ -367,10 +372,11 @@ def vrvs_ensemble(
     array([46.48256493, 57.90759816, 92.37153472])
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(w, ens_w, p))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     w = _dimension_weights(w, obs, fct, xp=xp)
     if ens_w is not None:
         ens_w = multivariate_weight_check(ens_w, fct, m_axis, v_axis, xp=xp)

@@ -1,6 +1,10 @@
 import typing as tp
 
-from scoringrules._dispatch import resolve_backend_arg, use_numba
+from scoringrules._dispatch import (
+    gufunc_inputs_supported,
+    resolve_backend_arg,
+    use_numba,
+)
 from scoringrules.backend import get_namespace
 from scoringrules.core import energy
 from scoringrules.core.utils import (
@@ -84,7 +88,7 @@ def es_ensemble(
         Some theoretical background on scoring rules for multivariate forecasts.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     # apply the nan policy before normalising the weights, so NaN in a user ens_w
@@ -248,7 +252,7 @@ def owes_ensemble(
         The computed Outcome-Weighted Energy Score.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     # apply the nan policy before deriving the outcome weights, so the (now zeroed)
@@ -257,6 +261,7 @@ def owes_ensemble(
         obs, fct, nan_policy, ens_w, m_axis=m_axis, v_axis=v_axis, xp=xp
     )
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     if ens_w is not None:
         ens_w = multivariate_weight_check(ens_w, fct, -2, -1, xp=xp)
 
@@ -329,7 +334,7 @@ def vres_ensemble(
         The computed Vertically Re-scaled Energy Score.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     # apply the nan policy before deriving the outcome weights, so the (now zeroed)
@@ -338,6 +343,7 @@ def vres_ensemble(
         obs, fct, nan_policy, ens_w, m_axis=m_axis, v_axis=v_axis, xp=xp
     )
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     if ens_w is not None:
         ens_w = multivariate_weight_check(ens_w, fct, -2, -1, xp=xp)
 

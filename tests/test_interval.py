@@ -203,6 +203,12 @@ WIS_CASES = (
     "batch",
     "list_inputs",
     "weights",
+    "batched_alpha",
+    "batched_weights",
+    "w_median_array",
+    "float32",
+    "float32_alpha",
+    "zero_d_obs",
     "median_term",
 )
 
@@ -223,10 +229,25 @@ def _wis_inputs(case, K=4, N=5, seed=0):
     kwargs = {"w_median": 0.0}
     if case == "weights":
         kwargs["w_alpha"] = rng.uniform(0.1, 1.0, size=K)
+    elif case == "batched_alpha":  # one set of levels per sample (#168)
+        alpha = np.sort(rng.uniform(0.05, 0.95, size=(*batch, K)), axis=-1)
+    elif case == "batched_weights":
+        kwargs["w_alpha"] = rng.uniform(0.1, 1.0, size=(*batch, K))
+    elif case == "w_median_array":  # zero, see the note above
+        kwargs["w_median"] = np.zeros(batch)
     elif case == "median_term":
         kwargs = {}
     if case == "scalar_obs":
         obs, median = float(obs), float(median)
+    elif case == "zero_d_obs":
+        obs, median, lower, upper = obs[0], median[0], lower[0], upper[0]
+        obs, median = np.asarray(obs), np.asarray(median)
+    elif case == "float32":
+        obs, median, lower, upper, alpha = (
+            np.asarray(a, dtype=np.float32) for a in (obs, median, lower, upper, alpha)
+        )
+    elif case == "float32_alpha":  # float64 data, float32 alpha: float64 out
+        alpha = alpha.astype(np.float32)
     args = (obs, median, lower, upper, alpha)
     if case == "list_inputs":
         args = tuple(np.asarray(a).tolist() for a in args)
@@ -248,6 +269,8 @@ def _wis_parity_params():
 @pytest.mark.parametrize("case", _wis_parity_params())
 def test_weighted_interval_score_paths_agree(case, paths_agree):
     args, kwargs = _wis_inputs(case)
+    if case == "float32_alpha":  # the array path computes the alpha terms in float32
+        kwargs["rtol"] = 1e-7
     paths_agree(sr.weighted_interval_score, *args, **kwargs)
 
 
@@ -286,6 +309,6 @@ def test_weighted_interval_score_float32_data_float64_alpha(paths_agree):
         upper,
         alpha,
         w_median=0.0,
-        rtol=1e-6,
+        rtol=1e-7,
     )
     assert res_numba.dtype == res_numpy.dtype == np.float64

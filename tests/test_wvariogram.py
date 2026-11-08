@@ -96,12 +96,14 @@ def test_twvariogram_score_correctness(backend_kwargs, native):
     np.testing.assert_allclose(res, 0.04856366, rtol=1e-6)
 
 
-@pytest.mark.parametrize("case", MV_CASES)
+# no nan_policy: "nan_propagate" checks that NaN propagates
+@pytest.mark.parametrize("case", [*MV_CASES, "nan_propagate"])
 @pytest.mark.parametrize("M", [6, 7])
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("score", ["owvs_ensemble", "vrvs_ensemble"])
 def test_weighted_variogram_paths_agree(score, weighted, M, case, paths_agree):
     obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
+    kwargs.pop("nan_policy", None)
     paths_agree(getattr(sr, score), obs, fct, mv_w_func, **kwargs)
 
 

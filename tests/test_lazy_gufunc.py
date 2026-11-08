@@ -215,7 +215,7 @@ def test_obs_and_fct_run_the_output_dtype_loop(dtypes, requires_numba):
     obs, fct = rng.normal(size=5), rng.normal(size=(5, 8))
     om, fm = rng.normal(size=(5, 3)), rng.normal(size=(5, 8, 3))
     out = np.result_type(np.result_type(*dtypes), np.float32).newbyteorder("=")
-    for fn, o, f in [
+    fns = [
         (lambda o, f, **k: sr.crps_ensemble(o, f, estimator="pwm", **k), obs, fct),
         (lambda o, f, **k: sr.crps_ensemble(o, f, estimator="nrg", **k), obs, fct),
         (lambda o, f, **k: sr.es_ensemble(o, f, **k), om, fm),
@@ -226,7 +226,25 @@ def test_obs_and_fct_run_the_output_dtype_loop(dtypes, requires_numba):
             obs,
             fct,
         ),
-    ]:
+    ]
+    if dtypes[0] == "float16":
+        # the scores send float16 to the array path (use_numba's input guard),
+        # so call the wrapped gufuncs directly
+        from scoringrules.core import crps, energy
+
+        fns = [
+            (lambda o, f, **k: crps.estimator_gufuncs("pwm")(o, np.sort(f)), obs, fct),
+            (lambda o, f, **k: crps.estimator_gufuncs("nrg")(o, f), obs, fct),
+            (lambda o, f, **k: energy.estimator_gufuncs["nrg"](o, f), om, fm),
+            (
+                lambda o, f, **k: crps.estimator_gufuncs_w("qd")(
+                    o, np.sort(f), np.full_like(f, 1 / 8)
+                ),
+                obs,
+                fct,
+            ),
+        ]
+    for fn, o, f in fns:
         o, f = o.astype(dtypes[0]), f.astype(dtypes[1])
         res = np.asarray(fn(o, f, backend="numba"))
         assert res.dtype == out

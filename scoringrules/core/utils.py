@@ -386,6 +386,14 @@ def uv_weighted_score_weights(
     return obs_w, fct_w
 
 
+def uv_outcome_weights(obs, fct, a, b, w_func, *, xp):
+    """``uv_weighted_score_weights`` cast to ``xp.float_dtype(fct)`` (with
+    ``asarray_like``), so boolean, integer or other-precision weights follow the
+    forecast precision on both paths."""
+    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
+    return asarray_like(obs_w, fct, xp=xp), asarray_like(fct_w, fct, xp=xp)
+
+
 def uv_weighted_score_chain(
     obs, fct, a=float("-inf"), b=float("inf"), v_func=None, *, xp
 ):

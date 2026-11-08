@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import scoringrules as sr
 
-from ._parity import MV_CASES, mv_ensemble_inputs, mv_v_func
+from ._parity import MV_CASES, MV_NAN_CASES, mv_ensemble_inputs, mv_v_func
 from .conftest import assert_inferred
 
 
@@ -267,7 +267,15 @@ def test_energy_score_nan_weights(estimator, backend_kwargs, native):
         assert np.allclose(res_omit, res_clean)
 
 
-@pytest.mark.parametrize("case", MV_CASES)
+def _expected_raise(case, estimator):
+    if case == "nan_raise":
+        return ValueError
+    if case == "nan_omit" and estimator in ("akr", "akr_circperm"):
+        return NotImplementedError
+    return None
+
+
+@pytest.mark.parametrize("case", [*MV_CASES, *MV_NAN_CASES])
 @pytest.mark.parametrize("M", [6, 7])
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("estimator", ESTIMATORS)
@@ -275,7 +283,15 @@ def test_energy_score_nan_weights(estimator, backend_kwargs, native):
 def test_energy_paths_agree(score, estimator, weighted, M, case, paths_agree):
     obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
     args = (mv_v_func,) if score == "twes_ensemble" else ()
-    paths_agree(getattr(sr, score), obs, fct, *args, estimator=estimator, **kwargs)
+    paths_agree(
+        getattr(sr, score),
+        obs,
+        fct,
+        *args,
+        estimator=estimator,
+        raises=_expected_raise(case, estimator),
+        **kwargs,
+    )
 
 
 def test_energy_score_akr_circperm_ens_w_known_value(

@@ -6,12 +6,16 @@ from scoringrules.core.utils import (
     estimator_check,
     univariate_array_check,
     univariate_weight_check,
-    uv_weighted_score_weights,
+    uv_outcome_weights,
     uv_weighted_score_chain,
     univariate_sort_ens,
     apply_nan_policy_ens_uv,
 )
-from scoringrules._dispatch import use_numba, resolve_backend_arg
+from scoringrules._dispatch import (
+    gufunc_inputs_supported,
+    resolve_backend_arg,
+    use_numba,
+)
 
 if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Array, ArrayLike, Backend, NanPolicy
@@ -128,7 +132,7 @@ def crps_ensemble(
     """
 
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs, fct, ens_w = apply_nan_policy_ens_uv(
@@ -352,10 +356,11 @@ def owcrps_ensemble(
     """
 
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
-    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
+    obs_w, fct_w = uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     obs, fct, ens_w = apply_nan_policy_ens_uv(
         obs, fct, nan_policy, ens_w, m_axis=m_axis, xp=xp
     )
@@ -465,10 +470,11 @@ def vrcrps_ensemble(
     """
 
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba(backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
-    obs_w, fct_w = uv_weighted_score_weights(obs, fct, a, b, w_func, xp=xp)
+    obs_w, fct_w = uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
+    numba = numba and gufunc_inputs_supported(obs_w, fct_w)  # e.g. masked w_func output
     obs, fct, ens_w = apply_nan_policy_ens_uv(
         obs, fct, nan_policy, ens_w, m_axis=m_axis, xp=xp
     )
@@ -542,6 +548,7 @@ def crps_quantile(
     # TODO: add example
     """
     resolve_backend_arg(backend)
+    numba = use_numba(backend, obs, fct, aux=(alpha,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     alpha = xp.asarray(alpha)
@@ -549,7 +556,7 @@ def crps_quantile(
         raise ValueError("`alpha` contains entries that are not between 0 and 1.")
     if not fct.shape[-1] == alpha.shape[-1]:
         raise ValueError("Expected matching length of `fct` and `alpha` values.")
-    if use_numba(backend, obs, fct):
+    if numba:
         # the array path promotes obs, fct and alpha, so do the same for the gufunc
         dtype = xp.result_type(*(xp.float_dtype(a) for a in (obs, fct, alpha)))
         obs, fct, alpha = (xp.astype(a, dtype) for a in (obs, fct, alpha))

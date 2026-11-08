@@ -3,7 +3,7 @@ import pytest
 
 import scoringrules as sr
 
-from ._parity import MV_CASES, mv_ensemble_inputs, mv_w_func
+from ._parity import MV_CASES, MV_NAN_CASES, mv_ensemble_inputs, mv_w_func
 from .conftest import assert_inferred
 
 
@@ -250,13 +250,14 @@ def test_weighted_energy_nan_policy_with_ens_w(score_fn, backend_kwargs, native)
         assert np.allclose(res_omit, res_clean)
 
 
-@pytest.mark.parametrize("case", MV_CASES)
+@pytest.mark.parametrize("case", [*MV_CASES, *MV_NAN_CASES])
 @pytest.mark.parametrize("M", [6, 7])
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("score", ["owes_ensemble", "vres_ensemble"])
 def test_weighted_energy_paths_agree(score, weighted, M, case, paths_agree):
     obs, fct, kwargs = mv_ensemble_inputs(case, M, weighted)
-    paths_agree(getattr(sr, score), obs, fct, mv_w_func, **kwargs)
+    raises = ValueError if case == "nan_raise" else None
+    paths_agree(getattr(sr, score), obs, fct, mv_w_func, raises=raises, **kwargs)
 
 
 @pytest.mark.parametrize("score", ["owes_ensemble", "vres_ensemble"])

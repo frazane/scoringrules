@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 import scoringrules as sr
-from ._parity import UV_CASES, uv_ensemble_inputs
+from ._parity import UV_CASES, uv_ensemble_inputs, uv_w_func
 from .conftest import assert_inferred
 
 
@@ -546,6 +546,49 @@ def test_weighted_crps_paths_agree(score, weighted, M, case, paths_agree):
     obs, fct, kwargs = uv_ensemble_inputs(case, M, weighted)
     raises = ValueError if case == "nan_raise" else None
     paths_agree(getattr(sr, score), obs, fct, -0.5, 1.0, raises=raises, **kwargs)
+
+
+def _uv_v_func(x):
+    """A univariate chaining function (numpy only)."""
+    return np.maximum(x, -0.5)
+
+
+# the twcrps goes through crps_ensemble, so a few cases per estimator suffice
+_TW_CASES = ["default", "m_axis", "list_inputs", "float32", "nan_omit", "nan_raise"]
+
+
+@pytest.mark.parametrize("case", _TW_CASES)
+@pytest.mark.parametrize("chain", ["ab", "v_func"])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("estimator", [*ESTIMATORS, "int"])
+def test_twcrps_paths_agree(estimator, weighted, chain, case, paths_agree):
+    obs, fct, kwargs = uv_ensemble_inputs(case, 7, weighted)
+    if chain == "ab":
+        args = (-0.5, 1.0)
+    else:
+        args, kwargs["v_func"] = (), _uv_v_func
+    raises = None
+    if case == "nan_raise":
+        raises = ValueError
+    elif case == "nan_omit" and estimator in ("int", "akr", "akr_circperm"):
+        raises = NotImplementedError
+    paths_agree(
+        sr.twcrps_ensemble,
+        obs,
+        fct,
+        *args,
+        estimator=estimator,
+        raises=raises,
+        **kwargs,
+    )
+
+
+@pytest.mark.parametrize("case", ["default", "batch", "float32", "nan_omit"])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("score", ["owcrps_ensemble", "vrcrps_ensemble"])
+def test_weighted_crps_w_func_paths_agree(score, weighted, case, paths_agree):
+    obs, fct, kwargs = uv_ensemble_inputs(case, 7, weighted)
+    paths_agree(getattr(sr, score), obs, fct, w_func=uv_w_func, **kwargs)
 
 
 def test_vrcrps_ensemble_square_batch_paths_agree(paths_agree):
