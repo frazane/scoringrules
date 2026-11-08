@@ -95,8 +95,8 @@ def _mv_inputs():
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_gksuv(estimator, backend, to_backend, backend_kwargs):
-    kwargs = {"estimator": estimator, **backend_kwargs}
+def test_gksuv(estimator, backend, to_backend):
+    kwargs = {"estimator": estimator}
     obs, fct = _uv_inputs()
 
     # undefined estimator
@@ -105,7 +105,6 @@ def test_gksuv(estimator, backend, to_backend, backend_kwargs):
             to_backend(obs),
             to_backend(fct),
             estimator="undefined_estimator",
-            **backend_kwargs,
         )
 
     # shape and m_axis keyword
@@ -145,8 +144,8 @@ def test_gksuv(estimator, backend, to_backend, backend_kwargs):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_gksmv(estimator, backend, to_backend, backend_kwargs):
-    kwargs = {"estimator": estimator, **backend_kwargs}
+def test_gksmv(estimator, backend, to_backend):
+    kwargs = {"estimator": estimator}
     obs, fct = _mv_inputs()
 
     # undefined estimator
@@ -155,7 +154,6 @@ def test_gksmv(estimator, backend, to_backend, backend_kwargs):
             to_backend(obs),
             to_backend(fct),
             estimator="undefined_estimator",
-            **backend_kwargs,
         )
 
     # incorrect dimensions
@@ -191,8 +189,8 @@ def test_gksmv(estimator, backend, to_backend, backend_kwargs):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_twgksuv(estimator, backend, to_backend, backend_kwargs):
-    kwargs = {"estimator": estimator, **backend_kwargs}
+def test_twgksuv(estimator, backend, to_backend):
+    kwargs = {"estimator": estimator}
     obs, fct = _uv_inputs()
     obs, fct = to_backend(obs), to_backend(fct)
 
@@ -227,40 +225,38 @@ def test_twgksuv(estimator, backend, to_backend, backend_kwargs):
         assert_close(np.mean(np.asarray(res)), expected, backend, rtol=1e-6)
 
 
-def test_twgksuv_bounds_follow_fct_precision(backend, to_backend, backend_kwargs):
+def test_twgksuv_bounds_follow_fct_precision(backend, to_backend):
     """Python-float a/b take the forecast dtype: on float64 torch they are not
     rounded to float32 (B12), so all frameworks match the numpy value."""
     rng = np.random.default_rng(9)
     obs, fct = rng.normal(size=N), rng.normal(size=(N, ENSEMBLE_SIZE))
     expected = sr.twgksuv_ensemble(obs, fct, -0.3, 1.85)
-    res = sr.twgksuv_ensemble(
-        to_backend(obs), to_backend(fct), -0.3, 1.85, **backend_kwargs
-    )
+    res = sr.twgksuv_ensemble(to_backend(obs), to_backend(fct), -0.3, 1.85)
     assert_inferred(res, backend)
     assert_close(res, expected, backend, rtol=1e-12, atol=1e-14)
 
 
-def test_twgksmv(backend, to_backend, backend_kwargs):
+def test_twgksmv(backend, to_backend):
     obs, fct = _mv_inputs()
     obs, fct = to_backend(obs), to_backend(fct)
 
-    res0 = sr.gksmv_ensemble(obs, fct, **backend_kwargs)
-    res = sr.twgksmv_ensemble(obs, fct, lambda x: x, **backend_kwargs)
+    res0 = sr.gksmv_ensemble(obs, fct)
+    res = sr.twgksmv_ensemble(obs, fct, lambda x: x)
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend, rtol=1e-6)
 
     obs, fct = to_backend(MV_OBS), to_backend(MV_FCT)
-    res = sr.twgksmv_ensemble(obs, fct, lambda x: x.clip(min=0.2), **backend_kwargs)
+    res = sr.twgksmv_ensemble(obs, fct, lambda x: x.clip(min=0.2))
     assert_close(res, 0.08671498, backend, rtol=1e-6)
 
     # a threshold that moves obs and two members (every MV_OBS/MV_FCT value is < 1)
     expected = _ref_kernel_score_mv(MV_OBS, MV_FCT, v=lambda x: min(x, 0.7))
-    res = sr.twgksmv_ensemble(obs, fct, lambda x: x.clip(max=0.7), **backend_kwargs)
+    res = sr.twgksmv_ensemble(obs, fct, lambda x: x.clip(max=0.7))
     assert_close(res, expected, backend, rtol=1e-6)
 
 
 @pytest.mark.parametrize("score", ["owgksuv_ensemble", "vrgksuv_ensemble"])
-def test_weighted_gksuv(score, backend, to_backend, backend_kwargs):
+def test_weighted_gksuv(score, backend, to_backend):
     fn = getattr(sr, score)
     obs, fct = _uv_inputs()
 
@@ -270,13 +266,12 @@ def test_weighted_gksuv(score, backend, to_backend, backend_kwargs):
         to_backend(np.random.randn(ENSEMBLE_SIZE, N)),
         w_func=lambda x: x * 0.0 + 1.0,
         m_axis=0,
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     assert not np.any(np.asarray(res) < 0.0)
 
     obs, fct = to_backend(obs), to_backend(fct)
-    res = np.asarray(sr.gksuv_ensemble(obs, fct, estimator="nrg", **backend_kwargs))
+    res = np.asarray(sr.gksuv_ensemble(obs, fct, estimator="nrg"))
 
     # no argument given, a and b, w_func as a constant function
     for w_kwargs in (
@@ -284,7 +279,7 @@ def test_weighted_gksuv(score, backend, to_backend, backend_kwargs):
         {"a": float("-inf"), "b": float("inf")},
         {"w_func": lambda x: x * 0.0 + 1.0},
     ):
-        resw = fn(obs, fct, **w_kwargs, **backend_kwargs)
+        resw = fn(obs, fct, **w_kwargs)
         assert_inferred(resw, backend)
         assert_close(resw, res, backend, rtol=1e-5, atol=1e-6)
 
@@ -301,18 +296,18 @@ def test_weighted_gksuv(score, backend, to_backend, backend_kwargs):
         ({"b": 1.85}, expected[1]),
     ]
     for w_kwargs, value in cases:
-        res = fn(obs, fct, **w_kwargs, **backend_kwargs)
+        res = fn(obs, fct, **w_kwargs)
         assert_close(np.mean(np.asarray(res)), value, backend, rtol=1e-5)
 
 
 @pytest.mark.parametrize("score", ["owgksmv_ensemble", "vrgksmv_ensemble"])
-def test_weighted_gksmv(score, backend, to_backend, backend_kwargs):
+def test_weighted_gksmv(score, backend, to_backend):
     fn = getattr(sr, score)
     obs, fct = _mv_inputs()
     obs, fct = to_backend(obs), to_backend(fct)
 
-    res0 = sr.gksmv_ensemble(obs, fct, **backend_kwargs)
-    res = fn(obs, fct, lambda x: x.mean() * 0.0 + 1.0, **backend_kwargs)
+    res0 = sr.gksmv_ensemble(obs, fct)
+    res = fn(obs, fct, lambda x: x.mean() * 0.0 + 1.0)
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend, rtol=1e-6)
 
@@ -325,7 +320,7 @@ def test_weighted_gksmv(score, backend, to_backend, backend_kwargs):
         (lambda x: 1.0 / (1.0 + x.sum() ** 2), lambda x: 1.0 / (1.0 + sum(x) ** 2)),
     ):
         expected = _ref_kernel_score_mv(MV_OBS, MV_FCT, w=w_ref, kind=kind)
-        res = fn(obs, fct, w_func, **backend_kwargs)
+        res = fn(obs, fct, w_func)
         assert_close(res, expected, backend, rtol=1e-6)
 
 
@@ -504,31 +499,31 @@ def _gks_call(fn, score, estimator, obs, fct, **kwargs):
 
 
 @pytest.mark.parametrize("score,estimator", _GKS_W_SCORES)
-def test_gks_uniform_ens_w(score, estimator, native, backend_kwargs):
+def test_gks_uniform_ens_w(score, estimator, native):
     """Uniform ens_w reproduces the unweighted score."""
     fn = native(getattr(sr, score))
     obs, fct, _, _, ens_w = _gks_ens_w_inputs(score.endswith("mv_ensemble"))
     ens_w = np.ones_like(ens_w)
-    res = _gks_call(fn, score, estimator, obs, fct, **backend_kwargs)
-    res_w = _gks_call(fn, score, estimator, obs, fct, ens_w=ens_w, **backend_kwargs)
+    res = _gks_call(fn, score, estimator, obs, fct)
+    res_w = _gks_call(fn, score, estimator, obs, fct, ens_w=ens_w)
     np.testing.assert_allclose(res_w, res, rtol=1e-5, atol=1e-6)
 
 
 @pytest.mark.parametrize(
     "score,estimator", [s for s in _GKS_W_SCORES if s[1] in (None, "nrg")]
 )
-def test_gks_ens_w_duplicated_members(score, estimator, native, backend_kwargs):
+def test_gks_ens_w_duplicated_members(score, estimator, native):
     """Integer ens_w equals the unweighted score of the ensemble with each member
     repeated that many times (holds for the energy form, not for fair or akr)."""
     fn = native(getattr(sr, score))
     obs, fct, _, fct_dup, ens_w = _gks_ens_w_inputs(score.endswith("mv_ensemble"))
-    res_w = _gks_call(fn, score, estimator, obs, fct, ens_w=ens_w, **backend_kwargs)
-    res_dup = _gks_call(fn, score, estimator, obs, fct_dup, **backend_kwargs)
+    res_w = _gks_call(fn, score, estimator, obs, fct, ens_w=ens_w)
+    res_dup = _gks_call(fn, score, estimator, obs, fct_dup)
     np.testing.assert_allclose(res_w, res_dup, rtol=1e-5, atol=1e-6)
 
 
 @pytest.mark.parametrize("score", ["gksuv_ensemble", "gksmv_ensemble"])
-def test_gks_fair_ens_w_known_value(score, native, backend_kwargs):
+def test_gks_fair_ens_w_known_value(score, native):
     """Weighted fair estimator excludes the i == j pairs (#150)."""
     mv = score == "gksmv_ensemble"
     obs = np.array([0.3, -0.1]) if mv else np.array(0.3)
@@ -544,15 +539,13 @@ def test_gks_fair_ens_w_known_value(score, native, backend_kwargs):
         w[i] * w[j] * kern(fct[i], fct[j]) for i in range(3) for j in range(3) if i != j
     )
     expected = -(e_1 - 0.5 * e_2 / (1 - np.sum(w**2)) - 0.5)
-    res = native(getattr(sr, score))(
-        obs, fct, ens_w=w, estimator="fair", **backend_kwargs
-    )
+    res = native(getattr(sr, score))(obs, fct, ens_w=w, estimator="fair")
     # rtol for jax, which runs in float32 here
     np.testing.assert_allclose(np.asarray(res), expected, rtol=1e-5)
 
 
 @pytest.mark.parametrize("score", ["gksuv_ensemble", "gksmv_ensemble"])
-def test_gks_akr_circperm_ens_w_known_value(score, native, backend_kwargs):
+def test_gks_akr_circperm_ens_w_known_value(score, native):
     """Weighted akr_circperm pairs member i with (i + M // 2) % M and uses w_i (#149)."""
     mv = score == "gksmv_ensemble"
     obs = [0.3, -0.1] if mv else [0.3]
@@ -569,7 +562,7 @@ def test_gks_akr_circperm_ens_w_known_value(score, native, backend_kwargs):
     obs_in = np.array(obs) if mv else np.array(obs[0])
     fct_in = np.array(fct) if mv else np.array(fct)[:, 0]
     res = native(getattr(sr, score))(
-        obs_in, fct_in, ens_w=np.array(w), estimator="akr_circperm", **backend_kwargs
+        obs_in, fct_in, ens_w=np.array(w), estimator="akr_circperm"
     )
     # rtol for jax, which runs in float32 here
     np.testing.assert_allclose(np.asarray(res), expected, rtol=1e-5)
@@ -593,28 +586,28 @@ _MV_LAYOUT_CASES = [
 
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("score,estimator", _MV_LAYOUT_CASES)
-def test_gksmv_ens_w_v_axis_first(score, estimator, weighted, native, backend_kwargs):
+def test_gksmv_ens_w_v_axis_first(score, estimator, weighted, native):
     """ens_w follows fct without its variables axis, also when v_axis comes
     before m_axis (it used to raise: the weight axis was taken against fct.ndim)."""
     obs, fct, kwargs = mv_ensemble_inputs("default", 7, weighted)
     args, extra = _mv_score_args(score, estimator)
     fn = native(getattr(sr, score))
-    expected = fn(obs, fct, *args, **extra, **kwargs, **backend_kwargs)
+    expected = fn(obs, fct, *args, **extra, **kwargs)
     kwargs = {**kwargs, "m_axis": -1, "v_axis": -2}
     fct_t = np.swapaxes(fct, -1, -2).copy()
-    res = fn(obs, fct_t, *args, **extra, **kwargs, **backend_kwargs)
+    res = fn(obs, fct_t, *args, **extra, **kwargs)
     np.testing.assert_allclose(np.asarray(res), np.asarray(expected), rtol=1e-6)
     # m_axis=0 with v_axis=1: fct (M, D, N), obs (D, N), ens_w (M, N)
     fct_t = np.moveaxis(fct, (-2, -1), (0, 1)).copy()
     kwargs = {**kwargs, "m_axis": 0, "v_axis": 1}
     if weighted:
         kwargs["ens_w"] = np.moveaxis(kwargs["ens_w"], -1, 0).copy()
-    res = fn(obs.T.copy(), fct_t, *args, **extra, **kwargs, **backend_kwargs)
+    res = fn(obs.T.copy(), fct_t, *args, **extra, **kwargs)
     np.testing.assert_allclose(np.asarray(res), np.asarray(expected), rtol=1e-6)
 
 
 @pytest.mark.parametrize("score,estimator", _MV_LAYOUT_CASES)
-def test_gksmv_ens_w_silent_layout(score, estimator, native, backend_kwargs):
+def test_gksmv_ens_w_silent_layout(score, estimator, native):
     """fct (D, M, N) with M == N, m_axis=1, v_axis=0: ens_w (M, N) used to be
     moved along the wrong axis without an error, so the score used the wrong
     weights. Compare with the default layout on moveaxis'd inputs."""
@@ -625,7 +618,7 @@ def test_gksmv_ens_w_silent_layout(score, estimator, native, backend_kwargs):
     ens_w = rng.uniform(0.1, 2.0, size=(M, M))  # (N, M)
     args, extra = _mv_score_args(score, estimator)
     fn = native(getattr(sr, score))
-    expected = fn(obs, fct, *args, ens_w=ens_w, **extra, **backend_kwargs)
+    expected = fn(obs, fct, *args, ens_w=ens_w, **extra)
     res = fn(
         obs.T.copy(),
         np.moveaxis(fct, (0, 1, 2), (2, 1, 0)).copy(),
@@ -634,7 +627,6 @@ def test_gksmv_ens_w_silent_layout(score, estimator, native, backend_kwargs):
         v_axis=0,
         ens_w=ens_w.T.copy(),
         **extra,
-        **backend_kwargs,
     )
     np.testing.assert_allclose(np.asarray(res), np.asarray(expected), rtol=1e-6)
 
@@ -661,26 +653,24 @@ def test_kernels_legacy_backend_string_deprecated():
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_kernels_float32(estimator, backend, to_backend_float32, backend_kwargs):
+def test_kernels_float32(estimator, backend, to_backend_float32):
     rng = np.random.default_rng(3)
     obs = to_backend_float32(rng.normal(size=N))
     fct = to_backend_float32(rng.normal(size=(N, ENSEMBLE_SIZE)))
     obs_mv = to_backend_float32(rng.normal(size=(N, N_VARS)))
     fct_mv = to_backend_float32(rng.normal(size=(N, ENSEMBLE_SIZE, N_VARS)))
     ens_w = to_backend_float32(rng.uniform(0.1, 1.0, (N, ENSEMBLE_SIZE)))
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
     for res in (
         sr.gksuv_ensemble(obs, fct, **kwargs),
         sr.gksuv_ensemble(obs, fct, ens_w=ens_w, **kwargs),
         sr.twgksuv_ensemble(obs, fct, v_func=lambda x: x.clip(min=-0.5), **kwargs),
         sr.twgksuv_ensemble(obs, fct, -0.5, 1.0, **kwargs),
-        sr.owgksuv_ensemble(obs, fct, w_func=_uv_w_func, **backend_kwargs),
-        sr.owgksuv_ensemble(obs, fct, b=0.5, ens_w=ens_w, **backend_kwargs),
-        sr.owgksuv_ensemble(obs, fct, w_func=lambda x: x > 0.0, **backend_kwargs),
-        sr.owgksuv_ensemble(
-            obs, fct, w_func=lambda x: (x > 0.0) * 1.0, ens_w=ens_w, **backend_kwargs
-        ),
-        sr.vrgksuv_ensemble(obs, fct, w_func=lambda x: x > 0.0, **backend_kwargs),
+        sr.owgksuv_ensemble(obs, fct, w_func=_uv_w_func),
+        sr.owgksuv_ensemble(obs, fct, b=0.5, ens_w=ens_w),
+        sr.owgksuv_ensemble(obs, fct, w_func=lambda x: x > 0.0),
+        sr.owgksuv_ensemble(obs, fct, w_func=lambda x: (x > 0.0) * 1.0, ens_w=ens_w),
+        sr.vrgksuv_ensemble(obs, fct, w_func=lambda x: x > 0.0),
     ):
         assert_inferred(res, backend)
         assert res.dtype == fct.dtype
@@ -688,10 +678,8 @@ def test_kernels_float32(estimator, backend, to_backend_float32, backend_kwargs)
         sr.gksmv_ensemble(obs_mv, fct_mv, **kwargs),
         sr.gksmv_ensemble(obs_mv, fct_mv, ens_w=ens_w, **kwargs),
         sr.twgksmv_ensemble(obs_mv, fct_mv, lambda x: x.clip(min=-0.5), **kwargs),
-        sr.owgksmv_ensemble(obs_mv, fct_mv, _mv_w_func, **backend_kwargs),
-        sr.vrgksmv_ensemble(
-            obs_mv, fct_mv, lambda x: (x > 0.0).all(), ens_w=ens_w, **backend_kwargs
-        ),
+        sr.owgksmv_ensemble(obs_mv, fct_mv, _mv_w_func),
+        sr.vrgksmv_ensemble(obs_mv, fct_mv, lambda x: (x > 0.0).all(), ens_w=ens_w),
     ):
         assert_inferred(res, backend)
         assert res.dtype == fct_mv.dtype

@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import scoringrules as sr
 from scoringrules.backend import backends
 
 DATA_DIR = Path(__file__).parent / "data"
@@ -87,12 +88,6 @@ def to_backend(backend):
     raise ValueError(backend)
 
 
-@pytest.fixture()
-def backend_kwargs(backend):
-    """kwargs to pass to a score: only numba needs an explicit backend string."""
-    return {"backend": "numba"} if backend == "numba" else {}
-
-
 def assert_inferred(result, backend):
     """Assert the result array belongs to the expected framework (guards against
     silent numpy fallback when a non-numpy backend was requested)."""
@@ -112,20 +107,36 @@ def requires_numba(request):
         pytest.skip("needs the numba backend (not selected or not installed)")
 
 
-@pytest.fixture()
-def restore_active(monkeypatch):
-    """Undo any ``backends.set_active`` call made by the test."""
-    from scoringrules import _dispatch
+# numba option for each ``backend`` parameter: "numpy" tests the array path
+# also when numba is installed, "numba" the default dispatch (the gufuncs,
+# except for ``_dispatch.AUTO_EXCLUDED``). The forced gufunc path is tested by
+# ``paths_agree``.
+_NUMBA_MODES = {"numpy": False, "numba": "auto"}
 
-    monkeypatch.setattr(_dispatch, "_numba_active", _dispatch._numba_active)
+
+@pytest.fixture(autouse=True)
+def _numba_config(request, monkeypatch):
+    """Run each test in the numba mode of its ``backend`` parameter (jax, torch
+    and unparametrized tests keep the process-wide configuration), and undo any
+    ``set_config`` or ``backends.set_active`` call made by the test."""
+    from scoringrules import _config
+
+    monkeypatch.setattr(_config, "_global_config", dict(_config._global_config))
     monkeypatch.setattr(backends, "_active", backends._active)
+    callspec = getattr(request.node, "callspec", None)
+    backend = callspec.params.get("backend") if callspec is not None else None
+    if backend in _NUMBA_MODES:
+        with sr.config_context(numba=_NUMBA_MODES[backend]):
+            yield
+    else:
+        yield
 
 
 @pytest.fixture()
-def numba_active(requires_numba, restore_active):
-    """Enable the global numba switch for one test, with the public
-    ``set_active("numba")``."""
-    backends.set_active("numba")
+def numba_on(requires_numba):
+    """Force the numba gufuncs for one test (``config_context(numba=True)``)."""
+    with sr.config_context(numba=True):
+        yield
 
 
 @pytest.fixture()

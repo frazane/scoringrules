@@ -28,25 +28,25 @@ CASES = {
 
 
 @pytest.mark.parametrize("name", sorted(CASES))
-def test_integer_obs_give_float_scores_on_numba(name, requires_numba):
+def test_integer_obs_give_float_scores_on_numba(name, numba_on):
     fn, obs = CASES[name]
-    res = np.asarray(fn(obs, backend="numba"))
+    res = np.asarray(fn(obs))
     assert res.dtype.kind == "f", res.dtype
-    np.testing.assert_array_equal(res, fn(obs.astype(float), backend="numba"))
+    np.testing.assert_array_equal(res, fn(obs.astype(float)))
 
 
-def test_float32_stays_float32_on_numba(requires_numba):
+def test_float32_stays_float32_on_numba(numba_on):
     f32 = np.float32
     fct = _FCT_UV.astype(f32)
     # 0-d obs: a numpy float32 scalar, not a Python float
-    res = sr.owcrps_ensemble(f32(0.3), fct[0], -1.0, 1.0, backend="numba")
+    res = sr.owcrps_ensemble(f32(0.3), fct[0], -1.0, 1.0)
     assert isinstance(res, np.float32)
     # auxiliary 0-d arrays built by the caller (w_median) do not promote
     args = [
         np.asarray(x, dtype=f32)
         for x in ([0.1, 0.5], [0.0, 0.2], [[-1, -0.5]] * 2, [[1, 0.5]] * 2, [0.2, 0.5])
     ]
-    assert sr.weighted_interval_score(*args, backend="numba").dtype == f32
+    assert sr.weighted_interval_score(*args).dtype == f32
 
 
 # --- lazy loading, exact-dtype loops ---------------------------------------------
@@ -101,27 +101,27 @@ def cases(dt):
     o, f = rng.normal(size=4).astype(dt), rng.normal(size=(4, 7)).astype(dt)
     om, fm = rng.normal(size=(4, 3)).astype(dt), rng.normal(size=(4, 7, 3)).astype(dt)
     w = rng.uniform(0.5, 1.5, size=(4, 7)).astype(dt)
-    nb = {"backend": "numba"}
     return {
-        "crps_pwm": lambda: sr.crps_ensemble(o, f, estimator="pwm", **nb),
-        "crps_nrg": lambda: sr.crps_ensemble(o, f, estimator="nrg", **nb),
-        "crps_w_qd": lambda: sr.crps_ensemble(o, f, ens_w=w, estimator="qd", **nb),
-        "owcrps_0d": lambda: sr.owcrps_ensemble(o[0], f[0], a=-0.5, **nb),
-        "es_nrg": lambda: sr.es_ensemble(om, fm, **nb),
-        "dssuv": lambda: sr.dssuv_ensemble(o, f, bias=True, **nb),
-        "vs_p": lambda: sr.vs_ensemble(om, fm, p=1.5, **nb),
-        "vs_w": lambda: sr.vs_ensemble(om, fm, w=np.ones((3, 3), dtype=dt), **nb),
+        "crps_pwm": lambda: sr.crps_ensemble(o, f, estimator="pwm"),
+        "crps_nrg": lambda: sr.crps_ensemble(o, f, estimator="nrg"),
+        "crps_w_qd": lambda: sr.crps_ensemble(o, f, ens_w=w, estimator="qd"),
+        "owcrps_0d": lambda: sr.owcrps_ensemble(o[0], f[0], a=-0.5),
+        "es_nrg": lambda: sr.es_ensemble(om, fm),
+        "dssuv": lambda: sr.dssuv_ensemble(o, f, bias=True),
+        "vs_p": lambda: sr.vs_ensemble(om, fm, p=1.5),
+        "vs_w": lambda: sr.vs_ensemble(om, fm, w=np.ones((3, 3), dtype=dt)),
     }
 """
 
 
-def test_float32_after_float64_runs_a_float32_loop(requires_numba):
+def test_float32_after_float64_runs_a_float32_loop(numba_on):
     ns = {}
     exec(_DTYPE_CASES, ns)  # noqa: S102
     fresh = _run_fresh(
         _DTYPE_CASES
         + """
 import json
+sr.set_config(numba=True)
 print(json.dumps({k: np.asarray(fn()).tolist() for k, fn in cases(np.float32).items()}))
 """
     )
@@ -134,15 +134,13 @@ print(json.dumps({k: np.asarray(fn()).tolist() for k, fn in cases(np.float32).it
         np.testing.assert_array_equal(res, np.asarray(fresh[name], np.float32), name)
 
 
-def test_float32_loops_exist_after_float64(requires_numba):
+def test_float32_loops_exist_after_float64(numba_on):
     from scoringrules.core.crps import _gufuncs, estimator_gufuncs
 
     rng = np.random.default_rng(3)
     obs, fct = rng.normal(size=3), rng.normal(size=(3, 5))
     for dt in (np.float64, np.float32):
-        sr.crps_ensemble(
-            obs.astype(dt), fct.astype(dt), estimator="akr", backend="numba"
-        )
+        sr.crps_ensemble(obs.astype(dt), fct.astype(dt), estimator="akr")
     assert estimator_gufuncs("akr").__wrapped__ is _gufuncs._crps_ensemble_akr_gufunc
     types = _gufuncs._crps_ensemble_akr_gufunc.ufunc.types
     assert "ff->f" in types and "dd->d" in types
@@ -156,8 +154,8 @@ def test_dssmv_float32_in_fresh_process(requires_numba):
         import scoringrules as sr
         rng = np.random.default_rng(2)
         obs, fct = rng.normal(size=(4, 3)), rng.normal(size=(4, 9, 3))
-        r32 = sr.dssmv_ensemble(obs.astype(np.float32), fct.astype(np.float32),
-                                backend="numba")
+        with sr.config_context(numba=True):
+            r32 = sr.dssmv_ensemble(obs.astype(np.float32), fct.astype(np.float32))
         r64 = sr.dssmv_ensemble(obs, fct)
         print(json.dumps({"dtype": str(r32.dtype), "r32": r32.tolist(),
                           "r64": r64.tolist()}))
@@ -192,8 +190,10 @@ def test_non_float_output_dtype_matches_array_path(fn, dtypes, requires_numba):
         else np.abs(_FCT_B)
     )
     obs, fct = obs.astype(dtypes[0]), fct.astype(dtypes[1])
-    res_numba = np.asarray(fn(obs, fct, backend="numba"))
-    res_array = np.asarray(fn(obs, fct))
+    with sr.config_context(numba=True):
+        res_numba = np.asarray(fn(obs, fct))
+    with sr.config_context(numba=False):
+        res_array = np.asarray(fn(obs, fct))
     assert res_numba.dtype == res_array.dtype == np.float64
     np.testing.assert_allclose(res_numba, res_array, rtol=1e-12, equal_nan=True)
 
@@ -208,7 +208,7 @@ def test_non_float_output_dtype_matches_array_path(fn, dtypes, requires_numba):
     ],
     ids=["f8_f4", "f4_f8", "float16", "bigendian"],
 )
-def test_obs_and_fct_run_the_output_dtype_loop(dtypes, requires_numba):
+def test_obs_and_fct_run_the_output_dtype_loop(dtypes, numba_on):
     # obs and fct are cast to the output dtype: mixed precision runs the float64
     # loop, float16 the float32 one, non-native byte order the native one
     rng = np.random.default_rng(4)
@@ -246,13 +246,13 @@ def test_obs_and_fct_run_the_output_dtype_loop(dtypes, requires_numba):
         ]
     for fn, o, f in fns:
         o, f = o.astype(dtypes[0]), f.astype(dtypes[1])
-        res = np.asarray(fn(o, f, backend="numba"))
+        res = np.asarray(fn(o, f))
         assert res.dtype == out
-        ref = fn(o.astype(out), f.astype(out), backend="numba")
+        ref = fn(o.astype(out), f.astype(out))
         np.testing.assert_array_equal(res, ref)
 
 
-def test_fallback_when_numba_internals_are_missing(monkeypatch, requires_numba):
+def test_fallback_when_numba_internals_are_missing(monkeypatch, numba_on):
     from numba.np.ufunc.gufunc import GUFunc
 
     from scoringrules.core.crps import _gufuncs
@@ -260,7 +260,7 @@ def test_fallback_when_numba_internals_are_missing(monkeypatch, requires_numba):
 
     rng = np.random.default_rng(5)
     obs, fct = rng.normal(size=4), rng.normal(size=(4, 7))
-    expected = sr.crps_ensemble(obs, fct, estimator="akr", backend="numba")
+    expected = sr.crps_ensemble(obs, fct, estimator="akr")
     calls = []
 
     def missing(self, *args):

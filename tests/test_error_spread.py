@@ -9,42 +9,36 @@ ENSEMBLE_SIZE = 11
 N = 5
 
 
-def test_error_spread_score(backend, to_backend, backend_kwargs):
+def test_error_spread_score(backend, to_backend):
     # test shape
     obs = np.random.randn(N)
     fct = obs[:, None] + np.random.randn(N, ENSEMBLE_SIZE)
-    res = sr.error_spread_score(to_backend(obs), to_backend(fct), **backend_kwargs)
+    res = sr.error_spread_score(to_backend(obs), to_backend(fct))
     assert_inferred(res, backend)
     assert res.shape == (N,)
 
     obs = np.random.randn(N)
     fct = np.random.randn(ENSEMBLE_SIZE, N)
-    res = sr.error_spread_score(
-        to_backend(obs), to_backend(fct), m_axis=0, **backend_kwargs
-    )
+    res = sr.error_spread_score(to_backend(obs), to_backend(fct), m_axis=0)
     assert_inferred(res, backend)
     assert res.shape == (N,)
 
     # N=1 keeps the batch axis
-    res = sr.error_spread_score(
-        to_backend(obs[:1]), to_backend(fct.T[:1]), **backend_kwargs
-    )
+    res = sr.error_spread_score(to_backend(obs[:1]), to_backend(fct.T[:1]))
     assert_inferred(res, backend)
     assert res.shape == (1,)
 
     # test correctness
     obs = 0.5
     fct = np.sqrt(np.arange(ENSEMBLE_SIZE))
-    res = sr.error_spread_score(to_backend(obs), to_backend(fct), **backend_kwargs)
+    res = sr.error_spread_score(to_backend(obs), to_backend(fct))
     assert_inferred(res, backend)
     assert np.isclose(np.asarray(res), 1.7942340)
 
     # approx zero when perfect forecast
     obs = np.random.randn(N)
     perfect_fct = obs[..., None] + np.random.randn(N, ENSEMBLE_SIZE) * 1e-5
-    res = sr.error_spread_score(
-        to_backend(obs), to_backend(perfect_fct), **backend_kwargs
-    )
+    res = sr.error_spread_score(to_backend(obs), to_backend(perfect_fct))
     assert_inferred(res, backend)
     res = np.asarray(res)
     assert not np.any(res - 0.0 > 0.0001)
@@ -63,13 +57,13 @@ def test_error_spread_score_paths_agree(case, M, paths_agree):
     paths_agree(sr.error_spread_score, obs, fct, **kwargs)
 
 
-def test_error_spread_score_float32(backend, to_backend_float32, backend_kwargs):
+def test_error_spread_score_float32(backend, to_backend_float32):
     obs = to_backend_float32(np.random.randn(N))
     fct = to_backend_float32(np.random.randn(N, ENSEMBLE_SIZE))
     for res in (
-        sr.error_spread_score(obs, fct, **backend_kwargs),
+        sr.error_spread_score(obs, fct),
         # Python-float obs take the forecast's dtype
-        sr.error_spread_score([0.5] * N, fct, **backend_kwargs),
+        sr.error_spread_score([0.5] * N, fct),
     ):
         assert_inferred(res, backend)
         assert res.dtype == fct.dtype
@@ -92,16 +86,19 @@ def test_error_spread_score_grad_torch():
 
 
 def test_error_spread_score_numba_dispatch(backend, to_backend):
+    # the deprecated backend="numba" during its deprecation window
     obs, fct = to_backend(np.random.randn(N)), to_backend(np.random.randn(N, 7))
-    if backend in ("jax", "torch"):
-        with pytest.raises(ValueError, match="numpy-compatible"):
-            sr.error_spread_score(obs, fct, backend="numba")
-    else:
-        pytest.importorskip("numba")
-        assert_inferred(sr.error_spread_score(obs, fct, backend="numba"), backend)
+    with pytest.warns(DeprecationWarning, match="backend='numba'"):
+        if backend in ("jax", "torch"):
+            with pytest.raises(ValueError, match="numpy-compatible"):
+                sr.error_spread_score(obs, fct, backend="numba")
+        else:
+            pytest.importorskip("numba")
+            res = sr.error_spread_score(obs, fct, backend="numba")
+            assert_inferred(res, backend)
 
 
-def test_error_spread_score_set_active_numba(numba_active, monkeypatch):
+def test_error_spread_score_numba_on(numba_on, monkeypatch):
     from scoringrules.core import error_spread
 
     calls = []

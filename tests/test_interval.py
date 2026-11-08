@@ -8,11 +8,11 @@ from .conftest import assert_inferred
 N = 100
 
 
-def test_interval_score(backend, to_backend, backend_kwargs):
+def test_interval_score(backend, to_backend):
     fa = to_backend
 
     # basic functionality
-    res = sr.interval_score(fa(0.1), fa(0.0), fa(0.4), fa(0.5), **backend_kwargs)
+    res = sr.interval_score(fa(0.1), fa(0.0), fa(0.4), fa(0.5))
     assert_inferred(res, backend)
     assert res.shape == ()
     assert np.isclose(np.asarray(res), 0.4)
@@ -23,7 +23,6 @@ def test_interval_score(backend, to_backend, backend_kwargs):
         lower=fa([0.0, 0.1, 0.2]),
         upper=fa([0.4, 0.3, 0.5]),
         alpha=fa(0.5),
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     assert res.shape == (3,)
@@ -34,7 +33,6 @@ def test_interval_score(backend, to_backend, backend_kwargs):
         lower=fa(np.ones((10, 5)) * 0.2),
         upper=fa(np.ones((10, 5)) * 0.8),
         alpha=fa(np.linspace(0.1, 0.9, 5)),
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     assert res.shape == (10, 5)
@@ -45,11 +43,10 @@ def test_interval_score(backend, to_backend, backend_kwargs):
         lower=fa([[0.2], [0.2]]),
         upper=fa([[0.8], [0.8]]),
         alpha=fa([0.5]),
-        **backend_kwargs,
     )
     assert res.shape == (2,)
     assert np.allclose(np.asarray(res), [1.0, 1.0])
-    res = sr.interval_score(fa([0.1]), fa([0.2]), fa([0.8]), fa(0.5), **backend_kwargs)
+    res = sr.interval_score(fa([0.1]), fa([0.2]), fa([0.8]), fa(0.5))
     assert res.shape == (1,)
 
     # raise ValueError
@@ -59,7 +56,6 @@ def test_interval_score(backend, to_backend, backend_kwargs):
             lower=fa(np.ones((10, 5)) * 0.2),
             upper=fa(np.ones((10, 4)) * 0.8),
             alpha=fa(np.linspace(0.1, 0.9, 5)),
-            **backend_kwargs,
         )
 
     with pytest.raises(ValueError):
@@ -68,19 +64,18 @@ def test_interval_score(backend, to_backend, backend_kwargs):
             lower=fa(np.ones((10, 5)) * 0.2),
             upper=fa(np.ones((10, 5)) * 0.8),
             alpha=fa(np.linspace(0.1, 0.9, 4)),
-            **backend_kwargs,
         )
 
 
 ## We use Bracher et al (2021) Eq. (3) to test the WIS
-def test_weighted_interval_score(backend, to_backend, backend_kwargs):
+def test_weighted_interval_score(backend, to_backend):
     obs = np.zeros(N)
     alpha = np.linspace(0.01, 0.99, 99)
     upper = st.norm(0, 1).ppf(np.tile(1 - alpha / 2, (N, 1)))
     lower = st.norm(0, 1).ppf(np.tile(alpha / 2, (N, 1)))
     obs, alpha, upper, lower = map(to_backend, (obs, alpha, upper, lower))
 
-    WIS = sr.weighted_interval_score(obs, obs, lower, upper, alpha, **backend_kwargs)
+    WIS = sr.weighted_interval_score(obs, obs, lower, upper, alpha)
     assert_inferred(WIS, backend)
     assert WIS.shape == (N,)
     CRPS = sr.crps_normal(obs, 0, 1)
@@ -89,34 +84,30 @@ def test_weighted_interval_score(backend, to_backend, backend_kwargs):
     assert np.all(1 - WIS / CRPS <= 0.001 * CRPS)
 
 
-def test_weighted_interval_score_list_alpha(backend, to_backend, backend_kwargs):
+def test_weighted_interval_score_list_alpha(backend, to_backend):
     alpha = [0.2, 0.5, 0.8]
     obs = to_backend(np.zeros(3))
     lower, upper = to_backend(-np.ones((3, 3))), to_backend(np.ones((3, 3)))
-    res = sr.weighted_interval_score(obs, obs, lower, upper, alpha, **backend_kwargs)
+    res = sr.weighted_interval_score(obs, obs, lower, upper, alpha)
     assert_inferred(res, backend)
-    expected = sr.weighted_interval_score(
-        obs, obs, lower, upper, to_backend(alpha), **backend_kwargs
-    )
+    expected = sr.weighted_interval_score(obs, obs, lower, upper, to_backend(alpha))
     assert np.allclose(np.asarray(res), np.asarray(expected))
 
 
-def test_interval_float32(backend, to_backend_float32, backend_kwargs):
+def test_interval_float32(backend, to_backend_float32):
     fa = to_backend_float32
     obs = fa(np.random.randn(5))
     alpha = fa(np.linspace(0.1, 0.9, 5))
     lower = fa(np.tile(-np.linspace(2.0, 0.1, 5), (5, 1)))
     upper = fa(np.tile(np.linspace(2.0, 0.1, 5), (5, 1)))
     for res in (
-        sr.interval_score(obs, lower, upper, alpha, **backend_kwargs),
-        sr.weighted_interval_score(obs, obs, lower, upper, alpha, **backend_kwargs),
+        sr.interval_score(obs, lower, upper, alpha),
+        sr.weighted_interval_score(obs, obs, lower, upper, alpha),
         # Python-float parameters take the inputs' dtype
-        sr.interval_score(obs, lower[:, 0], upper[:, 0], 0.1, **backend_kwargs),
+        sr.interval_score(obs, lower[:, 0], upper[:, 0], 0.1),
+        sr.weighted_interval_score(obs, obs, lower, upper, alpha, 0.3),
         sr.weighted_interval_score(
-            obs, obs, lower, upper, alpha, 0.3, **backend_kwargs
-        ),
-        sr.weighted_interval_score(
-            obs, obs, lower, upper, list(np.linspace(0.1, 0.9, 5)), **backend_kwargs
+            obs, obs, lower, upper, list(np.linspace(0.1, 0.9, 5))
         ),
     ):
         assert_inferred(res, backend)
@@ -156,23 +147,29 @@ def test_weighted_interval_score_grad_torch():
 
 
 def test_interval_score_numba_arg_infers(backend, to_backend):
-    # no gufunc: backend="numba" means "infer", also for jax/torch inputs
+    # no gufunc: the deprecated backend="numba" means "infer", also for jax/torch
     fa = to_backend
-    res = sr.interval_score(fa(0.1), fa(0.0), fa(0.4), fa(0.5), backend="numba")
+    with pytest.warns(DeprecationWarning, match="backend='numba'"):
+        res = sr.interval_score(fa(0.1), fa(0.0), fa(0.4), fa(0.5), backend="numba")
     assert_inferred(res, backend)
 
 
 def test_weighted_interval_score_numba_dispatch(backend, to_backend):
+    # the deprecated backend="numba" during its deprecation window
     args = [to_backend(x) for x in _wis_inputs("default")[0]]
-    if backend in ("jax", "torch"):
-        with pytest.raises(ValueError, match="numpy-compatible"):
-            sr.weighted_interval_score(*args, backend="numba")
-    else:
-        pytest.importorskip("numba")
-        assert_inferred(sr.weighted_interval_score(*args, backend="numba"), backend)
+    with pytest.warns(DeprecationWarning, match="backend='numba'"):
+        if backend in ("jax", "torch"):
+            with pytest.raises(ValueError, match="numpy-compatible"):
+                sr.weighted_interval_score(*args, backend="numba")
+        else:
+            pytest.importorskip("numba")
+            res = sr.weighted_interval_score(*args, backend="numba")
+            assert_inferred(res, backend)
 
 
-def test_weighted_interval_score_set_active_numba(numba_active, monkeypatch):
+@pytest.mark.parametrize("mode,n_calls", [("auto", 0), (True, 1)])
+def test_weighted_interval_score_numba_mode(mode, n_calls, requires_numba, monkeypatch):
+    # auto mode leaves WIS on the array path until #140 is fixed (#141)
     from scoringrules.core import interval
 
     calls = []
@@ -184,11 +181,12 @@ def test_weighted_interval_score_set_active_numba(numba_active, monkeypatch):
 
     monkeypatch.setattr(interval, "_weighted_interval_score_gufunc", spy)
     args, _ = _wis_inputs("default")
-    sr.weighted_interval_score(*args)
-    assert len(calls) == 1
-    torch = pytest.importorskip("torch")
-    res = sr.weighted_interval_score(*map(torch.as_tensor, args))
-    assert len(calls) == 1 and isinstance(res, torch.Tensor)
+    with sr.config_context(numba=mode):
+        sr.weighted_interval_score(*args)
+        assert len(calls) == n_calls
+        torch = pytest.importorskip("torch")
+        res = sr.weighted_interval_score(*map(torch.as_tensor, args))
+    assert len(calls) == n_calls and isinstance(res, torch.Tensor)
 
 
 # The array path adds ``w_median * median`` where the gufunc adds

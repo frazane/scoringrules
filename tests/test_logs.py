@@ -29,49 +29,47 @@ def fa(to_backend):
     return lambda x: to_backend(np.asarray(x, dtype=float))
 
 
-def test_ensemble(backend, fa, backend_kwargs):
+def test_ensemble(backend, fa):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N))
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    res = sr.logs_ensemble(fa(obs), fa(fct), m_axis=-1, **backend_kwargs)
+    res = sr.logs_ensemble(fa(obs), fa(fct), m_axis=-1)
     assert_inferred(res, backend)
     assert res.shape == (N,)
 
-    res0 = sr.logs_ensemble(fa(obs), fa(fct.T), m_axis=0, **backend_kwargs)
+    res0 = sr.logs_ensemble(fa(obs), fa(fct.T), m_axis=0)
     assert_inferred(res0, backend)
     assert_close(res, np.asarray(res0), backend)
 
     # a given bandwidth, one per forecast
     bw = np.full(N, 0.3)
-    res_bw = sr.logs_ensemble(fa(obs), fa(fct), bw=fa(bw), **backend_kwargs)
+    res_bw = sr.logs_ensemble(fa(obs), fa(fct), bw=fa(bw))
     assert_inferred(res_bw, backend)
     expected = sr.logs_mixnorm(obs, fct, np.full(fct.shape, 0.3))
     assert_close(res_bw, expected, backend)
 
     obs, fct = 6.2, [4.2, 5.1, 6.1, 7.6, 8.3, 9.5]
-    res = sr.logs_ensemble(fa(obs), fa(fct), **backend_kwargs)
+    res = sr.logs_ensemble(fa(obs), fa(fct))
     assert_inferred(res, backend)
     assert_close(res, 1.926475, backend)
 
     fct = [-142.7, -160.3, -179.4, -184.5]
-    res = sr.logs_ensemble(fa(obs), fa(fct), **backend_kwargs)
+    res = sr.logs_ensemble(fa(obs), fa(fct))
     assert_inferred(res, backend)
     assert_close(res, 55.25547, backend)
 
 
-def test_clogs(backend, fa, backend_kwargs):
+def test_clogs(backend, fa):
     obs = np.random.randn(N)
     mu = obs + np.random.randn(N) * 0.1
     sigma = abs(np.random.randn(N))
     fct = np.random.randn(N, ENSEMBLE_SIZE) * sigma[..., None] + mu[..., None]
 
-    res0 = sr.logs_ensemble(fa(obs), fa(fct), m_axis=-1, **backend_kwargs)
-    res = sr.clogs_ensemble(fa(obs), fa(fct), m_axis=-1, **backend_kwargs)
-    res_co = sr.clogs_ensemble(
-        fa(obs), fa(fct), m_axis=-1, cens=False, **backend_kwargs
-    )
+    res0 = sr.logs_ensemble(fa(obs), fa(fct), m_axis=-1)
+    res = sr.clogs_ensemble(fa(obs), fa(fct), m_axis=-1)
+    res_co = sr.clogs_ensemble(fa(obs), fa(fct), m_axis=-1, cens=False)
     assert_inferred(res, backend)
     assert_inferred(res_co, backend)
     assert res.shape == (N,)
@@ -79,66 +77,65 @@ def test_clogs(backend, fa, backend_kwargs):
     assert_close(res, np.asarray(res0), backend, atol=1e-5)
     assert_close(res_co, np.asarray(res0), backend, atol=1e-5)
 
-    res1 = sr.clogs_ensemble(fa(obs), fa(fct.T), m_axis=0, **backend_kwargs)
+    res1 = sr.clogs_ensemble(fa(obs), fa(fct.T), m_axis=0)
     assert_inferred(res1, backend)
     assert_close(res, np.asarray(res1), backend, atol=1e-5)
 
     obs, fct = 6.2, [4.2, 5.1, 6.1, 7.6, 8.3, 9.5]
-    res = sr.clogs_ensemble(fa(obs), fa(fct), a=fa(8.0), **backend_kwargs)
+    res = sr.clogs_ensemble(fa(obs), fa(fct), a=fa(8.0))
     assert_inferred(res, backend)
     assert_close(res, 0.3929448, backend)
 
-    res = sr.clogs_ensemble(fa(obs), fa(fct), a=fa(5.0), cens=False, **backend_kwargs)
+    res = sr.clogs_ensemble(fa(obs), fa(fct), a=fa(5.0), cens=False)
     assert_inferred(res, backend)
     assert_close(res, 1.646852, backend)
 
     fct = [-142.7, -160.3, -179.4, -184.5]
-    res = sr.clogs_ensemble(fa(obs), fa(fct), b=fa(-150.0), **backend_kwargs)
+    res = sr.clogs_ensemble(fa(obs), fa(fct), b=fa(-150.0))
     assert_inferred(res, backend)
     assert_close(res, 1.420427, backend)
 
 
-def test_beta(backend, fa, backend_kwargs):
+def test_beta(backend, fa):
     res = sr.logs_beta(
         fa(np.random.uniform(0, 1, (3, 3))),
         fa(np.random.uniform(0, 3, (3, 3))),
         fa(1.1),
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     assert res.shape == (3, 3)
     assert not np.any(np.isnan(np.asarray(res)))
 
     # jax runs in float32, hence the loose tolerance on this case
-    res = sr.logs_beta(fa(0.3), fa(0.7), fa(1.1), fa(0.0), fa(1.0), **backend_kwargs)
+    res = sr.logs_beta(fa(0.3), fa(0.7), fa(1.1), fa(0.0), fa(1.0))
     assert_inferred(res, backend)
     assert_close(res, -0.04344567, backend, atol=1e-4)
 
-    res = sr.logs_beta(fa(-3.0), fa(0.9), fa(2.1), fa(-5.0), fa(4.0), **backend_kwargs)
+    res = sr.logs_beta(fa(-3.0), fa(0.9), fa(2.1), fa(-5.0), fa(4.0))
     assert_inferred(res, backend)
     assert_close(res, 1.74193, backend)
 
-    res = sr.logs_beta(fa(-3.0), fa(0.9), fa(2.1), fa(-2.0), fa(4.0), **backend_kwargs)
+    res = sr.logs_beta(fa(-3.0), fa(0.9), fa(2.1), fa(-2.0), fa(4.0))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
 
-def test_binomial(backend, fa, backend_kwargs):
-    res = sr.logs_binomial(fa(8), fa(10), fa(0.9), **backend_kwargs)
+def test_binomial(backend, fa):
+    res = sr.logs_binomial(fa(8), fa(10), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 1.641392, backend)
 
-    res = sr.logs_binomial(fa(-8), fa(10), fa(0.9), **backend_kwargs)
+    res = sr.logs_binomial(fa(-8), fa(10), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
-    res = sr.logs_binomial(fa(18), fa(30), fa(0.5), **backend_kwargs)
+    res = sr.logs_binomial(fa(18), fa(30), fa(0.5))
     assert_inferred(res, backend)
     assert_close(res, 2.518839, backend)
 
     # large n: comb(171, 50) overflows a factorial-based comb (171! > 1e308).
     # -scipy.stats.binom.logpmf(50, 171, 0.4)
-    res = sr.logs_binomial(fa(50), fa(171), fa(0.4), **backend_kwargs)
+    res = sr.logs_binomial(fa(50), fa(171), fa(0.4))
     assert_inferred(res, backend)
     # comb(171, 50) ~ 1e43 does not fit jax's float32 (x64 off), so only the
     # numeric comparison is skipped on jax.
@@ -146,369 +143,353 @@ def test_binomial(backend, fa, backend_kwargs):
         assert_close(res, 6.995656745750523, backend)
 
 
-def test_exponential(backend, fa, backend_kwargs):
-    res = sr.logs_exponential(fa(0.3), fa(0.1), **backend_kwargs)
+def test_exponential(backend, fa):
+    res = sr.logs_exponential(fa(0.3), fa(0.1))
     assert_inferred(res, backend)
     assert_close(res, 2.332585, backend)
 
-    res = sr.logs_exponential(fa(-1.3), fa(2.4), **backend_kwargs)
+    res = sr.logs_exponential(fa(-1.3), fa(2.4))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
-    res = sr.logs_exponential(fa(0.0), fa(0.9), **backend_kwargs)
+    res = sr.logs_exponential(fa(0.0), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 0.1053605, backend)
 
 
-def test_gamma(backend, fa, backend_kwargs):
+def test_gamma(backend, fa):
     obs, shape, rate = 0.2, 1.1, 0.7
     expected = 0.6434138
 
-    res = sr.logs_gamma(fa(obs), fa(shape), fa(rate), **backend_kwargs)
+    res = sr.logs_gamma(fa(obs), fa(shape), fa(rate))
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
-    res = sr.logs_gamma(fa(obs), fa(shape), scale=fa(1 / rate), **backend_kwargs)
+    res = sr.logs_gamma(fa(obs), fa(shape), scale=fa(1 / rate))
     assert_inferred(res, backend)
     assert_close(res, expected, backend)
 
     with pytest.raises(ValueError):
-        sr.logs_gamma(
-            fa(obs), fa(shape), fa(rate), scale=fa(1 / rate), **backend_kwargs
-        )
+        sr.logs_gamma(fa(obs), fa(shape), fa(rate), scale=fa(1 / rate))
 
     with pytest.raises(ValueError):
-        sr.logs_gamma(fa(obs), fa(shape), **backend_kwargs)
+        sr.logs_gamma(fa(obs), fa(shape))
 
 
-def test_gev(backend, fa, backend_kwargs):
-    res0 = sr.logs_gev(fa(0.3), fa(0.7), **backend_kwargs)
+def test_gev(backend, fa):
+    res0 = sr.logs_gev(fa(0.3), fa(0.7))
     assert_inferred(res0, backend)
     assert_close(res0, 1.22455, backend)
 
-    res = sr.logs_gev(fa(0.3), fa(0.7), fa(0.0), fa(1.0), **backend_kwargs)
+    res = sr.logs_gev(fa(0.3), fa(0.7), fa(0.0), fa(1.0))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
-    res = sr.logs_gev(fa(0.3), fa(-0.7), fa(0.0), fa(1.0), **backend_kwargs)
+    res = sr.logs_gev(fa(0.3), fa(-0.7), fa(0.0), fa(1.0))
     assert_inferred(res, backend)
     assert_close(res, 0.8151139, backend)
 
-    res = sr.logs_gev(fa(0.3), fa(0.0), fa(0.0), fa(1.0), **backend_kwargs)
+    res = sr.logs_gev(fa(0.3), fa(0.0), fa(0.0), fa(1.0))
     assert_inferred(res, backend)
     assert_close(res, 1.040818, backend)
 
-    res = sr.logs_gev(fa(-3.6), fa(0.7), fa(0.0), fa(1.0), **backend_kwargs)
+    res = sr.logs_gev(fa(-3.6), fa(0.7), fa(0.0), fa(1.0))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
-    res = sr.logs_gev(fa(-3.6), fa(1.7), fa(-4.0), fa(2.7), **backend_kwargs)
+    res = sr.logs_gev(fa(-3.6), fa(1.7), fa(-4.0), fa(2.7))
     assert_inferred(res, backend)
     assert_close(res, 2.226233, backend)
 
 
-def test_gpd(backend, fa, backend_kwargs):
-    res0 = sr.logs_gpd(fa(0.8), fa(0.9), **backend_kwargs)
+def test_gpd(backend, fa):
+    res0 = sr.logs_gpd(fa(0.8), fa(0.9))
     assert_inferred(res0, backend)
     assert_close(res0, 1.144907, backend)
 
-    res = sr.logs_gpd(fa(0.8), fa(0.9), fa(0.0), fa(1.0), **backend_kwargs)
+    res = sr.logs_gpd(fa(0.8), fa(0.9), fa(0.0), fa(1.0))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
-    res = sr.logs_gpd(fa(-0.8), fa(0.9), fa(0.0), fa(1.0), **backend_kwargs)
+    res = sr.logs_gpd(fa(-0.8), fa(0.9), fa(0.0), fa(1.0))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
-    res = sr.logs_gpd(fa(0.8), fa(-0.9), fa(0.0), fa(1.0), **backend_kwargs)
+    res = sr.logs_gpd(fa(0.8), fa(-0.9), fa(0.0), fa(1.0))
     assert_inferred(res, backend)
     assert_close(res, 0.1414406, backend)
 
-    res = sr.logs_gpd(fa(0.8), fa(0.0), fa(0.0), fa(2.1), **backend_kwargs)
+    res = sr.logs_gpd(fa(0.8), fa(0.0), fa(0.0), fa(2.1))
     assert_inferred(res, backend)
     assert_close(res, 1.12289, backend)
 
-    res = sr.logs_gpd(fa(-17.4), fa(2.3), fa(-21.0), fa(4.3), **backend_kwargs)
+    res = sr.logs_gpd(fa(-17.4), fa(2.3), fa(-21.0), fa(4.3))
     assert_inferred(res, backend)
     assert_close(res, 2.998844, backend)
 
 
-def test_hypergeometric(backend, fa, backend_kwargs):
-    res = sr.logs_hypergeometric(fa(5), fa(7), fa(13), fa(12), **backend_kwargs)
+def test_hypergeometric(backend, fa):
+    res = sr.logs_hypergeometric(fa(5), fa(7), fa(13), fa(12))
     assert_inferred(res, backend)
     assert_close(res, 1.251525, backend)
 
     # large population: -scipy.stats.hypergeom.logpmf(5, 171, 100, 20)
-    res = sr.logs_hypergeometric(fa(5), fa(100), fa(71), fa(20), **backend_kwargs)
+    res = sr.logs_hypergeometric(fa(5), fa(100), fa(71), fa(20))
     assert_inferred(res, backend)
     assert_close(res, 6.755243793500753, backend)
 
-    res = sr.logs_hypergeometric(
-        fa(5 * np.ones((2, 2))), fa(7), fa(13), fa(12), **backend_kwargs
-    )
+    res = sr.logs_hypergeometric(fa(5 * np.ones((2, 2))), fa(7), fa(13), fa(12))
     assert_inferred(res, backend)
     assert res.shape == (2, 2)
 
-    res = sr.logs_hypergeometric(
-        fa(5), fa(7 * np.ones((2, 2))), fa(13), fa(12), **backend_kwargs
-    )
+    res = sr.logs_hypergeometric(fa(5), fa(7 * np.ones((2, 2))), fa(13), fa(12))
     assert_inferred(res, backend)
     assert res.shape == (2, 2)
 
 
-def test_logis(backend, fa, backend_kwargs):
-    res = sr.logs_logistic(fa(17.1), fa(13.8), fa(3.3), **backend_kwargs)
+def test_logis(backend, fa):
+    res = sr.logs_logistic(fa(17.1), fa(13.8), fa(3.3))
     assert_inferred(res, backend)
     assert_close(res, 2.820446, backend)
 
-    res = sr.logs_logistic(fa(3.1), fa(4.0), fa(0.5), **backend_kwargs)
+    res = sr.logs_logistic(fa(3.1), fa(4.0), fa(0.5))
     assert_inferred(res, backend)
     assert_close(res, 1.412808, backend)
 
 
-def test_loglogistic(backend, fa, backend_kwargs):
-    res = sr.logs_loglogistic(fa(3.0), fa(0.1), fa(0.9), **backend_kwargs)
+def test_loglogistic(backend, fa):
+    res = sr.logs_loglogistic(fa(3.0), fa(0.1), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 2.672729, backend)
 
-    res = sr.logs_loglogistic(fa(0.0), fa(0.1), fa(0.9), **backend_kwargs)
+    res = sr.logs_loglogistic(fa(0.0), fa(0.1), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
-    res = sr.logs_loglogistic(fa(12.0), fa(12.1), fa(4.9), **backend_kwargs)
+    res = sr.logs_loglogistic(fa(12.0), fa(12.1), fa(4.9))
     assert_inferred(res, backend)
     assert_close(res, 6.299409, backend)
 
 
-def test_lognormal(backend, fa, backend_kwargs):
-    res = sr.logs_lognormal(fa(3.0), fa(0.1), fa(0.9), **backend_kwargs)
+def test_lognormal(backend, fa):
+    res = sr.logs_lognormal(fa(3.0), fa(0.1), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 2.527762, backend)
 
-    res = sr.logs_lognormal(fa(0.0), fa(0.1), fa(0.9), **backend_kwargs)
+    res = sr.logs_lognormal(fa(0.0), fa(0.1), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
-    res = sr.logs_lognormal(fa(12.0), fa(12.1), fa(4.9), **backend_kwargs)
+    res = sr.logs_lognormal(fa(12.0), fa(12.1), fa(4.9))
     assert_inferred(res, backend)
     assert_close(res, 6.91832, backend)
 
 
-def test_exponential2(backend, fa, backend_kwargs):
-    res = sr.logs_exponential2(fa(8.3), fa(7.0), fa(1.2), **backend_kwargs)
+def test_exponential2(backend, fa):
+    res = sr.logs_exponential2(fa(8.3), fa(7.0), fa(1.2))
     assert_inferred(res, backend)
     assert_close(res, 1.265655, backend)
 
-    res = sr.logs_exponential2(fa(-1.3), fa(2.4), fa(4.5), **backend_kwargs)
+    res = sr.logs_exponential2(fa(-1.3), fa(2.4), fa(4.5))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
-    res = sr.logs_exponential2(fa(0.9), fa(0.9), fa(2.0), **backend_kwargs)
+    res = sr.logs_exponential2(fa(0.9), fa(0.9), fa(2.0))
     assert_inferred(res, backend)
     assert_close(res, 0.6931472, backend)
 
-    res0 = sr.logs_exponential(fa(0.9), fa(1 / 2.0), **backend_kwargs)
-    res = sr.logs_exponential2(fa(0.9), fa(0.0), fa(2.0), **backend_kwargs)
+    res0 = sr.logs_exponential(fa(0.9), fa(1 / 2.0))
+    res = sr.logs_exponential2(fa(0.9), fa(0.0), fa(2.0))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_exponential2_does_not_modify_obs(backend, fa, backend_kwargs):
+def test_exponential2_does_not_modify_obs(backend, fa):
     # #153: the location shift used to be applied in place to the caller's obs
     obs = fa([1.0, 2.0])
-    sr.logs_exponential2(obs, fa(0.5), fa(1.0), **backend_kwargs)
+    sr.logs_exponential2(obs, fa(0.5), fa(1.0))
     np.testing.assert_array_equal(np.asarray(obs), [1.0, 2.0])
 
 
-def test_2pexponential(backend, fa, backend_kwargs):
-    res = sr.logs_2pexponential(fa(0.3), fa(0.1), fa(4.3), fa(0.0), **backend_kwargs)
+def test_2pexponential(backend, fa):
+    res = sr.logs_2pexponential(fa(0.3), fa(0.1), fa(4.3), fa(0.0))
     assert_inferred(res, backend)
     assert_close(res, 1.551372, backend)
 
-    res = sr.logs_2pexponential(
-        fa(-20.8), fa(7.1), fa(2.0), fa(-15.4), **backend_kwargs
-    )
+    res = sr.logs_2pexponential(fa(-20.8), fa(7.1), fa(2.0), fa(-15.4))
     assert_inferred(res, backend)
     assert_close(res, 2.968838, backend)
 
 
-def test_laplace(backend, fa, backend_kwargs):
-    res = sr.logs_laplace(fa(-3.0), **backend_kwargs)
+def test_laplace(backend, fa):
+    res = sr.logs_laplace(fa(-3.0))
     assert_inferred(res, backend)
     assert_close(res, 3.693147, backend)
 
-    res = sr.logs_laplace(fa(-3.0), fa(0.1), **backend_kwargs)
+    res = sr.logs_laplace(fa(-3.0), fa(0.1))
     assert_inferred(res, backend)
     assert_close(res, 3.793147, backend)
 
-    res = sr.logs_laplace(fa(-3.0), fa(0.1), fa(0.9), **backend_kwargs)
+    res = sr.logs_laplace(fa(-3.0), fa(0.1), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 4.032231, backend)
 
 
-def test_loglaplace(backend, fa, backend_kwargs):
-    res = sr.logs_loglaplace(fa(3.0), fa(0.1), fa(0.9), **backend_kwargs)
+def test_loglaplace(backend, fa):
+    res = sr.logs_loglaplace(fa(3.0), fa(0.1), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, 2.795968, backend)
 
-    res = sr.logs_loglaplace(fa(0.0), fa(0.1), fa(0.9), **backend_kwargs)
+    res = sr.logs_loglaplace(fa(0.0), fa(0.1), fa(0.9))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
-    res = sr.logs_loglaplace(fa(12.0), fa(12.1), fa(4.9), **backend_kwargs)
+    res = sr.logs_loglaplace(fa(12.0), fa(12.1), fa(4.9))
     assert_inferred(res, backend)
     assert_close(res, 6.729553, backend)
 
 
-def test_mixnorm(backend, fa, backend_kwargs):
+def test_mixnorm(backend, fa):
     obs, m, s, w = 0.3, [0.0, -2.9, 0.9], [0.5, 1.4, 0.7], [1 / 3, 1 / 3, 1 / 3]
-    res = sr.logs_mixnorm(fa(obs), fa(m), fa(s), fa(w), **backend_kwargs)
+    res = sr.logs_mixnorm(fa(obs), fa(m), fa(s), fa(w))
     assert_inferred(res, backend)
     assert_close(res, 1.019742, backend)
 
-    res0 = sr.logs_mixnorm(fa(obs), fa(m), fa(s), **backend_kwargs)
+    res0 = sr.logs_mixnorm(fa(obs), fa(m), fa(s))
     assert_inferred(res0, backend)
     assert_close(res, np.asarray(res0), backend)
 
     w = [0.3, 0.1, 0.6]
-    res = sr.logs_mixnorm(fa(obs), fa(m), fa(s), fa(w), **backend_kwargs)
+    res = sr.logs_mixnorm(fa(obs), fa(m), fa(s), fa(w))
     assert_inferred(res, backend)
     assert_close(res, 0.8235977, backend)
 
     obs = [-1.6, 0.3]
     m = [[0.0, -2.9], [0.6, 0.0], [-1.1, -2.3]]
     s = [[0.5, 1.7], [1.1, 0.7], [1.4, 1.5]]
-    res1 = sr.logs_mixnorm(fa(obs), fa(m), fa(s), mc_axis=0, **backend_kwargs)
+    res1 = sr.logs_mixnorm(fa(obs), fa(m), fa(s), mc_axis=0)
     assert_inferred(res1, backend)
 
     m = [[0.0, 0.6, -1.1], [-2.9, 0.0, -2.3]]
     s = [[0.5, 1.1, 1.4], [1.7, 0.7, 1.5]]
-    res2 = sr.logs_mixnorm(fa(obs), fa(m), fa(s), **backend_kwargs)
+    res2 = sr.logs_mixnorm(fa(obs), fa(m), fa(s))
     assert_inferred(res2, backend)
     assert_close(res1, np.asarray(res2), backend)
 
 
-def test_negbinom(backend, fa, backend_kwargs):
+def test_negbinom(backend, fa):
     with pytest.raises(ValueError):
-        sr.logs_negbinom(fa(1), fa(1.1), fa(0.1), mu=fa(0.1), **backend_kwargs)
+        sr.logs_negbinom(fa(1), fa(1.1), fa(0.1), mu=fa(0.1))
 
-    res = sr.logs_negbinom(fa(2.0), fa(7.0), fa(0.8), **backend_kwargs)
+    res = sr.logs_negbinom(fa(2.0), fa(7.0), fa(0.8))
     assert_inferred(res, backend)
     assert_close(res, 1.448676, backend)
 
-    res = sr.logs_negbinom(fa(1.5), fa(2.0), fa(0.5), **backend_kwargs)
+    res = sr.logs_negbinom(fa(1.5), fa(2.0), fa(0.5))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
-    res = sr.logs_negbinom(fa(-1.0), fa(17.0), fa(0.1), **backend_kwargs)
+    res = sr.logs_negbinom(fa(-1.0), fa(17.0), fa(0.1))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
-    res = sr.logs_negbinom(fa(2.0), fa(11.0), mu=fa(7.3), **backend_kwargs)
+    res = sr.logs_negbinom(fa(2.0), fa(11.0), mu=fa(7.3))
     assert_inferred(res, backend)
     assert_close(res, 3.247462, backend)
 
     # a real-valued size: scipy's comb, not a rounded integer comb
-    res = sr.logs_negbinom(fa(3.0), fa(2.5), fa(0.4), **backend_kwargs)
+    res = sr.logs_negbinom(fa(3.0), fa(2.5), fa(0.4))
     assert_inferred(res, backend)
     assert_close(res, 1.9418321, backend)
 
 
-def test_normal(backend, fa, backend_kwargs):
-    res = sr.logs_normal(fa(0.0), fa(0.1), fa(0.1), **backend_kwargs)
+def test_normal(backend, fa):
+    res = sr.logs_normal(fa(0.0), fa(0.1), fa(0.1))
     assert_inferred(res, backend)
     assert_close(res, -0.8836466, backend)
 
-    res = sr.logs_normal(fa(17.1), fa(13.8), fa(3.3), **backend_kwargs)
+    res = sr.logs_normal(fa(17.1), fa(13.8), fa(3.3))
     assert_inferred(res, backend)
     assert_close(res, 2.612861, backend)
 
-    res = sr.logs_normal(fa(3.1), fa(4.0), fa(0.5), **backend_kwargs)
+    res = sr.logs_normal(fa(3.1), fa(4.0), fa(0.5))
     assert_inferred(res, backend)
     assert_close(res, 1.845791, backend)
 
-    res = sr.logs_normal(fa(3.1), fa(4.0), fa(0.5), negative=False, **backend_kwargs)
+    res = sr.logs_normal(fa(3.1), fa(4.0), fa(0.5), negative=False)
     assert_inferred(res, backend)
     assert_close(res, -1.845791, backend)
 
 
-def test_2pnormal(backend, fa, backend_kwargs):
-    res = sr.logs_2pnormal(fa(29.1), fa(4.6), fa(1.3), fa(27.9), **backend_kwargs)
+def test_2pnormal(backend, fa):
+    res = sr.logs_2pnormal(fa(29.1), fa(4.6), fa(1.3), fa(27.9))
     assert_inferred(res, backend)
     assert_close(res, 2.426779, backend)
 
-    res = sr.logs_2pnormal(fa(-2.2), fa(1.6), fa(3.3), fa(-1.9), **backend_kwargs)
+    res = sr.logs_2pnormal(fa(-2.2), fa(1.6), fa(3.3), fa(-1.9))
     assert_inferred(res, backend)
     assert_close(res, 1.832605, backend)
 
     obs, scale, location = 1.5, 4.5, 5.4
-    res0 = sr.logs_normal(fa(obs), fa(location), fa(scale), **backend_kwargs)
-    res = sr.logs_2pnormal(
-        fa(obs), fa(scale), fa(scale), fa(location), **backend_kwargs
-    )
+    res0 = sr.logs_normal(fa(obs), fa(location), fa(scale))
+    res = sr.logs_2pnormal(fa(obs), fa(scale), fa(scale), fa(location))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_poisson(backend, fa, backend_kwargs):
-    res = sr.logs_poisson(fa(1.0), fa(3.0), **backend_kwargs)
+def test_poisson(backend, fa):
+    res = sr.logs_poisson(fa(1.0), fa(3.0))
     assert_inferred(res, backend)
     assert_close(res, 1.901388, backend)
 
-    res = sr.logs_poisson(fa(1.5), fa(2.3), **backend_kwargs)
+    res = sr.logs_poisson(fa(1.5), fa(2.3))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
-    res = sr.logs_poisson(fa(-1.0), fa(1.5), **backend_kwargs)
+    res = sr.logs_poisson(fa(-1.0), fa(1.5))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
 
-def test_t(backend, fa, backend_kwargs):
-    res = sr.logs_t(fa(11.1), fa(5.2), fa(13.8), fa(2.3), **backend_kwargs)
+def test_t(backend, fa):
+    res = sr.logs_t(fa(11.1), fa(5.2), fa(13.8), fa(2.3))
     assert_inferred(res, backend)
     assert_close(res, 2.528398, backend)
 
-    res = sr.logs_t(fa(0.7), fa(4.0), **backend_kwargs)
+    res = sr.logs_t(fa(0.7), fa(4.0))
     assert_inferred(res, backend)
     assert_close(res, 1.269725, backend)
 
 
-def test_tlogis(backend, fa, backend_kwargs):
-    res = sr.logs_tlogistic(
-        fa(4.9), fa(3.5), fa(2.3), fa(0.0), fa(20.0), **backend_kwargs
-    )
+def test_tlogis(backend, fa):
+    res = sr.logs_tlogistic(fa(4.9), fa(3.5), fa(2.3), fa(0.0), fa(20.0))
     assert_inferred(res, backend)
     assert_close(res, 2.11202, backend)
 
     # aligns with logs_logistic
-    res0 = sr.logs_logistic(fa(4.9), fa(3.5), fa(2.3), **backend_kwargs)
-    res = sr.logs_tlogistic(fa(4.9), fa(3.5), fa(2.3), **backend_kwargs)
+    res0 = sr.logs_logistic(fa(4.9), fa(3.5), fa(2.3))
+    res = sr.logs_tlogistic(fa(4.9), fa(3.5), fa(2.3))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_tnormal(backend, fa, backend_kwargs):
-    res = sr.logs_tnormal(
-        fa(4.2), fa(2.9), fa(2.2), fa(1.5), fa(17.3), **backend_kwargs
-    )
+def test_tnormal(backend, fa):
+    res = sr.logs_tnormal(fa(4.2), fa(2.9), fa(2.2), fa(1.5), fa(17.3))
     assert_inferred(res, backend)
     assert_close(res, 1.577806, backend)
 
-    res = sr.logs_tnormal(
-        fa(-1.0), fa(2.9), fa(2.2), fa(1.5), fa(17.3), **backend_kwargs
-    )
+    res = sr.logs_tnormal(fa(-1.0), fa(2.9), fa(2.2), fa(1.5), fa(17.3))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
     # aligns with logs_normal
-    res0 = sr.logs_normal(fa(-1.0), fa(2.9), fa(2.2), **backend_kwargs)
-    res = sr.logs_tnormal(fa(-1.0), fa(2.9), fa(2.2), **backend_kwargs)
+    res0 = sr.logs_normal(fa(-1.0), fa(2.9), fa(2.2))
+    res = sr.logs_tnormal(fa(-1.0), fa(2.9), fa(2.2))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_tt(backend, fa, backend_kwargs):
+def test_tt(backend, fa):
     if backend == "torch":
         with pytest.raises(NotImplementedError):
             sr.logs_tt(fa(1.9), fa(2.9), fa(3.1), fa(4.2), fa(1.5), fa(17.3))
@@ -517,35 +498,31 @@ def test_tt(backend, fa, backend_kwargs):
             "betainc row)"
         )
 
-    res = sr.logs_tt(
-        fa(1.9), fa(2.9), fa(3.1), fa(4.2), fa(1.5), fa(17.3), **backend_kwargs
-    )
+    res = sr.logs_tt(fa(1.9), fa(2.9), fa(3.1), fa(4.2), fa(1.5), fa(17.3))
     assert_inferred(res, backend)
     assert_close(res, 2.002856, backend)
 
-    res = sr.logs_tt(
-        fa(-1.0), fa(2.9), fa(3.1), fa(4.2), fa(1.5), fa(17.3), **backend_kwargs
-    )
+    res = sr.logs_tt(fa(-1.0), fa(2.9), fa(3.1), fa(4.2), fa(1.5), fa(17.3))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
     # aligns with logs_t
-    res0 = sr.logs_t(fa(-1.0), fa(2.9), fa(3.1), fa(4.2), **backend_kwargs)
-    res = sr.logs_tt(fa(-1.0), fa(2.9), fa(3.1), fa(4.2), **backend_kwargs)
+    res0 = sr.logs_t(fa(-1.0), fa(2.9), fa(3.1), fa(4.2))
+    res = sr.logs_tt(fa(-1.0), fa(2.9), fa(3.1), fa(4.2))
     assert_inferred(res, backend)
     assert_close(res, np.asarray(res0), backend)
 
 
-def test_uniform(backend, fa, backend_kwargs):
-    res = sr.logs_uniform(fa(0.3), fa(-1.0), fa(2.1), **backend_kwargs)
+def test_uniform(backend, fa):
+    res = sr.logs_uniform(fa(0.3), fa(-1.0), fa(2.1))
     assert_inferred(res, backend)
     assert_close(res, 1.131402, backend)
 
-    res = sr.logs_uniform(fa(-17.9), fa(-15.2), fa(-8.7), **backend_kwargs)
+    res = sr.logs_uniform(fa(-17.9), fa(-15.2), fa(-8.7))
     assert_inferred(res, backend)
     assert_close(res, float("inf"), backend)
 
-    res = sr.logs_uniform(fa(0.1), fa(0.1), fa(3.1), **backend_kwargs)
+    res = sr.logs_uniform(fa(0.1), fa(0.1), fa(3.1))
     assert_inferred(res, backend)
     assert_close(res, 1.098612, backend)
 
@@ -589,14 +566,14 @@ FLOAT32_IDS = [f"{c[0]}-{i}" for i, c in enumerate(FLOAT32_CASES)]
 
 
 @pytest.mark.parametrize("name, args", FLOAT32_CASES, ids=FLOAT32_IDS)
-def test_float32(name, args, backend, to_backend_float32, backend_kwargs):
+def test_float32(name, args, backend, to_backend_float32):
     if backend == "torch" and name == "logs_tt":
         pytest.skip(
             "betainc is BLOCKED on torch (docs/special_functions_audit.md, "
             "betainc row)"
         )
     fn = getattr(sr, name)
-    res = fn(*map(to_backend_float32, args), **backend_kwargs)
+    res = fn(*map(to_backend_float32, args))
     assert_inferred(res, backend)
     assert str(res.dtype).endswith("float32"), f"{name} returned {res.dtype}"
     expected = np.asarray(fn(*(np.asarray(a, dtype=np.float64) for a in args)))
@@ -612,9 +589,7 @@ def test_exponential2_float32_python_location(backend, to_backend_float32):
 
 
 @pytest.mark.parametrize("name, args", FLOAT32_CASES, ids=FLOAT32_IDS)
-def test_float32_python_float_params(
-    name, args, backend, to_backend_float32, backend_kwargs
-):
+def test_float32_python_float_params(name, args, backend, to_backend_float32):
     """float32 obs with Python-float (or list) parameters must stay float32."""
     if backend == "torch" and name == "logs_tt":
         pytest.skip(
@@ -622,7 +597,7 @@ def test_float32_python_float_params(
             "betainc row)"
         )
     fn = getattr(sr, name)
-    res = fn(to_backend_float32(args[0]), *args[1:], **backend_kwargs)
+    res = fn(to_backend_float32(args[0]), *args[1:])
     assert_inferred(res, backend)
     assert str(res.dtype).endswith("float32"), f"{name} returned {res.dtype}"
 
@@ -659,7 +634,8 @@ def test_logs_legacy_backend_string_deprecated():
 def test_logs_numba_backend_means_infer():
     torch = pytest.importorskip("torch")
     obs = torch.tensor([0.2, 1.0], dtype=torch.float64)
-    res = sr.logs_normal(obs, 0.1, 1.2, backend="numba")
+    with pytest.warns(DeprecationWarning, match="backend='numba'"):
+        res = sr.logs_normal(obs, 0.1, 1.2, backend="numba")
     assert_inferred(res, "torch")
 
 

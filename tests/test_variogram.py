@@ -15,25 +15,21 @@ ESTIMATORS = ["nrg", "fair"]
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_variogram_score(estimator, backend, to_backend, backend_kwargs):
+def test_variogram_score(estimator, backend, to_backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = sr.vs_ensemble(
-        to_backend(obs), to_backend(fct), estimator=estimator, **backend_kwargs
-    )
+    res = sr.vs_ensemble(to_backend(obs), to_backend(fct), estimator=estimator)
     assert_inferred(res, backend)
     assert res.shape == (N,)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_variogram_score_permuted_dims(estimator, backend, to_backend, backend_kwargs):
+def test_variogram_score_permuted_dims(estimator, backend, to_backend):
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = sr.vs_ensemble(
-        to_backend(obs), to_backend(fct), estimator=estimator, **backend_kwargs
-    )
+    res = sr.vs_ensemble(to_backend(obs), to_backend(fct), estimator=estimator)
     # fct (D, N, M) with m_axis=-1, v_axis=0; obs (D, N)
     res_t = sr.vs_ensemble(
         to_backend(obs.T.copy()),
@@ -41,14 +37,13 @@ def test_variogram_score_permuted_dims(estimator, backend, to_backend, backend_k
         v_axis=0,
         m_axis=-1,
         estimator=estimator,
-        **backend_kwargs,
     )
     assert_inferred(res_t, backend)
     np.testing.assert_allclose(np.asarray(res_t), np.asarray(res), rtol=1e-6)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_variogram_score_correctness(estimator, backend_kwargs, native):
+def test_variogram_score_correctness(estimator, native):
     vs = native(sr.vs_ensemble)
     # correctness
     fct = np.array(
@@ -59,7 +54,7 @@ def test_variogram_score_correctness(estimator, backend_kwargs, native):
     ).T
     obs = np.array([0.2743836, 0.8146400])
 
-    res = vs(obs, fct, p=0.5, estimator=estimator, **backend_kwargs)
+    res = vs(obs, fct, p=0.5, estimator=estimator)
     if estimator == "nrg":
         expected = 0.04114727
         np.testing.assert_allclose(res, expected, rtol=1e-5)
@@ -67,7 +62,7 @@ def test_variogram_score_correctness(estimator, backend_kwargs, native):
         expected = 0.01407421
         np.testing.assert_allclose(res, expected, rtol=1e-5)
 
-    res = vs(obs, fct, p=1.0, estimator=estimator, **backend_kwargs)
+    res = vs(obs, fct, p=1.0, estimator=estimator)
     if estimator == "nrg":
         expected = 0.04480374
         np.testing.assert_allclose(res, expected, rtol=1e-5)
@@ -77,46 +72,44 @@ def test_variogram_score_correctness(estimator, backend_kwargs, native):
 
     # with and without dimension weights
     w = np.ones((2, 2))
-    res_w = vs(obs, fct, w=w, p=1.0, estimator=estimator, **backend_kwargs)
+    res_w = vs(obs, fct, w=w, p=1.0, estimator=estimator)
     np.testing.assert_allclose(res_w, res, rtol=1e-5)
 
     # with dimension weights
     w = np.array([[0.1, 0.2], [0.2, 0.4]])
-    res = vs(obs, fct, w=w, p=0.5, estimator=estimator, **backend_kwargs)
+    res = vs(obs, fct, w=w, p=0.5, estimator=estimator)
     if estimator == "nrg":
         expected = 0.008229455
         np.testing.assert_allclose(res, expected, atol=1e-6)
 
     # invariance to diagonal terms of weight matrix
     w = np.array([[1.1, 0.2], [0.2, 100]])
-    res = vs(obs, fct, w=w, p=0.5, estimator=estimator, **backend_kwargs)
+    res = vs(obs, fct, w=w, p=0.5, estimator=estimator)
     if estimator == "nrg":
         np.testing.assert_allclose(res, expected, atol=1e-6)
 
     # with ensemble weights
     ens_w = np.array([0.1, 0.8, 0.3, 0.4])
-    res = vs(obs, fct, ens_w=ens_w, p=0.5, estimator="nrg", **backend_kwargs)
+    res = vs(obs, fct, ens_w=ens_w, p=0.5, estimator="nrg")
     if estimator == "nrg":
         expected = 0.07648068
         np.testing.assert_allclose(res, expected, atol=1e-6)
 
     ens_w = np.array([0.9, 0.2, 0.5, 0.5])
-    res = vs(obs, fct, ens_w=ens_w, p=0.75, estimator=estimator, **backend_kwargs)
+    res = vs(obs, fct, ens_w=ens_w, p=0.75, estimator=estimator)
     if estimator == "nrg":
         expected = 0.01160571
         np.testing.assert_allclose(res, expected, atol=1e-6)
 
     # check invariance to scaling of the weights
     ens_w_scaled = ens_w * 10
-    res_scaled = vs(
-        obs, fct, ens_w=ens_w_scaled, p=0.75, estimator=estimator, **backend_kwargs
-    )
+    res_scaled = vs(obs, fct, ens_w=ens_w_scaled, p=0.75, estimator=estimator)
     assert np.allclose(res_scaled, res)
 
     # with dimension and ensemble weights
     w = np.array([[0.1, 0.2], [0.2, 0.4]])
     ens_w = np.array([0.1, 0.8, 0.3, 0.4])
-    res = vs(obs, fct, w=w, ens_w=ens_w, p=0.5, estimator=estimator, **backend_kwargs)
+    res = vs(obs, fct, w=w, ens_w=ens_w, p=0.5, estimator=estimator)
     if estimator == "nrg":
         expected = 0.01529614
         np.testing.assert_allclose(res, expected, atol=1e-6)
@@ -188,7 +181,7 @@ def test_variogram_p_w_variants_paths_agree(score, w, p, paths_agree):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_variogram_ens_w_silent_layout(estimator, native, backend_kwargs):
+def test_variogram_ens_w_silent_layout(estimator, native):
     """fct (D, M, N) with M == N, m_axis=1, v_axis=0: ens_w (M, N) used to be
     moved along the wrong axis without an error, so the score used the wrong
     weights. Compare with the default layout on moveaxis'd inputs."""
@@ -198,7 +191,7 @@ def test_variogram_ens_w_silent_layout(estimator, native, backend_kwargs):
     fct = rng.normal(size=(M, M, D))  # (N, M, D)
     ens_w = rng.uniform(0.1, 2.0, size=(M, M))  # (N, M)
     fn = native(sr.vs_ensemble)
-    expected = fn(obs, fct, ens_w=ens_w, estimator=estimator, **backend_kwargs)
+    expected = fn(obs, fct, ens_w=ens_w, estimator=estimator)
     res = fn(
         obs.T.copy(),
         np.moveaxis(fct, (0, 1, 2), (2, 1, 0)).copy(),
@@ -206,19 +199,18 @@ def test_variogram_ens_w_silent_layout(estimator, native, backend_kwargs):
         v_axis=0,
         ens_w=ens_w.T.copy(),
         estimator=estimator,
-        **backend_kwargs,
     )
     np.testing.assert_allclose(np.asarray(res), np.asarray(expected), rtol=1e-6)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
 @pytest.mark.parametrize("score", ["vs_ensemble", "twvs_ensemble"])
-def test_variogram_ens_w_v_axis_first(score, estimator, native, backend_kwargs):
+def test_variogram_ens_w_v_axis_first(score, estimator, native):
     """ens_w follows fct without its variables axis when v_axis comes first."""
     obs, fct, kwargs = mv_ensemble_inputs("default", 7, weighted=True)
     args = (lambda x: x,) if score == "twvs_ensemble" else ()
     fn = native(getattr(sr, score))
-    expected = fn(obs, fct, *args, estimator=estimator, **kwargs, **backend_kwargs)
+    expected = fn(obs, fct, *args, estimator=estimator, **kwargs)
     res = fn(
         obs,
         np.swapaxes(fct, -1, -2).copy(),
@@ -227,7 +219,6 @@ def test_variogram_ens_w_v_axis_first(score, estimator, native, backend_kwargs):
         v_axis=-2,
         estimator=estimator,
         **kwargs,
-        **backend_kwargs,
     )
     np.testing.assert_allclose(np.asarray(res), np.asarray(expected), rtol=1e-6)
 
@@ -249,12 +240,12 @@ def test_variogram_legacy_backend_string_deprecated():
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_variogram_float32(estimator, backend, to_backend_float32, backend_kwargs):
+def test_variogram_float32(estimator, backend, to_backend_float32):
     rng = np.random.default_rng(3)
     obs = to_backend_float32(rng.normal(size=(6, 4)))
     fct = to_backend_float32(rng.normal(size=(6, 7, 4)))
     ens_w = to_backend_float32(rng.uniform(0.1, 1.0, (6, 7)))
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
     for res in (
         sr.vs_ensemble(obs, fct, **kwargs),
         sr.vs_ensemble(obs, fct, ens_w=ens_w, **kwargs),

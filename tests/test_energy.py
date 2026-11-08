@@ -22,8 +22,8 @@ def assert_close(result, expected, backend, *, rtol=1e-7, atol=1e-6):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_energy_score(estimator, backend, to_backend, backend_kwargs):
-    kwargs = {"estimator": estimator, **backend_kwargs}
+def test_energy_score(estimator, backend, to_backend):
+    kwargs = {"estimator": estimator}
 
     # incorrect dimensions
     with pytest.raises(ValueError):
@@ -38,7 +38,6 @@ def test_energy_score(estimator, backend, to_backend, backend_kwargs):
             to_backend(obs),
             to_backend(fct),
             estimator="undefined_estimator",
-            **backend_kwargs,
         )
 
     # shapes
@@ -97,9 +96,9 @@ OMIT_ESTIMATORS = ["nrg", "fair"]
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_energy_score_nan_policy(estimator, backend_kwargs, native):
+def test_energy_score_nan_policy(estimator, native):
     """es_ensemble with NaN forecast members, no user weights."""
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
     es = native(sr.es_ensemble)
 
     obs = np.random.randn(N, N_VARS)
@@ -153,9 +152,9 @@ def test_energy_score_nan_policy(estimator, backend_kwargs, native):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_energy_score_w_ens_nan_policy(estimator, backend_kwargs, native):
+def test_energy_score_w_ens_nan_policy(estimator, native):
     """es_ensemble with NaN forecast members AND user-supplied ens_w."""
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
     es = native(sr.es_ensemble)
 
     obs = np.random.randn(N, N_VARS)
@@ -229,9 +228,9 @@ def test_energy_score_w_ens_nan_policy(estimator, backend_kwargs, native):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_energy_score_nan_weights(estimator, backend_kwargs, native):
+def test_energy_score_nan_weights(estimator, native):
     """es_ensemble when ens_w itself contains NaN (forecasts are clean)."""
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
     es = native(sr.es_ensemble)
 
     obs = np.random.randn(N, N_VARS)
@@ -294,9 +293,7 @@ def test_energy_paths_agree(score, estimator, weighted, M, case, paths_agree):
     )
 
 
-def test_energy_score_akr_circperm_ens_w_known_value(
-    backend, to_backend, backend_kwargs
-):
+def test_energy_score_akr_circperm_ens_w_known_value(backend, to_backend):
     """Weighted akr_circperm pairs member i with (i + M // 2) % M and uses w_i (#149)."""
     obs = np.array([0.3, -0.1])
     fct = np.array([[0.1, 0.2], [-0.4, 0.0], [1.2, -0.5]])
@@ -314,7 +311,6 @@ def test_energy_score_akr_circperm_ens_w_known_value(
         to_backend(fct),
         ens_w=to_backend(np.array(w)),
         estimator="akr_circperm",
-        **backend_kwargs,
     )
     assert_close(res, expected, backend)
 
@@ -322,25 +318,23 @@ def test_energy_score_akr_circperm_ens_w_known_value(
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("estimator", ESTIMATORS)
 @pytest.mark.parametrize("score", ["es_ensemble", "twes_ensemble"])
-def test_energy_ens_w_v_axis_first(score, estimator, weighted, native, backend_kwargs):
+def test_energy_ens_w_v_axis_first(score, estimator, weighted, native):
     """ens_w follows fct without its variables axis, also when v_axis comes
     before m_axis (it used to raise: the weight axis was taken against fct.ndim)."""
     obs, fct, kwargs = mv_ensemble_inputs("default", 7, weighted)
     args = (lambda x: x,) if score == "twes_ensemble" else ()
     fn = native(getattr(sr, score))
-    expected = fn(obs, fct, *args, estimator=estimator, **kwargs, **backend_kwargs)
+    expected = fn(obs, fct, *args, estimator=estimator, **kwargs)
     kwargs = {**kwargs, "m_axis": -1, "v_axis": -2}
     fct_t = np.swapaxes(fct, -1, -2).copy()
-    res = fn(obs, fct_t, *args, estimator=estimator, **kwargs, **backend_kwargs)
+    res = fn(obs, fct_t, *args, estimator=estimator, **kwargs)
     np.testing.assert_allclose(np.asarray(res), np.asarray(expected), rtol=1e-6)
     # m_axis=0 with v_axis=1: fct (M, D, N), obs (D, N), ens_w (M, N)
     fct_t = np.moveaxis(fct, (-2, -1), (0, 1)).copy()
     kwargs = {**kwargs, "m_axis": 0, "v_axis": 1}
     if weighted:
         kwargs["ens_w"] = np.moveaxis(kwargs["ens_w"], -1, 0).copy()
-    res = fn(
-        obs.T.copy(), fct_t, *args, estimator=estimator, **kwargs, **backend_kwargs
-    )
+    res = fn(obs.T.copy(), fct_t, *args, estimator=estimator, **kwargs)
     np.testing.assert_allclose(np.asarray(res), np.asarray(expected), rtol=1e-6)
 
 
@@ -360,12 +354,12 @@ def test_energy_legacy_backend_string_deprecated():
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_energy_float32(estimator, backend, to_backend_float32, backend_kwargs):
+def test_energy_float32(estimator, backend, to_backend_float32):
     rng = np.random.default_rng(3)
     obs = to_backend_float32(rng.normal(size=(N, N_VARS)))
     fct = to_backend_float32(rng.normal(size=(N, ENSEMBLE_SIZE, N_VARS)))
     ens_w = to_backend_float32(rng.uniform(0.1, 1.0, (N, ENSEMBLE_SIZE)))
-    kwargs = {"estimator": estimator, **backend_kwargs}
+    kwargs = {"estimator": estimator}
     for res in (
         sr.es_ensemble(obs, fct, **kwargs),
         sr.es_ensemble(obs, fct, ens_w=ens_w, **kwargs),
@@ -389,7 +383,7 @@ def test_energy_grad_torch(estimator):
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_energy_ens_w_silent_layout(estimator, native, backend_kwargs):
+def test_energy_ens_w_silent_layout(estimator, native):
     """fct (D, M, N) with M == N, m_axis=1, v_axis=0: ens_w (M, N) used to be
     moved along the wrong axis without an error, so the score used the wrong
     weights. Compare with the default layout on moveaxis'd inputs."""
@@ -399,7 +393,7 @@ def test_energy_ens_w_silent_layout(estimator, native, backend_kwargs):
     fct = rng.normal(size=(M, M, D))  # (N, M, D)
     ens_w = rng.uniform(0.1, 2.0, size=(M, M))  # (N, M)
     fn = native(sr.es_ensemble)
-    expected = fn(obs, fct, ens_w=ens_w, estimator=estimator, **backend_kwargs)
+    expected = fn(obs, fct, ens_w=ens_w, estimator=estimator)
     res = fn(
         obs.T.copy(),
         np.moveaxis(fct, (0, 1, 2), (2, 1, 0)).copy(),
@@ -407,6 +401,5 @@ def test_energy_ens_w_silent_layout(estimator, native, backend_kwargs):
         v_axis=0,
         ens_w=ens_w.T.copy(),
         estimator=estimator,
-        **backend_kwargs,
     )
     np.testing.assert_allclose(np.asarray(res), np.asarray(expected), rtol=1e-6)

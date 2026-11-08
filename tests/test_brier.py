@@ -13,22 +13,22 @@ FCT_K = [
 OBS_K = [1, 3, 4, 2]
 
 
-def test_brier(backend, to_backend, backend_kwargs):
+def test_brier(backend, to_backend):
     # test exceptions
     with pytest.raises(ValueError):
-        sr.brier_score(to_backend(1), to_backend(1.1), **backend_kwargs)
+        sr.brier_score(to_backend(1), to_backend(1.1))
 
     with pytest.raises(ValueError):
-        sr.brier_score(to_backend(1), to_backend(-0.1), **backend_kwargs)
+        sr.brier_score(to_backend(1), to_backend(-0.1))
 
     with pytest.raises(ValueError):
-        sr.brier_score(to_backend(0.5), to_backend(0.5), **backend_kwargs)
+        sr.brier_score(to_backend(0.5), to_backend(0.5))
 
     with pytest.raises(ValueError):
         sr.brier_score(to_backend([0, np.nan]), to_backend([0.5, 0.5]))
 
     # test correctness
-    res = sr.brier_score(to_backend(0), to_backend(0.271), **backend_kwargs)
+    res = sr.brier_score(to_backend(0), to_backend(0.271))
     assert_inferred(res, backend)
     assert np.isclose(np.asarray(res), 0.073441)
 
@@ -37,35 +37,31 @@ def test_brier(backend, to_backend, backend_kwargs):
     assert np.allclose(np.asarray(res), [0.073441, 0.531441])
 
 
-def test_rps(backend, to_backend, backend_kwargs):
+def test_rps(backend, to_backend):
     # test exceptions
     with pytest.raises(ValueError):
-        sr.rps_score(to_backend(1), to_backend(1.1), **backend_kwargs)
+        sr.rps_score(to_backend(1), to_backend(1.1))
 
     with pytest.raises(ValueError):
-        sr.rps_score(to_backend(1), to_backend(-0.1), **backend_kwargs)
+        sr.rps_score(to_backend(1), to_backend(-0.1))
 
     with pytest.raises(ValueError):
-        sr.rps_score(to_backend([1, 2]), to_backend(FCT_K), **backend_kwargs)
+        sr.rps_score(to_backend([1, 2]), to_backend(FCT_K))
 
     # test correctness
     obs, fct = 3, [0.01, 0.32, 0.44, 0.23]
-    res = sr.rps_score(to_backend(obs), to_backend(fct), **backend_kwargs)
+    res = sr.rps_score(to_backend(obs), to_backend(fct))
     assert_inferred(res, backend)
     assert np.isclose(np.asarray(res), 0.1619)
 
     # onehot gives the same result
-    res_onehot = sr.rps_score(
-        to_backend([0, 0, 1, 0]), to_backend(fct), onehot=True, **backend_kwargs
-    )
+    res_onehot = sr.rps_score(to_backend([0, 0, 1, 0]), to_backend(fct), onehot=True)
     assert_inferred(res_onehot, backend)
     assert np.isclose(np.asarray(res_onehot), 0.1619)
 
     # k_axis
-    res1 = sr.rps_score(to_backend(OBS_K), to_backend(FCT_K), **backend_kwargs)
-    res2 = sr.rps_score(
-        to_backend(OBS_K), to_backend(np.transpose(FCT_K)), k_axis=0, **backend_kwargs
-    )
+    res1 = sr.rps_score(to_backend(OBS_K), to_backend(FCT_K))
+    res2 = sr.rps_score(to_backend(OBS_K), to_backend(np.transpose(FCT_K)), k_axis=0)
     assert_inferred(res1, backend)
     assert_inferred(res2, backend)
     assert res1.shape == (4,)
@@ -77,24 +73,23 @@ def test_rps(backend, to_backend, backend_kwargs):
         to_backend(np.transpose(FCT_K)),
         k_axis=0,
         onehot=True,
-        **backend_kwargs,
     )
     assert np.allclose(np.asarray(res1), np.asarray(res3))
 
 
-def test_logs(backend, to_backend, backend_kwargs):
+def test_logs(backend, to_backend):
     # test exceptions
     with pytest.raises(ValueError):
-        sr.log_score(to_backend(1), to_backend(1.1), **backend_kwargs)
+        sr.log_score(to_backend(1), to_backend(1.1))
 
     with pytest.raises(ValueError):
-        sr.log_score(to_backend(1), to_backend(-0.1), **backend_kwargs)
+        sr.log_score(to_backend(1), to_backend(-0.1))
 
     with pytest.raises(ValueError):
-        sr.log_score(to_backend(0.5), to_backend(0.5), **backend_kwargs)
+        sr.log_score(to_backend(0.5), to_backend(0.5))
 
     # test correctness
-    res = sr.log_score(to_backend(0), to_backend(0.481), **backend_kwargs)
+    res = sr.log_score(to_backend(0), to_backend(0.481))
     assert_inferred(res, backend)
     assert np.isclose(np.asarray(res), 0.6558514)
 
@@ -103,45 +98,43 @@ def test_logs(backend, to_backend, backend_kwargs):
     assert np.allclose(np.asarray(res), [0.6558514, -np.log(0.481)])
 
 
-def test_rls(backend, to_backend, backend_kwargs):
+def test_rls(backend, to_backend):
     # test exceptions
     with pytest.raises(ValueError):
-        sr.rls_score(to_backend(1), to_backend(1.1), **backend_kwargs)
+        sr.rls_score(to_backend(1), to_backend(1.1))
 
     with pytest.raises(ValueError):
-        sr.rls_score(to_backend(1), to_backend(-0.1), **backend_kwargs)
+        sr.rls_score(to_backend(1), to_backend(-0.1))
 
     # test correctness
     obs, fct = 2, [0.21, 0.31, 0.32, 0.16]
-    res = sr.rls_score(to_backend(obs), to_backend(fct), **backend_kwargs)
+    res = sr.rls_score(to_backend(obs), to_backend(fct))
     assert_inferred(res, backend)
     assert np.isclose(np.asarray(res), 1.064002)
 
     # k_axis
-    res1 = sr.rls_score(to_backend(OBS_K), to_backend(FCT_K), **backend_kwargs)
-    res2 = sr.rls_score(
-        to_backend(OBS_K), to_backend(np.transpose(FCT_K)), k_axis=0, **backend_kwargs
-    )
+    res1 = sr.rls_score(to_backend(OBS_K), to_backend(FCT_K))
+    res2 = sr.rls_score(to_backend(OBS_K), to_backend(np.transpose(FCT_K)), k_axis=0)
     assert_inferred(res1, backend)
     assert res1.shape == (4,)
     assert np.allclose(np.asarray(res1), np.asarray(res2))
 
 
-def test_brier_family_float32(backend, to_backend_float32, backend_kwargs):
+def test_brier_family_float32(backend, to_backend_float32):
     obs_b = to_backend_float32([0, 1, 1])
     fct_b = to_backend_float32([0.2, 0.7, 0.4])
     obs_k = to_backend_float32(OBS_K)
     fct_k = to_backend_float32(FCT_K)
     for res in (
-        sr.brier_score(obs_b, fct_b, **backend_kwargs),
-        sr.log_score(obs_b, fct_b, **backend_kwargs),
-        sr.rps_score(obs_k, fct_k, **backend_kwargs),
-        sr.rls_score(obs_k, fct_k, **backend_kwargs),
+        sr.brier_score(obs_b, fct_b),
+        sr.log_score(obs_b, fct_b),
+        sr.rps_score(obs_k, fct_k),
+        sr.rls_score(obs_k, fct_k),
         # Python obs take the forecast's dtype
-        sr.brier_score(1, fct_b, **backend_kwargs),
-        sr.log_score([0, 1, 1], fct_b, **backend_kwargs),
-        sr.rps_score(OBS_K, fct_k, **backend_kwargs),
-        sr.rls_score(OBS_K, fct_k, **backend_kwargs),
+        sr.brier_score(1, fct_b),
+        sr.log_score([0, 1, 1], fct_b),
+        sr.rps_score(OBS_K, fct_k),
+        sr.rls_score(OBS_K, fct_k),
     ):
         assert_inferred(res, backend)
         assert res.dtype == fct_b.dtype
@@ -178,7 +171,7 @@ def test_brier_family_grad_torch():
 
 @pytest.mark.parametrize("fn", ["brier_score", "log_score", "rps_score", "rls_score"])
 def test_brier_family_numba_arg_infers(fn, backend, to_backend):
-    # no gufunc: backend="numba" means "infer", also for jax/torch inputs
+    # no gufunc: the deprecated backend="numba" means "infer", also for jax/torch
     obs, fct = (
         ([0, 1], [0.2, 0.7])
         if fn in ("brier_score", "log_score")
@@ -187,5 +180,6 @@ def test_brier_family_numba_arg_infers(fn, backend, to_backend):
             FCT_K,
         )
     )
-    res = getattr(sr, fn)(to_backend(obs), to_backend(fct), backend="numba")
+    with pytest.warns(DeprecationWarning, match="backend='numba'"):
+        res = getattr(sr, fn)(to_backend(obs), to_backend(fct), backend="numba")
     assert_inferred(res, backend)

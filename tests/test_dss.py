@@ -18,36 +18,35 @@ def assert_close(result, expected, backend, *, rtol=1e-6, atol=1e-6):
     np.testing.assert_allclose(np.asarray(result), expected, rtol=rtol, atol=atol)
 
 
-def test_ds_score_uv(backend, to_backend, backend_kwargs):
+def test_ds_score_uv(backend, to_backend):
     # m_axis keyword
     res = sr.dssuv_ensemble(
         to_backend(np.random.randn(N)),
         to_backend(np.random.randn(ENSEMBLE_SIZE, N)),
         m_axis=0,
-        **backend_kwargs,
     )
     assert_inferred(res, backend)
     assert res.shape == (N,)
 
     # test correctness
     obs, fct = 11.6, np.array([9.8, 8.7, 11.9, 12.1, 13.4])
-    res = sr.dssuv_ensemble(obs, to_backend(fct), bias=True, **backend_kwargs)
+    res = sr.dssuv_ensemble(obs, to_backend(fct), bias=True)
     assert_close(res, 1.115645, backend)
-    res = sr.dssuv_ensemble(obs, to_backend(fct), **backend_kwargs)
+    res = sr.dssuv_ensemble(obs, to_backend(fct))
     sig = np.std(fct, ddof=1)
     assert_close(res, ((obs - fct.mean()) / sig) ** 2 + 2 * np.log(sig), backend)
 
 
-def test_ds_score_mv(backend, to_backend, backend_kwargs):
+def test_ds_score_mv(backend, to_backend):
     with pytest.raises(ValueError):
         obs = np.random.randn(N, N_VARS)
         fct = np.random.randn(N, ENSEMBLE_SIZE, N_VARS - 1)
-        sr.dssmv_ensemble(to_backend(obs), to_backend(fct), **backend_kwargs)
+        sr.dssmv_ensemble(to_backend(obs), to_backend(fct))
 
     # test shapes
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
-    res = sr.dssmv_ensemble(to_backend(obs), to_backend(fct), **backend_kwargs)
+    res = sr.dssmv_ensemble(to_backend(obs), to_backend(fct))
     assert_inferred(res, backend)
     assert res.shape == (N,)
 
@@ -56,31 +55,29 @@ def test_ds_score_mv(backend, to_backend, backend_kwargs):
         [[0.79546742, 0.4777960, 0.2164079], [0.02461368, 0.7584595, 0.3181810]]
     ).T
     obs = np.array([0.2743836, 0.8146400])
-    res = sr.dssmv_ensemble(to_backend(obs), to_backend(fct), **backend_kwargs)
+    res = sr.dssmv_ensemble(to_backend(obs), to_backend(fct))
     assert_close(res, -3.161553, backend, rtol=0)
 
     # batched result matches per-element calls
     fct = np.random.randn(2, 3, 100, 4)
     obs = np.random.randn(2, 3, 4)
-    res = sr.dssmv_ensemble(to_backend(obs), to_backend(fct), **backend_kwargs)
+    res = sr.dssmv_ensemble(to_backend(obs), to_backend(fct))
     assert_inferred(res, backend)
     assert res.shape == (2, 3)
     for i in range(2):
         for j in range(3):
             res_ij = sr.dssmv_ensemble(
-                to_backend(obs[i, j, :]), to_backend(fct[i, j, :, :]), **backend_kwargs
+                to_backend(obs[i, j, :]), to_backend(fct[i, j, :, :])
             )
             assert_close(res[i, j], res_ij, backend)
 
 
-def test_ds_score_mv_bias(backend, to_backend, backend_kwargs):
+def test_ds_score_mv_bias(backend, to_backend):
     rng = np.random.default_rng(1)
     obs = rng.normal(size=(4, N_VARS))
     fct = rng.normal(size=(4, ENSEMBLE_SIZE, N_VARS))
     for bias in (False, True):
-        res = sr.dssmv_ensemble(
-            to_backend(obs), to_backend(fct), bias=bias, **backend_kwargs
-        )
+        res = sr.dssmv_ensemble(to_backend(obs), to_backend(fct), bias=bias)
         assert_inferred(res, backend)
         expected = []
         for o, f in zip(obs, fct):
@@ -251,9 +248,8 @@ def test_dssmv_float32_judged_at_float32_precision(paths_agree):
     fct = rng.normal(size=(20, 21, 3))
     fct[..., 2] = fct[..., 0] + fct[..., 1] + 1e-4 * rng.normal(size=(20, 21))
     obs = rng.normal(size=(20, 3))
-    r32 = sr.dssmv_ensemble(
-        obs.astype(np.float32), fct.astype(np.float32), backend="numba"
-    )
+    with sr.config_context(numba=True):
+        r32 = sr.dssmv_ensemble(obs.astype(np.float32), fct.astype(np.float32))
     paths_agree(
         sr.dssmv_ensemble,
         obs.astype(np.float32),
@@ -266,29 +262,26 @@ def test_dssmv_float32_judged_at_float32_precision(paths_agree):
     assert np.isfinite(res).all()
 
 
-def test_dssmv_float32_gufunc_matches_float64(requires_numba):
+def test_dssmv_float32_gufunc_matches_float64(numba_on):
     # the gufunc accumulates in float64 for float32 input and returns float32
     rng = np.random.default_rng(10)
     obs, fct = rng.normal(size=(20, 3)), rng.normal(size=(20, 11, 3))
-    r32 = sr.dssmv_ensemble(
-        obs.astype(np.float32), fct.astype(np.float32), backend="numba"
-    )
+    r32 = sr.dssmv_ensemble(obs.astype(np.float32), fct.astype(np.float32))
     r64 = sr.dssmv_ensemble(
         obs.astype(np.float32).astype(np.float64),
         fct.astype(np.float32).astype(np.float64),
-        backend="numba",
     )
     assert r32.dtype == np.float32
     np.testing.assert_allclose(r32, r64.astype(np.float32), rtol=1e-6)
 
 
-def test_dss_float32(backend, to_backend_float32, backend_kwargs):
+def test_dss_float32(backend, to_backend_float32):
     rng = np.random.default_rng(2)
     obs = to_backend_float32(rng.normal(size=(N, N_VARS)))
     fct = to_backend_float32(rng.normal(size=(N, ENSEMBLE_SIZE, N_VARS)))
     for res, ref in (
-        (sr.dssuv_ensemble(obs[:, 0], fct[..., 0], **backend_kwargs), fct),
-        (sr.dssmv_ensemble(obs, fct, **backend_kwargs), fct),
+        (sr.dssuv_ensemble(obs[:, 0], fct[..., 0]), fct),
+        (sr.dssmv_ensemble(obs, fct), fct),
     ):
         assert_inferred(res, backend)
         assert res.dtype == ref.dtype

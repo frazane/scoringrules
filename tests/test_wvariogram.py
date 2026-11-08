@@ -13,50 +13,48 @@ N = 100
 N_VARS = 3
 
 
-def test_owvs_vs_vs(backend_kwargs, native):
+def test_owvs_vs_vs(native):
     vs = native(sr.vs_ensemble)
     owvs = native(sr.owvs_ensemble)
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = vs(obs, fct, **backend_kwargs)
+    res = vs(obs, fct)
     resw = owvs(
         obs,
         fct,
         lambda x: x.mean() * 0.0 + 1.0,
-        **backend_kwargs,
     )
     np.testing.assert_allclose(res, resw, atol=1e-5)
 
 
-def test_twvs_vs_vs(backend_kwargs, native):
+def test_twvs_vs_vs(native):
     vs = native(sr.vs_ensemble)
     twvs = native(sr.twvs_ensemble)
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = vs(obs, fct, **backend_kwargs)
-    resw = twvs(obs, fct, lambda x: x, **backend_kwargs)
+    res = vs(obs, fct)
+    resw = twvs(obs, fct, lambda x: x)
     np.testing.assert_allclose(res, resw, atol=1e-5)
 
 
-def test_vrvs_vs_vs(backend_kwargs, native):
+def test_vrvs_vs_vs(native):
     vs = native(sr.vs_ensemble)
     vrvs = native(sr.vrvs_ensemble)
     obs = np.random.randn(N, N_VARS)
     fct = np.expand_dims(obs, axis=-2) + np.random.randn(N, ENSEMBLE_SIZE, N_VARS)
 
-    res = vs(obs, fct, **backend_kwargs)
+    res = vs(obs, fct)
     resw = vrvs(
         obs,
         fct,
         lambda x: x.mean() * 0.0 + 1.0,
-        **backend_kwargs,
     )
     np.testing.assert_allclose(res, resw, atol=1e-5)
 
 
-def test_owvariogram_score_correctness(backend_kwargs, native):
+def test_owvariogram_score_correctness(native):
     owvs = native(sr.owvs_ensemble)
     fct = np.array(
         [[0.79546742, 0.4777960, 0.2164079], [0.02461368, 0.7584595, 0.3181810]]
@@ -66,17 +64,17 @@ def test_owvariogram_score_correctness(backend_kwargs, native):
     def w_func(x):
         return (x > 0.2).all()
 
-    res = owvs(obs, fct, w_func, p=0.5, **backend_kwargs)
+    res = owvs(obs, fct, w_func, p=0.5)
     np.testing.assert_allclose(res, 0.1929739, rtol=1e-6)
 
     def w_func(x):
         return (x < 1.0).all()
 
-    res = owvs(obs, fct, w_func, p=1.0, **backend_kwargs)
+    res = owvs(obs, fct, w_func, p=1.0)
     np.testing.assert_allclose(res, 0.04856366, rtol=1e-6)
 
 
-def test_twvariogram_score_correctness(backend_kwargs, native):
+def test_twvariogram_score_correctness(native):
     twvs = native(sr.twvs_ensemble)
     fct = np.array(
         [[0.79546742, 0.4777960, 0.2164079], [0.02461368, 0.7584595, 0.3181810]]
@@ -86,13 +84,13 @@ def test_twvariogram_score_correctness(backend_kwargs, native):
     def v_func(x):
         return x.clip(min=0.2)
 
-    res = twvs(obs, fct, v_func, p=0.5, **backend_kwargs)
+    res = twvs(obs, fct, v_func, p=0.5)
     np.testing.assert_allclose(res, 0.07594679, rtol=1e-6)
 
     def v_func(x):
         return x.clip(max=1.0)
 
-    res = twvs(obs, fct, v_func, p=1.0, **backend_kwargs)
+    res = twvs(obs, fct, v_func, p=1.0)
     np.testing.assert_allclose(res, 0.04856366, rtol=1e-6)
 
 
@@ -126,21 +124,19 @@ def _vs_w_func(x):
 
 
 @pytest.mark.parametrize("score", ["owvs_ensemble", "vrvs_ensemble"])
-def test_weighted_variogram_uniform_ens_w(score, backend_kwargs, native):
+def test_weighted_variogram_uniform_ens_w(score, native):
     """Uniform ens_w reproduces the unweighted score."""
     rng = np.random.default_rng(0)
     obs = rng.normal(size=(N, N_VARS))
     fct = rng.normal(size=(N, 6, N_VARS))
     fn = native(getattr(sr, score))
-    res = np.asarray(fn(obs, fct, _vs_w_func, **backend_kwargs))
-    res_w = np.asarray(
-        fn(obs, fct, _vs_w_func, ens_w=np.ones((N, 6)), **backend_kwargs)
-    )
+    res = np.asarray(fn(obs, fct, _vs_w_func))
+    res_w = np.asarray(fn(obs, fct, _vs_w_func, ens_w=np.ones((N, 6))))
     np.testing.assert_allclose(res_w, res, rtol=1e-5, atol=1e-6)
 
 
 @pytest.mark.parametrize("score", ["owvs_ensemble", "vrvs_ensemble"])
-def test_weighted_variogram_ens_w_duplicated_members(score, backend_kwargs, native):
+def test_weighted_variogram_ens_w_duplicated_members(score, native):
     """Integer ens_w equals the unweighted score of the ensemble with each member
     repeated that many times, also with m_axis=0."""
     rng = np.random.default_rng(0)
@@ -149,10 +145,8 @@ def test_weighted_variogram_ens_w_duplicated_members(score, backend_kwargs, nati
     counts = np.array([1, 3, 1, 2, 1, 1])
     ens_w = np.broadcast_to(counts, (N, 6)).astype(float)
     fn = native(getattr(sr, score))
-    res_dup = np.asarray(
-        fn(obs, np.repeat(fct, counts, axis=1), _vs_w_func, **backend_kwargs)
-    )
-    res_w = np.asarray(fn(obs, fct, _vs_w_func, ens_w=ens_w, **backend_kwargs))
+    res_dup = np.asarray(fn(obs, np.repeat(fct, counts, axis=1), _vs_w_func))
+    res_w = np.asarray(fn(obs, fct, _vs_w_func, ens_w=ens_w))
     np.testing.assert_allclose(res_w, res_dup, rtol=1e-5, atol=1e-6)
     res_w = fn(
         obs,
@@ -160,17 +154,16 @@ def test_weighted_variogram_ens_w_duplicated_members(score, backend_kwargs, nati
         _vs_w_func,
         m_axis=0,
         ens_w=ens_w.T,
-        **backend_kwargs,
     )
     np.testing.assert_allclose(np.asarray(res_w), res_dup, rtol=1e-5, atol=1e-6)
 
 
 @pytest.mark.parametrize("score", ["owvs_ensemble", "vrvs_ensemble"])
-def test_weighted_variogram_ens_w_v_axis_first(score, native, backend_kwargs):
+def test_weighted_variogram_ens_w_v_axis_first(score, native):
     """ens_w follows fct without its variables axis when v_axis comes first."""
     obs, fct, kwargs = mv_ensemble_inputs("default", 7, weighted=True)
     fn = native(getattr(sr, score))
-    expected = fn(obs, fct, _vs_w_func, **kwargs, **backend_kwargs)
+    expected = fn(obs, fct, _vs_w_func, **kwargs)
     res = fn(
         obs,
         np.swapaxes(fct, -1, -2).copy(),
@@ -178,12 +171,11 @@ def test_weighted_variogram_ens_w_v_axis_first(score, native, backend_kwargs):
         m_axis=-1,
         v_axis=-2,
         **kwargs,
-        **backend_kwargs,
     )
     np.testing.assert_allclose(np.asarray(res), np.asarray(expected), rtol=1e-6)
 
 
-def test_weighted_variogram_float32(backend, to_backend_float32, backend_kwargs):
+def test_weighted_variogram_float32(backend, to_backend_float32):
     rng = np.random.default_rng(3)
     obs = to_backend_float32(rng.normal(size=(6, 4)))
     fct = to_backend_float32(rng.normal(size=(6, 7, 4)))
@@ -195,7 +187,7 @@ def test_weighted_variogram_float32(backend, to_backend_float32, backend_kwargs)
 
     for score in (sr.owvs_ensemble, sr.vrvs_ensemble):
         for kwargs in ({}, {"ens_w": ens_w}):
-            res = score(obs, fct, w_func, **kwargs, **backend_kwargs)
+            res = score(obs, fct, w_func, **kwargs)
             assert_inferred(res, backend)
             assert res.dtype == fct.dtype
 
