@@ -266,16 +266,6 @@ def test_apply_along_axis_torch_empty_axis():
     )
 
 
-def test_legacy_jax_indices_honors_device():
-    jax = pytest.importorskip("jax")
-    from scoringrules.backend.jax import JaxBackend
-
-    dev = jax.devices()[0]
-    out = JaxBackend().indices((2, 3), device=dev)
-    assert out.devices() == {dev}
-    np.testing.assert_array_equal(np.asarray(out), np.indices((2, 3)))
-
-
 def test_kind_rejects_unknown_namespace():
     import types
 

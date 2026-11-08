@@ -101,8 +101,7 @@ def test_error_spread_score_numba_dispatch(backend, to_backend):
         assert_inferred(sr.error_spread_score(obs, fct, backend="numba"), backend)
 
 
-def test_error_spread_score_set_active_numba(requires_numba, monkeypatch):
-    from scoringrules.backend import backends
+def test_error_spread_score_set_active_numba(numba_active, monkeypatch):
     from scoringrules.core import error_spread
 
     calls = []
@@ -113,7 +112,6 @@ def test_error_spread_score_set_active_numba(requires_numba, monkeypatch):
         return gufunc(*args)
 
     monkeypatch.setattr(error_spread, "_ess_gufunc", spy)
-    monkeypatch.setattr(backends, "_active", "numba")
     obs, fct = np.random.randn(N), np.random.randn(N, ENSEMBLE_SIZE)
     sr.error_spread_score(obs, fct)
     assert len(calls) == 1

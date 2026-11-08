@@ -39,8 +39,9 @@ least-privilege `permissions: contents: read`.
 - **Dependabot** (`.github/dependabot.yml`) opens **one grouped PR per week** for GitHub
   Actions version bumps — not one PR per action. It doesn't auto-merge.
 - **Labeler** (`.github/labeler.yml` + `labeler.yml` workflow) auto-labels PRs by the paths
-  they touch (`core`, `docs`, `ci`, `backend:jax`, `backend:torch`). These labels drive the
-  release notes below.
+  they touch (`core`, `docs`, `ci`). These labels drive the release notes below. The
+  `backend:jax` / `backend:torch` labels are applied by hand: no source file is specific
+  to one framework.
 - **Issue / PR templates** live in `.github/` — the bug form asks for backend, Python and
   package versions, and a reproducer.
 

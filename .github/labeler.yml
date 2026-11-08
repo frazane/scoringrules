@@ -10,16 +10,6 @@ documentation:
           - "docs/**"
           - "**/*.md"
 
-"backend:jax":
-  - changed-files:
-      - any-glob-to-any-file:
-          - "scoringrules/backend/jax.py"
-
-"backend:torch":
-  - changed-files:
-      - any-glob-to-any-file:
-          - "scoringrules/backend/torch.py"
-
 ci:
   - changed-files:
       - any-glob-to-any-file:
