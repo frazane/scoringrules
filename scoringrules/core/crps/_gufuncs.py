@@ -146,13 +146,19 @@ def _crps_ensemble_pwm_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray)
 def _crps_ensemble_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """CRPS estimaton based on the approximate kernel representation."""
     M = fct.shape[-1]
+    if M == 0:
+        out[0] = np.nan
+        return
+    # the wrap-around pair (fct[0], fct[M - 1]) starts the sums, so the loop
+    # has no branch; same accumulation order as before. The float accumulators
+    # keep float32 input summing in float64.
     e_1 = 0.0
     e_2 = 0.0
-    for i, forecast in enumerate(fct):
-        if i == 0:
-            i = M
-        e_1 += abs(forecast - obs)
-        e_2 += abs(forecast - fct[i - 1])
+    e_1 += abs(fct[0] - obs)
+    e_2 += abs(fct[0] - fct[M - 1])
+    for i in range(1, M):
+        e_1 += abs(fct[i] - obs)
+        e_2 += abs(fct[i] - fct[i - 1])
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
@@ -162,12 +168,16 @@ def _crps_ensemble_akr_circperm_gufunc(
 ):
     """CRPS estimaton based on the AKR with cyclic permutation."""
     M = fct.shape[-1]
+    h = M // 2
     e_1 = 0.0
     e_2 = 0.0
-    for i, forecast in enumerate(fct):
-        sigma_i = (i + M // 2) % M
-        e_1 += abs(forecast - obs)
-        e_2 += abs(forecast - fct[sigma_i])
+    for i in range(M):
+        # (i + h) % M without an integer modulo per member
+        j = i + h
+        if j >= M:
+            j -= M
+        e_1 += abs(fct[i] - obs)
+        e_2 += abs(fct[i] - fct[j])
     out[0] = e_1 / M - 0.5 * 1 / M * e_2
 
 
