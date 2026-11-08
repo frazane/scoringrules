@@ -200,11 +200,67 @@ def test_dssmv_degenerate_paths_agree(bias, paths_agree):
 
 
 def test_dssmv_tol_factor_matches():
-    # the gufunc keeps its own copy of the constant (numba's cache tracks its file)
+    # the gufunc keeps its own copy of the constants (numba's cache tracks its file)
     pytest.importorskip("numba")
     from scoringrules.core.dss import _gufuncs, _score
 
     assert _gufuncs.TOL_FACTOR == _score.TOL_FACTOR
+    assert _gufuncs.ZERO_VAR_FACTOR == _score.ZERO_VAR_FACTOR
+
+
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+@pytest.mark.parametrize("value", [0.0, 0.1, 2.5, 273.15, 1e-3, 101325.0])
+@pytest.mark.parametrize("M", [10, 21, 60])
+def test_dssmv_constant_variable_is_nan(value, M, backend, native):
+    # a constant variable whose mean does not round exactly to its value has a
+    # rounding-level variance; it must still count as constant on every path
+    rng = np.random.default_rng(11)
+    fct = rng.normal(size=(3, M, 4))
+    fct[:, :, 2] = value
+    obs = rng.normal(size=(3, 4))
+    res = np.asarray(native(sr.dssmv_ensemble)(obs, fct))
+    assert np.isnan(res).all(), res
+    if backend in ("numpy", "numba"):
+        f32 = np.asarray(
+            native(sr.dssmv_ensemble)(obs.astype(np.float32), fct.astype(np.float32))
+        )
+        assert np.isnan(f32).all(), f32
+
+
+@pytest.mark.parametrize("center,spread", [(1e5, 1e-3), (273.15, 1e-2), (1.0, 1e-6)])
+def test_dssmv_small_spread_is_not_constant(center, spread, paths_agree):
+    # the zero-variance floor is relative to eps: a 1e5 pressure with a 1e-3 spread
+    # is a regular float64 variable
+    rng = np.random.default_rng(12)
+    fct = rng.normal(size=(20, 21, 3))
+    fct[..., 2] = center + spread * fct[..., 2]
+    obs = fct[:, 0] + 0.1 * spread
+    res, _ = paths_agree(sr.dssmv_ensemble, obs, fct, rtol=1e-8)
+    assert np.isfinite(res).all()
+
+
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+def test_dssmv_float32_judged_at_float32_precision(paths_agree):
+    # a variable that is a linear combination of the others up to a 1e-4 relative
+    # perturbation: singular at float32 precision (NaN on both paths), regular in
+    # float64
+    rng = np.random.default_rng(13)
+    fct = rng.normal(size=(20, 21, 3))
+    fct[..., 2] = fct[..., 0] + fct[..., 1] + 1e-4 * rng.normal(size=(20, 21))
+    obs = rng.normal(size=(20, 3))
+    r32 = sr.dssmv_ensemble(
+        obs.astype(np.float32), fct.astype(np.float32), backend="numba"
+    )
+    paths_agree(
+        sr.dssmv_ensemble,
+        obs.astype(np.float32),
+        fct.astype(np.float32),
+        allow_all_nan=True,
+    )
+    assert np.isnan(r32).all()
+    # ill-conditioned in float64 (pivot ratio ~5e-9), so the paths differ ~1e-7
+    res, _ = paths_agree(sr.dssmv_ensemble, obs, fct, rtol=1e-5)
+    assert np.isfinite(res).all()
 
 
 def test_dssmv_float32_gufunc_matches_float64(requires_numba):

@@ -6,9 +6,12 @@ from numba import guvectorize
 from scoringrules.core.utils import lazy_gufunc_wrapper_uv, lazy_gufunc_wrapper_mv
 
 # a Cholesky pivot below TOL_FACTOR * D * eps times its diagonal entry counts as
-# zero; the same constant as ``_score.TOL_FACTOR`` (kept here so that numba's
-# cache, which tracks this file only, sees changes)
+# zero, and a variable whose standard deviation is at most ZERO_VAR_FACTOR * eps
+# times its absolute mean counts as constant; the same constants
+# as in ``_score`` (kept here so that numba's cache, which tracks this file only,
+# sees changes)
 TOL_FACTOR = 10.0
+ZERO_VAR_FACTOR = 1.0
 
 
 @lazy_gufunc_wrapper_uv
@@ -30,9 +33,9 @@ def _dss_uv_gufunc(obs: np.ndarray, fct: np.ndarray, bias: bool, out: np.ndarray
 def _dss_mv_gufunc(obs: np.ndarray, fct: np.ndarray, bias: bool, out: np.ndarray):
     """Mahalanobis term and log-determinant through a Cholesky factorisation of the
     covariance, accumulated in float64 for every input dtype. A covariance that is not
-    positive definite to the input's precision (``M <= D``, collinear or non-finite
-    members, ``M == 1``) or a non-finite obs gives NaN, as on the array path
-    (``ds_score_mv``)."""
+    positive definite to the input's precision (``M <= D``, collinear, constant or
+    non-finite members, ``M == 1``) or a non-finite obs gives NaN, as on the array
+    path (``ds_score_mv``)."""
     M, D = fct.shape
     if M <= D:  # the centred members span at most M - 1 dimensions
         out[0] = np.nan
@@ -43,6 +46,14 @@ def _dss_mv_gufunc(obs: np.ndarray, fct: np.ndarray, bias: bool, out: np.ndarray
             mean[i] += fct[m, i]
     for i in range(D):
         mean[i] /= M
+    # refine the mean by the mean residual: a constant variable then has a mean
+    # equal to its value, so its variance is exactly zero
+    r = np.zeros(D)
+    for m in range(M):
+        for i in range(D):
+            r[i] += fct[m, i] - mean[i]
+    for i in range(D):
+        mean[i] += r[i] / M
     # covariance, lower triangle
     L = np.zeros((D, D))
     c = np.empty(D)
@@ -57,9 +68,14 @@ def _dss_mv_gufunc(obs: np.ndarray, fct: np.ndarray, bias: bool, out: np.ndarray
     for i in range(D):
         for j in range(i + 1):
             L[i, j] /= fact
+    eps = np.finfo(fct.dtype).eps
+    for j in range(D):  # constant variables (scale invariant, also takes NaN)
+        if not math.sqrt(L[j, j]) > ZERO_VAR_FACTOR * eps * abs(mean[j]):
+            out[0] = np.nan
+            return
     # Cholesky in place; a pivot below tol times its diagonal entry (or NaN) means
     # the covariance is singular to the input's precision
-    tol = TOL_FACTOR * D * np.finfo(fct.dtype).eps
+    tol = TOL_FACTOR * D * eps
     log_det = 0.0
     for j in range(D):
         s = L[j, j]
