@@ -404,7 +404,7 @@ def test_gksuv_nonfinite_members_paths_agree(estimator, weighted, paths_agree):
     """NaN and +-inf members give the same NaN positions on both paths. nrg
     evaluates k(x, x) on the diagonal, so an inf member gives NaN there.
     fair is left out: its gufunc skips the diagonal and gives a finite score
-    for an inf member where the array path gives NaN (not yet filed)."""
+    for an inf member where the array path gives NaN, already on main."""
     obs, fct, kwargs = uv_ensemble_inputs("default", 7, weighted)
     fct[0, 2] = np.nan
     fct[1, 3] = np.inf

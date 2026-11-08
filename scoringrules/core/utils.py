@@ -354,8 +354,9 @@ def univariate_sort_ens(
 ):
     sort_ensemble = not sorted_ensemble and estimator in ["qd", "pwm", "int"]
     # stable=False: the array-API default (stable=True) selects numpy's much
-    # slower stable sort. Ties cannot change a score: equal members have equal
-    # values, and the weighted estimators are symmetric in tied members.
+    # slower stable sort. The order of tied members only changes rounding:
+    # equal members have equal values, and the weighted estimators are
+    # symmetric in tied members.
     if sort_ensemble and ens_w is None:
         fct = xp.sort(fct, axis=-1, stable=False)
     elif sort_ensemble:
