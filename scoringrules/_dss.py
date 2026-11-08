@@ -48,7 +48,7 @@ def dssuv_ensemble(
         The computed Dawid-Sebastiani Score.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba("dssuv_ensemble", backend, obs, fct)
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     if numba:
@@ -104,7 +104,7 @@ def dssmv_ensemble(
         The computed Dawid-Sebastiani Score.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct)
+    numba = use_numba("dssmv_ensemble", backend, obs, fct)
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     if numba:

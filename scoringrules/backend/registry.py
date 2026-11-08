@@ -3,8 +3,8 @@
 ``scoringrules.backends`` used to hold hand-written ``ArrayBackend`` objects.
 Scores now infer the array framework from their inputs, so the registry only
 remains for backward compatibility until 1.0: its values are the augmented
-array-API namespaces (``ArrayAPINamespace``) of each framework, and
-``set_active("numba")`` is the public switch for the global numba fast path."""
+array-API namespaces (``ArrayAPINamespace``) of each framework. The numba
+switch is ``scoringrules.set_config(numba=...)``; ``set_active`` maps to it."""
 
 import importlib
 import typing as tp
@@ -12,6 +12,7 @@ import warnings
 from importlib.util import find_spec
 
 from scoringrules import _dispatch
+from scoringrules._config import set_config
 
 from .namespace import _NUMPY_NS, ArrayAPINamespace, get_namespace
 
@@ -19,10 +20,10 @@ if tp.TYPE_CHECKING:
     from scoringrules.core.typing import Backend
 
 _ALL_BACKENDS = ("jax", "numpy", "torch", "numba")
-_ARRAY_API_BACKENDS = {"numpy", "jax", "torch"}
 _REMOVAL_NOTE = (
     "is deprecated and removed in 1.0; scores infer the array framework from "
-    "their inputs (use backend='numba' for the numba fast path)."
+    "their inputs (use scoringrules.set_config(numba=...) to choose whether the "
+    "numba gufuncs are used)."
 )
 
 
@@ -47,8 +48,8 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
         if _dispatch._numba_available():
             super().__setitem__("numba", _NUMPY_NS)
 
-        # Name returned by ``active``; the numba switch itself is
-        # ``scoringrules._dispatch._numba_active``.
+        # Name returned by ``active``; the numba switch itself is the
+        # ``numba`` option of ``scoringrules.set_config``.
         self._active = "numpy"
 
     @property
@@ -123,24 +124,27 @@ class BackendsRegistry(dict[str, ArrayAPINamespace]):
         return super().items()
 
     def set_active(self, backend: str):
-        """Select the global default backend.
+        """Select the global default backend (deprecated, removed in 1.0).
 
-        ``"numba"`` enables the numba gufuncs for numpy inputs when ``backend`` is
-        not passed to a score (raises ``BackendNotAvailable`` if numba cannot
-        be imported). ``"numpy"``, ``"jax"`` and ``"torch"`` are deprecated: they
-        only switch numba off again.
+        ``"numba"`` is ``scoringrules.set_config(numba=True)`` (raises
+        ``BackendNotAvailable`` if numba cannot be imported); any other name is
+        ``scoringrules.set_config(numba="auto")``.
         """
-        if backend in _ARRAY_API_BACKENDS:
-            warnings.warn(
-                f"set_active for array-API backends {_REMOVAL_NOTE}",
-                DeprecationWarning,
-                stacklevel=2,
+        if backend == "numba":
+            _dispatch.warn_at_caller(
+                "set_active('numba') is deprecated and removed in 1.0; use "
+                "scoringrules.set_config(numba=True) instead."
             )
-        elif backend == "numba" and _dispatch._numba_import_error() is not None:
-            raise _dispatch.numba_unavailable_error(
-                "set_active('numba')", BackendNotAvailable
+            if _dispatch._numba_import_error() is not None:
+                raise _dispatch.numba_unavailable_error(
+                    "set_active('numba')", BackendNotAvailable
+                )
+        else:
+            _dispatch.warn_at_caller(
+                f"set_active({backend!r}) {_REMOVAL_NOTE} It now means "
+                "scoringrules.set_config(numba='auto')."
             )
-        _dispatch._set_numba_active(backend == "numba")
+        set_config(numba=True if backend == "numba" else "auto")
         self._active = backend
 
     @property

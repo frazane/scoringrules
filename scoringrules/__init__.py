@@ -101,6 +101,7 @@ from scoringrules._kernels import (
 )
 from scoringrules._quantile import quantile_score
 from scoringrules.backend import backends, register_backend
+from scoringrules._config import config_context, get_config, set_config
 
 
 def _deprecated_alias(new_func, old_func_name, remove_version):
@@ -133,6 +134,9 @@ __version__ = version("scoringrules")
 __all__ = [
     "register_backend",
     "backends",
+    "config_context",
+    "get_config",
+    "set_config",
     "crps_ensemble",
     "crps_beta",
     "crps_binomial",

@@ -86,7 +86,7 @@ def gksuv_ensemble(
     array([0.30799922, 0.17469789, 0.17174067])
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(ens_w,))
+    numba = use_numba(("gksuv_ensemble", estimator), backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     if ens_w is not None:
@@ -174,9 +174,8 @@ def twgksuv_ensemble(
     >>> sr.twgksuv_ensemble(obs, fct, v_func=v_func)
     array([0.31423505, 0.14243174, 0.17610499])
     """
-    resolve_backend_arg(backend)
-    # warned above, at the user's call: forward only the numba choice
-    backend = "numba" if backend == "numba" else None
+    # warns here, at the user's call; the score called below does not
+    backend = resolve_backend_arg(backend)
     xp = get_namespace(obs, fct)
     # the bounds follow the forecast precision (a float64 0-d array would upcast
     # float32 numpy inputs, a float32 tensor would round them for float64 torch)
@@ -263,7 +262,7 @@ def owgksuv_ensemble(
     array([0.38847902, 0.17524147, 0.14577796])
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(ens_w,))
+    numba = use_numba("owgksuv_ensemble", backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs_w, fct_w = uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
@@ -350,7 +349,7 @@ def vrgksuv_ensemble(
     array([0.3652057 , 0.17914915, 0.14754764])
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(ens_w,))
+    numba = use_numba("vrgksuv_ensemble", backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = univariate_array_check(obs, fct, m_axis, xp=xp)
     obs_w, fct_w = uv_outcome_weights(obs, fct, a, b, w_func, xp=xp)
@@ -423,7 +422,7 @@ def gksmv_ensemble(
         The GKS between the forecast ensemble and obs.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(ens_w,))
+    numba = use_numba(("gksmv_ensemble", estimator), backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     if ens_w is not None:
@@ -494,9 +493,8 @@ def twgksmv_ensemble(
     score : array_like
         The computed Threshold-Weighted Gaussian Kernel Score.
     """
-    resolve_backend_arg(backend)
-    # warned above, at the user's call: forward only the numba choice
-    backend = "numba" if backend == "numba" else None
+    # warns here, at the user's call; the score called below does not
+    backend = resolve_backend_arg(backend)
     obs, fct = mv_weighted_score_chain(obs, fct, v_func)
     return gksmv_ensemble(
         obs,
@@ -575,7 +573,7 @@ def owgksmv_ensemble(
         The computed Outcome-Weighted GKS.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(ens_w,))
+    numba = use_numba("owgksmv_ensemble", backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
@@ -648,7 +646,7 @@ def vrgksmv_ensemble(
         The computed Vertically Re-scaled Gaussian Kernel Score.
     """
     resolve_backend_arg(backend)
-    numba = use_numba(backend, obs, fct, aux=(ens_w,))
+    numba = use_numba("vrgksmv_ensemble", backend, obs, fct, aux=(ens_w,))
     xp = get_namespace(obs, fct)
     obs, fct = multivariate_array_check(obs, fct, m_axis, v_axis, xp=xp)
     obs_w, fct_w = mv_weighted_score_weights(obs, fct, w_func, xp=xp)
