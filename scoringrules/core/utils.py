@@ -9,6 +9,7 @@ of them imports numba.
 
 import importlib
 import sys
+import threading
 
 import numpy as np
 from array_api_compat import array_namespace, is_array_api_obj
@@ -51,9 +52,6 @@ def nan_policy_check(nan_policy: str) -> None:
         raise ValueError(f"Invalid nan_policy '{nan_policy}'. Must be one of {valid}.")
 
 
-_INT_KINDS = frozenset("biu")
-
-
 def _dtype_of(a):
     """The numpy dtype numba types ``a`` as: an array's dtype, float64 for a
     Python float, int64 for a Python int and bool for a Python bool."""
@@ -67,12 +65,24 @@ def _gufunc_out_dtype(d0, d1):
     """Output dtype of a gufunc call on ``obs`` and ``fct`` of dtypes ``d0`` and
     ``d1``, as on the array path: numpy's promotion of the two, and numpy's
     default float64 when neither is floating (bool and integer inputs). At least
-    float32. Auxiliary arguments (weights, exponents, constants built by the
-    caller) do not take part."""
+    float32, in native byte order. Auxiliary arguments (weights, exponents,
+    constants built by the caller) do not take part."""
     dtype = np.result_type(d0, d1)
     if dtype.kind != "f":
         return np.dtype(np.float64)
-    return np.result_type(dtype, np.float32)
+    return np.result_type(dtype, np.float32).newbyteorder("=")
+
+
+_FLOAT16 = np.dtype(np.float16)
+
+
+def _native_dtype(dtype):
+    """``dtype`` in native byte order, float16 as float32 (numba has neither)."""
+    return (
+        np.result_type(dtype, np.float32)
+        if dtype.kind == "f"
+        else dtype.newbyteorder("=")
+    )
 
 
 class GufuncWrapper:
@@ -80,16 +90,20 @@ class GufuncWrapper:
 
     The output is allocated here, with the shape of ``obs`` (the first argument),
     reduced by its last axis for multivariate gufuncs, and the dtype of
-    ``_gufunc_out_dtype``. Integer and bool ``obs`` and ``fct`` (the first two
-    arguments) are cast to that dtype, so they always run a float loop; the other
-    arguments are passed as they are.
+    ``_gufunc_out_dtype``. ``obs`` and ``fct`` (the first two arguments) are cast
+    to that dtype when theirs differs (integer, bool, float16, the other float
+    precision, non-native byte order), so they always run the loop of the output
+    dtype; the other arguments are passed as they are, except that non-native
+    byte order and float16 (which numba does not support) become native and
+    float32.
 
     numba's own ``GUFunc.__call__`` types every argument and searches the loops
     in Python on every call (about 50 us), and the search accepts safe casts, so
     float32 input would run through an existing float64 loop. Instead the dtypes
     of the call form a key: a known key calls the built numpy ufunc with exactly
     that loop (``signature=key``), an unknown one first compiles exactly that loop
-    (loaded from numba's cache when ``cache=True`` and it is there).
+    (loaded from numba's cache when ``cache=True`` and it is there). That uses
+    numba internals; if they are missing, the wrapper calls the GUFunc instead.
     """
 
     def __init__(self, gufunc, mv):
@@ -99,6 +113,10 @@ class GufuncWrapper:
         self._mv = mv
         self._keys = set()
         self._out_dtypes = {}
+        # numba builds a new ufunc per loop and assigns it after releasing its
+        # compiler lock, so concurrent first calls must not interleave
+        self._lock = threading.Lock()
+        self._fallback = False  # numba internals missing: call the GUFunc
         self.__name__ = gufunc.__name__
         self.__doc__ = gufunc.__doc__
         self.__wrapped__ = gufunc
@@ -107,12 +125,22 @@ class GufuncWrapper:
         return f"<GufuncWrapper {self.__name__}>"
 
     def _compile(self, args, key):
-        """Compile the loop for exactly the dtypes of ``args`` and rebuild the ufunc."""
+        """Compile the loop for exactly the dtypes of ``args`` and rebuild the
+        ufunc. Returns False if numba's internals are not there (the wrapper then
+        falls back to calling the GUFunc)."""
         g = self._gufunc
-        if g.find_ewise_function(g._get_ewise_dtypes(args)) == (None, None):
-            g.add(g._get_function_type(*args))
-        g.build_ufunc()
-        self._keys.add(key)
+        with self._lock:
+            if key in self._keys or self._fallback:
+                return not self._fallback
+            try:
+                if g.find_ewise_function(g._get_ewise_dtypes(args)) == (None, None):
+                    g.add(g._get_function_type(*args))
+                g.build_ufunc()
+            except (AttributeError, TypeError):
+                self._fallback = True
+                return False
+            self._keys.add(key)
+            return True
 
     def __call__(self, *args):
         a0, a1, *rest = args
@@ -120,16 +148,33 @@ class GufuncWrapper:
         odt = self._out_dtypes.get((d0, d1))
         if odt is None:
             odt = self._out_dtypes[(d0, d1)] = _gufunc_out_dtype(d0, d1)
-        if d0.kind in _INT_KINDS:
+        if d0 != odt:
             a0, d0 = np.asarray(a0, dtype=odt), odt
-        if d1.kind in _INT_KINDS:
+        if d1 != odt:
             a1, d1 = np.asarray(a1, dtype=odt), odt
+        dts = [_dtype_of(a) for a in rest]
+        for i, d in enumerate(dts):
+            if not d.isnative or d == _FLOAT16:  # numba supports neither
+                dts[i] = _native_dtype(d)
+                rest[i] = np.asarray(rest[i], dtype=dts[i])
         shape = np.shape(a0)
         out = np.empty(shape[:-1] if self._mv else shape, dtype=odt)
-        key = (d0, d1, *[_dtype_of(a) for a in rest], odt)
-        if key not in self._keys:
-            self._compile((a0, a1, *rest, out), key)
-        self._gufunc.ufunc(a0, a1, *rest, out, signature=key)
+        call = (a0, a1, *rest, out)
+        key = (d0, d1, *dts, odt)
+        if not self._fallback and (key in self._keys or self._compile(call, key)):
+            try:
+                self._gufunc.ufunc(*call, signature=key)
+            except TypeError:
+                # the loop was lost (e.g. numba rebuilt the ufunc from another
+                # thread outside this wrapper): compile it again, once
+                with self._lock:
+                    self._keys.discard(key)
+                if self._compile(call, key):
+                    self._gufunc.ufunc(*call, signature=key)
+                else:
+                    self._gufunc(*call)
+        else:
+            self._gufunc(*call)
         if out.ndim == 0:
             return out[()]  # a numpy scalar of out's dtype
         return out
@@ -170,6 +215,15 @@ def lazy_gufunc_getattr(package, attrs):
             value = getattr(mod, source or name)
         except ImportError:
             value = None
+        except RuntimeError as err:
+            if "no locator available" not in str(err):
+                raise
+            raise RuntimeError(
+                "numba cannot cache the scoringrules gufuncs: neither the package "
+                "directory nor numba's user cache directory is writable. Set the "
+                "NUMBA_CACHE_DIR environment variable to a writable directory "
+                f"before the first numba call. ({err})"
+            ) from err
         setattr(sys.modules[package], name, value)
         return value
 

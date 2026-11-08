@@ -196,3 +196,84 @@ def test_non_float_output_dtype_matches_array_path(fn, dtypes, requires_numba):
     res_array = np.asarray(fn(obs, fct))
     assert res_numba.dtype == res_array.dtype == np.float64
     np.testing.assert_allclose(res_numba, res_array, rtol=1e-12, equal_nan=True)
+
+
+@pytest.mark.parametrize(
+    "dtypes",
+    [
+        ("float64", "float32"),
+        ("float32", "float64"),
+        ("float16", "float16"),
+        (">f8", ">f8"),
+    ],
+    ids=["f8_f4", "f4_f8", "float16", "bigendian"],
+)
+def test_obs_and_fct_run_the_output_dtype_loop(dtypes, requires_numba):
+    # obs and fct are cast to the output dtype: mixed precision runs the float64
+    # loop, float16 the float32 one, non-native byte order the native one
+    rng = np.random.default_rng(4)
+    obs, fct = rng.normal(size=5), rng.normal(size=(5, 8))
+    om, fm = rng.normal(size=(5, 3)), rng.normal(size=(5, 8, 3))
+    out = np.result_type(np.result_type(*dtypes), np.float32).newbyteorder("=")
+    for fn, o, f in [
+        (lambda o, f, **k: sr.crps_ensemble(o, f, estimator="pwm", **k), obs, fct),
+        (lambda o, f, **k: sr.crps_ensemble(o, f, estimator="nrg", **k), obs, fct),
+        (lambda o, f, **k: sr.es_ensemble(o, f, **k), om, fm),
+        # weights follow fct's dtype (float16, >f8 weights reach the gufunc);
+        # M = 8 so uniform weights are exact in every precision
+        (
+            lambda o, f, **k: sr.crps_ensemble(o, f, ens_w=np.ones_like(f), **k),
+            obs,
+            fct,
+        ),
+    ]:
+        o, f = o.astype(dtypes[0]), f.astype(dtypes[1])
+        res = np.asarray(fn(o, f, backend="numba"))
+        assert res.dtype == out
+        ref = fn(o.astype(out), f.astype(out), backend="numba")
+        np.testing.assert_array_equal(res, ref)
+
+
+def test_fallback_when_numba_internals_are_missing(monkeypatch, requires_numba):
+    from numba.np.ufunc.gufunc import GUFunc
+
+    from scoringrules.core.crps import _gufuncs
+    from scoringrules.core.utils import GufuncWrapper
+
+    rng = np.random.default_rng(5)
+    obs, fct = rng.normal(size=4), rng.normal(size=(4, 7))
+    expected = sr.crps_ensemble(obs, fct, estimator="akr", backend="numba")
+    calls = []
+
+    def missing(self, *args):
+        calls.append(args)
+        raise AttributeError("find_ewise_function")
+
+    monkeypatch.setattr(GUFunc, "find_ewise_function", missing)
+    # a new wrapper knows no loops, so it tries the internals on its first call
+    wrapper = GufuncWrapper(_gufuncs._crps_ensemble_akr_gufunc, mv=False)
+    for _ in range(3):
+        np.testing.assert_array_equal(wrapper(obs, fct), expected)
+    assert wrapper._fallback is True
+    assert len(calls) == 1  # the internals are not tried again
+
+
+def test_cache_without_locator_names_numba_cache_dir(tmp_path, monkeypatch):
+    # what numba raises at decoration time when no cache directory is writable
+    pkg = tmp_path / "fake_family"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text(
+        "from scoringrules.core.utils import lazy_gufunc_getattr\n"
+        "__getattr__ = lazy_gufunc_getattr(__name__, {'gufuncs': '._gufuncs'})\n"
+    )
+    (pkg / "_gufuncs.py").write_text(
+        "raise RuntimeError(\"cannot cache function 'f': no locator available "
+        "for file 'x.py'\")\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    import fake_family
+
+    with pytest.raises(RuntimeError, match="NUMBA_CACHE_DIR") as info:
+        fake_family.gufuncs  # noqa: B018
+    assert "no locator available" in str(info.value.__cause__)
+    monkeypatch.delitem(sys.modules, "fake_family")
