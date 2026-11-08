@@ -353,8 +353,14 @@ def univariate_sort_ens(
     fct, ens_w=None, m_axis=-1, estimator=None, sorted_ensemble=False, *, xp
 ):
     sort_ensemble = not sorted_ensemble and estimator in ["qd", "pwm", "int"]
-    if sort_ensemble:
-        ind = xp.argsort(fct, axis=-1)
+    # stable=False: the array-API default (stable=True) selects numpy's much
+    # slower stable sort. The order of tied members only changes rounding:
+    # equal members have equal values, and the weighted estimators are
+    # symmetric in tied members.
+    if sort_ensemble and ens_w is None:
+        fct = xp.sort(fct, axis=-1, stable=False)
+    elif sort_ensemble:
+        ind = xp.argsort(fct, axis=-1, stable=False)
         fct = xp.gather(fct, ind, axis=-1)
     if ens_w is not None:
         ens_w = univariate_weight_check(ens_w, fct, m_axis, xp=xp)

@@ -447,6 +447,37 @@ def test_crps_ensemble_paths_agree(estimator, weighted, M, case, paths_agree):
     )
 
 
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize("estimator", ["qd", "pwm", "int"])
+def test_crps_ensemble_tied_members_order(estimator, weighted, backend, to_backend):
+    """The ensemble sort is not stable: reordering tied members (and their
+    weights) must not change the score."""
+    rng = np.random.default_rng(1)
+    obs = rng.normal(size=6)
+    fct = np.round(rng.normal(size=(6, 8)))  # many ties
+    fct[0] = 0.0
+    fct[0, ::2] = -0.0  # signed zeros compare equal
+    w = rng.uniform(0.1, 2.0, size=fct.shape)
+    perm = rng.permutation(fct.shape[-1])
+    kwargs = {"estimator": estimator}
+    if backend == "numba":
+        kwargs["backend"] = "numba"
+    res = sr.crps_ensemble(
+        to_backend(obs),
+        to_backend(fct),
+        ens_w=to_backend(w) if weighted else None,
+        **kwargs,
+    )
+    res_perm = sr.crps_ensemble(
+        to_backend(obs),
+        to_backend(fct[:, perm]),
+        ens_w=to_backend(w[:, perm]) if weighted else None,
+        **kwargs,
+    )
+    rtol = 1e-5 if backend == "jax" else 1e-12
+    np.testing.assert_allclose(np.asarray(res_perm), np.asarray(res), rtol=rtol)
+
+
 @pytest.mark.parametrize("case", [c for c in UV_CASES if not c.startswith("nan_")])
 def test_crps_quantile_paths_agree(case, paths_agree):
     obs, fct, kwargs = uv_ensemble_inputs(case, 7, weighted=False)
