@@ -77,10 +77,10 @@ sr.crps_ensemble(np.random.randn(5), np.random.randn(5, 11))  # numba gufunc if 
 ```
 
 Some inputs always take the array path, with or without numba: jax and torch arrays,
-masked arrays, float16, longdouble and complex data, and objects that only provide
-`__array__`. Scores that have no gufunc always take it too. In the default mode a few
-combinations also stay on the array path because it is faster or more accurate there.
-At the moment these are `weighted_interval_score`, and the `akr` and `akr_circperm`
+masked arrays, bool, float16, longdouble and complex data, and objects that only
+provide `__array__`. Scores that have no gufunc always take it too. In the default
+mode a few combinations also stay on the array path because it is faster or more
+accurate there. At the moment these are `weighted_interval_score`, and the `akr` and `akr_circperm`
 estimators of `gksuv_ensemble` for float32 data.
 
 Use `set_config` to change the mode for the whole process:
@@ -93,14 +93,18 @@ sr.get_config()               # {'numba': 'auto'}
 ```
 
 With `numba=True`, a score call that would use a gufunc raises an `ImportError` if
-numba is not installed. The excluded combinations above then use the gufunc as well.
-To change the mode for a block of code only, use `config_context`. It restores the
+numba is not installed (inputs that always take the array path still work). The
+excluded combinations above then use the gufunc as well. To change the mode for a block of code only, use `config_context`. It restores the
 previous value on exit and does not affect other threads:
 
 ```python
 with sr.config_context(numba=False):
     sr.crps_ensemble(obs, fct)  # array path
 ```
+
+Work that runs in other threads, such as a thread pool or dask's threaded scheduler,
+does not see a `config_context` opened in the calling thread; use `set_config` there.
+Spawned processes only read the environment variable below.
 
 The initial mode is read from the environment variable `SCORINGRULES_NUMBA` when
 scoringrules is imported. It accepts `0`, `1` and `auto` (also `false` and `true`).
@@ -120,8 +124,9 @@ This applies to:
 - every value of the `backend` argument of the scores. `backend="numba"` still works
   as `numba=True` for that call, the other values are ignored. All of them warn.
 - `sr.register_backend(...)` and `sr.backends.set_active(...)`.
-  `set_active("numba")` is the same as `set_config(numba=True)`, and any other name
-  is the same as `set_config(numba="auto")`.
+  `set_active("numba")` is the same as `set_config(numba=True)`,
+  `set_active("numpy")` is the same as `set_config(numba=False)`, and `"jax"` or
+  `"torch"` are the same as `set_config(numba="auto")`.
 - reading values from the `sr.backends` registry: any `sr.backends[...]` lookup,
   `sr.backends.get(...)`, `.values()`, `.items()` and `.active` warn. It is a
   compatibility shim: its values are the array-API namespaces scoringrules uses
