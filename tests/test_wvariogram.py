@@ -105,12 +105,18 @@ def test_weighted_variogram_paths_agree(score, weighted, M, case, paths_agree):
     paths_agree(getattr(sr, score), obs, fct, mv_w_func, **kwargs)
 
 
+# p = 1 and 2 take the abs / square branch of the gufuncs, 1.5 the pow branch
+@pytest.mark.parametrize("p", [1.0, 2.0, 1.5])
+@pytest.mark.parametrize("nan", [False, True], ids=["finite", "nan"])
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("score", ["owvs_ensemble", "vrvs_ensemble"])
-def test_weighted_variogram_paths_agree_w_p(score, weighted, paths_agree):
+def test_weighted_variogram_paths_agree_w_p(nan, p, score, weighted, paths_agree):
     obs, fct, kwargs = mv_ensemble_inputs("default", 7, weighted)
+    if nan:  # a NaN member element in sample 1, a NaN obs element in sample 3
+        fct[1, 2, 0] = np.nan
+        obs[3, 1] = np.nan
     w = np.random.default_rng(1).uniform(0.1, 2.0, size=(*obs.shape, obs.shape[-1]))
-    paths_agree(getattr(sr, score), obs, fct, mv_w_func, w, p=1.0, **kwargs)
+    paths_agree(getattr(sr, score), obs, fct, mv_w_func, w, p=p, **kwargs)
 
 
 def _vs_w_func(x):

@@ -133,12 +133,18 @@ def test_variogram_paths_agree(score, estimator, weighted, M, case, paths_agree)
     paths_agree(getattr(sr, score), obs, fct, *args, estimator=estimator, **kwargs)
 
 
+# p = 1 and 2 take the abs / square branch of the gufuncs, 1.5 the pow branch
+@pytest.mark.parametrize("p", [1.0, 2.0, 1.5])
+@pytest.mark.parametrize("nan", [False, True], ids=["finite", "nan"])
 @pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
 @pytest.mark.parametrize("estimator", ESTIMATORS)
-def test_variogram_paths_agree_w_p(estimator, weighted, paths_agree):
+def test_variogram_paths_agree_w_p(nan, p, estimator, weighted, paths_agree):
     obs, fct, kwargs = mv_ensemble_inputs("default", 7, weighted)
+    if nan:  # a NaN member element in sample 1, a NaN obs element in sample 3
+        fct[1, 2, 0] = np.nan
+        obs[3, 1] = np.nan
     w = np.random.default_rng(1).uniform(0.1, 2.0, size=(*obs.shape, obs.shape[-1]))
-    paths_agree(sr.vs_ensemble, obs, fct, w, p=1.0, estimator=estimator, **kwargs)
+    paths_agree(sr.vs_ensemble, obs, fct, w, p=p, estimator=estimator, **kwargs)
 
 
 @pytest.mark.parametrize("estimator", ESTIMATORS)
@@ -255,3 +261,34 @@ def test_mv_numpy_weights_follow_torch_inputs():
         ):
             assert isinstance(res, torch.Tensor) and res.dtype == dtype
             np.testing.assert_allclose(res.numpy(), ref, rtol=1e-5)
+
+
+@pytest.mark.parametrize("adversarial", ["outlier0", "offset", "near_identical"])
+@pytest.mark.parametrize("weighted", [False, True], ids=["uw", "w"])
+@pytest.mark.parametrize(
+    "score", ["vs_ensemble", "owvs_ensemble", "vrvs_ensemble"], ids=["vs", "ow", "vr"]
+)
+def test_variogram_spread_identity_paths_agree(
+    score, weighted, adversarial, paths_agree
+):
+    # the gufuncs sum the member pairs through S0 S2 - S1^2 with shifted sums;
+    # inputs where an unshifted identity would cancel badly
+    obs, fct, kwargs = mv_ensemble_inputs("default", 9, weighted, D=4)
+
+    def w_func(x):
+        return 1.0 / (1.0 + np.exp(-np.mean(x) * 1e-4))
+
+    if adversarial == "outlier0":  # the variogram of member 0 far from the others
+        fct[:, 0] += 1e3 * np.arange(4)
+
+        def w_func(x):  # noqa: F811, member 0 gets weight 0
+            return float(x[-1] - x[0] < 100.0)
+
+    elif adversarial == "offset":  # |x_i - x_j| large, with a small spread
+        obs, fct = obs + 1e4 * np.arange(4), fct + 1e4 * np.arange(4)
+    else:
+        fct = fct[:, :1] + 1e-6 * fct
+    if score == "vs_ensemble":
+        paths_agree(sr.vs_ensemble, obs, fct, estimator="fair", rtol=1e-9, **kwargs)
+    else:
+        paths_agree(getattr(sr, score), obs, fct, w_func, rtol=1e-9, **kwargs)
