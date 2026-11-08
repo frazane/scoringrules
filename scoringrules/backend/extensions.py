@@ -196,6 +196,61 @@ def comb(xp, n, k):
     return xp.where(valid, xp.exp(log_comb), 0.0)
 
 
+# --- linear algebra ---
+
+
+def cholesky(xp, x):
+    """Lower Cholesky factor of a (batch of) symmetric matrices, NaN for every
+    matrix that is not positive definite (or holds NaN/inf), without raising.
+
+    jax puts NaN in the columns from the failing pivot on, so a factor with any
+    NaN is masked; torch uses ``cholesky_ex`` and masks the failures by ``info``;
+    both also mask non-finite inputs (an inf diagonal entry passes as a pivot).
+    numpy raises ``LinAlgError`` for the whole stack, so non-finite matrices are
+    masked first and a failing stack is split in halves until the failing
+    matrices are isolated.
+    """
+    k = _kind(xp)
+    if k == "jax":
+        import jax.numpy as jnp
+
+        L = jnp.linalg.cholesky(x)
+        ok = jnp.all(jnp.isfinite(x), axis=(-2, -1)) & jnp.all(
+            jnp.isfinite(L), axis=(-2, -1)
+        )
+        return jnp.where(ok[..., None, None], L, jnp.nan)
+    if k == "torch":
+        t = _ts()
+        L, info = t.linalg.cholesky_ex(x)
+        ok = (info == 0) & t.isfinite(x).all(dim=-1).all(dim=-1)
+        return t.where(ok[..., None, None], L, t.nan)
+    x = np.asarray(x)
+    if x.ndim == 2:
+        return _np_cholesky(x[None])[0]
+    flat = x.reshape(-1, *x.shape[-2:])
+    return _np_cholesky(flat).reshape(x.shape)
+
+
+def _np_cholesky(a):
+    """``np.linalg.cholesky`` of a stack ``(n, d, d)``, NaN where it fails."""
+    finite = np.isfinite(a).all(axis=(-2, -1))
+    if not finite.all():
+        eye = np.eye(a.shape[-1], dtype=a.dtype)
+        L = _np_cholesky_split(np.where(finite[:, None, None], a, eye))
+        return np.where(finite[:, None, None], L, np.nan)
+    return _np_cholesky_split(a)
+
+
+def _np_cholesky_split(a):
+    try:
+        return np.linalg.cholesky(a)
+    except np.linalg.LinAlgError:
+        if a.shape[0] == 1:
+            return np.full_like(a, np.nan)
+    h = a.shape[0] // 2
+    return np.concatenate([_np_cholesky_split(a[:h]), _np_cholesky_split(a[h:])])
+
+
 # --- non-standard helpers ---
 
 

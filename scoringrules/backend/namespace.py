@@ -146,6 +146,13 @@ class ArrayAPINamespace:
     def det(self, x):
         return self._xp.linalg.det(x)
 
+    def cholesky(self, x):
+        """Lower Cholesky factor, NaN (instead of an error) for matrices that are
+        not positive definite."""
+        from . import extensions
+
+        return extensions.cholesky(self._xp, x)
+
     # --- non-standard helpers ---
     def gather(self, x, ind, axis):
         return self._xp.take_along_axis(x, ind, axis=axis)

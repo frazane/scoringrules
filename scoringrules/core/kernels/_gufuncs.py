@@ -13,15 +13,6 @@ def _gauss_kern_uv(x1: float, x2: float) -> float:
     return out
 
 
-@njit(cache=True)
-def _gauss_kern_mv(x1: float, x2: float) -> float:
-    """Gaussian kernel evaluated at x1 and x2."""
-    # sum of squares, like the array path (gauss_kern_mv in _approx.py)
-    d = x1 - x2
-    out: float = math.exp(-0.5 * np.sum(d * d))
-    return out
-
-
 @guvectorize("(),(n)->()", cache=True)
 def _ks_ensemble_uv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Standard version of the kernel score."""
@@ -166,18 +157,50 @@ def _vrks_ensemble_uv_gufunc(
     out[0] = -((e_1 / M) - 0.5 * (e_2 / (M**2)) - 0.5 * e_3)
 
 
+# Multivariate kernels: scalar sums of squares; the member pairs i < j run on a
+# (D, M) copy of the members (contiguous j loop), the full double sum is the
+# diagonal plus twice that. Loops are written out per gufunc, which keeps the
+# first-call compile time down.
+
+
 @guvectorize("(d),(m,d)->()", cache=True)
 def _ks_ensemble_mv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Standard version of the multivariate kernel score."""
-    M = fct.shape[0]
-
+    M, D = fct.shape
     e_1 = 0.0
-    e_2 = 0.0
+    e_d = 0.0  # diagonal of the member pairs (1, or NaN for a non-finite member)
     for i in range(M):
-        e_1 += float(_gauss_kern_mv(fct[i], obs))
-        for j in range(M):
-            e_2 += float(_gauss_kern_mv(fct[i], fct[j]))
-    e_3 = float(_gauss_kern_mv(obs, obs))
+        s1 = 0.0
+        s0 = 0.0
+        for d in range(D):
+            t = float(fct[i, d] - obs[d])
+            s1 += t * t
+            t = float(fct[i, d] - fct[i, d])
+            s0 += t * t
+        e_1 += math.exp(-0.5 * s1)
+        e_d += math.exp(-0.5 * s0)
+    ft = np.empty((D, M), dtype=fct.dtype)
+    for m in range(M):
+        for d in range(D):
+            ft[d, m] = fct[m, d]
+    acc = np.empty(M)
+    e_u = 0.0  # member pairs i < j
+    for i in range(M - 1):
+        for j in range(i + 1, M):
+            acc[j] = 0.0
+        for d in range(D):
+            xi = ft[d, i]
+            for j in range(i + 1, M):
+                t = float(ft[d, j] - xi)
+                acc[j] += t * t
+        for j in range(i + 1, M):
+            e_u += math.exp(-0.5 * acc[j])
+    e_2 = e_d + 2 * e_u
+    s3 = 0.0
+    for d in range(D):
+        t = float(obs[d] - obs[d])
+        s3 += t * t
+    e_3 = math.exp(-0.5 * s3)
 
     out[0] = -((e_1 / M) - 0.5 * (e_2 / (M**2)) - 0.5 * e_3)
 
@@ -185,15 +208,35 @@ def _ks_ensemble_mv_nrg_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray
 @guvectorize("(d),(m,d)->()", cache=True)
 def _ks_ensemble_mv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Fair version of the multivariate kernel score."""
-    M = fct.shape[0]
-
+    M, D = fct.shape
     e_1 = 0.0
-    e_2 = 0.0
     for i in range(M):
-        e_1 += float(_gauss_kern_mv(fct[i], obs))
+        s1 = 0.0
+        for d in range(D):
+            t = float(fct[i, d] - obs[d])
+            s1 += t * t
+        e_1 += math.exp(-0.5 * s1)
+    ft = np.empty((D, M), dtype=fct.dtype)
+    for m in range(M):
+        for d in range(D):
+            ft[d, m] = fct[m, d]
+    acc = np.empty(M)
+    e_2 = 0.0
+    for i in range(M - 1):
         for j in range(i + 1, M):
-            e_2 += float(_gauss_kern_mv(fct[i], fct[j]))
-    e_3 = float(_gauss_kern_mv(obs, obs))
+            acc[j] = 0.0
+        for d in range(D):
+            xi = ft[d, i]
+            for j in range(i + 1, M):
+                t = float(ft[d, j] - xi)
+                acc[j] += t * t
+        for j in range(i + 1, M):
+            e_2 += math.exp(-0.5 * acc[j])
+    s3 = 0.0
+    for d in range(D):
+        t = float(obs[d] - obs[d])
+        s3 += t * t
+    e_3 = math.exp(-0.5 * s3)
 
     out[0] = -(e_1 / M - e_2 / (M * (M - 1)) - 0.5 * e_3)
 
@@ -201,14 +244,24 @@ def _ks_ensemble_mv_fair_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarra
 @guvectorize("(d),(m,d)->()", cache=True)
 def _ks_ensemble_mv_akr_gufunc(obs: np.ndarray, fct: np.ndarray, out: np.ndarray):
     """Approximate kernel representation estimator of the multivariate kernel score."""
-    M = fct.shape[0]
-
-    e_1 = 0
-    e_2 = 0
+    M, D = fct.shape
+    e_1 = 0.0
+    e_2 = 0.0
     for i in range(M):
-        e_1 += float(_gauss_kern_mv(fct[i], obs))
-        e_2 += float(_gauss_kern_mv(fct[i], fct[i - 1]))
-    e_3 = float(_gauss_kern_mv(obs, obs))
+        s1 = 0.0
+        s2 = 0.0
+        for d in range(D):
+            t = float(fct[i, d] - obs[d])
+            s1 += t * t
+            t = float(fct[i, d] - fct[i - 1, d])
+            s2 += t * t
+        e_1 += math.exp(-0.5 * s1)
+        e_2 += math.exp(-0.5 * s2)
+    s3 = 0.0
+    for d in range(D):
+        t = float(obs[d] - obs[d])
+        s3 += t * t
+    e_3 = math.exp(-0.5 * s3)
 
     out[0] = -(e_1 / M - 0.5 * e_2 / M - 0.5 * e_3)
 
@@ -218,15 +271,25 @@ def _ks_ensemble_mv_akr_circperm_gufunc(
     obs: np.ndarray, fct: np.ndarray, out: np.ndarray
 ):
     """AKR estimator of the multivariate kernel score with cyclic permutation."""
-    M = fct.shape[0]
-
-    e_1 = 0
-    e_2 = 0
+    M, D = fct.shape
+    e_1 = 0.0
+    e_2 = 0.0
     for i in range(M):
         sigma_i = (i + M // 2) % M
-        e_1 += float(_gauss_kern_mv(fct[i], obs))
-        e_2 += float(_gauss_kern_mv(fct[i], fct[sigma_i]))
-    e_3 = float(_gauss_kern_mv(obs, obs))
+        s1 = 0.0
+        s2 = 0.0
+        for d in range(D):
+            t = float(fct[i, d] - obs[d])
+            s1 += t * t
+            t = float(fct[i, d] - fct[sigma_i, d])
+            s2 += t * t
+        e_1 += math.exp(-0.5 * s1)
+        e_2 += math.exp(-0.5 * s2)
+    s3 = 0.0
+    for d in range(D):
+        t = float(obs[d] - obs[d])
+        s3 += t * t
+    e_3 = math.exp(-0.5 * s3)
 
     out[0] = -(e_1 / M - 0.5 * e_2 / M - 0.5 * e_3)
 
@@ -240,15 +303,43 @@ def _owks_ensemble_mv_gufunc(
     out: np.ndarray,
 ):
     """Outcome-weighted kernel score for multivariate ensembles."""
-    M = fct.shape[0]
-
+    M, D = fct.shape
     e_1 = 0.0
-    e_2 = 0.0
+    e_d = 0.0
     for i in range(M):
-        e_1 += float(_gauss_kern_mv(fct[i], obs) * fw[i] * ow)
-        for j in range(M):
-            e_2 += float(_gauss_kern_mv(fct[i], fct[j]) * fw[i] * fw[j] * ow)
-    e_3 = float(_gauss_kern_mv(obs, obs)) * ow
+        s1 = 0.0
+        s0 = 0.0
+        for d in range(D):
+            t = float(fct[i, d] - obs[d])
+            s1 += t * t
+            t = float(fct[i, d] - fct[i, d])
+            s0 += t * t
+        e_1 += math.exp(-0.5 * s1) * fw[i]
+        e_d += math.exp(-0.5 * s0) * fw[i] * fw[i]
+    ft = np.empty((D, M), dtype=fct.dtype)
+    for m in range(M):
+        for d in range(D):
+            ft[d, m] = fct[m, d]
+    acc = np.empty(M)
+    e_u = 0.0
+    for i in range(M - 1):
+        for j in range(i + 1, M):
+            acc[j] = 0.0
+        for d in range(D):
+            xi = ft[d, i]
+            for j in range(i + 1, M):
+                t = float(ft[d, j] - xi)
+                acc[j] += t * t
+        fi = fw[i]
+        for j in range(i + 1, M):
+            e_u += math.exp(-0.5 * acc[j]) * fi * fw[j]
+    e_1 = e_1 * ow
+    e_2 = (e_d + 2 * e_u) * ow
+    s3 = 0.0
+    for d in range(D):
+        t = float(obs[d] - obs[d])
+        s3 += t * t
+    e_3 = math.exp(-0.5 * s3) * ow
 
     wbar = np.mean(fw)
 
@@ -264,15 +355,43 @@ def _vrks_ensemble_mv_gufunc(
     out: np.ndarray,
 ):
     """Vertically re-scaled kernel score for multivariate ensembles."""
-    M = fct.shape[0]
-
+    M, D = fct.shape
     e_1 = 0.0
-    e_2 = 0.0
+    e_d = 0.0
     for i in range(M):
-        e_1 += float(_gauss_kern_mv(fct[i], obs) * fw[i] * ow)
-        for j in range(M):
-            e_2 += float(_gauss_kern_mv(fct[i], fct[j]) * fw[i] * fw[j])
-    e_3 = float(_gauss_kern_mv(obs, obs)) * ow * ow
+        s1 = 0.0
+        s0 = 0.0
+        for d in range(D):
+            t = float(fct[i, d] - obs[d])
+            s1 += t * t
+            t = float(fct[i, d] - fct[i, d])
+            s0 += t * t
+        e_1 += math.exp(-0.5 * s1) * fw[i]
+        e_d += math.exp(-0.5 * s0) * fw[i] * fw[i]
+    ft = np.empty((D, M), dtype=fct.dtype)
+    for m in range(M):
+        for d in range(D):
+            ft[d, m] = fct[m, d]
+    acc = np.empty(M)
+    e_u = 0.0
+    for i in range(M - 1):
+        for j in range(i + 1, M):
+            acc[j] = 0.0
+        for d in range(D):
+            xi = ft[d, i]
+            for j in range(i + 1, M):
+                t = float(ft[d, j] - xi)
+                acc[j] += t * t
+        fi = fw[i]
+        for j in range(i + 1, M):
+            e_u += math.exp(-0.5 * acc[j]) * fi * fw[j]
+    e_1 = e_1 * ow
+    e_2 = e_d + 2 * e_u
+    s3 = 0.0
+    for d in range(D):
+        t = float(obs[d] - obs[d])
+        s3 += t * t
+    e_3 = math.exp(-0.5 * s3) * ow * ow
 
     out[0] = -((e_1 / M) - 0.5 * (e_2 / (M**2)) - 0.5 * e_3)
 

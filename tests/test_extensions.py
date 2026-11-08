@@ -354,3 +354,55 @@ def test_comb_grad_torch():
     torch = pytest.importorskip("torch")
     n = torch.tensor([10.0, 20.0], dtype=torch.float64, requires_grad=True)
     assert torch.autograd.gradcheck(lambda x: ext.comb(torch, x, x - 3.0), (n,))
+
+
+def _cholesky_inputs():
+    """A stack (2, 3, 3, 3): positive definite matrices except [0, 1] (singular),
+    [1, 0] (indefinite), [1, 2] (a NaN entry) and [0, 2] (an inf entry)."""
+    rng = np.random.default_rng(3)
+    a = rng.normal(size=(2, 3, 3, 5))
+    x = a @ np.swapaxes(a, -1, -2) / 5
+    v = rng.normal(size=3)
+    x[0, 1] = np.outer(v, v)
+    x[1, 0] = np.diag([1.0, -1.0, 2.0])
+    x[1, 2, 0, 1] = x[1, 2, 1, 0] = np.nan
+    x[0, 2, 2, 2] = np.inf
+    bad = np.zeros((2, 3), dtype=bool)
+    bad[0, 1] = bad[1, 0] = bad[1, 2] = bad[0, 2] = True
+    return x, bad
+
+
+def test_cholesky_nan_for_non_positive_definite(backend):
+    mods = {"numpy": "numpy", "numba": "numpy", "jax": "jax.numpy", "torch": "torch"}
+    xp_mod = pytest.importorskip(mods[backend])
+    from scoringrules.backend import get_namespace
+
+    ref, bad = _cholesky_inputs()
+    if backend == "torch":
+        x = xp_mod.asarray(ref, dtype=xp_mod.float64)
+    else:
+        x = xp_mod.asarray(ref)
+    L = get_namespace(x).cholesky(x)  # does not raise
+    assert get_namespace(L)._xp is get_namespace(x)._xp
+    L = np.asarray(L)
+    assert L.shape == ref.shape
+    assert np.isnan(L[bad]).all()
+    rtol = 1e-5 if backend == "jax" else 1e-12  # jax runs in float32 in the tests
+    np.testing.assert_allclose(L[~bad], np.linalg.cholesky(ref[~bad]), rtol=rtol)
+    # a single matrix
+    np.testing.assert_allclose(
+        np.asarray(get_namespace(x).cholesky(x[0, 0])), L[0, 0], rtol=rtol
+    )
+    assert np.isnan(np.asarray(get_namespace(x).cholesky(x[1, 0]))).all()
+
+
+def test_cholesky_numpy_isolates_failures_in_a_large_stack():
+    rng = np.random.default_rng(4)
+    a = rng.normal(size=(1000, 3, 6))
+    x = a @ np.swapaxes(a, -1, -2)
+    x[[3, 500, 999]] = np.ones((3, 3))  # singular
+    L = ext.cholesky(NP, x)
+    bad = np.zeros(1000, dtype=bool)
+    bad[[3, 500, 999]] = True
+    assert np.isnan(L[bad]).all()
+    np.testing.assert_array_equal(L[~bad], np.linalg.cholesky(x[~bad]))

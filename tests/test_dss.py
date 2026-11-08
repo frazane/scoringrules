@@ -136,11 +136,147 @@ def dss_mv_inputs(case, M, D):
 @pytest.mark.parametrize("case", DSS_MV_CASES)
 def test_dssmv_paths_agree(case, M, D, bias, paths_agree):
     obs, fct, kwargs = dss_mv_inputs(case, M, D)
-    if case == "int_fct" and (M, D) == (3, 2):
-        # some integer ensembles of 3 members in 2-d are collinear, so the
-        # covariance is exactly singular and both numpy paths raise
-        kwargs["raises"] = np.linalg.LinAlgError
+    # some integer ensembles of 3 members in 2-d are collinear: their covariance is
+    # singular and both paths give NaN there
     paths_agree(sr.dssmv_ensemble, obs, fct, bias=bias, **kwargs)
+
+
+def _dssmv_degenerate_inputs():
+    """(obs, fct) of 7 samples, M=8, D=3: sample 0 is regular, 1 has a NaN member
+    element, 2 an inf member element, 3 a duplicated variable (collinear
+    members), 4 a variable that is a linear combination of the others, 5 a NaN
+    obs, 6 an inf obs. Each gives NaN except sample 0."""
+    rng = np.random.default_rng(7)
+    obs = rng.normal(size=(7, 3))
+    fct = rng.normal(size=(7, 8, 3))
+    fct[1, 2, 0] = np.nan
+    fct[2, 5, 1] = np.inf
+    fct[3, :, 2] = fct[3, :, 0]
+    fct[4, :, 2] = 0.3 * fct[4, :, 0] - 1.7 * fct[4, :, 1]
+    obs[5, 1] = np.nan
+    obs[6, 0] = np.inf
+    return obs, fct
+
+
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+@pytest.mark.parametrize("bias", [False, True])
+def test_dssmv_degenerate_covariance_is_nan(bias, backend, native):
+    # a NaN or inf member, or a singular covariance gives NaN (not an error) on
+    # every path; the regular sample is unaffected
+    obs, fct = _dssmv_degenerate_inputs()
+    res = np.asarray(native(sr.dssmv_ensemble)(obs, fct, bias=bias))
+    expected = [
+        d @ np.linalg.inv(c) @ d + np.log(np.linalg.det(c))
+        for d, c in [
+            (obs[0] - fct[0].mean(axis=0), np.cov(fct[0], rowvar=False, bias=bias))
+        ]
+    ]
+    rtol = 1e-4 if backend == "jax" else 1e-10
+    np.testing.assert_allclose(res[:1], expected, rtol=rtol)
+    assert np.isnan(res[1:]).all(), res
+
+
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+@pytest.mark.parametrize("M,D", [(1, 1), (1, 3), (2, 2), (3, 4)])
+@pytest.mark.parametrize("bias", [False, True])
+def test_dssmv_too_few_members_is_nan(M, D, bias, backend, native):
+    # M <= D: the centred members span at most M - 1 dimensions
+    rng = np.random.default_rng(8)
+    res = native(sr.dssmv_ensemble)(
+        rng.normal(size=(4, D)), rng.normal(size=(4, M, D)), bias=bias
+    )
+    assert res.shape == (4,)
+    assert np.isnan(np.asarray(res)).all()
+
+
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+@pytest.mark.parametrize("bias", [False, True])
+def test_dssmv_degenerate_paths_agree(bias, paths_agree):
+    obs, fct = _dssmv_degenerate_inputs()
+    paths_agree(sr.dssmv_ensemble, obs, fct, bias=bias)
+    rng = np.random.default_rng(9)
+    obs, fct = rng.normal(size=(3, 4)), rng.normal(size=(3, 4, 4))  # M == D
+    paths_agree(sr.dssmv_ensemble, obs, fct, bias=bias, allow_all_nan=True)
+
+
+def test_dssmv_tol_factor_matches():
+    # the gufunc keeps its own copy of the constants (numba's cache tracks its file)
+    pytest.importorskip("numba")
+    from scoringrules.core.dss import _gufuncs, _score
+
+    assert _gufuncs.TOL_FACTOR == _score.TOL_FACTOR
+    assert _gufuncs.ZERO_VAR_FACTOR == _score.ZERO_VAR_FACTOR
+
+
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+@pytest.mark.parametrize("value", [0.0, 0.1, 2.5, 273.15, 1e-3, 101325.0])
+@pytest.mark.parametrize("M", [10, 21, 60])
+def test_dssmv_constant_variable_is_nan(value, M, backend, native):
+    # a constant variable whose mean does not round exactly to its value has a
+    # rounding-level variance; it must still count as constant on every path
+    rng = np.random.default_rng(11)
+    fct = rng.normal(size=(3, M, 4))
+    fct[:, :, 2] = value
+    obs = rng.normal(size=(3, 4))
+    res = np.asarray(native(sr.dssmv_ensemble)(obs, fct))
+    assert np.isnan(res).all(), res
+    if backend in ("numpy", "numba"):
+        f32 = np.asarray(
+            native(sr.dssmv_ensemble)(obs.astype(np.float32), fct.astype(np.float32))
+        )
+        assert np.isnan(f32).all(), f32
+
+
+@pytest.mark.parametrize("center,spread", [(1e5, 1e-3), (273.15, 1e-2), (1.0, 1e-6)])
+def test_dssmv_small_spread_is_not_constant(center, spread, paths_agree):
+    # the zero-variance floor is relative to eps: a 1e5 pressure with a 1e-3 spread
+    # is a regular float64 variable
+    rng = np.random.default_rng(12)
+    fct = rng.normal(size=(20, 21, 3))
+    fct[..., 2] = center + spread * fct[..., 2]
+    obs = fct[:, 0] + 0.1 * spread
+    res, _ = paths_agree(sr.dssmv_ensemble, obs, fct, rtol=1e-8)
+    assert np.isfinite(res).all()
+
+
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+def test_dssmv_float32_judged_at_float32_precision(paths_agree):
+    # a variable that is a linear combination of the others up to a 1e-4 relative
+    # perturbation: singular at float32 precision (NaN on both paths), regular in
+    # float64
+    rng = np.random.default_rng(13)
+    fct = rng.normal(size=(20, 21, 3))
+    fct[..., 2] = fct[..., 0] + fct[..., 1] + 1e-4 * rng.normal(size=(20, 21))
+    obs = rng.normal(size=(20, 3))
+    r32 = sr.dssmv_ensemble(
+        obs.astype(np.float32), fct.astype(np.float32), backend="numba"
+    )
+    paths_agree(
+        sr.dssmv_ensemble,
+        obs.astype(np.float32),
+        fct.astype(np.float32),
+        allow_all_nan=True,
+    )
+    assert np.isnan(r32).all()
+    # ill-conditioned in float64 (pivot ratio ~5e-9), so the paths differ ~1e-7
+    res, _ = paths_agree(sr.dssmv_ensemble, obs, fct, rtol=1e-5)
+    assert np.isfinite(res).all()
+
+
+def test_dssmv_float32_gufunc_matches_float64(requires_numba):
+    # the gufunc accumulates in float64 for float32 input and returns float32
+    rng = np.random.default_rng(10)
+    obs, fct = rng.normal(size=(20, 3)), rng.normal(size=(20, 11, 3))
+    r32 = sr.dssmv_ensemble(
+        obs.astype(np.float32), fct.astype(np.float32), backend="numba"
+    )
+    r64 = sr.dssmv_ensemble(
+        obs.astype(np.float32).astype(np.float64),
+        fct.astype(np.float32).astype(np.float64),
+        backend="numba",
+    )
+    assert r32.dtype == np.float32
+    np.testing.assert_allclose(r32, r64.astype(np.float32), rtol=1e-6)
 
 
 def test_dss_float32(backend, to_backend_float32, backend_kwargs):
