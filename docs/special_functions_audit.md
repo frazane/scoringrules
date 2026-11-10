@@ -53,6 +53,15 @@ Notes from the probe that shaped the implementation:
 
 ## Support matrix
 
+**PyTorch gradient limitation:** For `gammainc`, `gammalinc`, and
+`gammauinc`, `torch grad: PASS` applies only to differentiation
+with respect to the second argument of the underlying incomplete
+gamma functions. PyTorch does not implement gradients with
+respect to the first argument (shape parameter).
+Consequently, functions such as `crps_gamma` cannot be
+differentiated with respect to the Gamma shape parameter
+using the Torch backend.
+
 | fn | numpy | jax fwd | jax grad | torch fwd | torch grad | notes |
 |----|-------|---------|----------|-----------|------------|-------|
 | `erf` | PASS | PASS | PASS | PASS | PASS | `jax.scipy.special.erf` / `torch.special.erf` |
