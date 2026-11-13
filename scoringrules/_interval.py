@@ -155,7 +155,7 @@ def weighted_interval_score(
     w_median : float
         The weight for the median prediction. Defaults to 0.5.
     w_alpha : array_like
-        The weights for the PI. Defaults to `2/alpha`.
+        The weights for the PI. Defaults to `alpha/2`.
     backend : str
         The name of the backend used for computations. Defaults to 'numba' if available, else 'numpy'.
 
