@@ -26,6 +26,34 @@ def assert_close(result, expected, backend, *, rtol=1e-5, atol=1e-8):
     ), f"[{backend}] {arr} != {expected}"
 
 
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_twcrps_ensemble_preserves_numpy_dtype(dtype):
+    obs = np.array([0.25, 0.75], dtype=dtype)
+    fct = np.array(
+        [[0.0, 0.5, 1.0], [0.5, 0.8, 1.2]],
+        dtype=dtype,
+    )
+
+    result = sr.twcrps_ensemble(obs, fct, a=-0.1, b=0.9)
+
+    assert result.dtype == np.dtype(dtype)
+
+
+def test_twcrps_ensemble_preserves_torch_bound_precision():
+    torch = pytest.importorskip("torch")
+
+    obs = torch.tensor([0.0], dtype=torch.float64)
+    fct = torch.tensor([[0.0, 2.0]], dtype=torch.float64)
+    upper_bound = 1.0 + 1e-8
+
+    result = sr.twcrps_ensemble(obs, fct, b=upper_bound)
+
+    expected = torch.tensor([upper_bound / 4], dtype=torch.float64)
+
+    assert result.dtype == torch.float64
+    torch.testing.assert_close(result, expected, rtol=0, atol=1e-12)
+
+
 def test_owcrps_ensemble(backend, to_backend):
     # test shapes
     obs = to_backend(np.random.randn(N))

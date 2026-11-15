@@ -398,12 +398,7 @@ def uv_weighted_score_chain(
     obs, fct, a=float("-inf"), b=float("inf"), v_func=None, *, xp
 ):
     if v_func is None:
-        a, b, obs, fct = (
-            xp.asarray(a),
-            xp.asarray(b),
-            xp.asarray(obs),
-            xp.asarray(fct),
-        )
+        a, b, obs, fct = asarray_matching(a, b, obs, fct, xp=xp)
 
         def v_func(x):
             return xp.minimum(xp.maximum(x, a), b)
