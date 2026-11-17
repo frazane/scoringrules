@@ -14,13 +14,19 @@ def vs_ensemble(
     xp,
 ) -> "Array":
     """Compute the Variogram Score for a multivariate finite ensemble."""
+    p_array = xp.broadcast_to(
+        xp.asarray(p, dtype=fct.dtype),
+        obs.shape[:-1],
+    )
+    p_obs = xp.reshape(p_array, p_array.shape + (1, 1))
+    p_fct = xp.expand_dims(p_obs, axis=-3)
     M: int = fct.shape[-2]
 
     fct_diff = (
-        xp.abs(xp.expand_dims(fct, axis=-2) - xp.expand_dims(fct, axis=-1)) ** p
+        xp.abs(xp.expand_dims(fct, axis=-2) - xp.expand_dims(fct, axis=-1)) ** p_fct
     )  # (... M D D)
     obs_diff = (
-        xp.abs(xp.expand_dims(obs, axis=-2) - xp.expand_dims(obs, axis=-1)) ** p
+        xp.abs(xp.expand_dims(obs, axis=-2) - xp.expand_dims(obs, axis=-1)) ** p_obs
     )  # (... D D)
 
     if estimator == "nrg":
