@@ -42,6 +42,46 @@ def test_variogram_score_permuted_dims(estimator, backend, to_backend):
     np.testing.assert_allclose(np.asarray(res_t), np.asarray(res), rtol=1e-6)
 
 
+
+
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+@pytest.mark.parametrize("weighted", [False, True], ids=["unweighted", "weighted"])
+def test_variogram_per_sample_exponent(estimator, weighted, backend, to_backend):
+    obs = np.array([
+        [1.0, 2.0],
+        [3.0, 4.0],
+        [5.0, 6.0],
+    ])
+    fct = np.arange(30, dtype=float).reshape(3, 5, 2) / 10
+    p = np.array([0.5, 1.0, 2.0])
+    ens_w = np.ones((3, 5)) if weighted else None
+
+    with sr.config_context(numba=False):
+        expected = np.array([
+            np.asarray(
+                sr.vs_ensemble(
+                    to_backend(obs[i]),
+                    to_backend(fct[i]),
+                    p=float(p[i]),
+                    estimator=estimator,
+                    ens_w=to_backend(ens_w[i]) if weighted else None,
+                )
+            )
+            for i in range(len(p))
+        ])
+
+        actual = sr.vs_ensemble(
+            to_backend(obs),
+            to_backend(fct),
+            p=to_backend(p),
+            estimator=estimator,
+            ens_w=to_backend(ens_w) if weighted else None,
+        )
+
+    assert_inferred(actual, backend)
+    np.testing.assert_allclose(np.asarray(actual), expected)
+
+
 @pytest.mark.parametrize("estimator", ESTIMATORS)
 def test_variogram_score_correctness(estimator, native):
     vs = native(sr.vs_ensemble)
@@ -323,3 +363,46 @@ def test_variogram_spread_identity_paths_agree(
         paths_agree(sr.vs_ensemble, obs, fct, estimator="fair", rtol=1e-9, **kwargs)
     else:
         paths_agree(getattr(sr, score), obs, fct, w_func, rtol=1e-9, **kwargs)
+
+
+@pytest.mark.parametrize("estimator", ESTIMATORS)
+@pytest.mark.parametrize("weighted", [False, True], ids=["unweighted", "weighted"])
+def test_variogram_multi_batch_exponent(estimator, weighted, backend, to_backend):
+    rng = np.random.default_rng(42)
+
+    obs = rng.normal(size=(2, 3, 4))
+    fct = rng.normal(size=(2, 3, 5, 4))
+    p = np.array([
+        [0.5, 1.0, 1.5],
+        [2.0, 0.75, 1.25],
+    ])
+    ens_w = rng.uniform(0.1, 1.0, size=(2, 3, 5)) if weighted else None
+
+    with sr.config_context(numba=False):
+        expected = np.array([
+            [
+                np.asarray(
+                    sr.vs_ensemble(
+                        to_backend(obs[i, j]),
+                        to_backend(fct[i, j]),
+                        p=float(p[i, j]),
+                        estimator=estimator,
+                        ens_w=to_backend(ens_w[i, j]) if weighted else None,
+                    )
+                )
+                for j in range(3)
+            ]
+            for i in range(2)
+        ])
+
+        actual = sr.vs_ensemble(
+            to_backend(obs),
+            to_backend(fct),
+            p=to_backend(p),
+            estimator=estimator,
+            ens_w=to_backend(ens_w) if weighted else None,
+        )
+
+    assert_inferred(actual, backend)
+    assert actual.shape == (2, 3)
+    np.testing.assert_allclose(np.asarray(actual), expected, rtol=1e-6)
