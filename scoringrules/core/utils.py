@@ -311,8 +311,14 @@ def categorical_array_check(obs, fct, k_axis, onehot, *, xp):
             raise ValueError(
                 f"Forecasts shape {fct.shape} and observations shape {obs.shape} are not compatible for broadcasting!"
             )
-        categories = xp.arange(1, fct.shape[-1] + 1, device=xp.device(obs))
-        obs = xp.astype(xp.expand_dims(obs, axis=-1) == categories, xp.float_dtype(fct))
+        n_categories = fct.shape[-1]
+        categories = xp.arange(1, n_categories + 1, device=xp.device(obs))
+        matches = xp.expand_dims(obs, axis=-1) == categories
+        if not xp.all(xp.any(matches, axis=-1)):
+            raise ValueError(
+                f"Observations must be categories in 1, ..., {n_categories}."
+            )
+        obs = xp.astype(matches, xp.float_dtype(fct))
     return obs, fct
 
 

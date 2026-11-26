@@ -90,8 +90,8 @@ def rps_score(
     Parameters
     ----------
     obs : array_like
-        Category that occurs. Or array of 0's and 1's corresponding to unobserved and
-        observed categories if `onehot=True`.
+        Observed category labels from 1 through :math:`K`. If ``onehot=True``,
+        provide an array of zeros and ones encoding the observed categories.
     fct : array
         Array of forecast probabilities for each category.
     k_axis: int
@@ -103,6 +103,11 @@ def rps_score(
         Deprecated, removed in 1.0. The array framework is inferred from the inputs;
         use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
         numba.
+
+    Raises
+    ------
+    ValueError
+        If ``onehot=False`` and an observation does not match a category label.
 
     Returns
     -------
@@ -198,7 +203,8 @@ def rls_score(
     Parameters
     ----------
     obs : array_like
-        Observed outcome, either 0 or 1.
+        Observed category labels from 1 through :math:`K`. If ``onehot=True``,
+        provide an array of zeros and ones encoding the observed categories.
     fct : array_like
         Forecasted probabilities between 0 and 1.
     k_axis: int
@@ -210,6 +216,11 @@ def rls_score(
         Deprecated, removed in 1.0. The array framework is inferred from the inputs;
         use ``scoringrules.set_config`` or ``scoringrules.config_context`` to control
         numba.
+
+    Raises
+    ------
+    ValueError
+        If ``onehot=False`` and an observation does not match a category label.
 
     Returns
     -------
