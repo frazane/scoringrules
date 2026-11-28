@@ -970,6 +970,26 @@ def test_crps_tlogis(backend, to_backend):
     assert_close(res, np.asarray(res0), backend)
 
 
+@pytest.mark.parametrize(
+    ("score", "tail_factor"),
+    [(sr.crps_tlogistic, 2.0), (sr.crps_clogistic, 1.0)],
+)
+def test_crps_logistic_one_sided(score, tail_factor, backend, to_backend):
+    # At the lower bound (the location), the standardised survival function
+    # for x > 0 is tail_factor / (1 + exp(x)). Its squared integral is
+    # tail_factor**2 * (log(2) - 1/2). Reflection gives the upper-bound case.
+    location = to_backend(np.array([0.0, 3.0]))
+    scale = to_backend(np.array([1.0, 2.0]))
+    lower = to_backend(np.array([0.0, -np.inf]))
+    upper = to_backend(np.array([np.inf, 3.0]))
+
+    res = score(location, location, scale, lower, upper)
+
+    expected = np.array([1.0, 2.0]) * tail_factor**2 * (np.log(2) - 0.5)
+    assert_inferred(res, backend)
+    assert_close(res, expected, backend)
+
+
 def test_crps_clogis(backend, to_backend):
     def fa(x):
         return to_backend(np.asarray(x, dtype=float))

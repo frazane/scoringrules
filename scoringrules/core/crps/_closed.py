@@ -328,8 +328,8 @@ def gtclogistic(
     u_inf = u == float("inf")
     l_inf = l == float("-inf")
 
-    F_mu = xp.where(u_inf | l_inf, xp.nan, F_mu)
-    F_ml = xp.where(u_inf | l_inf, xp.nan, F_ml)
+    F_mu = xp.where(u_inf, xp.nan, F_mu)
+    F_ml = xp.where(l_inf, xp.nan, F_ml)
     u = xp.where(u_inf, xp.nan, u)
     l = xp.where(l_inf, xp.nan, l)
 
